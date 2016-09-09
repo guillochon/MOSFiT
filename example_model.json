@@ -22,37 +22,41 @@
     },
     "nickel":{
         "kind":"engine",
-        "input":[
+        "inputs":[
             "times",
             "mnickel",
             "texplosion"
         ],
-        "output":"luminosities"
+        "outputs":"luminosities"
     },
     "identity":{
         "kind":"transform",
-        "input":"nickel",
-        "output":"luminosities"
+        "inputs":"nickel",
+        "outputs":"luminosities"
     },
     "blackbody":{
         "kind":"sed",
-        "input":"identity",
-        "output":"seds"
+        "inputs":"identity",
+        "outputs":"seds"
     },
-    "B":{
-        "kind":"filter",
-        "input":"blackbody"
+    "filter":{
+        "kind":"observable",
+        "path":"observables/filters/B.dat",
+        "inputs":"blackbody"
     },
-    "V":{
-        "kind":"filter",
-        "input":"blackbody"
+    "filter":{
+        "kind":"observable",
+        "path":"observables/filters/V.dat",
+        "inputs":"blackbody"
     },
-    "R":{
-        "kind":"filter",
-        "input":"blackbody"
+    "filter":{
+        "kind":"observable",
+        "path":"observables/filters/R.dat",
+        "inputs":"blackbody"
     },
-    "I":{
-        "kind":"filter",
-        "input":"blackbody"
+    "filter":{
+        "kind":"observable",
+        "path":"observables/filters/I.dat",
+        "inputs":"blackbody"
     }
 }
