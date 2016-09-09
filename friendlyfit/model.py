@@ -1,7 +1,7 @@
 import importlib
 import json
 import logging
-from collections import Iterable, OrderedDict
+from collections import OrderedDict
 
 import emcee
 import numpy as np
@@ -93,14 +93,6 @@ class Model:
                         d, children, name=inp, depth=depth + 1)
                     trees[tag].setdefault('children', {})
                     trees[tag]['children'].update(children)
-
-    def flatten_tree(self, l):
-        for el in l:
-            if isinstance(el, Iterable) and not isinstance(el, (str, bytes)):
-                for sub in self.flatten_tree(el):
-                    yield sub
-            else:
-                yield el
 
     def lnprob(self, x, ivar):
         parameters = {}
