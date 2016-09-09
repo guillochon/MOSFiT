@@ -65,7 +65,10 @@ class Model:
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='friendlyfit')
-            self._modules[task] = getattr(mod, mod.CLASS_NAME)(name=task)
+            if cur_task['kind'] == 'parameter' and task in self._parameters:
+                cur_task.update(self._parameters[task])
+            self._modules[task] = getattr(mod, mod.CLASS_NAME)(name=task,
+                                                               **cur_task)
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
@@ -101,7 +104,11 @@ class Model:
 
     def lnprob(self, x, ivar):
         outputs = {}
+        pos = 0
         for task in self._call_stack:
+            if self._call_stack[task]['kind'] == 'parameter':
+                outputs = {'fraction': x[pos]}
+                pos = pos + 1
             outputs = self._modules[task].process(**outputs)
 
             if self._call_stack[task]['kind'] == 'objective':
