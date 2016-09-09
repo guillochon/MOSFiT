@@ -29,7 +29,7 @@ class Model:
         self.construct_trees(self._model, trees, kinds=root_kinds)
 
         unsorted_call_stack = {}
-        max_depth_all = -1
+        self._max_depth_all = -1
         for tag in self._model:
             if self._model[tag]['kind'] in root_kinds:
                 max_depth = 0
@@ -39,8 +39,8 @@ class Model:
                     depth = self.get_max_depth(tag, trees[tag2], max_depth)
                     if depth > max_depth:
                         max_depth = depth
-                    if depth > max_depth_all:
-                        max_depth_all = depth
+                    if depth > self._max_depth_all:
+                        self._max_depth_all = depth
             new_entry = self._model[tag].copy()
             if 'children' in new_entry:
                 del (new_entry['children'])
@@ -51,7 +51,7 @@ class Model:
         # Currently just have one call stack for all products, can be wasteful
         # if only using some products.
         self._call_stack = OrderedDict()
-        for depth in range(max_depth_all, -1, -1):
+        for depth in range(self._max_depth_all, -1, -1):
             for task in unsorted_call_stack:
                 if unsorted_call_stack[task]['depth'] == depth:
                     self._call_stack[task] = unsorted_call_stack[task]
@@ -103,13 +103,21 @@ class Model:
                     trees[tag]['children'].update(children)
 
     def lnprob(self, x, ivar):
+        inputs = {}
         outputs = {}
         pos = 0
+        cur_depth = self._max_depth_all
         for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if cur_task['depth'] != cur_depth:
+                inputs = outputs
+                outputs = {}
+            cur_depth = cur_task['depth']
             if self._call_stack[task]['kind'] == 'parameter':
-                outputs = {'fraction': x[pos]}
+                inputs.update({'fraction': x[pos]})
                 pos = pos + 1
-            outputs = self._modules[task].process(**outputs)
+            new_outs = self._modules[task].process(**inputs)
+            outputs.update(new_outs)
 
             if self._call_stack[task]['kind'] == 'objective':
                 return outputs['value']
@@ -117,12 +125,26 @@ class Model:
         # return -0.5 * np.sum(ivar * x**2)
 
     def fit_data(self, data, plot_points=[]):
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if 'class' in cur_task:
+                class_name = cur_task['class']
+            else:
+                class_name = task
+            mod = importlib.import_module(
+                '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
+                package='friendlyfit')
+            if cur_task['kind'] == 'data':
+                cur_task.update({'data': data})
+            self._modules[task] = getattr(mod, mod.CLASS_NAME)(name=task,
+                                                               **cur_task)
+
         ndim, nwalkers = self._num_free_parameters, 100
         ivar = 1. / np.random.rand(ndim)
         p0 = [np.random.rand(ndim) for i in range(nwalkers)]
 
         sampler = emcee.EnsembleSampler(
             nwalkers, ndim, self.lnprob, args=[ivar])
-        sampler.run_mcmc(p0, 1000)
+        sampler.run_mcmc(p0, 10)
 
         return (p0, p0)

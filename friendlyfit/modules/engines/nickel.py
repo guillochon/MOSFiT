@@ -16,7 +16,7 @@ class Nickel(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def luminosity(self, **kwargs):
+    def process(self, **kwargs):
         self.times = kwargs['times']
         self.mnickel = kwargs['mnickel']
         self.texplosion = kwargs['texplosion']
@@ -25,5 +25,5 @@ class Nickel(Module):
                       for x in self.times]
         current_mnickel = [self.mnickel * 0.5**x for x in decay_facs]
 
-        return [current_mnickel * 2.0**x * log(2.0) / self.HALF_LIFE
-                for x in decay_facs]
+        return {'luminosities': [y * 2.0**x * log(2.0) / self.HALF_LIFE
+                for x, y in zip(decay_facs, current_mnickel)]}

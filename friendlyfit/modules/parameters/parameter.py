@@ -13,4 +13,4 @@ class Parameter(Module):
     def process(self, **kwargs):
         value = (kwargs['fraction'] *
                  (self._max_value - self._min_value) + self._min_value)
-        return {'value': value}
+        return {self._name: value}
