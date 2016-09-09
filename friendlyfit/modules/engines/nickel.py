@@ -1,7 +1,9 @@
-from math import exp, log
+from math import log
+
+from ..module import Module
 
 
-class Nickel:
+class Nickel(Module):
     """Nickel decay engine
     """
 

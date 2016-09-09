@@ -1,4 +1,6 @@
-class Identity:
+from ..module import Module
+
+class Identity(Module):
     """Identity transform (no change to input).
     """
 

@@ -2,7 +2,6 @@ import importlib
 import json
 import logging
 from collections import Iterable, OrderedDict
-from logging import DEBUG, INFO, WARNING
 
 import emcee
 import numpy as np
@@ -15,6 +14,7 @@ class Model:
             self._model_dict = json.loads(f.read())
         self._parameters = parameters
         self._log = logging.getLogger()
+        self._modules = {}
 
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
@@ -23,8 +23,6 @@ class Model:
 
         trees = {}
         self.construct_trees(self._model_dict, trees, kinds=root_kinds)
-        for tree in trees:
-            print(trees[tree])
 
         unsorted_call_stack = {}
         max_depth_all = -1
@@ -35,7 +33,6 @@ class Model:
                 max_depth = -1
                 for tag2 in trees:
                     depth = self.get_max_depth(tag, trees[tag2], max_depth)
-                    print(tag, tag2, depth)
                     if depth > max_depth:
                         max_depth = depth
                     if depth > max_depth_all:
@@ -47,19 +44,23 @@ class Model:
             unsorted_call_stack[tag] = new_entry
         # print(unsorted_call_stack)
 
-        call_stack = OrderedDict()
+        self._call_stack = OrderedDict()
         for depth in range(max_depth_all, -1, -1):
             for task in unsorted_call_stack:
                 if unsorted_call_stack[task]['depth'] == depth:
-                    call_stack[task] = unsorted_call_stack[task]
+                    self._call_stack[task] = unsorted_call_stack[task]
 
-        print(call_stack)
-        raise (SystemExit)
-
-        # try:
-        #     mod = importlib.import_module('.' + mod_name, package='astrocats')
-        # except Exception as err:
-        #     self._log.error("Import of specified module '{}' failed.".format(mod_name))
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if cur_task['kind'] in ['engine', 'observable', 'sed', 'transform'
+                                    ]:
+                if 'class' in cur_task:
+                    class_name = cur_task['class']
+                else:
+                    class_name = task
+                self._modules[task] = importlib.import_module(
+                    '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
+                    package='friendlyfit')
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
@@ -107,7 +108,12 @@ class Model:
             parameters[par.name] = (
                 ivar *
                 (par['max_value'] - par['min_value']) + par['min_value'])
-        return -0.5 * np.sum(ivar * x**2)
+
+        return self.magdev(parameters)
+        # return -0.5 * np.sum(ivar * x**2)
+
+    # def magdev(self, parameters):
+    #     for task in self._call_stack:
 
     def fit_data(self, data, plot_times=[]):
         ndim, nwalkers = 10, 100

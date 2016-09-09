@@ -42,22 +42,26 @@
     "filter-B":{
         "kind":"observable",
         "path":"observables/filters/B.dat",
-        "inputs":"blackbody"
+        "inputs":"blackbody",
+        "class":"band"
     },
     "filter-V":{
         "kind":"observable",
         "path":"observables/filters/V.dat",
-        "inputs":"blackbody"
+        "inputs":"blackbody",
+        "class":"band"
     },
     "filter-R":{
         "kind":"observable",
         "path":"observables/filters/R.dat",
-        "inputs":"blackbody"
+        "inputs":"blackbody",
+        "class":"band"
     },
     "filter-I":{
         "kind":"observable",
         "path":"observables/filters/I.dat",
-        "inputs":"blackbody"
+        "inputs":"blackbody",
+        "class":"band"
     },
     "likelihood":{
         "kind":"objective",

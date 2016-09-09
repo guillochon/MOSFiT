@@ -1,5 +1,8 @@
-class Band:
-    """Blackbody spectral energy distribution
+from ..module import Module
+
+
+class Band(Module):
+    """Band-pass filter
     """
 
     def __init__(self, times, luminosities, band):
