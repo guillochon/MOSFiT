@@ -58,5 +58,17 @@
         "kind":"observable",
         "path":"observables/filters/I.dat",
         "inputs":"blackbody"
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "magnitudes",
+            "e_magnitudes",
+            "times",
+            "filter-B",
+            "filter-V",
+            "filter-R",
+            "filter-I"
+        ]
     }
 }

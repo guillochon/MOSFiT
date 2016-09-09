@@ -19,25 +19,30 @@ class Model:
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
         # combining trees.
+        root_kinds = ['observables', 'objective']
+
         trees = {}
-        self.construct_trees(self._model_dict, trees, kind='observable')
+        self.construct_trees(self._model_dict, trees, kinds=root_kinds)
+        for tree in trees:
+            print(trees[tree])
 
         unsorted_call_stack = {}
         max_depth_all = -1
         for tag in self._model_dict:
-            if self._model_dict[tag]['kind'] == 'observable':
+            if self._model_dict[tag]['kind'] in root_kinds:
                 max_depth = 0
             else:
                 max_depth = -1
                 for tag2 in trees:
-                    depth = self.get_max_depth(tag, trees[tag2])
+                    depth = self.get_max_depth(tag, trees[tag2], max_depth)
+                    print(tag, tag2, depth)
                     if depth > max_depth:
                         max_depth = depth
                     if depth > max_depth_all:
                         max_depth_all = depth
             new_entry = self._model_dict[tag].copy()
             if 'children' in new_entry:
-                del(new_entry['children'])
+                del (new_entry['children'])
             new_entry['depth'] = max_depth
             unsorted_call_stack[tag] = new_entry
         # print(unsorted_call_stack)
@@ -56,19 +61,23 @@ class Model:
         # except Exception as err:
         #     self._log.error("Import of specified module '{}' failed.".format(mod_name))
 
-    def get_max_depth(self, tag, parent):
+    def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
             if child == tag:
-                return parent['children'][child]['depth']
+                new_max = parent['children'][child]['depth']
+                if new_max > max_depth:
+                    max_depth = new_max
             else:
-                depth = self.get_max_depth(tag, parent['children'][child])
-                return depth
-        return parent['depth']
+                new_max = self.get_max_depth(tag, parent['children'][child],
+                                             max_depth)
+                if new_max > max_depth:
+                    max_depth = new_max
+        return max_depth
 
-    def construct_trees(self, d, trees, kind='', name='', depth=0):
+    def construct_trees(self, d, trees, kinds=[], name='', depth=0):
         for tag in d:
             entry = d[tag].copy()
-            if entry['kind'] == kind or tag == name:
+            if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 trees[tag] = entry
                 inputs = []
