@@ -9,13 +9,18 @@ def main():
         prog='FriendlyFit',
         description='Fit astrophysical light curves using AstroCats data.')
 
-    parser.add_argument('event-paths', '-p', dest='event_paths', default=None)
+    parser.add_argument(
+        '--event-paths', '-p', dest='event_paths', default=[], nargs='+')
 
-    parser.parse_args()
+    parser.add_argument(
+        '--model-paths', '-m', dest='model_paths', default=[], nargs='+')
 
-    for path in parser.event_paths:
-        data = json.loads(path)
-        for model_path in parser.model_paths:
+    args = parser.parse_args()
+
+    for path in args.event_paths:
+        with open(path, 'r') as f:
+            data = json.loads(f.read())
+        for model_path in args.model_paths:
             model = Model(model_path)
 
-            (fit, full) = model.fit_data(data, plot_times=parser.plot_times)
+            (fit, full) = model.fit_data(data, plot_times=args.plot_times)

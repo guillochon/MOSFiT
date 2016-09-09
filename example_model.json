@@ -39,22 +39,22 @@
         "inputs":"identity",
         "outputs":"seds"
     },
-    "filter":{
+    "filter-B":{
         "kind":"observable",
         "path":"observables/filters/B.dat",
         "inputs":"blackbody"
     },
-    "filter":{
+    "filter-V":{
         "kind":"observable",
         "path":"observables/filters/V.dat",
         "inputs":"blackbody"
     },
-    "filter":{
+    "filter-R":{
         "kind":"observable",
         "path":"observables/filters/R.dat",
         "inputs":"blackbody"
     },
-    "filter":{
+    "filter-I":{
         "kind":"observable",
         "path":"observables/filters/I.dat",
         "inputs":"blackbody"
