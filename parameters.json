@@ -1,0 +1,11 @@
+{
+    "mnickel":{
+        "min_value":0.1,
+        "max_value":10.0,
+        "log":true
+    },
+    "texplosion":{
+        "min_value":-1000.0,
+        "max_value":1000.0
+    }
+}

@@ -1,5 +1,8 @@
 from ..module import Module
 
+CLASS_NAME = 'Identity'
+
+
 class Identity(Module):
     """Identity transform (no change to input).
     """

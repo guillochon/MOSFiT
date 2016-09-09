@@ -4,6 +4,8 @@ from astropy import constants as c
 
 from ..module import Module
 
+CLASS_NAME = 'Blackbody'
+
 
 class Blackbody(Module):
     """Blackbody spectral energy distribution

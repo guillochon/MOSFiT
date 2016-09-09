@@ -1,5 +1,7 @@
 from ..module import Module
 
+CLASS_NAME = 'Band'
+
 
 class Band(Module):
     """Band-pass filter

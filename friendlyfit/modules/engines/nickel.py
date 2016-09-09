@@ -2,6 +2,8 @@ from math import log
 
 from ..module import Module
 
+CLASS_NAME = 'Nickel'
+
 
 class Nickel(Module):
     """Nickel decay engine

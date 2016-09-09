@@ -2,23 +2,28 @@
     "times":{
         "kind":"data",
         "file":"SN2015bn.json",
-        "key":"time"
+        "key":"time",
+        "class":"photometry"
     },
     "magnitudes":{
         "kind":"data",
         "file":"SN2015bn.json",
-        "key":"magnitude"
+        "key":"magnitude",
+        "class":"photometry"
     },
     "e_magnitudes":{
         "kind":"data",
         "file":"SN2015bn.json",
-        "key":"e_magnitude"
+        "key":"e_magnitude",
+        "class":"photometry"
     },
     "mnickel":{
-        "kind":"parameter"
+        "kind":"parameter",
+        "value":1.0
     },
     "texplosion":{
-        "kind":"parameter"
+        "kind":"parameter",
+        "value":0.0
     },
     "nickel":{
         "kind":"engine",

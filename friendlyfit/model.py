@@ -8,11 +8,15 @@ import numpy as np
 
 
 class Model:
-    def __init__(self, parameters=[], path='example_model.json'):
-        self._path = path
-        with open(path, 'r') as f:
-            self._model_dict = json.loads(f.read())
-        self._parameters = parameters
+    def __init__(self,
+                 parameter_path='parameters.json',
+                 model_path='example_model.json'):
+        self._model_path = model_path
+        with open(model_path, 'r') as f:
+            self._model = json.loads(f.read())
+        with open(parameter_path, 'r') as f:
+            self._parameters = json.loads(f.read())
+        self._num_free_parameters = len(self._parameters)
         self._log = logging.getLogger()
         self._modules = {}
 
@@ -22,12 +26,12 @@ class Model:
         root_kinds = ['observables', 'objective']
 
         trees = {}
-        self.construct_trees(self._model_dict, trees, kinds=root_kinds)
+        self.construct_trees(self._model, trees, kinds=root_kinds)
 
         unsorted_call_stack = {}
         max_depth_all = -1
-        for tag in self._model_dict:
-            if self._model_dict[tag]['kind'] in root_kinds:
+        for tag in self._model:
+            if self._model[tag]['kind'] in root_kinds:
                 max_depth = 0
             else:
                 max_depth = -1
@@ -37,7 +41,7 @@ class Model:
                         max_depth = depth
                     if depth > max_depth_all:
                         max_depth_all = depth
-            new_entry = self._model_dict[tag].copy()
+            new_entry = self._model[tag].copy()
             if 'children' in new_entry:
                 del (new_entry['children'])
             new_entry['depth'] = max_depth
@@ -52,15 +56,14 @@ class Model:
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if cur_task['kind'] in ['engine', 'observable', 'sed', 'transform'
-                                    ]:
-                if 'class' in cur_task:
-                    class_name = cur_task['class']
-                else:
-                    class_name = task
-                self._modules[task] = importlib.import_module(
-                    '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
-                    package='friendlyfit')
+            if 'class' in cur_task:
+                class_name = cur_task['class']
+            else:
+                class_name = task
+            mod = importlib.import_module(
+                '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
+                package='friendlyfit')
+            self._modules[task] = getattr(mod, mod.CLASS_NAME)
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
@@ -95,20 +98,19 @@ class Model:
                     trees[tag]['children'].update(children)
 
     def lnprob(self, x, ivar):
+        for task in self._call_stack:
+            self._modules[task]
         parameters = {}
         for par in self._parameters:
-            parameters[par.name] = (
-                ivar *
-                (par['max_value'] - par['min_value']) + par['min_value'])
+            cur_par = self._parameters[par]
+            parameters[par] = (ivar *
+                               (cur_par['max_value'] - cur_par['min_value']
+                                ) + cur_par['min_value'])
 
-        return self.magdev(parameters)
         # return -0.5 * np.sum(ivar * x**2)
 
-    # def magdev(self, parameters):
-    #     for task in self._call_stack:
-
-    def fit_data(self, data, plot_times=[]):
-        ndim, nwalkers = 10, 100
+    def fit_data(self, data, plot_points=[]):
+        ndim, nwalkers = self._num_free_parameters, 100
         ivar = 1. / np.random.rand(ndim)
         p0 = [np.random.rand(ndim) for i in range(nwalkers)]
 
