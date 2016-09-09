@@ -7,8 +7,9 @@ class Band(Module):
     """Band-pass filter
     """
 
-    def __init__(self, times, luminosities, band):
-        self.luminosities = luminosities
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def luminosity(self):
+    def luminosity(self, **kwargs):
+        self.luminosities = kwargs['luminosities']
         return self.luminosities

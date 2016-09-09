@@ -13,12 +13,14 @@ class Nickel(Module):
     DECAY_ENER = 3.42166689e-6
     NUM_NI56_SUN = 2.14125561e55
 
-    def __init__(self, times, mnickel, texplosion):
-        self.times = times
-        self.mnickel = mnickel
-        self.texplosion = texplosion
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def luminosity(self):
+    def luminosity(self, **kwargs):
+        self.times = kwargs['times']
+        self.mnickel = kwargs['mnickel']
+        self.texplosion = kwargs['texplosion']
+
         decay_facs = [(x - self.texplosion) / self.HALF_LIFE
                       for x in self.times]
         current_mnickel = [self.mnickel * 0.5**x for x in decay_facs]

@@ -4,5 +4,5 @@ CLASS_NAME = 'Photometry'
 
 
 class Photometry(Module):
-    def __init__(self):
-        pass
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)

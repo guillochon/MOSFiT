@@ -7,8 +7,9 @@ class Identity(Module):
     """Identity transform (no change to input).
     """
 
-    def __init__(self, times, luminosities):
-        self._luminosities = luminosities
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def luminosities(self):
+    def luminosities(self, **kwargs):
+        self._luminosities = kwargs['luminosities']
         return self._luminosities

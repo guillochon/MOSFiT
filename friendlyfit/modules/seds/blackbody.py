@@ -14,9 +14,12 @@ class Blackbody(Module):
     FLUX_CONST = (2.0 * c.h / (c.c**2) * pi).value
     X_CONST = (c.h / c.k_B).value
 
-    def __init__(self, temperature=1.e4):
-        self._temperature = temperature
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
 
-    def seds(self, frequencies):
-        a = [self.X_CONST * x / self._temperature for x in frequencies]
-        return [x**3 * self.FLUX_CONST / (exp(a) - 1.0) for x in frequencies]
+    def seds(self, **kwargs):
+        self._temperature = kwargs['temperature']
+        a = [self.X_CONST * x / self._temperature
+             for x in kwargs['frequencies']]
+        return [x**3 * self.FLUX_CONST / (exp(a) - 1.0)
+                for x in kwargs['frequencies']]

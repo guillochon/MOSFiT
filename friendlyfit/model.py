@@ -23,7 +23,7 @@ class Model:
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
         # combining trees.
-        root_kinds = ['observables', 'objective']
+        root_kinds = ['observable', 'objective']
 
         trees = {}
         self.construct_trees(self._model, trees, kinds=root_kinds)
@@ -48,6 +48,8 @@ class Model:
             unsorted_call_stack[tag] = new_entry
         # print(unsorted_call_stack)
 
+        # Currently just have one call stack for all products, can be wasteful
+        # if only using some products.
         self._call_stack = OrderedDict()
         for depth in range(max_depth_all, -1, -1):
             for task in unsorted_call_stack:
@@ -63,7 +65,7 @@ class Model:
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='friendlyfit')
-            self._modules[task] = getattr(mod, mod.CLASS_NAME)
+            self._modules[task] = getattr(mod, mod.CLASS_NAME)(name=task)
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
@@ -98,14 +100,12 @@ class Model:
                     trees[tag]['children'].update(children)
 
     def lnprob(self, x, ivar):
+        outputs = {}
         for task in self._call_stack:
-            self._modules[task]
-        parameters = {}
-        for par in self._parameters:
-            cur_par = self._parameters[par]
-            parameters[par] = (ivar *
-                               (cur_par['max_value'] - cur_par['min_value']
-                                ) + cur_par['min_value'])
+            outputs = self._modules[task].process(**outputs)
+
+            if self._call_stack[task]['kind'] == 'objective':
+                return outputs['value']
 
         # return -0.5 * np.sum(ivar * x**2)
 
@@ -117,3 +117,5 @@ class Model:
         sampler = emcee.EnsembleSampler(
             nwalkers, ndim, self.lnprob, args=[ivar])
         sampler.run_mcmc(p0, 1000)
+
+        return (p0, p0)

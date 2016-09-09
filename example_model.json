@@ -19,11 +19,13 @@
     },
     "mnickel":{
         "kind":"parameter",
-        "value":1.0
+        "value":1.0,
+        "class":"parameter"
     },
     "texplosion":{
         "kind":"parameter",
-        "value":0.0
+        "value":0.0,
+        "class":"parameter"
     },
     "nickel":{
         "kind":"engine",

@@ -1,3 +1,6 @@
 class Module:
-    def __init__(self, **kwargs):
-        pass
+    def __init__(self, name, **kwargs):
+        self._name = name
+
+    def process(self, **kwargs):
+        return {}
