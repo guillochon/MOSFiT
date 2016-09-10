@@ -159,6 +159,9 @@ class Model:
         self._log.error('run_stack should have produced an output!')
         raise RuntimeError
 
+    def prior(self, data):
+        return 0.0
+
     def fit_data(self, data, plot_points=[], iterations=10, num_walkers=100):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -168,21 +171,31 @@ class Model:
                     req_key_values={'band': self._bands},
                     subtract_minimum_keys=['times'])
 
-        ndim, nwalkers = self._num_free_parameters, num_walkers
-        p0 = [np.random.rand(ndim) for i in range(nwalkers)]
+        ntemps, ndim, nwalkers = 5, self._num_free_parameters, num_walkers
+        p0 = np.random.uniform(
+            low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
         pool = MPIPool(loadbalance=True)
-        if not pool.is_master():
+
+        if pool.is_master():
+            print('{} dimensions in problem.'.format(ndim), flush=True)
+        else:
             pool.wait()
             sys.exit(0)
 
-        sampler = emcee.EnsembleSampler(
-            nwalkers, ndim, self.run_stack, args=['objective'], pool=pool)
-        for result in tqdm(
+        sampler = emcee.PTSampler(
+            ntemps,
+            nwalkers,
+            ndim,
+            self.run_stack,
+            self.prior,
+            loglargs=['objective'],
+            pool=pool)
+        for p, lnprob, lnlike in tqdm(
                 sampler.sample(
                     p0, iterations=iterations), total=iterations):
             # pass
-            tqdm.write(str(max(result[1])))
+            print(lnprob, flush=True)
         pool.close()
 
         return (p0, p0)

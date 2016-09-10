@@ -21,8 +21,8 @@ class Likelihood(Module):
         self._mags = kwargs['magnitudes']
         self._e_mags = kwargs['e_magnitudes']
 
-        print(self._variance2, self._mags[:5], self._e_mags[:5],
-              self._model_mags[:5])
+        # print(self._variance2, self._mags[:5], self._e_mags[:5],
+        #       self._model_mags[:5])
 
         ret = {'value': -0.5 * np.sum(
             [(x - y)**2 /

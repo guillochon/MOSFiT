@@ -15,7 +15,7 @@
     },
     "variance":{
         "min_value":1.0e-3,
-        "max_value":10.0,
+        "max_value":100.0,
         "log":true
     }
 }

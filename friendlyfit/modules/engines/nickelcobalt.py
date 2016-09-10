@@ -32,5 +32,5 @@ class NickelCobalt(Module):
                         for t in ts]
         luminosities = [np.inf if isnan(x) else x for x in luminosities]
 
-        print(max(luminosities))
+        # print(max(luminosities))
         return {'luminosities': luminosities}
