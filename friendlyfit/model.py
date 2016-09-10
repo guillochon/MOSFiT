@@ -1,10 +1,12 @@
 import importlib
 import json
 import logging
+import sys
 from collections import OrderedDict
 
 import emcee
 import numpy as np
+from emcee.utils import MPIPool
 
 
 class Model:
@@ -27,7 +29,7 @@ class Model:
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
         # combining trees.
-        root_kinds = ['observable', 'objective']
+        root_kinds = ['objective']
 
         trees = {}
         self.construct_trees(self._model, trees, kinds=root_kinds)
@@ -129,7 +131,7 @@ class Model:
                     trees[tag].setdefault('children', {})
                     trees[tag]['children'].update(children)
 
-    def lnprob(self, x, ivar):
+    def lnprob(self, x):
         inputs = {}
         outputs = {}
         pos = 0
@@ -149,8 +151,6 @@ class Model:
             if self._call_stack[task]['kind'] == 'objective':
                 return outputs['value']
 
-        # return -0.5 * np.sum(ivar * x**2)
-
     def fit_data(self, data, plot_points=[]):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -161,11 +161,15 @@ class Model:
                     self._modules[task].set_data(data)
 
         ndim, nwalkers = self._num_free_parameters, 100
-        ivar = 1. / np.random.rand(ndim)
         p0 = [np.random.rand(ndim) for i in range(nwalkers)]
 
-        sampler = emcee.EnsembleSampler(
-            nwalkers, ndim, self.lnprob, args=[ivar])
+        pool = MPIPool(loadbalance=True)
+        if not pool.is_master():
+            pool.wait()
+            sys.exit(0)
+
+        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, pool=pool)
         sampler.run_mcmc(p0, 10)
+        pool.close()
 
         return (p0, p0)
