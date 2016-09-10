@@ -12,9 +12,11 @@ class Parameter(Module):
         self._log = kwargs.get('log', False)
 
     def process(self, **kwargs):
-        if self._value:
+        if not self._min_value or not self._max_value:
             value = self._value
         else:
-            value = (kwargs['fraction'] *
-                     (self._max_value - self._min_value) + self._min_value)
+            value = max(
+                min((kwargs['fraction'] *
+                     (self._max_value - self._min_value) + self._min_value),
+                    self._max_value), self._min_value)
         return {self._name: value}

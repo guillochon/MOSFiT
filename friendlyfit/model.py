@@ -22,6 +22,7 @@ class Model:
                  self._parameters[x])])
         self._log = logging.getLogger()
         self._modules = {}
+        self._bands = []
 
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
@@ -63,6 +64,8 @@ class Model:
             cur_task = self._call_stack[task]
             if 'class' in cur_task:
                 class_name = cur_task['class']
+                if cur_task['class'] == 'band':
+                    self._bands.append(cur_task['band'])
             else:
                 class_name = task
             mod = importlib.import_module(
@@ -144,7 +147,7 @@ class Model:
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
-                self._modules[task].set_data(data)
+                self._modules[task].set_data(data, self._bands)
 
         ndim, nwalkers = self._num_free_parameters, 100
         ivar = 1. / np.random.rand(ndim)

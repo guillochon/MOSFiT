@@ -17,7 +17,7 @@ class Photometry(Module):
             return {'e_magnitudes': self._e_magnitudes}
         return {}
 
-    def set_data(self, data):
+    def set_data(self, data, bands):
         self._data = data
         if self._data:
             name = list(self._data.keys())[0]
@@ -26,5 +26,8 @@ class Photometry(Module):
                 map(list, zip(*[
                     [float(x['time']), float(x['magnitude']), float(x[
                         'e_magnitude'])] for x in photo
-                    if 'time' in x and 'e_magnitude' in x
+                    if 'time' in x and 'e_magnitude' in x and x.get('band', '')
+                    in bands
                 ])))
+            min_times = min(self._times)
+            self._times = [x - min_times for x in self._times]

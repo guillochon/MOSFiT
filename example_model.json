@@ -55,6 +55,7 @@
         "outputs":"seds"
     },
     "filter-B":{
+        "band":"B",
         "kind":"observable",
         "path":"observables/filters/B.dat",
         "inputs":"blackbody",
@@ -64,6 +65,7 @@
         "class":"band"
     },
     "filter-V":{
+        "band":"V",
         "kind":"observable",
         "path":"observables/filters/V.dat",
         "inputs":"blackbody",
@@ -73,6 +75,7 @@
         "class":"band"
     },
     "filter-R":{
+        "band":"R",
         "kind":"observable",
         "path":"observables/filters/R.dat",
         "inputs":"blackbody",
@@ -82,6 +85,7 @@
         "class":"band"
     },
     "filter-I":{
+        "band":"I",
         "kind":"observable",
         "path":"observables/filters/I.dat",
         "inputs":"blackbody",
