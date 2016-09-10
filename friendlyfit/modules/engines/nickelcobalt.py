@@ -30,7 +30,7 @@ class NickelCobalt(Module):
         luminosities = [self.mnickel * (self.NI56_LUM * np.exp(
             -t / self.NI56_LIFE) + self.CO56_LUM * np.exp(-t / self.CO56_LIFE))
                         for t in ts]
-        luminosities = [np.inf if isnan(x) else x for x in luminosities]
+        luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
         # print(max(luminosities))
         return {'luminosities': luminosities}

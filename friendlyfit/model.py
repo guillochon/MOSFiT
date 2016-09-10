@@ -144,6 +144,7 @@ class Model:
             if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
                     'max_value' in cur_task):
                 inputs.update({'fraction': x[pos]})
+                inputs.setdefault('fractions', []).append(x[pos])
                 pos = pos + 1
             # if root == 'observable':
             #     inputs['times']:
@@ -152,8 +153,6 @@ class Model:
 
             if self._call_stack[task]['kind'] == root:
                 if root == 'objective':
-                    if min(x) < 0.0 or max(x) > 1.0:
-                        return -np.inf
                     return outputs['value']
         # Should not reach here, should always have an output
         self._log.error('run_stack should have produced an output!')
