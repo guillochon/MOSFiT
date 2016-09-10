@@ -1,6 +1,9 @@
 import json
+import warnings
 
 from .model import Model
+
+warnings.filterwarnings("ignore")
 
 
 class Fitter():
@@ -8,7 +11,8 @@ class Fitter():
                    model_paths=[],
                    plot_points=100,
                    iterations=10,
-                   num_walkers=100):
+                   num_walkers=100,
+                   num_temps=2):
         for path in event_paths:
             with open(path, 'r') as f:
                 data = json.loads(f.read())
@@ -19,4 +23,5 @@ class Fitter():
                     data,
                     plot_points=plot_points,
                     iterations=iterations,
-                    num_walkers=num_walkers)
+                    num_walkers=num_walkers,
+                    num_temps=num_temps)

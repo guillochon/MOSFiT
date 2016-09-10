@@ -26,7 +26,10 @@ def main():
     parser.add_argument(
         '--num-walkers', '-N', dest='num_walkers', type=int, default=100)
 
+    parser.add_argument(
+        '--num-temps', '-T', dest='num_temps', type=int, default=2)
+
     args = parser.parse_args()
 
     Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
-                      args.iterations, args.num_walkers)
+                      args.iterations, args.num_walkers, args.num_temps)

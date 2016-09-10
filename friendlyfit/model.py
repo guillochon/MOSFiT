@@ -93,7 +93,7 @@ class Model:
                             parent = par
                     if not parent:
                         self._log.error("Couldn't find parent task!")
-                        raise (RuntimeError)
+                        raise ValueError
                     reqs = cur_task['requests'][i]
                     for req in reqs:
                         requests[req] = self._modules[task].request(req)
@@ -156,12 +156,17 @@ class Model:
                     return outputs['value']
         # Should not reach here, should always have an output
         self._log.error('run_stack should have produced an output!')
-        raise RuntimeError
+        raise ValueError
 
     def prior(self, data):
         return 0.0
 
-    def fit_data(self, data, plot_points=[], iterations=10, num_walkers=100):
+    def fit_data(self,
+                 data,
+                 plot_points=[],
+                 iterations=10,
+                 num_walkers=100,
+                 num_temps=2):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
@@ -170,7 +175,8 @@ class Model:
                     req_key_values={'band': self._bands},
                     subtract_minimum_keys=['times'])
 
-        ntemps, ndim, nwalkers = 5, self._num_free_parameters, num_walkers
+        ntemps, ndim, nwalkers = (
+            num_temps, self._num_free_parameters, num_walkers)
         p0 = np.random.uniform(
             low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
@@ -194,7 +200,7 @@ class Model:
                 sampler.sample(
                     p0, iterations=iterations), total=iterations):
             # pass
-            print(lnprob, flush=True)
+            print([max(x) for x in lnprob], flush=True)
         pool.close()
 
         return (p0, p0)

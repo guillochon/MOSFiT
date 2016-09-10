@@ -1,10 +1,10 @@
 import csv
 import os
-from math import pi
 
 import numpy as np
 from astropy import units as u
 
+from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC
 from ..module import Module
 
 CLASS_NAME = 'Filter'
@@ -39,7 +39,8 @@ class Filter(Module):
                 np.array(self._wavelengths[i]))
 
     def process(self, **kwargs):
-        self._lumdist = (kwargs['lumdist'] * u.Mpc).cgs.value
+        self._dist_const = np.log10(FOUR_PI * (
+            (kwargs['lumdist'] * u.Mpc).cgs.value)**2)
         mags = []
         for bi, band in enumerate(self._bands):
             seds = kwargs['seds'][bi]
@@ -55,8 +56,7 @@ class Filter(Module):
 
     def abmag(self, eff_fluxes):
         return [(np.inf if x == 0.0 else
-                 (-48.6 -
-                  (100.0**0.2) * np.log10(x / (4.0 * pi * self._lumdist**2))))
+                 (AB_OFFSET - MAG_FAC * (np.log10(x) - self._dist_const)))
                 for x in eff_fluxes]
 
     def request(self, request):
