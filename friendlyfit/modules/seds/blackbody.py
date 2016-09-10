@@ -45,7 +45,7 @@ class Blackbody(Module):
 
     def handle_requests(self, **requests):
         wavelength_ranges = requests.get('wavelengths', [])
-        self._bands.extend(requests.get('band', []))
+        self._bands.extend(requests.get('bands', []))
         if not wavelength_ranges:
             return
         for rng in wavelength_ranges:

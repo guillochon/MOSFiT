@@ -67,10 +67,10 @@ class Model:
             cur_task = self._call_stack[task]
             if 'class' in cur_task:
                 class_name = cur_task['class']
-                if cur_task['class'] == 'band':
-                    self._bands.append(cur_task['band'])
             else:
                 class_name = task
+            if class_name == 'filter':
+                self._bands = cur_task['bands']
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='friendlyfit')
@@ -96,8 +96,7 @@ class Model:
                         raise (RuntimeError)
                     reqs = cur_task['requests'][i]
                     for req in reqs:
-                        requests.setdefault(
-                            req, []).append(self._modules[task].request(req))
+                        requests[req] = self._modules[task].request(req)
                     self._modules[parent].handle_requests(**requests)
 
     def get_max_depth(self, tag, parent, max_depth):
@@ -164,10 +163,10 @@ class Model:
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
-                if cur_task['class'] == 'photometry':
-                    self._modules[task].set_data(data, self._bands)
-                elif cur_task['class'] == 'quantity':
-                    self._modules[task].set_data(data)
+                self._modules[task].set_data(
+                    data,
+                    req_key_values={'band': self._bands},
+                    subtract_minimum_keys=['times'])
 
         ndim, nwalkers = self._num_free_parameters, num_walkers
         p0 = [np.random.rand(ndim) for i in range(nwalkers)]
