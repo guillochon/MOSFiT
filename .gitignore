@@ -1,2 +1,4 @@
 *.pyc
 *checkpoint.ipynb
+*.so
+build/

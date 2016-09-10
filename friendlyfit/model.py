@@ -175,8 +175,8 @@ class Model:
                     req_key_values={'band': self._bands},
                     subtract_minimum_keys=['times'])
 
-        ntemps, ndim, nwalkers = (
-            num_temps, self._num_free_parameters, num_walkers)
+        ntemps, ndim, nwalkers = (num_temps, self._num_free_parameters,
+                                  num_walkers)
         p0 = np.random.uniform(
             low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 

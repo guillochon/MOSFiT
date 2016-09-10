@@ -58,9 +58,10 @@
         "outputs":"seds"
     },
     "filter":{
-        "bands":["B", "V", "R", "I"],
+        "bands":["U", "B", "V", "R", "I"],
         "kind":"observable",
         "paths":[
+            "observables/filters/bess_u.dat",
             "observables/filters/bess_b.dat",
             "observables/filters/bess_v.dat",
             "observables/filters/bess_r.dat",

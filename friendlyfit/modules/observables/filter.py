@@ -2,10 +2,10 @@ import csv
 import os
 
 import numpy as np
-from scipy.integrate import romb
 from astropy import units as u
+from scipy.integrate import romb
 
-from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC
+from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from ..module import Module
 
 CLASS_NAME = 'Filter'
@@ -40,8 +40,7 @@ class Filter(Module):
                 np.array(self._wavelengths[i]))
 
     def process(self, **kwargs):
-        self._dist_const = np.log10(FOUR_PI * (
-            (kwargs['lumdist'] * u.Mpc).cgs.value)**2)
+        self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         mags = []
         for bi, band in enumerate(self._bands):
             seds = kwargs['seds'][bi]
