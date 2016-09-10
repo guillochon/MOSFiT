@@ -132,7 +132,7 @@ class Model:
                     trees[tag].setdefault('children', {})
                     trees[tag]['children'].update(children)
 
-    def lnprob(self, x):
+    def run_stack(self, x, root='objective'):
         inputs = {}
         outputs = {}
         pos = 0
@@ -146,13 +146,16 @@ class Model:
                     'max_value' in cur_task):
                 inputs.update({'fraction': x[pos]})
                 pos = pos + 1
+            # if root == 'observable':
+            #     inputs['times']:
             new_outs = self._modules[task].process(**inputs)
             outputs.update(new_outs)
 
-            if self._call_stack[task]['kind'] == 'objective':
-                if min(x) < 0.0 or max(x) > 1.0:
-                    return -np.inf
-                return outputs['value']
+            if self._call_stack[task]['kind'] == root:
+                if root == 'objective':
+                    if min(x) < 0.0 or max(x) > 1.0:
+                        return -np.inf
+                    return outputs['value']
 
     def fit_data(self, data, plot_points=[], iterations=10):
         for task in self._call_stack:
@@ -171,7 +174,8 @@ class Model:
             pool.wait()
             sys.exit(0)
 
-        sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, pool=pool)
+        sampler = emcee.EnsembleSampler(
+            nwalkers, ndim, self.run_stack, args=['objective'], pool=pool)
         for result in tqdm(
                 sampler.sample(
                     p0, iterations=iterations), total=iterations):

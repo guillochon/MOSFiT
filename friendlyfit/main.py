@@ -12,7 +12,11 @@ def main():
         '--event-paths', '-p', dest='event_paths', default=[], nargs='+')
 
     parser.add_argument(
-        '--model-paths', '-m', dest='model_paths', default=[], nargs='+')
+        '--model-paths',
+        '-m',
+        dest='model_paths',
+        default=['example_model.json'],
+        nargs='+')
 
     parser.add_argument('--plot-points', dest='plot_points', default=100)
 
