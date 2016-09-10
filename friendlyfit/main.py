@@ -1,6 +1,6 @@
 import argparse
 
-from .fitter import fit_events
+from .fitter import Fitter
 
 
 def main():
@@ -25,5 +25,5 @@ def main():
 
     args = parser.parse_args()
 
-    fit_events(args.event_paths, args.model_paths, args.plot_points,
-               args.iterations)
+    Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
+                      args.iterations)

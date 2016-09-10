@@ -44,6 +44,8 @@ class Band(Module):
         return {'model_magnitudes': mags}
 
     def abmag(self, eff_flux):
+        if eff_flux == 0.0:
+            return np.nan
         return -48.6 - (100.0**0.2) * log10(eff_flux /
                                             (4.0 * pi * self._lumdist**2))
 
