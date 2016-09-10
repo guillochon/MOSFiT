@@ -5,6 +5,7 @@ from astropy import constants as c
 from astropy import units as u
 
 from ..module import Module
+from ...constants import FOUR_PI
 
 CLASS_NAME = 'Blackbody'
 
@@ -17,8 +18,7 @@ class Blackbody(Module):
     X_CONST = (c.h / c.k_B).cgs.value
     C_CONST = (c.c / u.Angstrom).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
-    FOUR_PI = 4.0 * pi
-    N_PTS = 10
+    N_PTS = 9
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -35,7 +35,7 @@ class Blackbody(Module):
             a = [self.X_CONST * x / self._temperature
                  for x in self._frequencies[wi]]
             sed = [
-                [self.FOUR_PI * z**2 * x**3 * self.FLUX_CONST / (exp(y) - 1.0)
+                [FOUR_PI * z**2 * x**3 * self.FLUX_CONST / (exp(y) - 1.0)
                  for x, y in zip(self._frequencies[wi], a)] for z in radii
             ]
             seds.append(sed)

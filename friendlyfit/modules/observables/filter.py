@@ -2,6 +2,7 @@ import csv
 import os
 
 import numpy as np
+from scipy.integrate import romb
 from astropy import units as u
 
 from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC
@@ -45,12 +46,13 @@ class Filter(Module):
         for bi, band in enumerate(self._bands):
             seds = kwargs['seds'][bi]
             wavs = kwargs['wavelengths'][bi]
-            eff_fluxes = [0.0] * len(seds)
+            dx = wavs[1] - wavs[0]
+            eff_fluxes = []
             itrans = np.interp(wavs, self._wavelengths[bi],
                                self._transmissions[bi])
-            for si, sed in enumerate(seds):
-                eff_flux = np.trapz([x * y for x, y in zip(itrans, sed)], wavs)
-                eff_fluxes[si] = eff_flux / self._filter_integrals[bi]
+            for sed in seds:
+                eff_flux = romb([x * y for x, y in zip(itrans, sed)], dx=dx)
+                eff_fluxes.append(eff_flux / self._filter_integrals[bi])
             mags.extend(self.abmag(eff_fluxes))
         return {'model_magnitudes': mags}
 
