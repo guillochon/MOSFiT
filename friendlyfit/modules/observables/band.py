@@ -10,6 +10,11 @@ class Band(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
-    def luminosity(self, **kwargs):
-        self.luminosities = kwargs['luminosities']
-        return self.luminosities
+    def process(self, **kwargs):
+        self._seds = kwargs['seds']
+        return self._seds
+
+    def request(self, request):
+        if request == 'wavelengths':
+            return [1000., 10000.]
+        return []

@@ -16,7 +16,10 @@ class Model:
             self._model = json.loads(f.read())
         with open(parameter_path, 'r') as f:
             self._parameters = json.loads(f.read())
-        self._num_free_parameters = len(self._parameters)
+        self._num_free_parameters = len(
+            [x for x in self._parameters
+             if ('min_value' in self._parameters[x] and 'max_value' in
+                 self._parameters[x])])
         self._log = logging.getLogger()
         self._modules = {}
 
@@ -65,10 +68,23 @@ class Model:
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='friendlyfit')
+            mod_class = getattr(mod, mod.CLASS_NAME)
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
-            self._modules[task] = getattr(mod, mod.CLASS_NAME)(name=task,
-                                                               **cur_task)
+            self._modules[task] = mod_class(name=task, **cur_task)
+            if 'requests' in cur_task:
+                requests = {}
+                parent = ''
+                for par in self._call_stack:
+                    if par == cur_task['inputs']:
+                        parent = par
+                if not parent:
+                    self._log.error("Couldn't find parent task!")
+                    raise (RuntimeError)
+                for req in cur_task['requests']:
+                    requests.setdefault(
+                        req, []).append(self._modules[task].request(req))
+                self._modules[parent].handle_requests(**requests)
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
@@ -113,7 +129,8 @@ class Model:
                 inputs = outputs
                 outputs = {}
             cur_depth = cur_task['depth']
-            if self._call_stack[task]['kind'] == 'parameter':
+            if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
+                    'max_value' in cur_task):
                 inputs.update({'fraction': x[pos]})
                 pos = pos + 1
             new_outs = self._modules[task].process(**inputs)
@@ -127,17 +144,8 @@ class Model:
     def fit_data(self, data, plot_points=[]):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if 'class' in cur_task:
-                class_name = cur_task['class']
-            else:
-                class_name = task
-            mod = importlib.import_module(
-                '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
-                package='friendlyfit')
             if cur_task['kind'] == 'data':
-                cur_task.update({'data': data})
-            self._modules[task] = getattr(mod, mod.CLASS_NAME)(name=task,
-                                                               **cur_task)
+                self._modules[task].set_data(data)
 
         ndim, nwalkers = self._num_free_parameters, 100
         ivar = 1. / np.random.rand(ndim)

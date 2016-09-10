@@ -27,6 +27,11 @@
         "value":0.0,
         "class":"parameter"
     },
+    "temperature":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter"
+    },
     "nickel":{
         "kind":"engine",
         "inputs":[
@@ -43,31 +48,46 @@
     },
     "blackbody":{
         "kind":"sed",
-        "inputs":"identity",
+        "inputs":[
+            "identity",
+            "temperature"
+        ],
         "outputs":"seds"
     },
     "filter-B":{
         "kind":"observable",
         "path":"observables/filters/B.dat",
         "inputs":"blackbody",
+        "requests":[
+            "wavelengths"
+        ],
         "class":"band"
     },
     "filter-V":{
         "kind":"observable",
         "path":"observables/filters/V.dat",
         "inputs":"blackbody",
+        "requests":[
+            "wavelengths"
+        ],
         "class":"band"
     },
     "filter-R":{
         "kind":"observable",
         "path":"observables/filters/R.dat",
         "inputs":"blackbody",
+        "requests":[
+            "wavelengths"
+        ],
         "class":"band"
     },
     "filter-I":{
         "kind":"observable",
         "path":"observables/filters/I.dat",
         "inputs":"blackbody",
+        "requests":[
+            "wavelengths"
+        ],
         "class":"band"
     },
     "likelihood":{

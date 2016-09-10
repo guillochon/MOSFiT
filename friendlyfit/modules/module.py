@@ -4,3 +4,9 @@ class Module:
 
     def process(self, **kwargs):
         return {}
+
+    def request(self, request):
+        return []
+
+    def handle_requests(self, **kwargs):
+        pass
