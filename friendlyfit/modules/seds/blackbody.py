@@ -28,6 +28,7 @@ class Blackbody(Module):
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
         self._temperature = kwargs['temperature']
+        zp1 = (1.0 + kwargs['redshift'])
         seds = []
         for wi, waveset in enumerate(self._wavelengths):
             radii = [sqrt(x / (self.STEF_CONST * self._temperature**4))
@@ -35,8 +36,10 @@ class Blackbody(Module):
             a = [self.X_CONST * x / self._temperature
                  for x in self._frequencies[wi]]
             sed = [
-                [FOUR_PI * z**2 * x**3 * self.FLUX_CONST / (exp(y) - 1.0)
-                 for x, y in zip(self._frequencies[wi], a)] for z in radii
+                [
+                    (FOUR_PI * z**2 * (x * zp1)**3 * self.FLUX_CONST /
+                     (exp(y) - 1.0)) for x, y in zip(self._frequencies[wi], a)
+                ] for z in radii
             ]
             seds.append(sed)
         return {'bands': self._bands,
