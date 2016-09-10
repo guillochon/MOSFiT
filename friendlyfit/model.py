@@ -7,6 +7,7 @@ from collections import OrderedDict
 import emcee
 import numpy as np
 from emcee.utils import MPIPool
+from tqdm import tqdm
 
 
 class Model:
@@ -149,9 +150,11 @@ class Model:
             outputs.update(new_outs)
 
             if self._call_stack[task]['kind'] == 'objective':
+                if min(x) < 0.0 or max(x) > 1.0:
+                    return -np.inf
                 return outputs['value']
 
-    def fit_data(self, data, plot_points=[]):
+    def fit_data(self, data, plot_points=[], iterations=10):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
@@ -169,7 +172,11 @@ class Model:
             sys.exit(0)
 
         sampler = emcee.EnsembleSampler(nwalkers, ndim, self.lnprob, pool=pool)
-        sampler.run_mcmc(p0, 10)
+        for result in tqdm(
+                sampler.sample(
+                    p0, iterations=iterations), total=iterations):
+            pass
+            # print(result[0])
         pool.close()
 
         return (p0, p0)

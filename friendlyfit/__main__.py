@@ -1,4 +1,4 @@
-"""Entry point for astrocats scripts.
+"""Entry point for FriendlyFit scripts.
 """
 
 if __name__ == "__main__":

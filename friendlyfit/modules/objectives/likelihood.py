@@ -23,5 +23,4 @@ class Likelihood(Module):
         ret = {'value': -0.5 * np.sum(
             [(x - y)**2 / z**2
              for x, y, z in zip(self._model_mags, self._mags, self._e_mags)])}
-        print(ret)
         return ret
