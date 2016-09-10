@@ -75,7 +75,6 @@ class Model:
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
             self._modules[task] = mod_class(name=task, **cur_task)
-            print(task)
             if 'requests' in cur_task:
                 inputs = []
                 if 'inputs' in cur_task:
@@ -92,11 +91,11 @@ class Model:
                     if not parent:
                         self._log.error("Couldn't find parent task!")
                         raise (RuntimeError)
-                    req = cur_task['requests'][i]
-                    if req:
+                    reqs = cur_task['requests'][i]
+                    for req in reqs:
                         requests.setdefault(
                             req, []).append(self._modules[task].request(req))
-                        self._modules[parent].handle_requests(**requests)
+                    self._modules[parent].handle_requests(**requests)
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):

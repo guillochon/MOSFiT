@@ -10,9 +10,8 @@ class Quantity(Module):
 
     def process(self, **kwargs):
         return {self._key: self._value}
-        return {}
 
     def set_data(self, data):
         if data:
             name = list(data.keys())[0]
-            self._value = data[name][self._key][0]['value']
+            self._value = float(data[name][self._key][0]['value'])

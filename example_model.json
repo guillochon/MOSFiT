@@ -69,7 +69,7 @@
             "lumdist"
         ],
         "requests":[
-            "wavelengths",
+            ["wavelengths", "band"],
             []
         ],
         "class":"band"
@@ -83,7 +83,7 @@
             "lumdist"
         ],
         "requests":[
-            "wavelengths",
+            ["wavelengths", "band"],
             []
         ],
         "class":"band"
@@ -97,7 +97,7 @@
             "lumdist"
         ],
         "requests":[
-            "wavelengths",
+            ["wavelengths", "band"],
             []
         ],
         "class":"band"
@@ -111,7 +111,7 @@
             "lumdist"
         ],
         "requests":[
-            "wavelengths",
+            ["wavelengths", "band"],
             []
         ],
         "class":"band"

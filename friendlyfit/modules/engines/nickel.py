@@ -30,5 +30,5 @@ class Nickel(Module):
         luminosities = [y * 2.0**x * log(2.0) / self.HALF_LIFE *
                         self.NUM_NI56_SUN * self.DECAY_ENER
                         for x, y in zip(decay_facs, current_mnickel)]
-        # print(max(luminosities))
+        print(max(luminosities))
         return {'luminosities': luminosities}
