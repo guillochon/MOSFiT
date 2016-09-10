@@ -31,14 +31,14 @@ class Blackbody(Module):
         zp1 = (1.0 + kwargs['redshift'])
         seds = []
         for wi, waveset in enumerate(self._wavelengths):
+            rest_freqs = [x * zp1 for x in self._frequencies[wi]]
             radii = [sqrt(x / (self.STEF_CONST * self._temperature**4))
                      for x in self._luminosities]
-            a = [self.X_CONST * x / self._temperature
-                 for x in self._frequencies[wi]]
+            a = [self.X_CONST * x / self._temperature for x in rest_freqs]
             sed = [
                 [
-                    (FOUR_PI * z**2 * (x * zp1)**3 * self.FLUX_CONST /
-                     (exp(y) - 1.0)) for x, y in zip(self._frequencies[wi], a)
+                    (FOUR_PI * z**2 * x**3 * self.FLUX_CONST / (exp(y) - 1.0))
+                    for x, y in zip(rest_freqs, a)
                 ] for z in radii
             ]
             seds.append(sed)
