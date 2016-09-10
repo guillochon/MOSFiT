@@ -4,8 +4,8 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 
-from ..module import Module
 from ...constants import FOUR_PI
+from ..module import Module
 
 CLASS_NAME = 'Blackbody'
 
@@ -18,7 +18,7 @@ class Blackbody(Module):
     X_CONST = (c.h / c.k_B).cgs.value
     C_CONST = (c.c / u.Angstrom).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
-    N_PTS = 9
+    N_PTS = 16 + 1
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
