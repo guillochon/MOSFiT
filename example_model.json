@@ -17,6 +17,12 @@
         "key":"e_magnitude",
         "class":"photometry"
     },
+    "lumdist":{
+        "kind":"data",
+        "file":"SN2015bn.json",
+        "key":"lumdist",
+        "class":"quantity"
+    },
     "mnickel":{
         "kind":"parameter",
         "value":1.0,
@@ -57,40 +63,56 @@
     "filter-B":{
         "band":"B",
         "kind":"observable",
-        "path":"observables/filters/B.dat",
-        "inputs":"blackbody",
+        "path":"observables/filters/bess_b.dat",
+        "inputs":[
+            "blackbody",
+            "lumdist"
+        ],
         "requests":[
-            "wavelengths"
+            "wavelengths",
+            []
         ],
         "class":"band"
     },
     "filter-V":{
         "band":"V",
         "kind":"observable",
-        "path":"observables/filters/V.dat",
-        "inputs":"blackbody",
+        "path":"observables/filters/bess_v.dat",
+        "inputs":[
+            "blackbody",
+            "lumdist"
+        ],
         "requests":[
-            "wavelengths"
+            "wavelengths",
+            []
         ],
         "class":"band"
     },
     "filter-R":{
         "band":"R",
         "kind":"observable",
-        "path":"observables/filters/R.dat",
-        "inputs":"blackbody",
+        "path":"observables/filters/bess_r.dat",
+        "inputs":[
+            "blackbody",
+            "lumdist"
+        ],
         "requests":[
-            "wavelengths"
+            "wavelengths",
+            []
         ],
         "class":"band"
     },
     "filter-I":{
         "band":"I",
         "kind":"observable",
-        "path":"observables/filters/I.dat",
-        "inputs":"blackbody",
+        "path":"observables/filters/bess_i.dat",
+        "inputs":[
+            "blackbody",
+            "lumdist"
+        ],
         "requests":[
-            "wavelengths"
+            "wavelengths",
+            []
         ],
         "class":"band"
     },

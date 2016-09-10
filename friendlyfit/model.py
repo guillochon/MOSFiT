@@ -75,19 +75,28 @@ class Model:
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
             self._modules[task] = mod_class(name=task, **cur_task)
+            print(task)
             if 'requests' in cur_task:
-                requests = {}
-                parent = ''
-                for par in self._call_stack:
-                    if par == cur_task['inputs']:
-                        parent = par
-                if not parent:
-                    self._log.error("Couldn't find parent task!")
-                    raise (RuntimeError)
-                for req in cur_task['requests']:
-                    requests.setdefault(
-                        req, []).append(self._modules[task].request(req))
-                self._modules[parent].handle_requests(**requests)
+                inputs = []
+                if 'inputs' in cur_task:
+                    if isinstance(cur_task['inputs'], str):
+                        inputs = [cur_task['inputs']]
+                    else:
+                        inputs = cur_task['inputs']
+                for i, inp in enumerate(inputs):
+                    requests = {}
+                    parent = ''
+                    for par in self._call_stack:
+                        if par == inp:
+                            parent = par
+                    if not parent:
+                        self._log.error("Couldn't find parent task!")
+                        raise (RuntimeError)
+                    req = cur_task['requests'][i]
+                    if req:
+                        requests.setdefault(
+                            req, []).append(self._modules[task].request(req))
+                        self._modules[parent].handle_requests(**requests)
 
     def get_max_depth(self, tag, parent, max_depth):
         for child in parent.get('children', []):
@@ -147,7 +156,10 @@ class Model:
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
-                self._modules[task].set_data(data, self._bands)
+                if cur_task['class'] == 'photometry':
+                    self._modules[task].set_data(data, self._bands)
+                elif cur_task['class'] == 'quantity':
+                    self._modules[task].set_data(data)
 
         ndim, nwalkers = self._num_free_parameters, 100
         ivar = 1. / np.random.rand(ndim)
