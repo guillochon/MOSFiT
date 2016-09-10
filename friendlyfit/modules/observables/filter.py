@@ -1,6 +1,6 @@
 import csv
 import os
-from math import log10, pi
+from math import pi
 
 import numpy as np
 from astropy import units as u
@@ -40,14 +40,13 @@ class Filter(Module):
 
     def process(self, **kwargs):
         self._lumdist = (kwargs['lumdist'] * u.Mpc).cgs.value
-        eff_fluxes = [[] for x in range(self._n_bands)]
         mags = []
         for bi, band in enumerate(self._bands):
             seds = kwargs['seds'][bi]
             wavs = kwargs['wavelengths'][bi]
+            eff_fluxes = [0.0] * len(seds)
             itrans = np.interp(wavs, self._wavelengths[bi],
                                self._transmissions[bi])
-            eff_fluxes = [0.0] * len(seds)
             for si, sed in enumerate(seds):
                 eff_flux = np.trapz([x * y for x, y in zip(itrans, sed)], wavs)
                 eff_fluxes[si] = eff_flux / self._filter_integrals[bi]

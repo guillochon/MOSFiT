@@ -32,7 +32,7 @@
         "kind":"parameter",
         "class":"parameter"
     },
-    "nickel":{
+    "nickelcobalt":{
         "kind":"engine",
         "inputs":[
             "transient",
@@ -43,7 +43,7 @@
     },
     "identity":{
         "kind":"transform",
-        "inputs":"nickel",
+        "inputs":"nickelcobalt",
         "outputs":"luminosities"
     },
     "blackbody":{
