@@ -7,5 +7,14 @@
     "texplosion":{
         "min_value":-100.0,
         "max_value":100.0
+    },
+    "temperature":{
+        "min_value":1.0e3,
+        "max_value":1.0e5,
+        "log":true
+    },
+    "variance":{
+        "min_value":1.0e-3,
+        "max_value":10.0
     }
 }

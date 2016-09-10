@@ -38,6 +38,10 @@
         "value":1.0e4,
         "class":"parameter"
     },
+    "variance":{
+        "kind":"parameter",
+        "class":"parameter"
+    },
     "nickel":{
         "kind":"engine",
         "inputs":[
@@ -72,7 +76,8 @@
             ["wavelengths", "band"],
             []
         ],
-        "class":"band"
+        "class":"band",
+        "outputs":"model_magnitudes"
     },
     "filter-V":{
         "band":"V",
@@ -86,7 +91,8 @@
             ["wavelengths", "band"],
             []
         ],
-        "class":"band"
+        "class":"band",
+        "outputs":"model_magnitudes"
     },
     "filter-R":{
         "band":"R",
@@ -100,7 +106,8 @@
             ["wavelengths", "band"],
             []
         ],
-        "class":"band"
+        "class":"band",
+        "outputs":"model_magnitudes"
     },
     "filter-I":{
         "band":"I",
@@ -114,7 +121,8 @@
             ["wavelengths", "band"],
             []
         ],
-        "class":"band"
+        "class":"band",
+        "outputs":"model_magnitudes"
     },
     "likelihood":{
         "kind":"objective",
@@ -122,6 +130,7 @@
             "magnitudes",
             "e_magnitudes",
             "times",
+            "variance",
             "filter-B",
             "filter-V",
             "filter-R",

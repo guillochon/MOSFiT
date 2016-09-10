@@ -16,11 +16,13 @@ class Likelihood(Module):
         for mag in self._model_mags:
             if isnan(mag):
                 return {'value': -np.inf}
+        self._variance2 = kwargs['variance']**2
         self._mags = kwargs['magnitudes']
         self._e_mags = kwargs['e_magnitudes']
 
         # Chi2 for now
         ret = {'value': -0.5 * np.sum(
-            [(x - y)**2 / z**2
+            [(x - y)**2 /
+             (z**2 + self._variance2) + np.log(self._variance2 + z**2)
              for x, y, z in zip(self._model_mags, self._mags, self._e_mags)])}
         return ret

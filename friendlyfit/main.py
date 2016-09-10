@@ -23,7 +23,10 @@ def main():
     parser.add_argument(
         '--iterations', '-i', dest='iterations', type=int, default=10)
 
+    parser.add_argument(
+        '--num-walkers', '-N', dest='num_walkers', type=int, default=100)
+
     args = parser.parse_args()
 
     Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
-                      args.iterations)
+                      args.iterations, args.num_walkers)

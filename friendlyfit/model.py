@@ -156,8 +156,11 @@ class Model:
                     if min(x) < 0.0 or max(x) > 1.0:
                         return -np.inf
                     return outputs['value']
+        # Should not reach here, should always have an output
+        self._log.error('run_stack should have produced an output!')
+        raise RuntimeError
 
-    def fit_data(self, data, plot_points=[], iterations=10):
+    def fit_data(self, data, plot_points=[], iterations=10, num_walkers=100):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
@@ -166,7 +169,7 @@ class Model:
                 elif cur_task['class'] == 'quantity':
                     self._modules[task].set_data(data)
 
-        ndim, nwalkers = self._num_free_parameters, 100
+        ndim, nwalkers = self._num_free_parameters, num_walkers
         p0 = [np.random.rand(ndim) for i in range(nwalkers)]
 
         pool = MPIPool(loadbalance=True)
@@ -179,8 +182,8 @@ class Model:
         for result in tqdm(
                 sampler.sample(
                     p0, iterations=iterations), total=iterations):
-            pass
-            # print(result[0])
+            # pass
+            tqdm.write(str(max(result[1])))
         pool.close()
 
         return (p0, p0)

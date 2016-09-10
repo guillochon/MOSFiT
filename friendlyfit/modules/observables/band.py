@@ -41,6 +41,7 @@ class Band(Module):
                 np.array([x * y for x, y in zip(itrans, sed)]), np.array(wavs))
             eff_flux = eff_flux / self._filter_integral
             mags.append(self.abmag(eff_flux))
+        # print(max(mags), min(mags))
         return {'model_magnitudes': mags}
 
     def abmag(self, eff_flux):
