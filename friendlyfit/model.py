@@ -127,7 +127,6 @@ class Model:
             cur_task = self._call_stack[task]
             if cur_task['depth'] != cur_depth:
                 inputs = outputs
-                outputs = {}
             cur_depth = cur_task['depth']
             if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
                     'max_value' in cur_task):

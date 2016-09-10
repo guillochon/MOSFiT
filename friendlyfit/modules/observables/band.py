@@ -12,7 +12,7 @@ class Band(Module):
 
     def process(self, **kwargs):
         self._seds = kwargs['seds']
-        return self._seds
+        return {'seds': self._seds}
 
     def request(self, request):
         if request == 'wavelengths':
