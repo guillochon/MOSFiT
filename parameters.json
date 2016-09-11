@@ -13,6 +13,21 @@
         "max_value":1.0e5,
         "log":true
     },
+    "kappagamma":{
+        "min_value":0.1,
+        "max_value":10.0,
+        "log":true
+    },
+    "mejecta":{
+        "min_value":0.1,
+        "max_value":10.0,
+        "log":true
+    },
+    "vejecta":{
+        "min_value":1.0e3,
+        "max_value":1.0e5,
+        "log":true
+    },
     "variance":{
         "min_value":1.0e-3,
         "max_value":100.0,

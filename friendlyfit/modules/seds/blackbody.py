@@ -53,7 +53,6 @@ class Blackbody(Module):
             return
         for rng in wavelength_ranges:
             self._band_wavelengths.append(
-                list(np.arange(rng[0], rng[1], (rng[1] - rng[0]) /
-                               self.N_PTS)))
+                list(np.linspace(rng[0], rng[1], self.N_PTS)))
         self._band_frequencies = [[self.C_CONST / x for x in y]
                                   for y in self._band_wavelengths]
