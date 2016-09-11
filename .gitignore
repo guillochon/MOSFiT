@@ -2,3 +2,4 @@
 *checkpoint.ipynb
 *.so
 build/
+*.prof
