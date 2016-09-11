@@ -1,3 +1,4 @@
+import astropy.constants as c
 import astropy.units as u
 import numpy as np
 
@@ -8,3 +9,6 @@ MAG_FAC = 100.0**0.2
 AB_OFFSET = -48.60
 MPC_CGS = (1.0 * u.Mpc).cgs.value
 DAY_CGS = (1.0 * u.day).cgs.value
+M_SUN_CGS = c.M_sun.cgs.value
+KM_CGS = 1.0e5
+C_CGS = c.c.cgs.value
