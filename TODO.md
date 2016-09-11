@@ -12,3 +12,8 @@ Transforms
 
 Improvements
 - [ ] Reddening in `Blackbody`
+
+Output
+- [ ] Model LCs
+- [ ] Model SEDs
+- [ ] Walker distributions
