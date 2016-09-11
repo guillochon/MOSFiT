@@ -3,6 +3,7 @@ from math import isnan
 import astropy.constants as c
 import astropy.units as u
 import numpy as np
+import numexpr as ne
 
 from ...constants import DAY_CGS, FOUR_PI
 from ..module import Module
@@ -47,11 +48,14 @@ class Diffusion(Module):
             int_lums = np.interp(int_times, self._times_since_exp,
                                  self._luminosities)
             int_times = [x * DAY_CGS for x in int_times]
-            int_arg = [
-                2.0 * l * t / td**2 *
-                np.exp((t**2 - te**2) / td**2) * (1.0 - np.exp(-A / te**2))
-                for t, l in zip(int_times, int_lums)
-            ]
+            int_arg = ne.evaluate('2.0 * int_lums * int_times / td**2 * '
+                                  'exp((int_times**2 - te**2) / td**2) * '
+                                  '(1.0 - exp(-A / te**2))')
+            # int_arg = [
+            #     2.0 * l * t / td**2 *
+            #     np.exp((t**2 - te**2) / td**2) * (1.0 - np.exp(-A / te**2))
+            #     for t, l in zip(int_times, int_lums)
+            # ]
             int_arg = [0.0 if isnan(x) else x for x in int_arg]
             new_lum.append(np.trapz(int_arg, int_times))
         return {'luminosities': new_lum}
