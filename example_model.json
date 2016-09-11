@@ -85,11 +85,21 @@
             "filter"
         ]
     },
-    "lightcurve":{
+    "modellc":{
         "kind":"output",
         "inputs":[
             "transient",
             "filter"
-        ]
+        ],
+        "ntimes":100,
+        "class":"lightcurve"
+    },
+    "fitlc":{
+        "kind":"output",
+        "inputs":[
+            "transient",
+            "filter"
+        ],
+        "class":"lightcurve"
     }
 }

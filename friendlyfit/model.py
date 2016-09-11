@@ -30,7 +30,7 @@ class Model:
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
         # combining trees.
-        root_kinds = ['objective']
+        root_kinds = ['output', 'objective']
 
         trees = {}
         self.construct_trees(self._model, trees, kinds=root_kinds)
@@ -154,9 +154,6 @@ class Model:
             if self._call_stack[task]['kind'] == root:
                 if root == 'objective':
                     return outputs['value']
-        # Should not reach here, should always have an output
-        self._log.error('run_stack should have produced an output!')
-        raise ValueError
 
     def prior(self, data):
         return 0.0
@@ -202,5 +199,8 @@ class Model:
             # pass
             print([max(x) for x in lnprob], flush=True)
         pool.close()
+
+        print(list(self._call_stack.keys()))
+        self.run_stack(p[0][0], root='')
 
         return (p0, p0)

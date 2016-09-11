@@ -1,7 +1,6 @@
 import csv
 import os
 
-import numexpr as ne
 import numpy as np
 
 from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
