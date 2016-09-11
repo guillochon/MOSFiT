@@ -3,3 +3,6 @@
 *.so
 build/
 *.prof
+*.swp
+*.png
+products/

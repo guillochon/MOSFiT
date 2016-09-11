@@ -11,9 +11,10 @@ class LightCurve(Module):
         self._n_times = kwargs.get("ntimes", 0)
 
     def process(self, **kwargs):
-        with open('lc.json', 'w') as f:
+        with open('products/lc.json', 'w') as f:
             output = {}
-            for key in ['model_magnitudes', 'bands', 'times']:
+            for key in ['magnitudes', 'e_magnitudes', 'model_magnitudes',
+                        'bands', 'times']:
                 output[key] = kwargs[key]
             json.dump(output, f)
         return {}

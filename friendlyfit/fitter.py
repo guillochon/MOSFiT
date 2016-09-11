@@ -19,7 +19,7 @@ class Fitter():
             for model_path in model_paths:
                 model = Model(model_path=model_path)
 
-                (fit, full) = model.fit_data(
+                (walkers, prob) = model.fit_data(
                     data,
                     plot_points=plot_points,
                     iterations=iterations,

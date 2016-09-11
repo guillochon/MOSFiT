@@ -194,11 +194,17 @@ class Model:
         for p, lnprob, lnlike in tqdm(
                 sampler.sample(
                     p0, iterations=iterations), total=iterations):
-            # pass
             print([max(x) for x in lnprob], flush=True)
         pool.close()
 
-        print(list(self._call_stack.keys()))
-        self.run_stack(p[0][0], root='')
+        bestprob = -np.inf
+        bestx = lnprob[0][0]
+        for i, probs in enumerate(lnprob):
+            for j, prob in enumerate(probs):
+                if prob > bestprob:
+                    bestprob = prob
+                    bestx = p[i][j]
 
-        return (p0, p0)
+        self.run_stack(bestx, root='')
+
+        return (p, lnprob)
