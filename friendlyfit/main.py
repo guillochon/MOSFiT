@@ -1,6 +1,6 @@
 import argparse
 
-from .fitter import Fitter
+from friendlyfit.fitter import Fitter
 
 
 def main():
@@ -33,3 +33,6 @@ def main():
 
     Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps)
+
+if __name__ == "__main__":
+    main()

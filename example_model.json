@@ -84,5 +84,12 @@
             "variance",
             "filter"
         ]
+    },
+    "lightcurve":{
+        "kind":"output",
+        "inputs":[
+            "transient",
+            "filter"
+        ]
     }
 }

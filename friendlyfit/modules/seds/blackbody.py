@@ -1,4 +1,4 @@
-from math import exp, pi, sqrt
+from math import pi, sqrt
 
 import numpy as np
 from astropy import constants as c
@@ -14,7 +14,7 @@ class Blackbody(Module):
     """Blackbody spectral energy distribution
     """
 
-    FLUX_CONST = (2.0 * c.h / (c.c**2) * pi).cgs.value
+    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     C_CONST = (c.c / u.Angstrom).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
@@ -32,14 +32,16 @@ class Blackbody(Module):
         seds = []
         for wi, waveset in enumerate(self._wavelengths):
             rest_freqs = [x * zp1 for x in self._frequencies[wi]]
-            radii = [sqrt(x / (self.STEF_CONST * self._temperature**4))
-                     for x in self._luminosities]
-            a = [self.X_CONST * x / self._temperature for x in rest_freqs]
+            rest_freqs3 = [x**3 for x in rest_freqs]
+            radii2 = [x / (self.STEF_CONST * self._temperature**4)
+                      for x in self._luminosities]
+            a = [np.exp(self.X_CONST * x / self._temperature) - 1.0
+                 for x in rest_freqs]
             sed = [
                 [
-                    (FOUR_PI * z**2 * x**3 * self.FLUX_CONST / (exp(y) - 1.0))
-                    for x, y in zip(rest_freqs, a)
-                ] for z in radii
+                    (self.FLUX_CONST * z * x / y)
+                    for x, y in zip(rest_freqs3, a)
+                ] for z in radii2
             ]
             seds.append(sed)
         return {'bands': self._bands,

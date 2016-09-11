@@ -1,9 +1,8 @@
 import csv
 import os
 
+import numexpr as ne
 import numpy as np
-from astropy import units as u
-from scipy.integrate import romb
 
 from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from ..module import Module
@@ -50,8 +49,10 @@ class Filter(Module):
             itrans = np.interp(wavs, self._wavelengths[bi],
                                self._transmissions[bi])
             for sed in seds:
-                eff_flux = romb([x * y for x, y in zip(itrans, sed)], dx=dx)
-                eff_fluxes.append(eff_flux / self._filter_integrals[bi])
+                yvals = [x * y for x, y in zip(itrans, sed)]
+                eff_fluxes.append(
+                    np.trapz(
+                        yvals, dx=dx) / self._filter_integrals[bi])
             mags.extend(self.abmag(eff_fluxes))
         return {'model_magnitudes': mags}
 
