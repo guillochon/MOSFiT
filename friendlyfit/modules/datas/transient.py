@@ -25,10 +25,14 @@ class Transient(Module):
             for entry in subdata:
                 if any([x not in entry for x in subkeys]):
                     continue
+                skip_key = False
                 for qkey in req_key_values:
                     if (qkey in entry and
                             entry[qkey] not in req_key_values[qkey]):
-                        continue
+                        skip_key = True
+                        break
+                if skip_key:
+                    continue
                 for x in subkeys:
                     if x == 'value':
                         self._data[key] = entry[x]

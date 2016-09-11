@@ -146,8 +146,6 @@ class Model:
                 inputs.update({'fraction': x[pos]})
                 inputs.setdefault('fractions', []).append(x[pos])
                 pos = pos + 1
-            # if root == 'observable':
-            #     inputs['times']:
             new_outs = self._modules[task].process(**inputs)
             outputs.update(new_outs)
 

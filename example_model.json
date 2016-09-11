@@ -72,7 +72,7 @@
             "transient"
         ],
         "requests":[
-            ["wavelengths", "bands"],
+            ["bandwavelengths", "bandnames"],
             []
         ],
         "outputs":"model_magnitudes"

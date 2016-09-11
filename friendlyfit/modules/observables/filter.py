@@ -16,9 +16,9 @@ class Filter(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._paths = kwargs['paths']
-        self._bands = kwargs['bands']
-        self._n_bands = len(self._bands)
-        self._wavelengths = [[] for i in range(self._n_bands)]
+        self._band_names = list(set(kwargs['bands']))
+        self._n_bands = len(self._band_names)
+        self._band_wavelengths = [[] for i in range(self._n_bands)]
         self._transmissions = [[] for i in range(self._n_bands)]
         self._min_waves = [0.0] * self._n_bands
         self._max_waves = [0.0] * self._n_bands
@@ -29,30 +29,32 @@ class Filter(Module):
                 for row in csv.reader(
                         f, delimiter='\t', skipinitialspace=True):
                     rows.append([float(x) for x in row])
-            self._wavelengths[i], self._transmissions[i] = list(
+            self._band_wavelengths[i], self._transmissions[i] = list(
                 map(list, zip(*rows)))
-            self._min_waves[i] = min(self._wavelengths[i])
-            self._max_waves[i] = max(self._wavelengths[i])
+            self._min_waves[i] = min(self._band_wavelengths[i])
+            self._max_waves[i] = max(self._band_wavelengths[i])
             self._filter_integrals[i] = np.trapz(
                 np.array(self._transmissions[i]),
-                np.array(self._wavelengths[i]))
+                np.array(self._band_wavelengths[i]))
 
     def process(self, **kwargs):
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
-        mags = []
-        for bi, band in enumerate(self._bands):
-            seds = kwargs['seds'][bi]
-            wavs = kwargs['wavelengths'][bi]
+        self._luminosities = kwargs['luminosities']
+        self._bands = kwargs['bands']
+        eff_fluxes = []
+        for li, band in enumerate(self._luminosities):
+            cur_band = self._bands[li]
+            bi = self._band_names.index(cur_band)
+            sed = kwargs['seds'][li]
+            wavs = kwargs['bandwavelengths'][bi]
             dx = wavs[1] - wavs[0]
-            eff_fluxes = []
-            itrans = np.interp(wavs, self._wavelengths[bi],
+            itrans = np.interp(wavs, self._band_wavelengths[bi],
                                self._transmissions[bi])
-            for sed in seds:
-                yvals = [x * y for x, y in zip(itrans, sed)]
-                eff_fluxes.append(
-                    np.trapz(
-                        yvals, dx=dx) / self._filter_integrals[bi])
-            mags.extend(self.abmag(eff_fluxes))
+            yvals = [x * y for x, y in zip(itrans, sed)]
+            eff_fluxes.append(
+                np.trapz(
+                    yvals, dx=dx) / self._filter_integrals[bi])
+        mags = self.abmag(eff_fluxes)
         return {'model_magnitudes': mags}
 
     def abmag(self, eff_fluxes):
@@ -61,8 +63,8 @@ class Filter(Module):
                 for x in eff_fluxes]
 
     def request(self, request):
-        if request == 'bands':
-            return self._bands
-        elif request == 'wavelengths':
+        if request == 'bandnames':
+            return self._band_names
+        elif request == 'bandwavelengths':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
         return []
