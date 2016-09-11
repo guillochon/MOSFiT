@@ -6,3 +6,4 @@ build/
 *.swp
 *.png
 products/
+.DS_Store

@@ -7,3 +7,4 @@ FOUR_PI = 4.0 * np.pi
 MAG_FAC = 100.0**0.2
 AB_OFFSET = -48.60
 MPC_CGS = (1.0 * u.Mpc).cgs.value
+DAY_CGS = (1.0 * u.day).cgs.value

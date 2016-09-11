@@ -18,7 +18,7 @@ class Parameter(Module):
             self._max_value = np.log(self._max_value)
 
     def process(self, **kwargs):
-        if not self._min_value or not self._max_value:
+        if self._min_value is None or self._max_value is None:
             value = self._value
         else:
             value = max(
