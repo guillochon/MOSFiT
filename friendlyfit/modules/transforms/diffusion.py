@@ -15,7 +15,8 @@ class Diffusion(Module):
     """Diffusion transform.
     """
 
-    N_INT_TIMES = 100
+    N_INT_TIMES = 20
+    MIN_EXP_ARG = 10
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -44,7 +45,8 @@ class Diffusion(Module):
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue
-            int_times = np.linspace(0.0, te, self.N_INT_TIMES)
+            tb = np.sqrt(max(te**2 - (self.MIN_EXP_ARG*td)**2, 0.0))
+            int_times = np.linspace(tb, te, self.N_INT_TIMES)
             int_lums = np.interp(int_times, self._times_since_exp,
                                  self._luminosities)
             int_arg = ne.evaluate('2.0 * int_lums * int_times / td**2 * '
