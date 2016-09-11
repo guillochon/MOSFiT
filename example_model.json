@@ -112,18 +112,10 @@
             "filter"
         ]
     },
-    "modellc":{
-        "kind":"output",
-        "inputs":[
-            "transient",
-            "filter"
-        ],
-        "ntimes":100,
-        "class":"lightcurve"
-    },
     "fitlc":{
         "kind":"output",
         "inputs":[
+            "likelihood",
             "transient",
             "filter"
         ],

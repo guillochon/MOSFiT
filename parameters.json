@@ -15,12 +15,12 @@
     },
     "kappagamma":{
         "min_value":0.1,
-        "max_value":10.0,
+        "max_value":1.0e3,
         "log":true
     },
     "mejecta":{
         "min_value":0.1,
-        "max_value":10.0,
+        "max_value":100.0,
         "log":true
     },
     "vejecta":{

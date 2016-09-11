@@ -3,6 +3,7 @@ import json
 import logging
 import sys
 from collections import OrderedDict
+from math import isnan
 
 import emcee
 import numpy as np
@@ -138,6 +139,8 @@ class Model:
         cur_depth = self._max_depth_all
         for task in self._call_stack:
             cur_task = self._call_stack[task]
+            if cur_task['kind'] == 'output' and root != 'output':
+                continue
             if cur_task['depth'] != cur_depth:
                 inputs = outputs
             cur_depth = cur_task['depth']
@@ -149,7 +152,7 @@ class Model:
             new_outs = self._modules[task].process(**inputs)
             outputs.update(new_outs)
 
-            if self._call_stack[task]['kind'] == root:
+            if cur_task['kind'] == root:
                 if root == 'objective':
                     return outputs['value']
 
@@ -172,13 +175,25 @@ class Model:
 
         ntemps, ndim, nwalkers = (num_temps, self._num_free_parameters,
                                   num_walkers)
-        p0 = np.random.uniform(
-            low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
+        # p0 = np.random.uniform(
+        #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
         pool = MPIPool(loadbalance=True)
 
         if pool.is_master():
             print('{} dimensions in problem.'.format(ndim), flush=True)
+            print('Drawing initial walkers.', flush=True)
+            p0 = [[] for x in range(ntemps)]
+
+            pbar = tqdm(total=nwalkers*ntemps)
+            for i, pt in enumerate(p0):
+                while len(p0[i]) < nwalkers:
+                    draw = np.random.uniform(low=0.0, high=1.0, size=ndim)
+                    score = self.run_stack(draw, root='objective')
+                    if not isnan(score) and np.isfinite(score):
+                        p0[i].append(draw)
+                        pbar.update(1)
+            pbar.close()
         else:
             pool.wait()
             sys.exit(0)
@@ -205,6 +220,6 @@ class Model:
                     bestprob = prob
                     bestx = p[i][j]
 
-        self.run_stack(bestx, root='')
+        self.run_stack(bestx, root='output')
 
         return (p, lnprob)

@@ -28,7 +28,8 @@ class Diffusion(Module):
         self._v_ejecta = kwargs['vejecta']
         self._times = kwargs['times']
         self._luminosities = kwargs['luminosities']
-        self._times_since_exp = [x - self._t_explosion for x in self._times]
+        self._times_since_exp = [(x - self._t_explosion) * DAY_CGS
+                                 for x in self._times]
         self._tau_diff = np.sqrt(2.0 * self._kappa * self._m_ejecta * c.M_sun /
                                  (13.7 * c.c *
                                   (self._v_ejecta * u.km / u.s))).cgs.value
@@ -39,15 +40,13 @@ class Diffusion(Module):
         td, A = self._tau_diff, self._trap_coeff
 
         new_lum = []
-        for tse in self._times_since_exp:
-            if tse <= 0.0:
+        for te in self._times_since_exp:
+            if te <= 0.0:
                 new_lum.append(0.0)
                 continue
-            te = tse * DAY_CGS
-            int_times = np.linspace(0.0, tse, self.N_INT_TIMES)
+            int_times = np.linspace(0.0, te, self.N_INT_TIMES)
             int_lums = np.interp(int_times, self._times_since_exp,
                                  self._luminosities)
-            int_times = [x * DAY_CGS for x in int_times]
             int_arg = ne.evaluate('2.0 * int_lums * int_times / td**2 * '
                                   'exp((int_times**2 - te**2) / td**2) * '
                                   '(1.0 - exp(-A / te**2))')
