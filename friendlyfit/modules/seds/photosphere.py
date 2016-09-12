@@ -2,7 +2,6 @@ from math import pi
 
 import numpy as np
 from astropy import constants as c
-from astropy import units as u
 
 from ...constants import DAY_CGS, FOUR_PI, KM_CGS
 from .sed import SED
@@ -17,7 +16,6 @@ class Photosphere(SED):
 
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
-    C_CONST = (c.c / u.Angstrom).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
     def __init__(self, **kwargs):
@@ -40,16 +38,16 @@ class Photosphere(SED):
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
-            # radius = self._v_ejecta * KM_CGS * (
-            #     self._times[li] - self._t_explosion) * DAY_CGS
+            radius = self._v_ejecta * KM_CGS * (
+                self._times[li] - self._t_explosion) * DAY_CGS
             rec_radius = np.sqrt(lum /
                                  (self.STEF_CONST * self._temperature**4))
-            # if radius < rec_radius:
-            #     radius2 = radius**2
-            #     temperature = (lum / (self.STEF_CONST * radius2))**0.25
-            # else:
-            radius2 = rec_radius**2
-            temperature = self._temperature
+            if radius < rec_radius:
+                radius2 = radius**2
+                temperature = (lum / (self.STEF_CONST * radius2))**0.25
+            else:
+                radius2 = rec_radius**2
+                temperature = self._temperature
 
             a = [np.exp(self.X_CONST * x / temperature) - 1.0
                  for x in rest_freqs]
