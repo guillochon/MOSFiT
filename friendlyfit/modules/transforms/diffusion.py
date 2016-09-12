@@ -13,7 +13,7 @@ class Diffusion(Module):
     """Diffusion transform.
     """
 
-    N_INT_TIMES = 20
+    N_INT_TIMES = 40
     MIN_EXP_ARG = 10
 
     def __init__(self, **kwargs):
