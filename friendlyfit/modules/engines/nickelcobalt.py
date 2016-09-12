@@ -21,7 +21,7 @@ class NickelCobalt(Module):
 
     def process(self, **kwargs):
         self._times = kwargs['times']
-        self._mnickel = kwargs['mnickel']
+        self._mnickel = kwargs['fnickel']*kwargs['mejecta']
         self._texplosion = kwargs['texplosion']
 
         # From 1994ApJS...92..527N

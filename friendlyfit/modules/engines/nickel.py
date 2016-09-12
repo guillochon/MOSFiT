@@ -22,7 +22,7 @@ class Nickel(Module):
 
     def process(self, **kwargs):
         self._times = kwargs['times']
-        self._mnickel = kwargs['mnickel']
+        self._mnickel = kwargs['fnickel']*kwargs['mejecta']
         self._texplosion = kwargs['texplosion']
 
         decay_facs = [np.inf if self._texplosion > x else np.power(0.5, (

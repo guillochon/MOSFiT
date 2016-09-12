@@ -188,7 +188,7 @@ class Model:
             print('Drawing initial walkers.', flush=True)
             p0 = [[] for x in range(ntemps)]
 
-            pbar = tqdm(total=nwalkers*ntemps)
+            pbar = tqdm(total=nwalkers * ntemps)
             for i, pt in enumerate(p0):
                 while len(p0[i]) < nwalkers:
                     draw = np.random.uniform(low=0.0, high=1.0, size=ndim)
@@ -211,7 +211,10 @@ class Model:
             pool=pool)
         for p, lnprob, lnlike in tqdm(
                 sampler.sample(
-                    p0, iterations=iterations), total=iterations):
+                    p0, iterations=iterations),
+                total=iterations,
+                desc='Running Parallel-Tempered Monte Carlo',
+                ncols=80):
             print([max(x) for x in lnprob], flush=True)
         pool.close()
 

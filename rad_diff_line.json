@@ -16,7 +16,7 @@
             ]
         }
     },
-    "mnickel":{
+    "fnickel":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter"
@@ -59,7 +59,8 @@
         "kind":"engine",
         "inputs":[
             "transient",
-            "mnickel",
+            "mejecta",
+            "fnickel",
             "texplosion"
         ],
         "outputs":"luminosities"
