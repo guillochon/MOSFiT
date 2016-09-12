@@ -79,6 +79,7 @@
     "photosphere":{
         "kind":"sed",
         "inputs":[
+            "texplosion",
             "diffusion",
             "temperature"
         ],
