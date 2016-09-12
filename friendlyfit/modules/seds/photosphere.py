@@ -1,6 +1,7 @@
 from math import pi
 
 import numpy as np
+import numexpr as ne
 from astropy import constants as c
 
 from ...constants import DAY_CGS, FOUR_PI, KM_CGS
@@ -28,13 +29,15 @@ class Photosphere(SED):
         self._temperature = kwargs['temperature']
         self._bands = kwargs['bands']
         self._v_ejecta = kwargs['vejecta']
+        xc = self.X_CONST
+        fc = self.FLUX_CONST
         zp1 = 1.0 + kwargs['redshift']
         seds = []
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
             bi = self._band_names.index(cur_band)
             rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
-            rest_freqs3 = [x**3 for x in rest_freqs]
+            # rest_freqs3 = [x**3 for x in rest_freqs]
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
@@ -49,11 +52,16 @@ class Photosphere(SED):
                 radius2 = rec_radius**2
                 temperature = self._temperature
 
-            a = [np.exp(self.X_CONST * x / temperature) - 1.0
-                 for x in rest_freqs]
-            sed = [
-                (self.FLUX_CONST * radius2 * x / y)
-                for x, y in zip(rest_freqs3, a)
-            ]
+            if li == 0:
+                sed = ne.evaluate('fc * radius2 * rest_freqs**3 / '
+                                  'exp(xc * rest_freqs / temperature) - 1.0')
+            else:
+                sed = ne.re_evaluate()
+            # a = [np.exp(self.X_CONST * x / temperature) - 1.0
+            #      for x in rest_freqs]
+            # sed = [
+            #     (self.FLUX_CONST * radius2 * x / y)
+            #     for x, y in zip(rest_freqs3, a)
+            # ]
             seds.append(sed)
         return {'bandwavelengths': self._band_wavelengths, 'seds': seds}

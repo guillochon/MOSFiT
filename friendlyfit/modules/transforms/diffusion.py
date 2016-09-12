@@ -38,23 +38,29 @@ class Diffusion(Module):
         td2, A = self._tau_diff**2, self._trap_coeff
 
         new_lum = []
+        evaled = False
         for te in self._times_since_exp:
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue
             tb = np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0))
-            # tb = 0.0
+            te2 = te**2
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
+            dt = int_times[1] - int_times[0]
             int_lums = np.interp(int_times, self._times_since_exp,
                                  self._luminosities)
-            int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '
-                                  'exp((int_times**2 - te**2) / td2) * '
-                                  '(1.0 - exp(-A / te**2))')
+            if not evaled:
+                int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '
+                                      'exp((int_times**2 - te2) / td2) * '
+                                      '(1.0 - exp(-A / te2))')
+                evaled = True
+            else:
+                int_arg = ne.re_evaluate()
             # int_arg = [
             #     2.0 * l * t / td2 *
             #     np.exp((t**2 - te**2) / td2) * (1.0 - np.exp(-A / te**2))
             #     for t, l in zip(int_times, int_lums)
             # ]
             int_arg = [0.0 if isnan(x) else x for x in int_arg]
-            new_lum.append(np.trapz(int_arg, int_times))
+            new_lum.append(np.trapz(int_arg, dx=dt))
         return {'luminosities': new_lum}

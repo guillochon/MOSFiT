@@ -2,6 +2,7 @@ import csv
 import json
 import os
 
+import numexpr as ne
 import numpy as np
 
 from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
@@ -45,8 +46,7 @@ class Filter(Module):
                     os.path.join('friendlyfit', 'modules', 'observables',
                                  'filters', path), 'r') as f:
                 rows = []
-                for row in csv.reader(
-                        f, delimiter=' ', skipinitialspace=True):
+                for row in csv.reader(f, delimiter=' ', skipinitialspace=True):
                     rows.append([float(x) for x in row[:2]])
             self._band_wavelengths[i], self._transmissions[i] = list(
                 map(list, zip(*rows)))
@@ -69,6 +69,11 @@ class Filter(Module):
             dx = wavs[1] - wavs[0]
             itrans = np.interp(wavs, self._band_wavelengths[bi],
                                self._transmissions[bi])
+            # if li == 0:
+            #     ef = ne.evaluate('sum(itrans * sed)')
+            # else:
+            #     ef = ne.re_evaluate()
+            # eff_fluxes.append(dx * ef)
             yvals = [x * y for x, y in zip(itrans, sed)]
             eff_fluxes.append(
                 np.trapz(
