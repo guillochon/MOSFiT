@@ -24,7 +24,9 @@ class Filter(Module):
         self._max_waves = [0.0] * self._n_bands
         self._filter_integrals = [0.0] * self._n_bands
         for i, path in enumerate(self._paths):
-            with open(os.path.join('friendlyfit', 'modules', path), 'r') as f:
+            with open(
+                    os.path.join('friendlyfit', 'modules', 'observables',
+                                 'filters', path), 'r') as f:
                 rows = []
                 for row in csv.reader(
                         f, delimiter='\t', skipinitialspace=True):

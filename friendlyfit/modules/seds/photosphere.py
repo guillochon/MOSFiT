@@ -7,11 +7,12 @@ from astropy import units as u
 from ...constants import FOUR_PI
 from ...modules.seds.sed import SED
 
-CLASS_NAME = 'Blackbody'
+CLASS_NAME = 'Photosphere'
 
 
-class Blackbody(SED):
-    """Blackbody spectral energy distribution.
+class Photosphere(SED):
+    """Expanding/recending photosphere with a blackbody spectral energy
+    distribution.
     """
 
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value

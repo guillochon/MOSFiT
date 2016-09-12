@@ -76,7 +76,7 @@
         ],
         "outputs":"luminosities"
     },
-    "blackbody":{
+    "photosphere":{
         "kind":"sed",
         "inputs":[
             "diffusion",
@@ -86,7 +86,7 @@
     },
     "line":{
         "kind":"sed",
-        "inputs":"blackbody",
+        "inputs":"photosphere",
         "requests":[
             ["bandwavelengths", "bandnames"]
         ],
@@ -96,11 +96,11 @@
         "bands":["U", "B", "V", "R", "I"],
         "kind":"observable",
         "paths":[
-            "observables/filters/bess_u.dat",
-            "observables/filters/bess_b.dat",
-            "observables/filters/bess_v.dat",
-            "observables/filters/bess_r.dat",
-            "observables/filters/bess_i.dat"
+            "bess_u.dat",
+            "bess_b.dat",
+            "bess_v.dat",
+            "bess_r.dat",
+            "bess_i.dat"
         ],
         "inputs":[
             "line",
