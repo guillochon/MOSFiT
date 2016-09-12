@@ -13,7 +13,7 @@ class Diffusion(Module):
     """Photon diffusion transform.
     """
 
-    N_INT_TIMES = 100
+    N_INT_TIMES = 20
     MIN_EXP_ARG = 20
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS**2)
@@ -42,8 +42,8 @@ class Diffusion(Module):
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue
-            # tb = np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0))
-            tb = 0.0
+            tb = np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0))
+            # tb = 0.0
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             int_lums = np.interp(int_times, self._times_since_exp,
                                  self._luminosities)
