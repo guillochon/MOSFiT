@@ -87,15 +87,8 @@
         "outputs":"seds"
     },
     "filter":{
-        "bands":["U", "B", "V", "R", "I"],
+        "bands":["U", "B", "V", "R", "I", "u'", "g'", "r'", "i'", "z'"],
         "kind":"observable",
-        "paths":[
-            "bess_u.dat",
-            "bess_b.dat",
-            "bess_v.dat",
-            "bess_r.dat",
-            "bess_i.dat"
-        ],
         "inputs":[
             "photosphere",
             "transient"

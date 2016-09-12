@@ -1,0 +1,30 @@
+[
+    {
+        "systems":[
+            "",
+            "Johnson",
+            "Bessel"
+        ],
+        "instruments":[
+            ""
+        ],
+        "surveys":[
+            ""
+        ],
+        "paths":{
+            "U":"bess_u.dat",
+            "B":"bess_b.dat",
+            "V":"bess_v.dat",
+            "R":"bess_r.dat",
+            "I":"bess_i.dat",
+            "u'":"sdss_u_atm.dat",
+            "g'":"sdss_g_atm.dat",
+            "r'":"sdss_r_atm.dat",
+            "i'":"sdss_i_atm.dat",
+            "z'":"sdss_z_atm.dat",
+            "W1":"UVOT_uvw1.dat",
+            "W2":"UVOT_uvw2.dat",
+            "M2":"UVOT_uvm2.dat"
+        }
+    }
+]

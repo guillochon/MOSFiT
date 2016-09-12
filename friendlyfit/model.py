@@ -10,6 +10,8 @@ import numpy as np
 from emcee.utils import MPIPool
 from tqdm import tqdm
 
+from .utils import pretty_num
+
 
 class Model:
     """Define a semi-analytical model to fit transients with.
@@ -185,10 +187,10 @@ class Model:
 
         if pool.is_master():
             print('{} dimensions in problem.'.format(ndim), flush=True)
-            print('Drawing initial walkers.', flush=True)
             p0 = [[] for x in range(ntemps)]
 
-            pbar = tqdm(total=nwalkers * ntemps)
+            pbar = tqdm(
+                total=nwalkers * ntemps, desc='Drawing initial walkers')
             for i, pt in enumerate(p0):
                 while len(p0[i]) < nwalkers:
                     draw = np.random.uniform(low=0.0, high=1.0, size=ndim)
@@ -213,9 +215,12 @@ class Model:
                 sampler.sample(
                     p0, iterations=iterations),
                 total=iterations,
-                desc='Running Parallel-Tempered Monte Carlo',
-                ncols=80):
-            print([max(x) for x in lnprob], flush=True)
+                desc='Running Parallel-Tempered Monte Carlo'):
+            # pass
+            print(
+                '\nBest ensemble scores: [ ' + ','.join(
+                    [pretty_num(max(x)) for x in lnprob]) + ' ]',
+                flush=True)
         pool.close()
 
         bestprob = -np.inf
