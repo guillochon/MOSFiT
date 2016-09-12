@@ -164,6 +164,15 @@ class Model:
     def prior(self, data):
         return 0.0
 
+    def draw_walker(self, arg):
+        p = None
+        while p is None:
+            draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
+            score = self.run_stack(draw, root='objective')
+            if not isnan(score) and np.isfinite(score):
+                p = draw
+        return p
+
     def fit_data(self,
                  data,
                  plot_points=[],
@@ -180,6 +189,7 @@ class Model:
 
         ntemps, ndim, nwalkers = (num_temps, self._num_free_parameters,
                                   num_walkers)
+        self._n_dim = ndim
         # p0 = np.random.uniform(
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
@@ -193,11 +203,11 @@ class Model:
                 total=nwalkers * ntemps, desc='Drawing initial walkers')
             for i, pt in enumerate(p0):
                 while len(p0[i]) < nwalkers:
-                    draw = np.random.uniform(low=0.0, high=1.0, size=ndim)
-                    score = self.run_stack(draw, root='objective')
-                    if not isnan(score) and np.isfinite(score):
-                        p0[i].append(draw)
-                        pbar.update(1)
+                    nmap = min(nwalkers - len(p0[i]), 4*pool.size)
+                    p0[i].extend(
+                        pool.map(self.draw_walker, range(nmap)))
+                    pbar.update(nmap)
+                # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
             pbar.close()
         else:
             pool.wait()
