@@ -42,10 +42,11 @@ class Photosphere(SED):
             # temperature lower than temperature parameter.
             radius = self._v_ejecta * KM_CGS * (
                 self._times[li] - self._t_explosion) * DAY_CGS
-            rec_radius = lum / (self.STEF_CONST * self._temperature**4)
+            rec_radius = np.sqrt(lum /
+                                 (self.STEF_CONST * self._temperature**4))
             if radius < rec_radius:
                 radius2 = radius**2
-                temperature = (lum / (self.STEF_CONST * radius))**0.25
+                temperature = (lum / (self.STEF_CONST * radius2))**0.25
             else:
                 radius2 = rec_radius**2
                 temperature = self._temperature
