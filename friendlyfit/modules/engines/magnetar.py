@@ -11,7 +11,6 @@ class Magnetar(Module):
     """Magnetar spin-down engine
     """
 
-
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 
@@ -23,15 +22,16 @@ class Magnetar(Module):
         self._thetaPB = kwargs['thetaPB']
         self._texplosion = kwargs['texplosion']
 
-        Ep = 2.6e52*(Mns/1.4)**(3./2.)*Pspin**(-2)
+        Ep = 2.6e52 * (self._Mns / 1.4)**(3. / 2.) * self._Pspin**(-2)
 
-        tp = 1.3e5*Bfield**(-2)*Pspin**2*(Mns/1.4)**(3./2.)*(np.sin(thetaPB))**(-2)
+        tp = 1.3e5 * self._Bfield**(-2) * self._Pspin**2 * (self._Mns / 1.4)**(
+            3. / 2.) * (np.sin(self._thetaPB))**(-2)
 
         ts = [np.inf if self._texplosion > x else (x - self._texplosion)
               for x in self._times]
-              
-        luminosities = [Ep/tp/(1.+ts/tp)**2
-                        for t in ts]
 
-#        print(max(luminosities))
+        luminosities = [Ep / tp / (1. + t / tp)**2 for t in ts]
+        luminosities = [0.0 if isnan(x) else x for x in luminosities]
+
+        #        print(max(luminosities))
         return {'luminosities': luminosities}
