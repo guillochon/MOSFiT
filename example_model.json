@@ -87,7 +87,6 @@
         "outputs":"seds"
     },
     "filter":{
-        "bands":["U", "B", "V", "R", "I", "u'", "g'", "r'", "i'", "z'"],
         "kind":"observable",
         "inputs":[
             "photosphere",

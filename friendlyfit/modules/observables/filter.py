@@ -18,15 +18,9 @@ class Filter(Module):
         super().__init__(**kwargs)
         bands = kwargs.get('bands', '')
         bands = [bands] if isinstance(bands, str) else bands
-        self._band_names = list(set(bands))
-        self._n_bands = len(self._band_names)
-        self._band_wavelengths = [[] for i in range(self._n_bands)]
-        self._transmissions = [[] for i in range(self._n_bands)]
-        self._min_waves = [0.0] * self._n_bands
-        self._max_waves = [0.0] * self._n_bands
-        self._filter_integrals = [0.0] * self._n_bands
-        self._paths = []
 
+        self._bands = []
+        self._paths = []
         with open(
                 os.path.join('friendlyfit', 'modules', 'observables',
                              'filterrules.json')) as f:
@@ -34,8 +28,17 @@ class Filter(Module):
             for band in bands:
                 for rule in filterrules:
                     for bnd in rule.get("paths", []):
-                        if band == bnd:
+                        if band == bnd or band == '':
+                            self._bands.append(bnd)
                             self._paths.append(rule["paths"][bnd])
+
+        self._band_names = list(set(self._bands))
+        self._n_bands = len(self._band_names)
+        self._band_wavelengths = [[] for i in range(self._n_bands)]
+        self._transmissions = [[] for i in range(self._n_bands)]
+        self._min_waves = [0.0] * self._n_bands
+        self._max_waves = [0.0] * self._n_bands
+        self._filter_integrals = [0.0] * self._n_bands
 
         for i, path in enumerate(self._paths):
             with open(
@@ -72,6 +75,9 @@ class Filter(Module):
                     yvals, dx=dx) / self._filter_integrals[bi])
         mags = self.abmag(eff_fluxes)
         return {'model_magnitudes': mags}
+
+    def band_names(self):
+        return self._band_names
 
     def abmag(self, eff_fluxes):
         return [(np.inf if x == 0.0 else

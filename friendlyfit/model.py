@@ -75,8 +75,6 @@ class Model:
                 class_name = cur_task['class']
             else:
                 class_name = task
-            if class_name == 'filter':
-                self._bands = cur_task['bands']
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='friendlyfit')
@@ -84,6 +82,8 @@ class Model:
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
             self._modules[task] = mod_class(name=task, **cur_task)
+            if class_name == 'filter':
+                self._bands = self._modules[task].band_names()
             if 'requests' in cur_task:
                 inputs = []
                 if 'inputs' in cur_task:
