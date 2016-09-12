@@ -57,6 +57,7 @@ class Filter(Module):
                 np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi])
         mags = self.abmag(eff_fluxes)
+        print(min(mags))
         return {'model_magnitudes': mags}
 
     def abmag(self, eff_fluxes):

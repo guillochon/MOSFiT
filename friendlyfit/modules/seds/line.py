@@ -1,4 +1,4 @@
-from ...modules.seds.sed import SED
+from .sed import SED
 
 CLASS_NAME = 'Line'
 

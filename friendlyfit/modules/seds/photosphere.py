@@ -5,7 +5,7 @@ from astropy import constants as c
 from astropy import units as u
 
 from ...constants import DAY_CGS, FOUR_PI, KM_CGS
-from ...modules.seds.sed import SED
+from .sed import SED
 
 CLASS_NAME = 'Photosphere'
 
@@ -30,7 +30,7 @@ class Photosphere(SED):
         self._temperature = kwargs['temperature']
         self._bands = kwargs['bands']
         self._v_ejecta = kwargs['vejecta']
-        zp1 = (1.0 + kwargs['redshift'])
+        zp1 = 1.0 + kwargs['redshift']
         seds = []
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
@@ -40,16 +40,16 @@ class Photosphere(SED):
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
-            radius = self._v_ejecta * KM_CGS * (
-                self._times[li] - self._t_explosion) * DAY_CGS
+            # radius = self._v_ejecta * KM_CGS * (
+            #     self._times[li] - self._t_explosion) * DAY_CGS
             rec_radius = np.sqrt(lum /
                                  (self.STEF_CONST * self._temperature**4))
-            if radius < rec_radius:
-                radius2 = radius**2
-                temperature = (lum / (self.STEF_CONST * radius2))**0.25
-            else:
-                radius2 = rec_radius**2
-                temperature = self._temperature
+            # if radius < rec_radius:
+            #     radius2 = radius**2
+            #     temperature = (lum / (self.STEF_CONST * radius2))**0.25
+            # else:
+            radius2 = rec_radius**2
+            temperature = self._temperature
 
             a = [np.exp(self.X_CONST * x / temperature) - 1.0
                  for x in rest_freqs]
