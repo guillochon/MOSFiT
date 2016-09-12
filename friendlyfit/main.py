@@ -4,6 +4,9 @@ from friendlyfit.fitter import Fitter
 
 
 def main():
+    """First, parse command line arguments.
+    """
+
     parser = argparse.ArgumentParser(
         prog='FriendlyFit',
         description='Fit astrophysical light curves using AstroCats data.')
@@ -30,6 +33,9 @@ def main():
         '--num-temps', '-T', dest='num_temps', type=int, default=2)
 
     args = parser.parse_args()
+
+    """Then, fit the listed events with the listed models.
+    """
 
     Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps)

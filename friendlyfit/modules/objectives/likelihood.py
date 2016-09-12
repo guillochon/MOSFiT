@@ -9,6 +9,9 @@ CLASS_NAME = 'Likelihood'
 
 
 class Likelihood(Module):
+    """Calculate the maximum likelihood score for a model.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
 

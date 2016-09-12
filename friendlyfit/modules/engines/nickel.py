@@ -21,15 +21,15 @@ class Nickel(Module):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        self.times = kwargs['times']
-        self.mnickel = kwargs['mnickel']
-        self.texplosion = kwargs['texplosion']
+        self._times = kwargs['times']
+        self._mnickel = kwargs['mnickel']
+        self._texplosion = kwargs['texplosion']
 
-        decay_facs = [np.inf if self.texplosion > x else np.power(0.5, (
-            (x - self.texplosion) / self.HALF_LIFE)) for x in self.times]
-        current_mnickel = [0.0 if isnan(x) else self.mnickel * x
+        decay_facs = [np.inf if self._texplosion > x else np.power(0.5, (
+            (x - self._texplosion) / self.HALF_LIFE)) for x in self._times]
+        current_mnickel = [0.0 if isnan(x) else self._mnickel * x
                            for x in decay_facs]
-        print(self.mnickel, min(current_mnickel), max(current_mnickel))
+        print(self._mnickel, min(current_mnickel), max(current_mnickel))
 
         luminosities = [x * y * self.DECAY_CONST
                         for x, y in zip(decay_facs, current_mnickel)]

@@ -11,7 +11,7 @@ CLASS_NAME = 'Blackbody'
 
 
 class Blackbody(SED):
-    """Blackbody spectral energy distribution
+    """Blackbody spectral energy distribution.
     """
 
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value

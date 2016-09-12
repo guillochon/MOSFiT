@@ -7,6 +7,9 @@ warnings.filterwarnings("ignore")
 
 
 class Fitter():
+    """Fit transient events with the provided model.
+    """
+
     def fit_events(event_paths=[],
                    model_paths=[],
                    plot_points=100,

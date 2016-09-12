@@ -1,5 +1,5 @@
-'''Functions for assisting with plotting catalog data.
-'''
+"""Functions for assisting with plotting, inherited from AstroCats.
+"""
 
 from collections import OrderedDict
 from random import seed, shuffle

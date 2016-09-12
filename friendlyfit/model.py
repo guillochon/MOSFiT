@@ -12,6 +12,9 @@ from tqdm import tqdm
 
 
 class Model:
+    """Define a semi-analytical model to fit transients with.
+    """
+
     def __init__(self,
                  parameter_path='parameters.json',
                  model_path='example_model.json'):

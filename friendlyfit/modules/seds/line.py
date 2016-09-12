@@ -1,10 +1,10 @@
 from ...modules.seds.sed import SED
 
-CLASS_NAME = 'Blackbody'
+CLASS_NAME = 'Line'
 
 
-class Blackbody(SED):
-    """Blackbody spectral energy distribution
+class Line(SED):
+    """Line spectral energy distribution, modifies existing SED.
     """
 
     def __init__(self, **kwargs):

@@ -6,6 +6,9 @@ CLASS_NAME = 'Parameter'
 
 
 class Parameter(Module):
+    """Model parameter that can either be free or fixed.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._max_value = kwargs.get('max_value', None)

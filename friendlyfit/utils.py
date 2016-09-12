@@ -1,3 +1,7 @@
+"""Miscellaneous utility functions.
+"""
+
+
 def is_number(s):
     try:
         float(s)

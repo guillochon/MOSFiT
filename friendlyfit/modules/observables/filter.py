@@ -10,7 +10,7 @@ CLASS_NAME = 'Filter'
 
 
 class Filter(Module):
-    """Band-pass filter
+    """Band-pass filter.
     """
 
     def __init__(self, **kwargs):

@@ -20,14 +20,14 @@ class NickelCobalt(Module):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        self.times = kwargs['times']
-        self.mnickel = kwargs['mnickel']
-        self.texplosion = kwargs['texplosion']
+        self._times = kwargs['times']
+        self._mnickel = kwargs['mnickel']
+        self._texplosion = kwargs['texplosion']
 
         # From 1994ApJS...92..527N
-        ts = [np.inf if self.texplosion > x else (x - self.texplosion)
-              for x in self.times]
-        luminosities = [self.mnickel * (self.NI56_LUM * np.exp(
+        ts = [np.inf if self._texplosion > x else (x - self._texplosion)
+              for x in self._times]
+        luminosities = [self._mnickel * (self.NI56_LUM * np.exp(
             -t / self.NI56_LIFE) + self.CO56_LUM * np.exp(-t / self.CO56_LIFE))
                         for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]

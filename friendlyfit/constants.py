@@ -1,3 +1,6 @@
+"""List of numerical constants, faster than using astropy with every call.
+"""
+
 import astropy.constants as c
 import astropy.units as u
 import numpy as np

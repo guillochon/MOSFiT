@@ -10,7 +10,7 @@ CLASS_NAME = 'Diffusion'
 
 
 class Diffusion(Module):
-    """Diffusion transform.
+    """Photon diffusion transform.
     """
 
     N_INT_TIMES = 40

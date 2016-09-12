@@ -7,7 +7,7 @@ CLASS_NAME = 'SED'
 
 
 class SED(Module):
-    """Blackbody spectral energy distribution
+    """Template class for SED Modules.
     """
 
     N_PTS = 16 + 1

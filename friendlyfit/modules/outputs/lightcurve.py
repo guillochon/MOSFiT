@@ -6,6 +6,9 @@ CLASS_NAME = 'LightCurve'
 
 
 class LightCurve(Module):
+    """Output a light curve to disk.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._n_times = kwargs.get("ntimes", 0)

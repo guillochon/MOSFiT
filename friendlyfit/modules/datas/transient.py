@@ -5,6 +5,9 @@ CLASS_NAME = 'Transient'
 
 
 class Transient(Module):
+    """Structure to store transient data.
+    """
+
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
