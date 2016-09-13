@@ -10,7 +10,7 @@ class Fitter():
     """Fit transient events with the provided model.
     """
 
-    def fit_events(event_paths=[],
+    def fit_events(event_paths=['tests/SN2006le.json'],
                    model_paths=[],
                    plot_points=100,
                    iterations=10,
