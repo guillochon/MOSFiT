@@ -1,5 +1,6 @@
 language: python
 python:
+    - "3.3"
     - "3.4"
     - "3.5"
 notifications:
@@ -31,9 +32,9 @@ install:
 
 # Run test
 script:
-    - echo "travis_fold:start:IMPORT Fitting test data"
+    - echo "travis_fold:start:FIT Fitting test data"
     - mpirun -np 2 coverage run -a -m friendlyfit
-    - echo "travis_fold:end:IMPORT Fitting test data done"
+    - echo "travis_fold:end:FIT Fitting test data done"
 
 # Run coveralls
 after_success:
