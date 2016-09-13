@@ -41,16 +41,16 @@ class Photosphere(SED):
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
-            # radius = self._v_ejecta * KM_CGS * (
-            #     self._times[li] - self._t_explosion) * DAY_CGS
+            radius = self._v_ejecta * KM_CGS * (
+                self._times[li] - self._t_explosion) * DAY_CGS
             rec_radius = np.sqrt(lum /
                                  (self.STEF_CONST * self._temperature**4))
-            # if radius < rec_radius:
-            #     radius2 = radius**2
-            #     temperature = (lum / (self.STEF_CONST * radius2))**0.25
-            # else:
-            radius2 = rec_radius**2
-            temperature = self._temperature
+            if radius < rec_radius:
+                radius2 = radius**2
+                temperature = (lum / (self.STEF_CONST * radius2))**0.25
+            else:
+                radius2 = rec_radius**2
+                temperature = self._temperature
 
             if li == 0:
                 sed = ne.evaluate('fc * radius2 * rest_freqs**3 / '

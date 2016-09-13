@@ -21,7 +21,7 @@ class NickelCobalt(Module):
 
     def process(self, **kwargs):
         self._times = kwargs['times']
-        self._mnickel = kwargs['fnickel']*kwargs['mejecta']
+        self._mnickel = kwargs['fnickel'] * kwargs['mejecta']
         self._texplosion = kwargs['texplosion']
 
         # From 1994ApJS...92..527N
@@ -31,6 +31,12 @@ class NickelCobalt(Module):
             -t / self.NI56_LIFE) + self.CO56_LUM * np.exp(-t / self.CO56_LIFE))
                         for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
+
+        # Add on to any existing luminosity
+        old_luminosities = kwargs.get('luminosities', None)
+        if old_luminosities is not None:
+            luminosities = [x + y
+                            for x, y in zip(old_luminosities, luminosities)]
 
         # print(max(luminosities))
         return {'luminosities': luminosities}
