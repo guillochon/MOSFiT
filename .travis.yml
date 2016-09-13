@@ -32,7 +32,7 @@ install:
 # Run test
 script:
     - echo "travis_fold:start:IMPORT Fitting test data"
-    - coverage run -a -m friendlyfit
+    - mpirun -np 2 coverage run -a -m friendlyfit
     - echo "travis_fold:end:IMPORT Fitting test data done"
 
 # Run coveralls
