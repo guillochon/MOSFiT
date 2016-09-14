@@ -43,13 +43,22 @@ def main():
     parser.add_argument(
         '--num-temps', '-T', dest='num_temps', type=int, default=2)
 
+    parser.add_argument(
+        '--no-fracking',
+        dest='fracking',
+        default=True,
+        action='store_false')
+
+    parser.add_argument(
+        '--frack-step', '-f', dest='frack_step', type=int, default=100)
+
     args = parser.parse_args()
+
     """Then, fit the listed events with the listed models.
     """
-
     Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps,
-                      args.parameter_paths)
+                      args.parameter_paths, args.fracking, args.frack_step)
 
 
 if __name__ == "__main__":

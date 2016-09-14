@@ -16,7 +16,9 @@ class Fitter():
                    iterations=10,
                    num_walkers=100,
                    num_temps=2,
-                   parameter_paths=[]):
+                   parameter_paths=[],
+                   fracking=True,
+                   frack_step=100):
         for path in event_paths:
             with open(path, 'r') as f:
                 data = json.loads(f.read())
@@ -30,4 +32,6 @@ class Fitter():
                         plot_points=plot_points,
                         iterations=iterations,
                         num_walkers=num_walkers,
-                        num_temps=num_temps)
+                        num_temps=num_temps,
+                        fracking=fracking,
+                        frack_step=frack_step)

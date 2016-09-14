@@ -1,7 +1,6 @@
 emcee>=2.2.1
 astropy>=1.1.1
 mpi4py>=2.0.0
-tqdm>=4.8.4
 scipy>=0.17.1
 numexpr>=2.6.1
 seaborn>=0.7.1

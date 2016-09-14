@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+import sys
 from math import floor, log10
 
 
@@ -25,3 +26,9 @@ def listify(x):
     if not isinstance(x, list):
         return [x]
     return x
+
+
+def print_inline(x):
+    sys.stdout.write("\033[F")
+    sys.stdout.write("\033[K")
+    print(x, flush=True)

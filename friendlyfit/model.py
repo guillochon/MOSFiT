@@ -1,7 +1,9 @@
+import datetime
 import importlib
 import json
 import logging
 import sys
+import time
 from collections import OrderedDict
 from math import isnan
 
@@ -9,9 +11,8 @@ import emcee
 import numpy as np
 from emcee.utils import MPIPool
 from scipy.optimize import basinhopping
-from tqdm import tqdm
 
-from .utils import listify, pretty_num
+from .utils import listify, pretty_num, print_inline, round_sig
 
 
 class Model:
@@ -151,9 +152,10 @@ class Model:
                  data,
                  plot_points=[],
                  iterations=10,
-                 frackstep=100,
+                 frack_step=100,
                  num_walkers=100,
-                 num_temps=2):
+                 num_temps=2,
+                 fracking=True):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if cur_task['kind'] == 'data':
@@ -171,18 +173,17 @@ class Model:
         pool = MPIPool(loadbalance=True)
 
         if pool.is_master():
-            print('{} dimensions in problem.'.format(ndim), flush=True)
+            print_inline('{} dimensions in problem.'.format(ndim))
             p0 = [[] for x in range(ntemps)]
 
-            pbar = tqdm(
-                total=nwalkers * ntemps, desc='Drawing initial walkers')
             for i, pt in enumerate(p0):
                 while len(p0[i]) < nwalkers:
+                    print_inline(
+                        'Drawing initial walkers | Progress: {}/{}'.format(
+                            i * nwalkers + len(p0[i]), nwalkers * ntemps))
                     nmap = min(nwalkers - len(p0[i]), 4 * pool.size)
                     p0[i].extend(pool.map(self.draw_walker, range(nmap)))
-                    pbar.update(nmap)
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
-            pbar.close()
         else:
             pool.wait()
             sys.exit(0)
@@ -190,31 +191,45 @@ class Model:
         sampler = emcee.PTSampler(
             ntemps, nwalkers, ndim, self.likelihood, self.prior, pool=pool)
 
+        print_inline('Initial draws completed!\n')
+        print_inline('Running PTSampler')
         p = p0.copy()
-        for b in tqdm(range(max(round(iterations/frackstep), 1))):
-            for p, lnprob, lnlike in tqdm(
-                    sampler.sample(
-                        p, iterations=frackstep),
-                    total=frackstep,
-                    desc='Running Parallel-Tempered Monte Carlo'):
-                # pass
-                print(
-                    '\nBest ensemble scores: [ ' + ','.join(
-                        [pretty_num(max(x)) for x in lnprob]) + ' ]',
-                    flush=True)
+        frack_iters = max(round(iterations / frack_step), 1)
+        emcee_est_t = 0.0
+        bh_est_t = 0.0
+        for b in range(frack_iters):
+            emi = 0
+            emcee_st = time.time()
+            for p, lnprob, lnlike in sampler.sample(p, iterations=frack_step):
+                scorestring = ','.join([pretty_num(max(x)) for x in lnprob])
+                timestring = str(datetime.timedelta(seconds=(
+                    round_sig(emcee_est_t + bh_est_t)))).rstrip('.0')
+                print_inline('Running PTSampler | Best scores: [ {} ] | '
+                             'Progress: {}/{} | '
+                             'Estimated time left: {}s'.format(
+                                 scorestring, b * frack_step + emi, iterations,
+                                 timestring))
+                emi = emi + 1
+                emcee_est_t = float(time.time() - emcee_st) / emi * (
+                    iterations - (b * frack_step + emi))
 
-            ris, rjs = np.random.randint(
-                ntemps, size=pool.size), np.random.randint(
+            if fracking:
+                print_inline('Running Basin-hopping')
+                ris, rjs = [0] * pool.size, np.random.randint(
                     nwalkers, size=pool.size)
 
-            bhs = pool.map(self.basinhop, [p[i][j] for i, j in zip(ris, rjs)])
-            for bhi, bh in enumerate(bhs):
-                p[ris[bhi]][rjs[bhi]] = bh.x
-            print(
-                '\nBasin-hopping scores: [ ' + ','.join(
-                    [pretty_num(x.fun) for x in bhs]) + ' ]',
-                flush=True)
-
+                bhs = pool.map(self.basinhop,
+                               [p[i][j] for i, j in zip(ris, rjs)])
+                bh_st = time.time()
+                for bhi, bh in enumerate(bhs):
+                    p[ris[bhi]][rjs[bhi]] = bh.x
+                bh_est_t = float(time.time() - bh_st) * (frack_iters - b - 1)
+                scorestring = ','.join([pretty_num(-x.fun) for x in bhs])
+                timestring = str(datetime.timedelta(seconds=(
+                    round_sig(emcee_est_t + bh_est_t)))).rstrip('.0')
+                print_inline('Running Basin-hopping | Scores: [ {} ] | '
+                             'Estimated time left {}s'.format(scorestring,
+                                                              timestring))
         pool.close()
 
         bestprob = -np.inf
