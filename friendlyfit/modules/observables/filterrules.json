@@ -24,7 +24,10 @@
             "z'":"sdss_z_atm.dat",
             "W1":"UVOT_uvw1.dat",
             "W2":"UVOT_uvw2.dat",
-            "M2":"UVOT_uvm2.dat"
+            "M2":"UVOT_uvm2.dat",
+            "J":"J.dat",
+            "H":"H.dat",
+            "K":"K.dat"
         }
     }
 ]
