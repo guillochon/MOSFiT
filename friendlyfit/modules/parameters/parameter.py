@@ -21,6 +21,9 @@ class Parameter(Module):
             self._max_value = np.log(self._max_value)
 
     def process(self, **kwargs):
+        """Initialize a parameter based upon either a fixed value or a
+        distribution, if one is defined.
+        """
         if self._min_value is None or self._max_value is None:
             value = self._value
         else:

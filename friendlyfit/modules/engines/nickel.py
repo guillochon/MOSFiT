@@ -33,5 +33,5 @@ class Nickel(Module):
 
         luminosities = [x * y * self.DECAY_CONST
                         for x, y in zip(decay_facs, current_mnickel)]
-        print(max(luminosities))
+
         return {'luminosities': luminosities}

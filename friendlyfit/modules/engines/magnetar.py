@@ -39,5 +39,4 @@ class Magnetar(Module):
             luminosities = [x + y
                             for x, y in zip(old_luminosities, luminosities)]
 
-        #        print(max(luminosities))
         return {'luminosities': luminosities}

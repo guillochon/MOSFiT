@@ -1,7 +1,7 @@
 from math import pi
 
-import numpy as np
 import numexpr as ne
+import numpy as np
 from astropy import constants as c
 
 from ...constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
@@ -50,16 +50,17 @@ class EnvelopeCore(SED):
                 self._times[li] - self._t_explosion) * DAY_CGS
 
             # Compute density in core
-            rho_core = 3.0 * self._m_ejecta * M_SUN_CGS / (4.0 * pi *
-                radius**3)
+            rho_core = (3.0 * self._m_ejecta * M_SUN_CGS /
+                        (4.0 * pi * radius**3))
 
             # Attach power-law envelope of negligible mass
             tau_e = self._kappa * rho_core * radius / (slope - 1.0)
 
             # Find location of photosphere in envelope/core
             if tau_e > 0.667:
-                radius_phot = (2.0 * (slope - 1.0) / (3.0 * self._kappa *
-                    rho_core * radius**slope))**(1.0 / (1.0 - slope))
+                radius_phot = (2.0 * (slope - 1.0) /
+                               (3.0 * self._kappa * rho_core *
+                                radius**slope))**(1.0 / (1.0 - slope))
             else:
                 radius_phot = slope * radius / (slope - 1.0) - 2.0 / (
                     3.0 * self._kappa * rho_core)
@@ -73,8 +74,6 @@ class EnvelopeCore(SED):
             else:
                 radius2 = rec_radius**2
                 temperature = self._temperature
-
-
 
             if li == 0:
                 sed = ne.evaluate('fc * radius2 * rest_freqs**3 / '

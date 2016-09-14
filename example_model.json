@@ -62,8 +62,7 @@
             "mejecta",
             "fnickel",
             "texplosion"
-        ],
-        "outputs":"luminosities"
+        ]
     },
     "diffusion":{
         "kind":"transform",
@@ -74,8 +73,7 @@
             "mejecta",
             "texplosion",
             "vejecta"
-        ],
-        "outputs":"luminosities"
+        ]
     },
     "photosphere":{
         "kind":"sed",
@@ -83,8 +81,7 @@
             "texplosion",
             "diffusion",
             "temperature"
-        ],
-        "outputs":"seds"
+        ]
     },
     "filter":{
         "kind":"observable",
@@ -95,8 +92,7 @@
         "requests":[
             ["bandwavelengths", "bandnames"],
             []
-        ],
-        "outputs":"model_magnitudes"
+        ]
     },
     "likelihood":{
         "kind":"objective",

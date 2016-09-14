@@ -18,7 +18,6 @@ class Likelihood(Module):
     def process(self, **kwargs):
         self._model_mags = kwargs['model_magnitudes']
         self._fractions = kwargs['fractions']
-        # raise SystemExit
         for mag in self._model_mags:
             if isnan(mag):
                 return {'value': LIKELIHOOD_FLOOR}
@@ -26,9 +25,6 @@ class Likelihood(Module):
         self._mags = kwargs['magnitudes']
         self._e_mags = kwargs['e_magnitudes']
         self._n_mags = len(self._mags)
-
-        # print(self._variance2, self._mags[:5], self._e_mags[:5],
-        #       self._model_mags[:5])
 
         value = -0.5 * np.sum(
             [(x - y)**2 /
