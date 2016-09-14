@@ -10,7 +10,7 @@ import numpy as np
 from emcee.utils import MPIPool
 from tqdm import tqdm
 
-from .utils import pretty_num
+from .utils import pretty_num, listify
 
 
 class Model:
@@ -85,12 +85,7 @@ class Model:
             if class_name == 'filter':
                 self._bands = self._modules[task].band_names()
             if 'requests' in cur_task:
-                inputs = []
-                if 'inputs' in cur_task:
-                    if isinstance(cur_task['inputs'], str):
-                        inputs = [cur_task['inputs']]
-                    else:
-                        inputs = cur_task['inputs']
+                inputs = listify(cur_task.get('inputs', []))
                 for i, inp in enumerate(inputs):
                     requests = {}
                     parent = ''
@@ -124,12 +119,7 @@ class Model:
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 trees[tag] = entry
-                inputs = []
-                if 'inputs' in entry:
-                    if isinstance(entry['inputs'], str):
-                        inputs = [entry['inputs']]
-                    else:
-                        inputs = entry['inputs']
+                inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
                     children = {}
                     self.construct_trees(

@@ -19,3 +19,9 @@ def round_sig(x, sig=4):
     if x == 0.0:
         return 0.0
     return round(x, sig - int(floor(log10(abs(x)))) - 1)
+
+
+def listify(x):
+    if not isinstance(x, list):
+        return [x]
+    return x
