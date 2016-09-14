@@ -10,7 +10,7 @@ import numpy as np
 from emcee.utils import MPIPool
 from tqdm import tqdm
 
-from .utils import pretty_num, listify
+from .utils import listify, pretty_num
 
 
 class Model:
@@ -44,17 +44,23 @@ class Model:
         unsorted_call_stack = {}
         self._max_depth_all = -1
         for tag in self._model:
-            if self._model[tag]['kind'] in root_kinds:
+            cur_model = self._model[tag]
+            roots = []
+            if cur_model['kind'] in root_kinds:
                 max_depth = 0
+                roots = [cur_model['kind']]
             else:
                 max_depth = -1
                 for tag2 in trees:
+                    roots.extend(trees[tag2]['roots'])
                     depth = self.get_max_depth(tag, trees[tag2], max_depth)
                     if depth > max_depth:
                         max_depth = depth
                     if depth > self._max_depth_all:
                         self._max_depth_all = depth
-            new_entry = self._model[tag].copy()
+            roots = list(set(roots))
+            new_entry = cur_model.copy()
+            new_entry['roots'] = roots
             if 'children' in new_entry:
                 del (new_entry['children'])
             new_entry['depth'] = max_depth
@@ -100,65 +106,33 @@ class Model:
                         requests[req] = self._modules[task].request(req)
                     self._modules[parent].handle_requests(**requests)
 
-    def get_max_depth(self, tag, parent, max_depth):
-        for child in parent.get('children', []):
-            if child == tag:
-                new_max = parent['children'][child]['depth']
-                if new_max > max_depth:
-                    max_depth = new_max
-            else:
-                new_max = self.get_max_depth(tag, parent['children'][child],
-                                             max_depth)
-                if new_max > max_depth:
-                    max_depth = new_max
-        return max_depth
-
-    def construct_trees(self, d, trees, kinds=[], name='', depth=0):
+    def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         for tag in d:
             entry = d[tag].copy()
+            new_roots = roots
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
+                if entry['kind'] in kinds:
+                    new_roots.append(entry['kind'])
+                entry['roots'] = list(set(new_roots))
                 trees[tag] = entry
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
                     children = {}
                     self.construct_trees(
-                        d, children, name=inp, depth=depth + 1)
+                        d,
+                        children,
+                        name=inp,
+                        roots=new_roots,
+                        depth=depth + 1)
                     trees[tag].setdefault('children', {})
                     trees[tag]['children'].update(children)
-
-    def run_stack(self, x, root='objective'):
-        inputs = {}
-        outputs = {}
-        pos = 0
-        cur_depth = self._max_depth_all
-        for task in self._call_stack:
-            cur_task = self._call_stack[task]
-            if cur_task['kind'] == 'output' and root != 'output':
-                continue
-            if cur_task['depth'] != cur_depth:
-                inputs = outputs
-            cur_depth = cur_task['depth']
-            if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
-                    'max_value' in cur_task):
-                inputs.update({'fraction': x[pos]})
-                inputs.setdefault('fractions', []).append(x[pos])
-                pos = pos + 1
-            new_outs = self._modules[task].process(**inputs)
-            outputs.update(new_outs)
-
-            if cur_task['kind'] == root:
-                if root == 'objective':
-                    return outputs['value']
-
-    def prior(self, data):
-        return 0.0
 
     def draw_walker(self, arg):
         p = None
         while p is None:
             draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
-            score = self.run_stack(draw, root='objective')
+            score = self.likelihood(draw)
             if not isnan(score) and np.isfinite(score):
                 p = draw
         return p
@@ -193,9 +167,8 @@ class Model:
                 total=nwalkers * ntemps, desc='Drawing initial walkers')
             for i, pt in enumerate(p0):
                 while len(p0[i]) < nwalkers:
-                    nmap = min(nwalkers - len(p0[i]), 4*pool.size)
-                    p0[i].extend(
-                        pool.map(self.draw_walker, range(nmap)))
+                    nmap = min(nwalkers - len(p0[i]), 4 * pool.size)
+                    p0[i].extend(pool.map(self.draw_walker, range(nmap)))
                     pbar.update(nmap)
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
             pbar.close()
@@ -204,13 +177,7 @@ class Model:
             sys.exit(0)
 
         sampler = emcee.PTSampler(
-            ntemps,
-            nwalkers,
-            ndim,
-            self.run_stack,
-            self.prior,
-            loglargs=['objective'],
-            pool=pool)
+            ntemps, nwalkers, ndim, self.likelihood, self.prior, pool=pool)
         for p, lnprob, lnlike in tqdm(
                 sampler.sample(
                     p0, iterations=iterations),
@@ -234,3 +201,53 @@ class Model:
         self.run_stack(bestx, root='output')
 
         return (p, lnprob)
+
+    def get_max_depth(self, tag, parent, max_depth):
+        for child in parent.get('children', []):
+            if child == tag:
+                new_max = parent['children'][child]['depth']
+                if new_max > max_depth:
+                    max_depth = new_max
+            else:
+                new_max = self.get_max_depth(tag, parent['children'][child],
+                                             max_depth)
+                if new_max > max_depth:
+                    max_depth = new_max
+        return max_depth
+
+    def likelihood(self, x):
+        """Return score related to maximum likelihood.
+        """
+        outputs = self.run_stack(x, root='objective')
+        return outputs['value']
+
+    def prior(self, data):
+        """Return score related to paramater priors.
+        """
+        return 0.0
+
+    def run_stack(self, x, root='objective'):
+        """Run a stack of modules as defined in the model definition file. Only
+        run functions that match the specified root.
+        """
+        inputs = {}
+        outputs = {}
+        pos = 0
+        cur_depth = self._max_depth_all
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if root not in cur_task['roots']:
+                continue
+            if cur_task['depth'] != cur_depth:
+                inputs = outputs
+            cur_depth = cur_task['depth']
+            if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
+                    'max_value' in cur_task):
+                inputs.update({'fraction': x[pos]})
+                inputs.setdefault('fractions', []).append(x[pos])
+                pos = pos + 1
+            new_outs = self._modules[task].process(**inputs)
+            outputs.update(new_outs)
+
+            if cur_task['kind'] == root:
+                return outputs
