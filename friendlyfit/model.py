@@ -200,10 +200,12 @@ class Model:
         for b in range(frack_iters):
             emi = 0
             emcee_st = time.time()
-            for p, lnprob, lnlike in sampler.sample(p, iterations=frack_step):
+            for p, lnprob, lnlike in sampler.sample(
+                    p, iterations=min(frack_step, iterations)):
                 scorestring = ','.join([pretty_num(max(x)) for x in lnprob])
-                timestring = str(datetime.timedelta(seconds=(
-                    round_sig(emcee_est_t + bh_est_t)))).rstrip('.0')
+                timestring = str(
+                    datetime.timedelta(seconds=(round_sig(
+                        emcee_est_t + bh_est_t)))).rstrip('.0')
                 print_inline('Running PTSampler | Best scores: [ {} ] | '
                              'Progress: {}/{} | '
                              'Estimated time left: {}s'.format(
@@ -225,8 +227,9 @@ class Model:
                     p[ris[bhi]][rjs[bhi]] = bh.x
                 bh_est_t = float(time.time() - bh_st) * (frack_iters - b - 1)
                 scorestring = ','.join([pretty_num(-x.fun) for x in bhs])
-                timestring = str(datetime.timedelta(seconds=(
-                    round_sig(emcee_est_t + bh_est_t)))).rstrip('.0')
+                timestring = str(
+                    datetime.timedelta(seconds=(round_sig(
+                        emcee_est_t + bh_est_t)))).rstrip('.0')
                 print_inline('Running Basin-hopping | Scores: [ {} ] | '
                              'Estimated time left {}s'.format(scorestring,
                                                               timestring))
