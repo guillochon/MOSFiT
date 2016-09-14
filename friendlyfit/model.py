@@ -191,7 +191,7 @@ class Model:
             ntemps, nwalkers, ndim, self.likelihood, self.prior, pool=pool)
 
         p = p0.copy()
-        for b in tqdm(range(round(iterations/frackstep))):
+        for b in tqdm(range(max(round(iterations/frackstep), 1))):
             for p, lnprob, lnlike in tqdm(
                     sampler.sample(
                         p, iterations=frackstep),
