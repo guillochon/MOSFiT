@@ -107,6 +107,8 @@ class Model:
                     self._modules[parent].handle_requests(**requests)
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
+        """Construct call trees for each root.
+        """
         for tag in d:
             entry = d[tag].copy()
             new_roots = roots
@@ -129,6 +131,9 @@ class Model:
                     trees[tag]['children'].update(children)
 
     def draw_walker(self, arg):
+        """Draw a walker randomly from the full range of all parameters, reject
+        walkers that return invalid scores.
+        """
         p = None
         while p is None:
             draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
@@ -203,6 +208,8 @@ class Model:
         return (p, lnprob)
 
     def get_max_depth(self, tag, parent, max_depth):
+        """Return the maximum depth a given task is found in a tree.
+        """
         for child in parent.get('children', []):
             if child == tag:
                 new_max = parent['children'][child]['depth']
