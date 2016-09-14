@@ -8,6 +8,7 @@ from math import isnan
 import emcee
 import numpy as np
 from emcee.utils import MPIPool
+from scipy.optimize import basinhopping
 from tqdm import tqdm
 
 from .utils import listify, pretty_num
@@ -106,6 +107,10 @@ class Model:
                         requests[req] = self._modules[task].request(req)
                     self._modules[parent].handle_requests(**requests)
 
+    def basinhop(self, x):
+        bh = basinhopping(self.bhprob, x, niter=10)
+        return bh
+
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root.
         """
@@ -146,6 +151,7 @@ class Model:
                  data,
                  plot_points=[],
                  iterations=10,
+                 frackstep=100,
                  num_walkers=100,
                  num_temps=2):
         for task in self._call_stack:
@@ -183,16 +189,32 @@ class Model:
 
         sampler = emcee.PTSampler(
             ntemps, nwalkers, ndim, self.likelihood, self.prior, pool=pool)
-        for p, lnprob, lnlike in tqdm(
-                sampler.sample(
-                    p0, iterations=iterations),
-                total=iterations,
-                desc='Running Parallel-Tempered Monte Carlo'):
-            # pass
+
+        p = p0.copy()
+        for b in tqdm(range(round(iterations/frackstep))):
+            for p, lnprob, lnlike in tqdm(
+                    sampler.sample(
+                        p, iterations=frackstep),
+                    total=frackstep,
+                    desc='Running Parallel-Tempered Monte Carlo'):
+                # pass
+                print(
+                    '\nBest ensemble scores: [ ' + ','.join(
+                        [pretty_num(max(x)) for x in lnprob]) + ' ]',
+                    flush=True)
+
+            ris, rjs = np.random.randint(
+                ntemps, size=pool.size), np.random.randint(
+                    nwalkers, size=pool.size)
+
+            bhs = pool.map(self.basinhop, [p[i][j] for i, j in zip(ris, rjs)])
+            for bhi, bh in enumerate(bhs):
+                p[ris[bhi]][rjs[bhi]] = bh.x
             print(
-                '\nBest ensemble scores: [ ' + ','.join(
-                    [pretty_num(max(x)) for x in lnprob]) + ' ]',
+                '\nBasin-hopping scores: [ ' + ','.join(
+                    [pretty_num(x.fun) for x in bhs]) + ' ]',
                 flush=True)
+
         pool.close()
 
         bestprob = -np.inf
@@ -232,6 +254,11 @@ class Model:
         """Return score related to paramater priors.
         """
         return 0.0
+
+    def bhprob(self, x):
+        """Return score for basinhopping.
+        """
+        return -self.likelihood(x)
 
     def run_stack(self, x, root='objective'):
         """Run a stack of modules as defined in the model definition file. Only
