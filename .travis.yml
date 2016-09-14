@@ -3,9 +3,6 @@ python:
     - "3.4"
     - "3.5"
 notifications:
-    email:
-        on_failure: change
-        on_success: change
     slack: astrochats:tV2KNwL9jXSGSv5KhulGNVro
 git:
     depth: 3
