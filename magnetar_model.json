@@ -95,7 +95,7 @@
         ],
         "outputs":"luminosities"
     },
-    "photosphere":{
+    "envelopecore":{
         "kind":"sed",
         "inputs":[
             "texplosion",
@@ -107,7 +107,7 @@
     "filter":{
         "kind":"observable",
         "inputs":[
-            "photosphere",
+            "envelopecore",
             "transient"
         ],
         "requests":[
