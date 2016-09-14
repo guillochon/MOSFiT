@@ -28,7 +28,9 @@ class NickelCobalt(Module):
         ts = [np.inf if self._texplosion > x else (x - self._texplosion)
               for x in self._times]
         luminosities = [self._mnickel * (self.NI56_LUM * np.exp(
-            -t / self.NI56_LIFE) + self.CO56_LUM * np.exp(-t / self.CO56_LIFE))
+            -t / self.NI56_LIFE) + self.CO56_LUM * self.CO56_LIFE / 
+            (self.CO56_LIFE - self.NI56_LIFE)
+            * (np.exp(-t / self.CO56_LIFE) - np.exp(-t / self.NI56_LIFE)))
                         for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
