@@ -33,5 +33,11 @@ class Magnetar(Module):
         luminosities = [Ep / tp / (1. + t / tp)**2 for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
+        # Add on to any existing luminosity
+        old_luminosities = kwargs.get('luminosities', None)
+        if old_luminosities is not None:
+            luminosities = [x + y
+                            for x, y in zip(old_luminosities, luminosities)]
+
         #        print(max(luminosities))
         return {'luminosities': luminosities}
