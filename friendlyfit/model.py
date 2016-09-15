@@ -203,9 +203,7 @@ class Model:
             for p, lnprob, lnlike in sampler.sample(
                     p, iterations=min(frack_step, iterations)):
                 scorestring = ','.join([pretty_num(max(x)) for x in lnprob])
-                timestring = str(
-                    datetime.timedelta(seconds=(round_sig(
-                        emcee_est_t + bh_est_t)))).rstrip('.0')
+                timestring = self.get_timestring(emcee_est_t + bh_est_t)
                 print_inline('Running PTSampler | Best scores: [ {} ] | '
                              'Progress: {}/{} | '
                              'Estimated time left: {}s'.format(
@@ -216,7 +214,10 @@ class Model:
                     iterations - (b * frack_step + emi))
 
             if fracking:
-                print_inline('Running Basin-hopping')
+                timestring = self.get_timestring(emcee_est_t + bh_est_t)
+                print_inline(
+                    'Running Basin-hopping | Estimated time left {}s'.format(
+                        timestring))
                 ris, rjs = [0] * pool.size, np.random.randint(
                     nwalkers, size=pool.size)
 
@@ -226,10 +227,8 @@ class Model:
                 for bhi, bh in enumerate(bhs):
                     p[ris[bhi]][rjs[bhi]] = bh.x
                 bh_est_t = float(time.time() - bh_st) * (frack_iters - b - 1)
+                timestring = self.get_timestring(emcee_est_t + bh_est_t)
                 scorestring = ','.join([pretty_num(-x.fun) for x in bhs])
-                timestring = str(
-                    datetime.timedelta(seconds=(round_sig(
-                        emcee_est_t + bh_est_t)))).rstrip('.0')
                 print_inline('Running Basin-hopping | Scores: [ {} ] | '
                              'Estimated time left {}s'.format(scorestring,
                                                               timestring))
@@ -246,6 +245,9 @@ class Model:
         self.run_stack(bestx, root='output')
 
         return (p, lnprob)
+
+    def get_timestring(self, t):
+        return str(datetime.timedelta(seconds=(round_sig(t)))).rstrip('.0')
 
     def get_max_depth(self, tag, parent, max_depth):
         """Return the maximum depth a given task is found in a tree.
