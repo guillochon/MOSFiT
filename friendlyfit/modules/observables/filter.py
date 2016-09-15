@@ -18,20 +18,31 @@ class Filter(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         bands = kwargs.get('bands', '')
+        systems = kwargs.get('systems', '')
+        instruments = kwargs.get('instruments', '')
         bands = [bands] if isinstance(bands, str) else bands
 
         self._bands = []
+        self._systems = []
+        self._instruments = []
         self._paths = []
         with open(
                 os.path.join('friendlyfit', 'modules', 'observables',
                              'filterrules.json')) as f:
             filterrules = json.loads(f.read())
-            for band in bands:
+            for bi, band in enumerate(bands):
                 for rule in filterrules:
-                    for bnd in rule.get("paths", []):
+                    if systems[bi] not in filterrules[rule].get("systems", []):
+                        continue
+                    if (instruments[bi] not in filterrules[rule].get(
+                            "instruments", [])):
+                        continue
+                    for bnd in enumerate(rule.get('filters', [])):
                         if band == bnd or band == '':
                             self._bands.append(bnd)
-                            self._paths.append(rule["paths"][bnd])
+                            self._band_offsets.append(rule['filters'][bnd].get(
+                                'AB-Vega', 0.0))
+                            self._paths.append(rule['filters'][bnd]['path'])
 
         self._band_names = list(set(self._bands))
         self._n_bands = len(self._band_names)

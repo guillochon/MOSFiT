@@ -1,5 +1,5 @@
-from ..module import Module
 from ...utils import is_number
+from ..module import Module
 
 CLASS_NAME = 'Transient'
 
@@ -24,9 +24,13 @@ class Transient(Module):
         for key in self._keys:
             subdata = self._all_data[name][key]
             subkeys = self._keys[key]
+            req_subkeys = [
+                x for x in subkeys
+                if not isinstance(x, dict) or subkeys[x] == 'required'
+            ]
             # Only include data that contains all subkeys
             for entry in subdata:
-                if any([x not in entry for x in subkeys]):
+                if any([x not in entry for x in req_subkeys]):
                     continue
                 skip_key = False
                 for qkey in req_key_values:
@@ -38,9 +42,10 @@ class Transient(Module):
                     continue
                 for x in subkeys:
                     if x == 'value':
-                        self._data[key] = entry[x]
+                        self._data[key] = entry.get(x, '')
                     else:
-                        self._data.setdefault(x + 's', []).append(entry[x])
+                        self._data.setdefault(x + 's',
+                                              []).append(entry.get(x, ''))
 
         for key in self._data.copy():
             if isinstance(self._data[key], list):
