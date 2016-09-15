@@ -6,9 +6,6 @@
         "instruments":[
             ""
         ],
-        "surveys":[
-            ""
-        ],
         "filters":{
             "U":{
                 "path":"bess_u.dat",

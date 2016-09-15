@@ -32,6 +32,7 @@ class Filter(Module):
             filterrules = json.loads(f.read())
             for bi, band in enumerate(bands):
                 for rule in filterrules:
+                    print(filterrules[rule].get("systems", []))
                     if systems[bi] not in filterrules[rule].get("systems", []):
                         continue
                     if (instruments[bi] not in filterrules[rule].get(
@@ -70,7 +71,6 @@ class Filter(Module):
     def process(self, **kwargs):
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
-        self._bands = kwargs['bands']
         eff_fluxes = []
         for li, band in enumerate(self._luminosities):
             cur_band = self._bands[li]
@@ -89,16 +89,16 @@ class Filter(Module):
             eff_fluxes.append(
                 np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi])
-        mags = self.abmag(eff_fluxes)
+        mags = self.abmag(eff_fluxes, self._band_offsets)
         return {'model_magnitudes': mags}
 
     def band_names(self):
         return self._band_names
 
-    def abmag(self, eff_fluxes):
+    def abmag(self, eff_fluxes, offsets):
         return [(np.inf if x == 0.0 else
-                 (AB_OFFSET - MAG_FAC * (np.log10(x) - self._dist_const)))
-                for x in eff_fluxes]
+                 (y + AB_OFFSET - MAG_FAC * (np.log10(x) - self._dist_const)))
+                for x, y in zip(eff_fluxes, offsets)]
 
     def request(self, request):
         if request == 'bandnames':

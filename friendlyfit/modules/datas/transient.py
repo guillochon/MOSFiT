@@ -47,6 +47,8 @@ class Transient(Module):
                         self._data.setdefault(x + 's',
                                               []).append(entry.get(x, ''))
 
+        print(list(self._data.keys()))
+
         for key in self._data.copy():
             if isinstance(self._data[key], list):
                 if not all(is_number(x) for x in self._data[key]):
