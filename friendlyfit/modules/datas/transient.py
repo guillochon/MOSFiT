@@ -26,7 +26,7 @@ class Transient(Module):
             subkeys = self._keys[key]
             req_subkeys = [
                 x for x in subkeys
-                if not isinstance(x, dict) or subkeys[x] == 'required'
+                if not isinstance(subkeys, dict) or subkeys[x] == 'required'
             ]
             # Only include data that contains all subkeys
             for entry in subdata:
@@ -46,8 +46,6 @@ class Transient(Module):
                     else:
                         self._data.setdefault(x + 's',
                                               []).append(entry.get(x, ''))
-
-        print(list(self._data.keys()))
 
         for key in self._data.copy():
             if isinstance(self._data[key], list):

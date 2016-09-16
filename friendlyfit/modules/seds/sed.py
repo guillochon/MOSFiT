@@ -2,7 +2,6 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 
-from ...constants import C_CGS
 from ..module import Module
 
 CLASS_NAME = 'SED'
