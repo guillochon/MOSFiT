@@ -40,6 +40,8 @@ class Fitter():
             # If the event name ends in .json, assume a path
             if event.endswith('.json'):
                 path = event
+                event_name = event.replace('.json', '')
+            # If not (or the file doesn't exist), download from OSC
             if not path or not os.path.exists(path):
                 names_path = os.path.join(
                         dir_path, 'cache', 'names.min.json')
@@ -59,18 +61,18 @@ class Fitter():
                     print('Error: Could not read list of SN names!')
                     raise RuntimeError
 
-                urlname = ''
+                event_name = ''
                 if event in names:
-                    urlname = event
+                    event_name = event
                 else:
                     for name in names:
                         if event in names[name]:
-                            urlname = name
+                            event_name = name
                             break
-                if not urlname:
+                if not event_name:
                     print('Error: Could not find event by that name!')
                     raise RuntimeError
-                urlname = urlname + '.json'
+                urlname = event_name + '.json'
 
                 name_path = os.path.join(dir_path, 'cache', urlname)
                 try:
@@ -102,6 +104,7 @@ class Fitter():
 
                     (walkers, prob) = model.fit_data(
                         data,
+                        event_name=event_name,
                         plot_points=plot_points,
                         iterations=iterations,
                         num_walkers=num_walkers,

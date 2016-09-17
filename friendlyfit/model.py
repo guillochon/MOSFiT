@@ -166,6 +166,7 @@ class Model:
 
     def fit_data(self,
                  data,
+                 event_name='',
                  plot_points=[],
                  iterations=10,
                  frack_step=100,
@@ -182,7 +183,10 @@ class Model:
 
         ntemps, ndim, nwalkers = (num_temps, self._num_free_parameters,
                                   num_walkers)
+        self._event_name = event_name
         self._n_dim = ndim
+        self._emcee_est_t = 0.0
+        self._bh_est_t = 0.0
         # p0 = np.random.uniform(
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
@@ -203,9 +207,10 @@ class Model:
 
             for i, pt in enumerate(p0):
                 while len(p0[i]) < nwalkers:
-                    print_inline(
-                        'Drawing initial walkers | Progress: {}/{}'.format(
-                            i * nwalkers + len(p0[i]), nwalkers * ntemps))
+                    self.print_status(
+                        desc='Drawing initial walkers',
+                        progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps
+                                  ])
                     if psize == 1:
                         p0[i].append(self.draw_walker())
                     else:
@@ -220,46 +225,42 @@ class Model:
                                   self.prior, **sampler_args)
 
         print_inline('Initial draws completed!\n')
-        print_inline('Running PTSampler')
         p = p0.copy()
         frack_iters = max(round(iterations / frack_step), 1)
-        emcee_est_t = 0.0
-        bh_est_t = 0.0
         for b in range(frack_iters):
             emi = 0
-            emcee_st = time.time()
+            st = time.time()
             for p, lnprob, lnlike in sampler.sample(
                     p, iterations=min(frack_step, iterations)):
-                scorestring = ','.join([pretty_num(max(x)) for x in lnprob])
-                timestring = self.get_timestring(emcee_est_t + bh_est_t)
                 emi = emi + 1
-                print_inline(' | '.join([
-                    'Running PTSampler', 'Best scores: [ {} ]',
-                    'Progress: {}/{}', timestring
-                ]).format(scorestring, b * frack_step + emi, iterations,
-                          timestring))
-                emcee_est_t = float(time.time() - emcee_st) / emi * (
+                self._emcee_est_t = float(time.time() - st) / emi * (
                     iterations - (b * frack_step + emi))
+                self.print_status(
+                    desc='Running PTSampler',
+                    scores=[max(x) for x in lnprob],
+                    progress=[b * frack_step + emi, iterations])
 
             if fracking:
-                timestring = self.get_timestring(emcee_est_t + bh_est_t)
-                print_inline(' | '.join(['Running Basin-hopping', timestring]))
+                self.print_status(
+                    desc='Running Basin-hopping',
+                    progress=[(b + 1) * frack_step, iterations])
                 ris, rjs = [0] * psize, np.random.randint(nwalkers, size=psize)
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
-                bh_st = time.time()
+                st = time.time()
                 if psize == 1:
                     bhs = list(map(self.basinhop, bhwalkers))
                 else:
                     bhs = pool.map(self.basinhop, bhwalkers)
                 for bhi, bh in enumerate(bhs):
                     p[ris[bhi]][rjs[bhi]] = bh.x
-                bh_est_t = float(time.time() - bh_st) * (frack_iters - b - 1)
-                timestring = self.get_timestring(emcee_est_t + bh_est_t)
-                scorestring = ','.join([pretty_num(-x.fun) for x in bhs])
-                print_inline('Running Basin-hopping | Scores: [ {} ] | '
-                             'Estimated time left {}'.format(scorestring,
-                                                             timestring))
+                self._bh_est_t = float(time.time() - st) * (
+                    frack_iters - b - 1)
+                scores = [-x.fun for x in bhs]
+                self.print_status(
+                    desc='Running Basin-hopping',
+                    scores=scores,
+                    progress=[(b + 1) * frack_step, iterations])
         if psize > 1:
             pool.close()
 
@@ -275,8 +276,26 @@ class Model:
 
         return (p, lnprob)
 
+    def print_status(self, desc='', scores='', progress=''):
+        outarr = [self._event_name]
+        if desc:
+            outarr.append(desc)
+        if isinstance(scores, list):
+            scorestring = 'Best scores: [ ' + ','.join(
+                [pretty_num(x) for x in scores]) + ' ]'
+            outarr.append(scorestring)
+        if isinstance(progress, list):
+            progressstring = 'Progress: [ {}/{} ]'.format(*progress)
+            outarr.append(progressstring)
+        if self._emcee_est_t + self._bh_est_t > 0.0:
+            timestring = self.get_timestring(self._emcee_est_t +
+                                             self._bh_est_t)
+            outarr.append(timestring)
+
+        print_inline(' | '.join(outarr))
+
     def get_timestring(self, t):
-        return ('Estimated time left [ ' + str(
+        return ('Estimated time left: [ ' + str(
             datetime.timedelta(seconds=(round_sig(t)))).rstrip('0').rstrip('.')
                 + ' ]')
 
