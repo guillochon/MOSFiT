@@ -129,6 +129,8 @@ class Model:
                     self._modules[parent].handle_requests(**requests)
 
     def basinhop(self, x):
+        """Perform Basin-hopping upon a single walker.
+        """
         bh = basinhopping(self.bhprob, x, niter=10)
         return bh
 
@@ -177,6 +179,9 @@ class Model:
                  num_walkers=100,
                  num_temps=2,
                  fracking=True):
+        """Fit the data for a given event with this model using a combination
+        of emcee and Basin-hopping.
+        """
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             self._modules[task].set_event_name(event_name)
@@ -284,11 +289,13 @@ class Model:
         return (p, lnprob)
 
     def print_status(self, desc='', scores='', progress=''):
+        """Prints a status message showing the current state of the fitting process.
+        """
         outarr = [self._event_name]
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ','.join(
+            scorestring = 'Best scores: [ ' + ', '.join(
                 [pretty_num(x) for x in scores]) + ' ]'
             outarr.append(scorestring)
         if isinstance(progress, list):
@@ -302,6 +309,9 @@ class Model:
         print_inline(' | '.join(outarr), new_line=self._travis)
 
     def get_timestring(self, t):
+        """Return a string showing the estimated remaining time based upon
+        elapsed times for emcee and Basin-hopping.
+        """
         return ('Estimated time left: [ ' + str(
             datetime.timedelta(seconds=(round_sig(t)))).rstrip('0').rstrip('.')
                 + ' ]')
