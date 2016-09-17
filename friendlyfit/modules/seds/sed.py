@@ -36,7 +36,7 @@ class SED(Module):
         old_seds = kwargs.get('seds', None)
         if old_seds is not None:
             new_seds = [(i + j for i, j in zip(x, y))
-                        for x, y in zip(old_seds, new_seds)]
+                        for x, y in zip(old_seds, list(new_seds))]
         return new_seds
 
     def request(self, request):

@@ -197,6 +197,7 @@ class Model:
         self._n_dim = ndim
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
+        self._fracking = fracking
         # p0 = np.random.uniform(
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
@@ -255,6 +256,7 @@ class Model:
             if fracking:
                 self.print_status(
                     desc='Running Basin-hopping',
+                    scores=[max(x) for x in lnprob],
                     progress=[(b + 1) * frack_step, iterations])
                 ris, rjs = [0] * psize, np.random.randint(nwalkers, size=psize)
 
@@ -284,7 +286,17 @@ class Model:
                     bestprob = prob
                     bestx = p[i][j]
 
-        self.run_stack(bestx, root='output')
+        walkers_out = OrderedDict()
+        for xi, x in enumerate(p[0]):
+            walkers_out[xi] = self.run_stack(x, root='output')
+            walkers_out[xi]['score'] = lnprob[0][xi]
+
+        with open(os.path.join('products', 'walkers.json'),
+                  'w') as flast, open(
+                      os.path.join('products', self._event_name + '.json'),
+                      'w') as f:
+            json.dump(walkers_out, flast)
+            json.dump(walkers_out, f)
 
         return (p, lnprob)
 
@@ -302,8 +314,11 @@ class Model:
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
             outarr.append(progressstring)
         if self._emcee_est_t + self._bh_est_t > 0.0:
-            timestring = self.get_timestring(self._emcee_est_t +
-                                             self._bh_est_t)
+            if self._bh_est_t > 0.0 or not self._fracking:
+                tott = self._emcee_est_t + self._bh_est_t
+            else:
+                tott = 2.0 * self._emcee_est_t
+            timestring = self.get_timestring(tott)
             outarr.append(timestring)
 
         print_inline(' | '.join(outarr), new_line=self._travis)

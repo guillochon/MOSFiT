@@ -63,7 +63,7 @@ class Photosphere(SED):
             #     (self.FLUX_CONST * radius2 * x / y)
             #     for x, y in zip(rest_freqs3, a)
             # ]
-            seds.append(sed)
+            seds.append(list(sed))
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 

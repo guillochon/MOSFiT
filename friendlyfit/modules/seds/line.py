@@ -24,7 +24,7 @@ class Line(SED):
 
             # Dummy function for now, needs implementation
             sed = [0.0 for x in rest_freqs]
-            seds.append(sed)
+            seds.append(list(sed))
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
