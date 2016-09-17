@@ -3,9 +3,9 @@
         "kind":"data",
         "keys":{
             "photometry":{
-                "time":"required",
-                "magnitude":"required",
-                "e_magnitude":"required",
+                "time":["required", "numeric"],
+                "magnitude":["required", "numeric"],
+                "e_magnitude":["required", "numeric"],
                 "band":"required",
                 "instrument":"optional",
                 "system":"optional",
