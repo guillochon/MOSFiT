@@ -206,7 +206,7 @@ class Model:
         sampler_args = {}
         serial = False
         try:
-            pool = MPIPool(loadbalance=True)
+            pool = MPIPool()
         except ValueError:
             psize = 1
             serial = True
@@ -234,7 +234,7 @@ class Model:
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
         else:
             pool.wait()
-            sys.exit(0)
+            return
 
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
                                   self.prior, **sampler_args)
@@ -278,8 +278,6 @@ class Model:
                     desc='Running Basin-hopping',
                     scores=scores,
                     progress=[(b + 1) * frack_step, iterations])
-        if not serial:
-            pool.close()
 
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):

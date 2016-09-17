@@ -26,7 +26,7 @@ class Fitter():
                    travis=False,
                    post_burn=500):
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        event_name = ''
+
         for event in events:
             pool = ''
             try:
@@ -35,7 +35,7 @@ class Fitter():
                 pass
             except:
                 raise
-
+            event_name = ''
             if not pool or pool.is_master():
                 path = ''
                 # If the event name ends in .json, assume a path
@@ -112,7 +112,7 @@ class Fitter():
                         parameter_path=parameter_path,
                         travis=travis)
 
-                    (walkers, prob) = model.fit_data(
+                    model.fit_data(
                         data,
                         event_name=event_name,
                         plot_points=plot_points,
@@ -122,3 +122,5 @@ class Fitter():
                         fracking=fracking,
                         frack_step=frack_step,
                         post_burn=post_burn)
+            if pool:
+                pool.close()
