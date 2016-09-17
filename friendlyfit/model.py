@@ -2,6 +2,7 @@ import datetime
 import importlib
 import json
 import logging
+import os
 import sys
 import time
 from collections import OrderedDict
@@ -19,13 +20,28 @@ class Model:
     """Define a semi-analytical model to fit transients with.
     """
 
-    def __init__(self,
-                 parameter_path='parameters.json',
-                 model_path='example_model.json'):
-        self._model_path = model_path
-        with open(model_path, 'r') as f:
+    def __init__(self, parameter_path='parameters.json', model='default'):
+        self._model_name = model
+        # Load the model file.
+        with open(
+                os.path.join('friendlyfit', 'models', model, model + '.json'),
+                'r') as f:
             self._model = json.loads(f.read())
-        with open(parameter_path, 'r') as f:
+
+        # Load model parameter file.
+        model_pp = os.path.join('friendlyfit', 'models', model,
+                                'parameters.json')
+        # First try user-specified path
+        if parameter_path and os.path.isfile(parameter_path):
+            pp = parameter_path
+        # Then try directory we are running from
+        elif os.path.isfile('parameter.json'):
+            pp = 'parameter.json'
+        # Finally try model folder
+        elif os.path.isfile(model_pp):
+            pp = model_pp
+
+        with open(pp, 'r') as f:
             self._parameters = json.loads(f.read())
         self._num_free_parameters = len(
             [x for x in self._parameters

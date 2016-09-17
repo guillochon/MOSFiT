@@ -11,7 +11,7 @@ class Fitter():
     """
 
     def fit_events(event_paths=[],
-                   model_paths=[],
+                   models=[],
                    plot_points=100,
                    iterations=10,
                    num_walkers=100,
@@ -22,10 +22,10 @@ class Fitter():
         for path in event_paths:
             with open(path, 'r') as f:
                 data = json.loads(f.read())
-            for model_path in model_paths:
+            for model in models:
                 for parameter_path in parameter_paths:
                     model = Model(
-                        model_path=model_path, parameter_path=parameter_path)
+                        model=model, parameter_path=parameter_path)
 
                     (walkers, prob) = model.fit_data(
                         data,

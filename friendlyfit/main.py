@@ -19,17 +19,17 @@ def main():
         nargs='+')
 
     parser.add_argument(
-        '--model-paths',
+        '--models',
         '-m',
-        dest='model_paths',
-        default=['example_model.json'],
+        dest='models',
+        default=['default'],
         nargs='+')
 
     parser.add_argument(
         '--parameter-paths',
         '-P',
         dest='parameter_paths',
-        default=['parameters.json'],
+        default=[''],
         nargs='+')
 
     parser.add_argument('--plot-points', dest='plot_points', default=100)
@@ -56,7 +56,7 @@ def main():
 
     """Then, fit the listed events with the listed models.
     """
-    Fitter.fit_events(args.event_paths, args.model_paths, args.plot_points,
+    Fitter.fit_events(args.event_paths, args.models, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps,
                       args.parameter_paths, args.fracking, args.frack_step)
 
