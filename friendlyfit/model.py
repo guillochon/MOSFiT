@@ -152,7 +152,7 @@ class Model:
                     trees[tag].setdefault('children', {})
                     trees[tag]['children'].update(children)
 
-    def draw_walker(self, arg):
+    def draw_walker(self, arg=''):
         """Draw a walker randomly from the full range of all parameters, reject
         walkers that return invalid scores.
         """
@@ -206,10 +206,10 @@ class Model:
                     print_inline(
                         'Drawing initial walkers | Progress: {}/{}'.format(
                             i * nwalkers + len(p0[i]), nwalkers * ntemps))
-                    nmap = min(nwalkers - len(p0[i]), 4 * psize)
                     if psize == 1:
-                        p0[i].extend(list(map(self.draw_walker, range(nmap))))
+                        p0[i].append(self.draw_walker())
                     else:
+                        nmap = min(nwalkers - len(p0[i]), 4 * psize)
                         p0[i].extend(pool.map(self.draw_walker, range(nmap)))
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
         else:

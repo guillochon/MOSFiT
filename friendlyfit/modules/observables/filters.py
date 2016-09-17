@@ -120,7 +120,7 @@ class Filters(Module):
 
     def abmag(self, eff_fluxes, offsets):
         return [(np.inf if x == 0.0 else
-                 (y + AB_OFFSET - MAG_FAC * (np.log10(x) - self._dist_const)))
+                 (AB_OFFSET - y - MAG_FAC * (np.log10(x) - self._dist_const)))
                 for x, y in zip(eff_fluxes, offsets)]
 
     def request(self, request):

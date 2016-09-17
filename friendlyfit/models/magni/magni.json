@@ -111,15 +111,6 @@
             "vejecta"
         ]
     },
-    "photosphere":{
-        "kind":"sed",
-        "inputs":[
-            "envelopecore"
-        ],
-        "requests":[
-            ["bandwavelengths", "filters"]
-        ]
-    },
     "envelopecore":{
         "kind":"sed",
         "inputs":[
@@ -130,7 +121,7 @@
     "filters":{
         "kind":"observable",
         "inputs":[
-            "photosphere"
+            "envelopecore"
         ],
         "requests":[
             ["band_wave_ranges", "filters"]
