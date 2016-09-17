@@ -174,11 +174,12 @@ class Model:
                  data,
                  event_name='',
                  plot_points=[],
-                 iterations=10,
+                 iterations=2000,
                  frack_step=100,
                  num_walkers=100,
                  num_temps=2,
-                 fracking=True):
+                 fracking=True,
+                 post_burn=500):
         """Fit the data for a given event with this model using a combination
         of emcee and Basin-hopping.
         """
@@ -198,6 +199,7 @@ class Model:
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
         self._fracking = fracking
+        self._burn_in = max(iterations - post_burn, 0)
         # p0 = np.random.uniform(
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
@@ -240,6 +242,8 @@ class Model:
         print_inline('Initial draws completed!\n')
         p = p0.copy()
         frack_iters = max(round(iterations / frack_step), 1)
+        bmax = int(round(self._burn_in/float(frack_step)))
+        print(bmax, flush=True)
         for b in range(frack_iters):
             emi = 0
             st = time.time()
@@ -253,7 +257,7 @@ class Model:
                     scores=[max(x) for x in lnprob],
                     progress=[b * frack_step + emi, iterations])
 
-            if fracking:
+            if fracking and b <= bmax:
                 self.print_status(
                     desc='Running Basin-hopping',
                     scores=[max(x) for x in lnprob],
@@ -269,7 +273,7 @@ class Model:
                 for bhi, bh in enumerate(bhs):
                     p[ris[bhi]][rjs[bhi]] = bh.x
                 self._bh_est_t = float(time.time() - st) * (
-                    frack_iters - b - 1)
+                    bmax - b - 1)
                 scores = [-x.fun for x in bhs]
                 self.print_status(
                     desc='Running Basin-hopping',
@@ -277,14 +281,6 @@ class Model:
                     progress=[(b + 1) * frack_step, iterations])
         if not serial:
             pool.close()
-
-        bestprob = -np.inf
-        bestx = lnprob[0][0]
-        for i, probs in enumerate(lnprob):
-            for j, prob in enumerate(probs):
-                if prob > bestprob:
-                    bestprob = prob
-                    bestx = p[i][j]
 
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):

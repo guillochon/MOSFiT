@@ -23,7 +23,8 @@ class Fitter():
                    parameter_paths=[],
                    fracking=True,
                    frack_step=100,
-                   travis=False):
+                   travis=False,
+                   post_burn=500):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         event_name = ''
         for event in events:
@@ -119,4 +120,5 @@ class Fitter():
                         num_walkers=num_walkers,
                         num_temps=num_temps,
                         fracking=fracking,
-                        frack_step=frack_step)
+                        frack_step=frack_step,
+                        post_burn=post_burn)

@@ -46,6 +46,9 @@ def main():
         '--frack-step', '-f', dest='frack_step', type=int, default=100)
 
     parser.add_argument(
+        '--post-burn', '-p', dest='post_burn', type=int, default=500)
+
+    parser.add_argument(
         '--travis', dest='travis', default=False, action='store_true')
 
     args = parser.parse_args()
@@ -54,7 +57,7 @@ def main():
     Fitter.fit_events(args.events, args.models, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps,
                       args.parameter_paths, args.fracking, args.frack_step,
-                      args.travis)
+                      args.travis, args.post_burn)
 
 
 if __name__ == "__main__":
