@@ -39,12 +39,14 @@ class Filter(Module):
                     for bnd in rule.get('filters', []):
                         if band == bnd or band == '':
                             band_list.append(rule['filters'][bnd])
+                            band_list[-1]['systems'] = rule.get('systems', [])
+                            band_list[-1]['instruments'] = rule.get(
+                                'instruments', [])
                             band_list[-1]['name'] = bnd
                             if not band_list[-1].get('offset', ''):
                                 band_list[-1]['offset'] = 0.0
 
-        self._unique_bands = list(map(dict, set(
-            tuple(sorted(d.items())) for d in band_list)))
+        self._unique_bands = band_list
         self._band_names = [x['name'] for x in self._unique_bands]
         self._band_offsets = [x['offset'] for x in self._unique_bands]
         self._n_bands = len(self._unique_bands)
@@ -69,16 +71,33 @@ class Filter(Module):
                 np.array(self._transmissions[i]),
                 np.array(self._band_wavelengths[i]))
 
+    def find_band_index(self, name, instrument='', system=''):
+        for bi, band in enumerate(self._unique_bands):
+            if (instrument in band.get('instruments', '') and
+                    system in band.get('systems', '') and
+                    name == band['name']):
+                return bi
+            if ('' in band.get('instruments', '') and
+                    '' in band.get('systems', '') and
+                    name == band['name']):
+                return bi
+        raise(ValueError('Cannot find band index!'))
+
     def process(self, **kwargs):
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['bands']
+        self._systems = kwargs['systems']
+        self._instruments = kwargs['instruments']
         eff_fluxes = []
+        offsets = []
         for li, band in enumerate(self._luminosities):
             cur_band = self._bands[li]
-            bi = self._band_names.index(cur_band)
+            bi = self.find_band_index(cur_band, self._systems[li],
+                                      self._instruments[li])
             sed = kwargs['seds'][li]
             wavs = kwargs['bandwavelengths'][bi]
+            offsets.append(self._band_offsets[bi])
             dx = wavs[1] - wavs[0]
             itrans = np.interp(wavs, self._band_wavelengths[bi],
                                self._transmissions[bi])
@@ -91,7 +110,7 @@ class Filter(Module):
             eff_fluxes.append(
                 np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi])
-        mags = self.abmag(eff_fluxes, self._band_offsets)
+        mags = self.abmag(eff_fluxes, offsets)
         return {'model_magnitudes': mags}
 
     def band_names(self):
