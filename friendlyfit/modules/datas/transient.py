@@ -34,9 +34,17 @@ class Transient(Module):
             num_subkeys = [
                 x for x in subkeys if 'numeric' in listify(subkeys[x])
             ]
+            exc_subkeys = [
+                x for x in subkeys if 'exclude' in listify(subkeys[x])
+            ]
             # Only include data that contains all subkeys
             for entry in subdata:
                 if any([x not in entry for x in req_subkeys]):
+                    continue
+                if any([x in entry for x in exc_subkeys]):
+                    continue
+                if any([not is_number(entry[x]) or np.isnan(float(entry[x]))
+                        for x in num_subkeys]):
                     continue
                 skip_key = False
                 for qkey in req_key_values:
@@ -44,9 +52,6 @@ class Transient(Module):
                             entry[qkey] not in req_key_values[qkey]):
                         skip_key = True
                         break
-                if any([not is_number(entry[x]) or np.isnan(float(entry[x]))
-                        for x in num_subkeys]):
-                    continue
                 if skip_key:
                     continue
                 for x in subkeys:

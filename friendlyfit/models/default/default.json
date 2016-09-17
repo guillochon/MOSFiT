@@ -9,7 +9,7 @@
                 "band":"required",
                 "instrument":"optional",
                 "system":"optional",
-                "upperlimit":"optional"
+                "upperlimit":"exclude"
             },
             "lumdist":{
                 "value":"required"
