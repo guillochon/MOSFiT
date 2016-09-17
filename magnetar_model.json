@@ -2,18 +2,21 @@
     "transient":{
         "kind":"data",
         "keys":{
-            "photometry":[
-                "time",
-                "magnitude",
-                "e_magnitude",
-                "band"
-            ],
-            "lumdist":[
-                "value"
-            ],
-            "redshift":[
-                "value"
-            ]
+            "photometry":{
+                "time":"required",
+                "magnitude":"required",
+                "e_magnitude":"required",
+                "band":"required",
+                "instrument":"optional",
+                "system":"optional",
+                "upperlimit":"optional"
+            },
+            "lumdist":{
+                "value":"required"
+            },
+            "redshift":{
+                "value":"required"
+            }
         }
     },
     "texplosion":{
