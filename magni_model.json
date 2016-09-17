@@ -111,10 +111,18 @@
             "vejecta"
         ]
     },
+    "photosphere":{
+        "kind":"sed",
+        "inputs":[
+            "envelopecore"
+        ],
+        "requests":[
+            ["bandwavelengths", "filters"]
+        ]
+    },
     "envelopecore":{
         "kind":"sed",
         "inputs":[
-            "texplosion",
             "diffusion",
             "temperature"
         ]
@@ -122,12 +130,10 @@
     "filters":{
         "kind":"observable",
         "inputs":[
-            "envelopecore",
-            "transient"
+            "photosphere"
         ],
         "requests":[
-            ["bandwavelengths", "filters"],
-            []
+            ["band_wave_ranges", "filters"]
         ]
     },
     "likelihood":{

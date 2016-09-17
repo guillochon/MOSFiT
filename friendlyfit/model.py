@@ -79,10 +79,7 @@ class Model:
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if 'class' in cur_task:
-                class_name = cur_task['class']
-            else:
-                class_name = task
+            class_name = cur_task.get('class', task)
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='friendlyfit')
@@ -92,6 +89,9 @@ class Model:
             self._modules[task] = mod_class(name=task, **cur_task)
             if class_name == 'filters':
                 self._bands = self._modules[task].band_names()
+
+        for task in reversed(self._call_stack):
+            cur_task = self._call_stack[task]
             if 'requests' in cur_task:
                 inputs = listify(cur_task.get('inputs', []))
                 for i, inp in enumerate(inputs):

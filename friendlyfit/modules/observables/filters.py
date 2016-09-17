@@ -124,6 +124,6 @@ class Filters(Module):
     def request(self, request):
         if request == 'filters':
             return self
-        elif request == 'bandwavelengths':
+        elif request == 'band_wave_ranges':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
         return []
