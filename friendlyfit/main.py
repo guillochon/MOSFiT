@@ -19,11 +19,7 @@ def main():
         nargs='+')
 
     parser.add_argument(
-        '--models',
-        '-m',
-        dest='models',
-        default=['default'],
-        nargs='+')
+        '--models', '-m', dest='models', default=['default'], nargs='+')
 
     parser.add_argument(
         '--parameter-paths',
@@ -44,21 +40,21 @@ def main():
         '--num-temps', '-T', dest='num_temps', type=int, default=2)
 
     parser.add_argument(
-        '--no-fracking',
-        dest='fracking',
-        default=True,
-        action='store_false')
+        '--no-fracking', dest='fracking', default=True, action='store_false')
 
     parser.add_argument(
         '--frack-step', '-f', dest='frack_step', type=int, default=100)
 
-    args = parser.parse_args()
+    parser.add_argument(
+        '--travis', dest='travis', default=False, action='store_true')
 
+    args = parser.parse_args()
     """Then, fit the listed events with the listed models.
     """
     Fitter.fit_events(args.events, args.models, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps,
-                      args.parameter_paths, args.fracking, args.frack_step)
+                      args.parameter_paths, args.fracking, args.frack_step,
+                      args.travis)
 
 
 if __name__ == "__main__":

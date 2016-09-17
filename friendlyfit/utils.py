@@ -28,7 +28,8 @@ def listify(x):
     return x
 
 
-def print_inline(x):
-    sys.stdout.write("\033[F")
-    sys.stdout.write("\033[K")
+def print_inline(x, new_line=False):
+    if not new_line:
+        sys.stdout.write("\033[F")
+        sys.stdout.write("\033[K")
     print(x, flush=True)

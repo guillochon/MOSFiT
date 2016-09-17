@@ -22,7 +22,8 @@ class Fitter():
                    num_temps=2,
                    parameter_paths=[],
                    fracking=True,
-                   frack_step=100):
+                   frack_step=100,
+                   travis=False):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         for event in events:
             pool = ''
@@ -100,7 +101,7 @@ class Fitter():
             for model in models:
                 for parameter_path in parameter_paths:
                     model = Model(
-                        model=model, parameter_path=parameter_path)
+                        model=model, parameter_path=parameter_path, travis=travis)
 
                     (walkers, prob) = model.fit_data(
                         data,

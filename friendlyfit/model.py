@@ -20,8 +20,12 @@ class Model:
     """Define a semi-analytical model to fit transients with.
     """
 
-    def __init__(self, parameter_path='parameters.json', model='default'):
+    def __init__(self,
+                 parameter_path='parameters.json',
+                 model='default',
+                 travis=False):
         self._model_name = model
+        self._travis = travis
         # Load the model file.
         with open(
                 os.path.join('friendlyfit', 'models', model, model + '.json'),
@@ -209,8 +213,8 @@ class Model:
                 while len(p0[i]) < nwalkers:
                     self.print_status(
                         desc='Drawing initial walkers',
-                        progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps
-                                  ])
+                        progress=[i * nwalkers + len(p0[i]),
+                                  nwalkers * ntemps])
                     if psize == 1:
                         p0[i].append(self.draw_walker())
                     else:
@@ -292,7 +296,7 @@ class Model:
                                              self._bh_est_t)
             outarr.append(timestring)
 
-        print_inline(' | '.join(outarr))
+        print_inline(' | '.join(outarr), new_line=self._travis)
 
     def get_timestring(self, t):
         return ('Estimated time left: [ ' + str(

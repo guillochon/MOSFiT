@@ -30,7 +30,7 @@ install:
 # Run test
 script:
     - echo "travis_fold:start:FIT Fitting test data"
-    - mpirun -np 2 coverage run -a -m friendlyfit
+    - mpirun -np 2 coverage run -a -m friendlyfit --travis
     - echo "travis_fold:end:FIT Fitting test data done"
 
 # Run coveralls
