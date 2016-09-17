@@ -12,9 +12,9 @@ def main():
         description='Fit astrophysical light curves using AstroCats data.')
 
     parser.add_argument(
-        '--event-paths',
-        '-p',
-        dest='event_paths',
+        '--events',
+        '-e',
+        dest='events',
         default=['friendlyfit/tests/SN2006le.json'],
         nargs='+')
 
@@ -56,7 +56,7 @@ def main():
 
     """Then, fit the listed events with the listed models.
     """
-    Fitter.fit_events(args.event_paths, args.models, args.plot_points,
+    Fitter.fit_events(args.events, args.models, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps,
                       args.parameter_paths, args.fracking, args.frack_step)
 
