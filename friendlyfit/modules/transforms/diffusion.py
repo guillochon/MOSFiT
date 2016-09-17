@@ -39,16 +39,22 @@ class Diffusion(Module):
 
         new_lum = []
         evaled = False
+        lum_cache = {}
         for te in self._times_since_exp:
             if te <= 0.0:
                 new_lum.append(0.0)
+                continue
+            if te in lum_cache:
+                new_lum.append(lum_cache[te])
                 continue
             tb = np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0))
             te2 = te**2
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
+
             int_lums = np.interp(int_times, self._times_since_exp,
                                  self._luminosities)
+
             if not evaled:
                 int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '
                                       'exp((int_times**2 - te2) / td2) * '
@@ -62,5 +68,7 @@ class Diffusion(Module):
             #     for t, l in zip(int_times, int_lums)
             # ]
             int_arg = [0.0 if isnan(x) else x for x in int_arg]
-            new_lum.append(np.trapz(int_arg, dx=dt))
+            lum_val = np.trapz(int_arg, dx=dt)
+            lum_cache[te] = lum_val
+            new_lum.append(lum_val)
         return {'luminosities': new_lum}

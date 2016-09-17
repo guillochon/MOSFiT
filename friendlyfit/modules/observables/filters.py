@@ -47,6 +47,8 @@ class Filters(Module):
                                 band_list[-1]['offset'] = 0.0
 
         self._unique_bands = band_list
+        self._band_insts = [x['instruments'] for x in self._unique_bands]
+        self._band_systs = [x['systems'] for x in self._unique_bands]
         self._band_names = [x['name'] for x in self._unique_bands]
         self._band_offsets = [x['offset'] for x in self._unique_bands]
         self._n_bands = len(self._unique_bands)
@@ -73,13 +75,13 @@ class Filters(Module):
 
     def find_band_index(self, name, instrument='', system=''):
         for bi, band in enumerate(self._unique_bands):
-            if (instrument in band.get('instruments', '') and
-                    system in band.get('systems', '') and
-                    name == band['name']):
+            if (name == band['name'] and
+                instrument in self._band_insts[bi] and
+                    system in self._band_systs[bi]):
                 return bi
-            if ('' in band.get('instruments', '') and
-                    '' in band.get('systems', '') and
-                    name == band['name']):
+            if (name == band['name'] and
+                '' in self._band_insts[bi] and
+                    '' in self._band_systs[bi]):
                 return bi
         raise(ValueError('Cannot find band index!'))
 
@@ -96,17 +98,17 @@ class Filters(Module):
             bi = self.find_band_index(cur_band, self._systems[li],
                                       self._instruments[li])
             sed = kwargs['seds'][li]
-            wavs = kwargs['bandwavelengths'][bi]
+            wavs = self._band_wavelengths[bi]
             offsets.append(self._band_offsets[bi])
             dx = wavs[1] - wavs[0]
-            itrans = np.interp(wavs, self._band_wavelengths[bi],
-                               self._transmissions[bi])
+            # itrans = np.interp(wavs, self._band_wavelengths[bi],
+            #                    self._transmissions[bi])
             # if li == 0:
             #     ef = ne.evaluate('sum(itrans * sed)')
             # else:
             #     ef = ne.re_evaluate()
             # eff_fluxes.append(dx * ef)
-            yvals = [x * y for x, y in zip(itrans, sed)]
+            yvals = [x * y for x, y in zip(wavs, sed)]
             eff_fluxes.append(
                 np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi])
