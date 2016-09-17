@@ -98,17 +98,17 @@ class Filters(Module):
             bi = self.find_band_index(cur_band, self._systems[li],
                                       self._instruments[li])
             sed = kwargs['seds'][li]
-            wavs = self._band_wavelengths[bi]
+            wavs = kwargs['bandwavelengths'][bi]
             offsets.append(self._band_offsets[bi])
             dx = wavs[1] - wavs[0]
-            # itrans = np.interp(wavs, self._band_wavelengths[bi],
-            #                    self._transmissions[bi])
+            itrans = np.interp(wavs, self._band_wavelengths[bi],
+                               self._transmissions[bi])
             # if li == 0:
             #     ef = ne.evaluate('sum(itrans * sed)')
             # else:
             #     ef = ne.re_evaluate()
             # eff_fluxes.append(dx * ef)
-            yvals = [x * y for x, y in zip(wavs, sed)]
+            yvals = [x * y for x, y in zip(itrans, sed)]
             eff_fluxes.append(
                 np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi])

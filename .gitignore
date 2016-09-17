@@ -1,9 +1,10 @@
+build/
+cache/
+products/
 *.pyc
 *checkpoint.ipynb
 *.so
-build/
 *.prof
 *.swp
 *.png
-products/
 .DS_Store

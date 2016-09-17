@@ -1,4 +1,6 @@
-from ...utils import is_number
+import numpy as np
+
+from ...utils import is_number, listify
 from ..module import Module
 
 CLASS_NAME = 'Transient'
@@ -26,7 +28,11 @@ class Transient(Module):
             subkeys = self._keys[key]
             req_subkeys = [
                 x for x in subkeys
-                if not isinstance(subkeys, dict) or subkeys[x] == 'required'
+                if not isinstance(subkeys, dict) or 'required' in listify(
+                    subkeys[x])
+            ]
+            num_subkeys = [
+                x for x in subkeys if 'numeric' in listify(subkeys[x])
             ]
             # Only include data that contains all subkeys
             for entry in subdata:
@@ -38,6 +44,9 @@ class Transient(Module):
                             entry[qkey] not in req_key_values[qkey]):
                         skip_key = True
                         break
+                if any([not is_number(entry[x]) or np.isnan(float(entry[x]))
+                        for x in num_subkeys]):
+                    continue
                 if skip_key:
                     continue
                 for x in subkeys:

@@ -232,37 +232,34 @@ class Model:
                     p, iterations=min(frack_step, iterations)):
                 scorestring = ','.join([pretty_num(max(x)) for x in lnprob])
                 timestring = self.get_timestring(emcee_est_t + bh_est_t)
-                print_inline('Running PTSampler | Best scores: [ {} ] | '
-                             'Progress: {}/{} | '
-                             'Estimated time left: {}s'.format(
-                                 scorestring, b * frack_step + emi, iterations,
-                                 timestring))
                 emi = emi + 1
+                print_inline(' | '.join([
+                    'Running PTSampler', 'Best scores: [ {} ]',
+                    'Progress: {}/{}', timestring
+                ]).format(scorestring, b * frack_step + emi, iterations,
+                          timestring))
                 emcee_est_t = float(time.time() - emcee_st) / emi * (
                     iterations - (b * frack_step + emi))
 
             if fracking:
                 timestring = self.get_timestring(emcee_est_t + bh_est_t)
-                print_inline(
-                    'Running Basin-hopping | Estimated time left {}s'.format(
-                        timestring))
-                ris, rjs = [0] * psize, np.random.randint(
-                    nwalkers, size=psize)
+                print_inline(' | '.join(['Running Basin-hopping', timestring]))
+                ris, rjs = [0] * psize, np.random.randint(nwalkers, size=psize)
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
+                bh_st = time.time()
                 if psize == 1:
                     bhs = list(map(self.basinhop, bhwalkers))
                 else:
                     bhs = pool.map(self.basinhop, bhwalkers)
-                bh_st = time.time()
                 for bhi, bh in enumerate(bhs):
                     p[ris[bhi]][rjs[bhi]] = bh.x
                 bh_est_t = float(time.time() - bh_st) * (frack_iters - b - 1)
                 timestring = self.get_timestring(emcee_est_t + bh_est_t)
                 scorestring = ','.join([pretty_num(-x.fun) for x in bhs])
                 print_inline('Running Basin-hopping | Scores: [ {} ] | '
-                             'Estimated time left {}s'.format(scorestring,
-                                                              timestring))
+                             'Estimated time left {}'.format(scorestring,
+                                                             timestring))
         if psize > 1:
             pool.close()
 
@@ -279,7 +276,9 @@ class Model:
         return (p, lnprob)
 
     def get_timestring(self, t):
-        return str(datetime.timedelta(seconds=(round_sig(t)))).rstrip('.0')
+        return ('Estimated time left [ ' + str(
+            datetime.timedelta(seconds=(round_sig(t)))).rstrip('0').rstrip('.')
+                + ' ]')
 
     def get_max_depth(self, tag, parent, max_depth):
         """Return the maximum depth a given task is found in a tree.
