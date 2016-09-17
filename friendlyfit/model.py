@@ -243,7 +243,6 @@ class Model:
         p = p0.copy()
         frack_iters = max(round(iterations / frack_step), 1)
         bmax = int(round(self._burn_in/float(frack_step)))
-        print(bmax, flush=True)
         for b in range(frack_iters):
             emi = 0
             st = time.time()
