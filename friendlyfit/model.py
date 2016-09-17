@@ -186,9 +186,18 @@ class Model:
         # p0 = np.random.uniform(
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
-        pool = MPIPool(loadbalance=True)
+        sampler_args = {}
+        try:
+            pool = MPIPool(loadbalance=True)
+        except ValueError:
+            psize = 1
+        except:
+            raise
+        else:
+            sampler_args = {'pool': pool}
+            psize = pool.size
 
-        if pool.is_master():
+        if psize == 1 or pool.is_master():
             print_inline('{} dimensions in problem.'.format(ndim))
             p0 = [[] for x in range(ntemps)]
 
@@ -197,15 +206,18 @@ class Model:
                     print_inline(
                         'Drawing initial walkers | Progress: {}/{}'.format(
                             i * nwalkers + len(p0[i]), nwalkers * ntemps))
-                    nmap = min(nwalkers - len(p0[i]), 4 * pool.size)
-                    p0[i].extend(pool.map(self.draw_walker, range(nmap)))
+                    nmap = min(nwalkers - len(p0[i]), 4 * psize)
+                    if psize == 1:
+                        p0[i].extend(list(map(self.draw_walker, range(nmap))))
+                    else:
+                        p0[i].extend(pool.map(self.draw_walker, range(nmap)))
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
         else:
             pool.wait()
             sys.exit(0)
 
-        sampler = emcee.PTSampler(
-            ntemps, nwalkers, ndim, self.likelihood, self.prior, pool=pool)
+        sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
+                                  self.prior, **sampler_args)
 
         print_inline('Initial draws completed!\n')
         print_inline('Running PTSampler')
@@ -234,11 +246,14 @@ class Model:
                 print_inline(
                     'Running Basin-hopping | Estimated time left {}s'.format(
                         timestring))
-                ris, rjs = [0] * pool.size, np.random.randint(
-                    nwalkers, size=pool.size)
+                ris, rjs = [0] * psize, np.random.randint(
+                    nwalkers, size=psize)
 
-                bhs = pool.map(self.basinhop,
-                               [p[i][j] for i, j in zip(ris, rjs)])
+                bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
+                if psize == 1:
+                    bhs = list(map(self.basinhop, bhwalkers))
+                else:
+                    bhs = pool.map(self.basinhop, bhwalkers)
                 bh_st = time.time()
                 for bhi, bh in enumerate(bhs):
                     p[ris[bhi]][rjs[bhi]] = bh.x
@@ -248,7 +263,8 @@ class Model:
                 print_inline('Running Basin-hopping | Scores: [ {} ] | '
                              'Estimated time left {}s'.format(scorestring,
                                                               timestring))
-        pool.close()
+        if psize > 1:
+            pool.close()
 
         bestprob = -np.inf
         bestx = lnprob[0][0]
