@@ -1,6 +1,5 @@
 import json
 import os
-import sys
 import warnings
 
 import requests
@@ -96,7 +95,6 @@ class Fitter():
                 else:
                     event_name = pool.comm.recv(source=0, tag=0)
                     path = pool.comm.recv(source=0, tag=1)
-                # pool.close()
 
             if os.path.exists(path):
                 with open(path, 'r') as f:
