@@ -17,11 +17,11 @@ class SED(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._band_wavelengths = []
-        self._band_names = []
+        self._filters = []
 
     def handle_requests(self, **requests):
         wavelength_ranges = requests.get('bandwavelengths', [])
-        self._band_names.extend(requests.get('bandnames', []))
+        self._filters = requests.get('filters', [])
         if not wavelength_ranges:
             return
         for rng in wavelength_ranges:
@@ -29,3 +29,8 @@ class SED(Module):
                 list(np.linspace(rng[0], rng[1], self.N_PTS)))
         self._band_frequencies = [[self.C_CONST / x for x in y]
                                   for y in self._band_wavelengths]
+
+    def request(self, request):
+        if request == 'filters':
+            return self._filters
+        return []

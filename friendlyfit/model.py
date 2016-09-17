@@ -90,7 +90,7 @@ class Model:
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
             self._modules[task] = mod_class(name=task, **cur_task)
-            if class_name == 'filter':
+            if class_name == 'filters':
                 self._bands = self._modules[task].band_names()
             if 'requests' in cur_task:
                 inputs = listify(cur_task.get('inputs', []))

@@ -2,18 +2,21 @@
     "transient":{
         "kind":"data",
         "keys":{
-            "photometry":[
-                "time",
-                "magnitude",
-                "e_magnitude",
-                "band"
-            ],
-            "lumdist":[
-                "value"
-            ],
-            "redshift":[
-                "value"
-            ]
+            "photometry":{
+                "time":"required",
+                "magnitude":"required",
+                "e_magnitude":"required",
+                "band":"required",
+                "instrument":"optional",
+                "system":"optional",
+                "upperlimit":"optional"
+            },
+            "lumdist":{
+                "value":"required"
+            },
+            "redshift":{
+                "value":"required"
+            }
         }
     },
     "fnickel":{
@@ -62,8 +65,7 @@
             "mejecta",
             "fnickel",
             "texplosion"
-        ],
-        "outputs":"luminosities"
+        ]
     },
     "diffusion":{
         "kind":"transform",
@@ -74,51 +76,39 @@
             "mejecta",
             "texplosion",
             "vejecta"
-        ],
-        "outputs":"luminosities"
+        ]
     },
     "photosphere":{
         "kind":"sed",
         "inputs":[
             "diffusion",
             "temperature"
-        ],
-        "outputs":"seds"
+        ]
     },
     "line":{
         "kind":"sed",
         "inputs":"photosphere",
         "requests":[
             ["bandwavelengths", "bandnames"]
-        ],
-        "outputs":"seds"
+        ]
     },
-    "filter":{
-        "bands":["U", "B", "V", "R", "I"],
+    "filters":{
         "kind":"observable",
-        "paths":[
-            "bess_u.dat",
-            "bess_b.dat",
-            "bess_v.dat",
-            "bess_r.dat",
-            "bess_i.dat"
-        ],
         "inputs":[
-            "line",
+            "photosphere",
             "transient"
         ],
         "requests":[
             ["bandwavelengths", "bandnames"],
             []
-        ],
-        "outputs":"model_magnitudes"
+        ]
     },
     "likelihood":{
         "kind":"objective",
         "inputs":[
             "transient",
             "variance",
-            "filter"
+            "filters"
         ]
     },
     "fitlc":{
@@ -126,7 +116,7 @@
         "inputs":[
             "likelihood",
             "transient",
-            "filter"
+            "filters"
         ],
         "class":"lightcurve"
     }

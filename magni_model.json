@@ -119,14 +119,14 @@
             "temperature"
         ]
     },
-    "filter":{
+    "filters":{
         "kind":"observable",
         "inputs":[
             "envelopecore",
             "transient"
         ],
         "requests":[
-            ["bandwavelengths", "bandnames"],
+            ["bandwavelengths", "filters"],
             []
         ]
     },
@@ -135,7 +135,7 @@
         "inputs":[
             "transient",
             "variance",
-            "filter"
+            "filters"
         ]
     },
     "fitlc":{
@@ -143,7 +143,7 @@
         "inputs":[
             "likelihood",
             "transient",
-            "filter"
+            "filters"
         ],
         "class":"lightcurve"
     }

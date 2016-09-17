@@ -86,7 +86,7 @@
             "temperature"
         ]
     },
-    "filter":{
+    "filters":{
         "kind":"observable",
         "inputs":[
             "photosphere",
@@ -102,7 +102,7 @@
         "inputs":[
             "transient",
             "variance",
-            "filter"
+            "filters"
         ]
     },
     "fitlc":{
@@ -110,7 +110,7 @@
         "inputs":[
             "likelihood",
             "transient",
-            "filter"
+            "filters"
         ],
         "class":"lightcurve"
     }

@@ -35,7 +35,7 @@ class Photosphere(SED):
         seds = []
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
-            bi = self._band_names.index(cur_band)
+            bi = self._filters.find_band_index(cur_band)
             rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
             # rest_freqs3 = [x**3 for x in rest_freqs]
 

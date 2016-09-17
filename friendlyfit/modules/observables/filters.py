@@ -9,11 +9,11 @@ from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from ...utils import listify
 from ..module import Module
 
-CLASS_NAME = 'Filter'
+CLASS_NAME = 'Filters'
 
 
-class Filter(Module):
-    """Band-pass filter.
+class Filters(Module):
+    """Band-pass filters.
     """
 
     def __init__(self, **kwargs):
@@ -122,8 +122,8 @@ class Filter(Module):
                 for x, y in zip(eff_fluxes, offsets)]
 
     def request(self, request):
-        if request == 'bandnames':
-            return self._band_names
+        if request == 'filters':
+            return self
         elif request == 'bandwavelengths':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
         return []
