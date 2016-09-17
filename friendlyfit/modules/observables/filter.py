@@ -6,6 +6,7 @@ import numexpr as ne
 import numpy as np
 
 from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
+from ...utils import listify
 from ..module import Module
 
 CLASS_NAME = 'Filter'
@@ -20,43 +21,43 @@ class Filter(Module):
         bands = kwargs.get('bands', '')
         systems = kwargs.get('systems', '')
         instruments = kwargs.get('instruments', '')
-        bands = [bands] if isinstance(bands, str) else bands
+        bands = listify(bands)
+        systems = listify(systems)
+        instruments = listify(instruments)
 
-        self._bands = []
-        self._systems = []
-        self._instruments = []
-        self._paths = []
+        band_list = []
         with open(
                 os.path.join('friendlyfit', 'modules', 'observables',
                              'filterrules.json')) as f:
             filterrules = json.loads(f.read())
             for bi, band in enumerate(bands):
                 for rule in filterrules:
-                    print(filterrules[rule].get("systems", []))
-                    if systems[bi] not in filterrules[rule].get("systems", []):
+                    if systems[bi] not in rule.get("systems", []):
                         continue
-                    if (instruments[bi] not in filterrules[rule].get(
-                            "instruments", [])):
+                    if instruments[bi] not in rule.get("instruments", []):
                         continue
-                    for bnd in enumerate(rule.get('filters', [])):
+                    for bnd in rule.get('filters', []):
                         if band == bnd or band == '':
-                            self._bands.append(bnd)
-                            self._band_offsets.append(rule['filters'][bnd].get(
-                                'AB-Vega', 0.0))
-                            self._paths.append(rule['filters'][bnd]['path'])
+                            band_list.append(rule['filters'][bnd])
+                            band_list[-1]['name'] = bnd
+                            if not band_list[-1].get('offset', ''):
+                                band_list[-1]['offset'] = 0.0
 
-        self._band_names = list(set(self._bands))
-        self._n_bands = len(self._band_names)
+        self._unique_bands = list(map(dict, set(
+            tuple(sorted(d.items())) for d in band_list)))
+        self._band_names = [x['name'] for x in self._unique_bands]
+        self._band_offsets = [x['offset'] for x in self._unique_bands]
+        self._n_bands = len(self._unique_bands)
         self._band_wavelengths = [[] for i in range(self._n_bands)]
         self._transmissions = [[] for i in range(self._n_bands)]
         self._min_waves = [0.0] * self._n_bands
         self._max_waves = [0.0] * self._n_bands
         self._filter_integrals = [0.0] * self._n_bands
 
-        for i, path in enumerate(self._paths):
+        for i, band in enumerate(self._unique_bands):
             with open(
                     os.path.join('friendlyfit', 'modules', 'observables',
-                                 'filters', path), 'r') as f:
+                                 'filters', band['path']), 'r') as f:
                 rows = []
                 for row in csv.reader(f, delimiter=' ', skipinitialspace=True):
                     rows.append([float(x) for x in row[:2]])
@@ -71,6 +72,7 @@ class Filter(Module):
     def process(self, **kwargs):
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
+        self._bands = kwargs['bands']
         eff_fluxes = []
         for li, band in enumerate(self._luminosities):
             cur_band = self._bands[li]

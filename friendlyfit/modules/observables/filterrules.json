@@ -9,35 +9,35 @@
         "filters":{
             "U":{
                 "path":"bess_u.dat",
-                "AB-Vega":0.79
+                "offset":0.79
             },
             "B":{
                 "path":"bess_b.dat",
-                "AB-Vega":-0.09
+                "offset":-0.09
             },
             "V":{
                 "path":"bess_v.dat",
-                "AB-Vega":0.02
+                "offset":0.02
             },
             "R":{
                 "path":"bess_r.dat",
-                "AB-Vega":0.21
+                "offset":0.21
             },
             "I":{
                 "path":"bess_i.dat",
-                "AB-Vega":0.45
+                "offset":0.45
             },
             "J":{
                 "path":"J.dat",
-                "AB-Vega":0.91
+                "offset":0.91
             },
             "H":{
                 "path":"H.dat",
-                "AB-Vega":1.39
+                "offset":1.39
             },
             "K":{
                 "path":"K.dat",
-                "AB-Vega":1.85
+                "offset":1.85
             },
             "u":{
                 "path":"sdss_u_atm.dat"
@@ -70,7 +70,7 @@
                 "path":"sdss_z_atm.dat"
             }
         },
-        "note":"AB-Vega values from http://swift.gsfc.nasa.gov/analysis/uvot_digest/zeropts.html"
+        "note":"offset values from http://swift.gsfc.nasa.gov/analysis/uvot_digest/zeropts.html"
     },
     {
         "systems":[
@@ -82,27 +82,27 @@
         "filters":{
             "U":{
                 "path":"bess_u.dat",
-                "AB-Vega":1.02
+                "offset":1.02
             },
             "B":{
                 "path":"bess_b.dat",
-                "AB-Vega":-0.13
+                "offset":-0.13
             },
             "V":{
                 "path":"bess_v.dat",
-                "AB-Vega":-0.01
+                "offset":-0.01
             },
             "W1":{
                 "path":"UVOT_uvw1.dat",
-                "AB-Vega":1.51
+                "offset":1.51
             },
             "W2":{
                 "path":"UVOT_uvw2.dat",
-                "AB-Vega":1.69
+                "offset":1.69
             },
             "M2":{
                 "path":"UVOT_uvm2.dat",
-                "AB-Vega":1.73
+                "offset":1.73
             }
         }
     },
