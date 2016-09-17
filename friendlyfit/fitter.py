@@ -41,7 +41,7 @@ class Fitter():
             # If the event name ends in .json, assume a path
             if event.endswith('.json'):
                 path = event
-                event_name = event.replace('.json', '')
+                event_name = event.replace('.json', '').split('/')[-1]
             # If not (or the file doesn't exist), download from OSC
             if not path or not os.path.exists(path):
                 names_path = os.path.join(

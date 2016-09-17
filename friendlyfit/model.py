@@ -196,17 +196,19 @@ class Model:
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
         sampler_args = {}
+        serial = False
         try:
             pool = MPIPool(loadbalance=True)
         except ValueError:
             psize = 1
+            serial = True
         except:
             raise
         else:
             sampler_args = {'pool': pool}
             psize = pool.size
 
-        if psize == 1 or pool.is_master():
+        if serial or pool.is_master():
             print_inline('{} dimensions in problem.'.format(ndim))
             p0 = [[] for x in range(ntemps)]
 
@@ -216,7 +218,7 @@ class Model:
                         desc='Drawing initial walkers',
                         progress=[i * nwalkers + len(p0[i]),
                                   nwalkers * ntemps])
-                    if psize == 1:
+                    if serial:
                         p0[i].append(self.draw_walker())
                     else:
                         nmap = min(nwalkers - len(p0[i]), 4 * psize)
@@ -253,7 +255,7 @@ class Model:
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
                 st = time.time()
-                if psize == 1:
+                if serial:
                     bhs = list(map(self.basinhop, bhwalkers))
                 else:
                     bhs = pool.map(self.basinhop, bhwalkers)
@@ -266,7 +268,7 @@ class Model:
                     desc='Running Basin-hopping',
                     scores=scores,
                     progress=[(b + 1) * frack_step, iterations])
-        if psize > 1:
+        if not serial:
             pool.close()
 
         bestprob = -np.inf
