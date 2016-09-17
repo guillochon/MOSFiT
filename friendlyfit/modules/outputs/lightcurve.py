@@ -1,4 +1,5 @@
 import json
+import os
 
 from ..module import Module
 
@@ -11,13 +12,16 @@ class LightCurve(Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
-        self._n_times = kwargs.get("ntimes", 0)
+        self._n_times = kwargs.get('ntimes', 0)
 
     def process(self, **kwargs):
-        with open('products/lc.json', 'w') as f:
+        with open(os.path.join('products', 'lc.json'), 'w') as flast, open(
+                os.path.join('products', self._event_name + '.json'),
+                'w') as f:
             output = {}
             for key in ['magnitudes', 'e_magnitudes', 'model_magnitudes',
                         'bands', 'times']:
                 output[key] = kwargs[key]
+            json.dump(output, flast)
             json.dump(output, f)
         return {}

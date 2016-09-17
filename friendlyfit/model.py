@@ -179,6 +179,7 @@ class Model:
                  fracking=True):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
+            self._modules[task].set_event_name(event_name)
             if cur_task['kind'] == 'data':
                 self._modules[task].set_data(
                     data,
