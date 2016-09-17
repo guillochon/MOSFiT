@@ -110,7 +110,7 @@
             "envelopecore"
         ],
         "requests":[
-            ["band_wave_ranges", "bandnames"]
+            ["band_wave_ranges", "filters"]
         ]
     },
     "likelihood":{
