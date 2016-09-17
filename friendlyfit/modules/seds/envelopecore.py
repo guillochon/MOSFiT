@@ -59,8 +59,8 @@ class EnvelopeCore(SED):
             # Find location of photosphere in envelope/core
             if tau_e > 0.667:
                 radius_phot = (2.0 * (slope - 1.0) /
-                               (3.0 * self._kappa * rho_core *
-                                radius**slope))**(1.0 / (1.0 - slope))
+                               (3.0 * self._kappa * rho_core * radius
+                                **slope))**(1.0 / (1.0 - slope))
             else:
                 radius_phot = slope * radius / (slope - 1.0) - 2.0 / (
                     3.0 * self._kappa * rho_core)
@@ -87,4 +87,7 @@ class EnvelopeCore(SED):
             #     for x, y in zip(rest_freqs3, a)
             # ]
             seds.append(sed)
+
+        seds = self.add_to_existing_seds(seds, **kwargs)
+
         return {'bandwavelengths': self._band_wavelengths, 'seds': seds}

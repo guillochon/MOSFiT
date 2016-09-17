@@ -30,6 +30,13 @@ class SED(Module):
         self._band_frequencies = [[self.C_CONST / x for x in y]
                                   for y in self._band_wavelengths]
 
+    def add_to_existing_seds(self, seds, **kwargs):
+        old_seds = kwargs.get('seds', None)
+        if old_seds is not None:
+            seds = [(i + j for i, j in zip(x, y))
+                    for x, y in zip(old_seds, seds)]
+        return seds
+
     def request(self, request):
         if request == 'filters':
             return self._filters

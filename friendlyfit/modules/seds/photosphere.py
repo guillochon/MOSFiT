@@ -64,4 +64,7 @@ class Photosphere(SED):
             #     for x, y in zip(rest_freqs3, a)
             # ]
             seds.append(sed)
+
+        seds = self.add_to_existing_seds(seds, **kwargs)
+
         return {'bandwavelengths': self._band_wavelengths, 'seds': seds}
