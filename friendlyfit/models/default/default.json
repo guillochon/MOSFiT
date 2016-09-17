@@ -89,12 +89,10 @@
     "filters":{
         "kind":"observable",
         "inputs":[
-            "photosphere",
-            "transient"
+            "photosphere"
         ],
         "requests":[
-            ["bandwavelengths", "bandnames"],
-            []
+            ["band_wave_ranges", "bandnames"]
         ]
     },
     "likelihood":{

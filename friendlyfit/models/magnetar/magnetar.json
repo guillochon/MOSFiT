@@ -107,12 +107,10 @@
     "filters":{
         "kind":"observable",
         "inputs":[
-            "envelopecore",
-            "transient"
+            "envelopecore"
         ],
         "requests":[
-            ["bandwavelengths", "bandnames"],
-            []
+            ["band_wave_ranges", "bandnames"]
         ]
     },
     "likelihood":{
