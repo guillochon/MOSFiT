@@ -63,19 +63,19 @@
         "kind":"parameter",
         "value":0.785398163,
         "class":"parameter",
-        "latex":"\\theta_{\\rm PB}"
+        "latex":"\\theta_{\\rm PB}\\,({\\rm radians})"
     },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
         "class":"parameter",
-        "latex":"\\Kappa"
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "kappagamma":{
         "kind":"parameter",
         "value":10.0,
         "class":"parameter",
-        "latex":"\\kappa_\\gamma"
+        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "mejecta":{
         "kind":"parameter",
