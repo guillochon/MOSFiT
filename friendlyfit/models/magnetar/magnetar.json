@@ -77,10 +77,17 @@
         "kind":"parameter",
         "class":"parameter"
     },
+    "densetimes":{
+        "kind":"array",
+        "inputs":[
+            "transient",
+            "texplosion"
+        ]
+    },
     "magnetar":{
         "kind":"engine",
         "inputs":[
-            "transient",
+            "densetimes",
             "mejecta",
             "Pspin",
             "Bfield",

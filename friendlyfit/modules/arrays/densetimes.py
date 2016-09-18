@@ -13,6 +13,8 @@ class DenseTimes(Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._n_times = kwargs[
+            'n_times'] if 'n_times' in kwargs else self.N_TIMES
 
     def process(self, **kwargs):
         self._times = kwargs['times']
@@ -26,6 +28,6 @@ class DenseTimes(Module):
                 x + self._t_explosion
                 for x in list(
                     np.linspace(
-                        0.0, max_times - self._t_explosion, num=self.N_TIMES))
+                        0.0, max_times - self._t_explosion, num=self._n_times))
             ] + self._times)
         return outputs
