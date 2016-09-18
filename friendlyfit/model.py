@@ -120,7 +120,8 @@ class Model:
                         if par == inp:
                             parent = par
                     if not parent:
-                        self._log.error("Couldn't find parent task!")
+                        self._log.error(
+                            "Couldn't find parent task for  {}!".format(inp))
                         raise ValueError
                     reqs = cur_task['requests'][i]
                     for req in reqs:
@@ -204,6 +205,7 @@ class Model:
 
         sampler_args = {}
         serial = False
+        pool = ''
         try:
             pool = MPIPool()
         except ValueError:
