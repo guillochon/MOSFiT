@@ -6,7 +6,8 @@ CLASS_NAME = 'DenseTimes'
 
 
 class DenseTimes(Module):
-    """Structure to store transient data.
+    """This class ensures an even time-sampling between the time of explosion
+    and the last datapoint, as many transients may lack regular candence data.
     """
 
     N_TIMES = 100
@@ -21,13 +22,13 @@ class DenseTimes(Module):
         self._t_explosion = kwargs['texplosion']
 
         outputs = {}
-        outputs['densetimes'] = kwargs['times']
         max_times = max(kwargs['times'])
         if max_times > kwargs['texplosion']:
             outputs['densetimes'] = sorted([
                 x + self._t_explosion
-                for x in list(
-                    np.linspace(
-                        0.0, max_times - self._t_explosion, num=self._n_times))
+                for x in np.linspace(
+                    0.0, max_times - self._t_explosion, num=self._n_times)
             ] + self._times)
+        else:
+            outputs['densetimes'] = kwargs['times']
         return outputs

@@ -3,7 +3,6 @@ import importlib
 import json
 import logging
 import os
-import sys
 import time
 from collections import OrderedDict
 from math import isnan
@@ -263,7 +262,7 @@ class Model:
                     scores=[max(x) for x in lnprob],
                     progress=[b * loop_step + emi, iterations])
 
-            if fracking and b <= bmax:
+            if fracking and b < bmax:
                 self.print_status(
                     desc='Running Basin-hopping',
                     scores=[max(x) for x in lnprob],

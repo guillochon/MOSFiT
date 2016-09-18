@@ -2,7 +2,6 @@ from math import isnan
 
 import numexpr as ne
 import numpy as np
-from scipy.interpolate import interp1d
 
 from ...constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from ..module import Module
