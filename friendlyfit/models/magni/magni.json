@@ -26,61 +26,73 @@
     "fnickel":{
         "kind":"parameter",
         "value":1.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$f_{\\rm Ni}$"
     },
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$t_{\\rm exp}$"
     },
     "temperature":{
         "kind":"parameter",
         "value":1.0e4,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$T_{\\min}$"
     },
     "Pspin":{
         "kind":"parameter",
         "value":2.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$P_{\\rm spin}$"
     },
     "Bfield":{
         "kind":"parameter",
         "value":1.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$B$"
     },
     "Mns":{
         "kind":"parameter",
         "value":2.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$M_{\\rm NS}$~($M_\\odot)$"
     },
     "thetaPB":{
         "kind":"parameter",
         "value":0.785398163,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$\\theta_{\\rm PB}$"
     },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$\\Kappa$"
     },
     "kappagamma":{
         "kind":"parameter",
         "value":10.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$\\Kappa_\\gamma$"
     },
     "mejecta":{
         "kind":"parameter",
         "value":1.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$M_{\\rm ej}$~($M_\\odot$)"
     },
     "vejecta":{
         "kind":"parameter",
         "value":1.0e4,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$v_{\\rm ej}$~(km~s$^{-1}$)"
     },
     "variance":{
         "kind":"parameter",
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"$\\sigma$"
     },
     "densetimes":{
         "kind":"array",

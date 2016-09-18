@@ -205,7 +205,7 @@ class Model:
         sampler_args = {}
         serial = False
         try:
-            pool = MPIPool()
+            pool = MPIPool(loadbalance=True)
         except ValueError:
             psize = 1
             serial = True
@@ -243,7 +243,7 @@ class Model:
 
         if fracking:
             frack_iters = max(round(iterations / frack_step), 1)
-            bmax = int(round(self._burn_in/float(frack_step)))
+            bmax = int(round(self._burn_in / float(frack_step)))
             loop_step = frack_step
         else:
             frack_iters = 1
@@ -277,8 +277,7 @@ class Model:
                     bhs = pool.map(self.basinhop, bhwalkers)
                 for bhi, bh in enumerate(bhs):
                     p[ris[bhi]][rjs[bhi]] = bh.x
-                self._bh_est_t = float(time.time() - st) * (
-                    bmax - b - 1)
+                self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
                 scores = [-x.fun for x in bhs]
                 self.print_status(
                     desc='Running Basin-hopping',
@@ -289,6 +288,23 @@ class Model:
         for xi, x in enumerate(p[0]):
             walkers_out[xi] = self.run_stack(x, root='output')
             walkers_out[xi]['score'] = lnprob[0][xi]
+            walkers_out[xi]['x'] = list(x)
+            parameters = {}
+            latex = {}
+            pi = 0
+            for ti, task in enumerate(self._call_stack):
+                cur_task = self._call_stack[task]
+                if (cur_task['kind'] != 'parameter' or
+                        'min_value' not in cur_task or
+                        'max_value' not in cur_task):
+                    continue
+                output = self._modules[task].process(**{'fraction': x[pi]})
+                parameters.update(output)
+                latex.update(
+                    {self._modules[task].name(): self._modules[task].latex()})
+                pi = pi + 1
+            walkers_out[xi]['parameters'] = parameters
+            walkers_out[xi]['latex'] = latex
 
         with open(os.path.join('products', 'walkers.json'),
                   'w') as flast, open(

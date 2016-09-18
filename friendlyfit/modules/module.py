@@ -8,6 +8,9 @@ class Module:
     def request(self, request):
         return []
 
+    def name(self):
+        return self._name
+
     def handle_requests(self, **kwargs):
         pass
 

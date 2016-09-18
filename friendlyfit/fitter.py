@@ -30,7 +30,7 @@ class Fitter():
         for event in events:
             pool = ''
             try:
-                pool = MPIPool()
+                pool = MPIPool(loadbalance=True)
             except ValueError:
                 pass
             except:

@@ -15,10 +15,14 @@ class Parameter(Module):
         self._min_value = kwargs.get('min_value', None)
         self._value = kwargs.get('value', None)
         self._log = kwargs.get('log', False)
+        self._latex = kwargs.get('latex', self._name)
         if (self._log and self._min_value is not None and
                 self._max_value is not None):
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
+
+    def latex(self):
+        return self._latex
 
     def process(self, **kwargs):
         """Initialize a parameter based upon either a fixed value or a

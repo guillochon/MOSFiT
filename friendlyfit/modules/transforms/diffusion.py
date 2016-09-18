@@ -66,8 +66,6 @@ class Diffusion(Transform):
             # ]
             int_arg = [0.0 if isnan(x) else x for x in int_arg]
             lum_val = np.trapz(int_arg, dx=dt)
-            if lum_val == 0.0:
-                print(dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
         return {'luminosities': new_lum}
