@@ -287,6 +287,9 @@ class Model:
                     scores=scores,
                     progress=[(b + 1) * frack_step, iterations])
 
+        if pool:
+            pool.close()
+
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):
             walkers_out[xi] = self.run_stack(x, root='output')

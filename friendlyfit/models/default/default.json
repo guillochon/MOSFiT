@@ -26,41 +26,49 @@
     "fnickel":{
         "kind":"parameter",
         "value":1.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"f_{\\rm Ni}"
     },
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
     "temperature":{
         "kind":"parameter",
         "value":1.0e4,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"T_{\\min}\\,{\\rm (K)}"
     },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "kappagamma":{
         "kind":"parameter",
         "value":10.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "mejecta":{
         "kind":"parameter",
         "value":1.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
     "vejecta":{
         "kind":"parameter",
         "value":1.0e4,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
     "variance":{
         "kind":"parameter",
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"\\sigma"
     },
     "densetimes":{
         "kind":"array",
