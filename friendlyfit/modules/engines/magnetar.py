@@ -2,12 +2,12 @@ from math import isnan
 
 import numpy as np
 
-from ..module import Module
+from .engine import Engine
 
 CLASS_NAME = 'Magnetar'
 
 
-class Magnetar(Module):
+class Magnetar(Engine):
     """Magnetar spin-down engine
     """
 
@@ -37,9 +37,6 @@ class Magnetar(Module):
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
         # Add on to any existing luminosity
-        old_luminosities = kwargs.get('luminosities', None)
-        if old_luminosities is not None:
-            luminosities = [x + y
-                            for x, y in zip(old_luminosities, luminosities)]
+        luminosities = self.add_to_existing_lums(luminosities)
 
         return {'luminosities': luminosities}

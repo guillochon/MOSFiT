@@ -2,12 +2,12 @@ from math import isnan
 
 import numpy as np
 
-from ..module import Module
+from .engine import Engine
 
 CLASS_NAME = 'NickelCobalt'
 
 
-class NickelCobalt(Module):
+class NickelCobalt(Engine):
     """Nickel/Cobalt decay engine
     """
 
@@ -40,5 +40,8 @@ class NickelCobalt(Module):
         if old_luminosities is not None:
             luminosities = [x + y
                             for x, y in zip(old_luminosities, luminosities)]
+
+        # Add on to any existing luminosity
+        luminosities = self.add_to_existing_lums(luminosities)
 
         return {'luminosities': luminosities}
