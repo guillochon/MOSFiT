@@ -205,7 +205,7 @@ class Model:
         sampler_args = {}
         serial = False
         try:
-            pool = MPIPool(loadbalance=True)
+            pool = MPIPool()
         except ValueError:
             psize = 1
             serial = True
@@ -228,7 +228,7 @@ class Model:
                     if serial:
                         p0[i].append(self.draw_walker())
                     else:
-                        nmap = min(nwalkers - len(p0[i]), 4 * psize)
+                        nmap = nwalkers - len(p0[i])
                         p0[i].extend(pool.map(self.draw_walker, range(nmap)))
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
         else:

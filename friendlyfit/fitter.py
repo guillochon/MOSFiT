@@ -30,7 +30,7 @@ class Fitter():
         for event in events:
             pool = ''
             try:
-                pool = MPIPool(loadbalance=True)
+                pool = MPIPool()
             except ValueError:
                 pass
             except:
@@ -96,6 +96,9 @@ class Fitter():
                 else:
                     event_name = pool.comm.recv(source=0, tag=0)
                     path = pool.comm.recv(source=0, tag=1)
+                    pool.wait()
+            if pool:
+                pool.close()
 
             if os.path.exists(path):
                 with open(path, 'r') as f:
@@ -122,5 +125,3 @@ class Fitter():
                         fracking=fracking,
                         frack_step=frack_step,
                         post_burn=post_burn)
-            if pool:
-                pool.close()
