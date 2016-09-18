@@ -32,6 +32,7 @@ class Diffusion(Transform):
         self._trap_coeff = (self.TRAP_CONST * self._kappa_gamma *
                             self._m_ejecta / (self._v_ejecta**2))
         td2, A = self._tau_diff**2, self._trap_coeff
+        tbarg = self.MIN_EXP_ARG * td2
 
         new_lum = []
         evaled = False
@@ -44,8 +45,8 @@ class Diffusion(Transform):
             if te in lum_cache:
                 new_lum.append(lum_cache[te])
                 continue
-            tb = max(np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0)), min_te)
             te2 = te**2
+            tb = max(np.sqrt(max(te2 - tbarg, 0.0)), min_te)
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
 
