@@ -9,9 +9,7 @@ CLASS_NAME = 'Extinction'
 
 
 class Extinction(SED):
-    """Expanding/receding photosphere with a core+envelope
-    morphology and a blackbody spectral energy
-    distribution.
+    """Adds extinction to SED from both host galaxy and MW.
     """
 
     MW_RV = 3.1
@@ -23,8 +21,13 @@ class Extinction(SED):
         self._ebv = kwargs['ebv']
         self._seds = kwargs['seds']
         self._bands = kwargs['bands']
+        self._nh_host = kwargs['nhhost']
+        zp1 = 1.0 + kwargs['redshift']
+        self._band_rest_wavelengths = [[y / zp1 for y in x]
+                                       for x in self._band_wavelengths]
 
         av = self.MW_RV * self._ebv
+        av_host = self._nh_host / 1.8e21
 
         for si in range(len(self._seds)):
             cur_band = self._bands[si]
@@ -32,6 +35,12 @@ class Extinction(SED):
             eapp(
                 odonnell94(
                     np.array(self._band_wavelengths[bi]), av, self.MW_RV),
+                self._seds[si],
+                inplace=True)
+            eapp(
+                odonnell94(
+                    np.array(self._band_rest_wavelengths[bi]), av_host,
+                    self.MW_RV),
                 self._seds[si],
                 inplace=True)
 
