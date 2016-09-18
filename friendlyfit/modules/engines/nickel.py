@@ -21,7 +21,10 @@ class Nickel(Module):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        self._times = kwargs['times']
+        if 'densetimes' in kwargs:
+            self._times = kwargs['densetimes']
+        else:
+            self._times = kwargs['times']
         self._mnickel = kwargs['fnickel']*kwargs['mejecta']
         self._texplosion = kwargs['texplosion']
 

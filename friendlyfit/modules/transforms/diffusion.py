@@ -4,12 +4,12 @@ import numexpr as ne
 import numpy as np
 
 from ...constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
-from ..module import Module
+from .transform import Transform
 
 CLASS_NAME = 'Diffusion'
 
 
-class Diffusion(Module):
+class Diffusion(Transform):
     """Photon diffusion transform.
     """
 
@@ -22,21 +22,11 @@ class Diffusion(Module):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        self._t_explosion = kwargs['texplosion']
+        self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']
         self._kappa_gamma = kwargs['kappagamma']
         self._m_ejecta = kwargs['mejecta']
         self._v_ejecta = kwargs['vejecta']
-        self._times = kwargs['times']
-        if 'densetimes' in kwargs:
-            self._dense_times = kwargs['densetimes']
-        else:
-            self._dense_times = kwargs['times']
-        self._luminosities = kwargs['luminosities']
-        self._times_since_exp = [(x - self._t_explosion) * DAY_CGS
-                                 for x in self._times]
-        self._dense_times_since_exp = [(x - self._t_explosion) * DAY_CGS
-                                       for x in self._dense_times]
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
                                  self._m_ejecta / self._v_ejecta)
         self._trap_coeff = (self.TRAP_CONST * self._kappa_gamma *
@@ -76,6 +66,8 @@ class Diffusion(Module):
             # ]
             int_arg = [0.0 if isnan(x) else x for x in int_arg]
             lum_val = np.trapz(int_arg, dx=dt)
+            if lum_val == 0.0:
+                print(dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
         return {'luminosities': new_lum}
