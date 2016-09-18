@@ -288,9 +288,7 @@ class Model:
         for xi, x in enumerate(p[0]):
             walkers_out[xi] = self.run_stack(x, root='output')
             walkers_out[xi]['score'] = lnprob[0][xi]
-            walkers_out[xi]['x'] = list(x)
             parameters = {}
-            latex = {}
             pi = 0
             for ti, task in enumerate(self._call_stack):
                 cur_task = self._call_stack[task]
@@ -299,12 +297,16 @@ class Model:
                         'max_value' not in cur_task):
                     continue
                 output = self._modules[task].process(**{'fraction': x[pi]})
-                parameters.update(output)
-                latex.update(
-                    {self._modules[task].name(): self._modules[task].latex()})
+                value = list(output.values())[0]
+                paramdict = {
+                    'value': value,
+                    'fraction': x[pi],
+                    'latex': self._modules[task].latex(),
+                    'log': self._modules[task].is_log()
+                }
+                parameters.update({self._modules[task].name(): paramdict})
                 pi = pi + 1
             walkers_out[xi]['parameters'] = parameters
-            walkers_out[xi]['latex'] = latex
 
         with open(os.path.join('products', 'walkers.json'),
                   'w') as flast, open(

@@ -27,72 +27,72 @@
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"$f_{\\rm Ni}$"
+        "latex":"f_{\\rm Ni}"
     },
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
         "class":"parameter",
-        "latex":"$t_{\\rm exp}$"
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
     "temperature":{
         "kind":"parameter",
         "value":1.0e4,
         "class":"parameter",
-        "latex":"$T_{\\min}$"
+        "latex":"T_{\\min}\\,{\\rm (K)}"
     },
     "Pspin":{
         "kind":"parameter",
         "value":2.0,
         "class":"parameter",
-        "latex":"$P_{\\rm spin}$"
+        "latex":"P_{\\rm spin}\\,{\\rm (ms)}"
     },
     "Bfield":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"$B$"
+        "latex":"B"
     },
     "Mns":{
         "kind":"parameter",
         "value":2.0,
         "class":"parameter",
-        "latex":"$M_{\\rm NS}$~($M_\\odot)$"
+        "latex":"M_{\\rm NS}\\,(M_\\odot)"
     },
     "thetaPB":{
         "kind":"parameter",
         "value":0.785398163,
         "class":"parameter",
-        "latex":"$\\theta_{\\rm PB}$"
+        "latex":"\\theta_{\\rm PB}"
     },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
         "class":"parameter",
-        "latex":"$\\Kappa$"
+        "latex":"\\Kappa"
     },
     "kappagamma":{
         "kind":"parameter",
         "value":10.0,
         "class":"parameter",
-        "latex":"$\\Kappa_\\gamma$"
+        "latex":"\\kappa_\\gamma"
     },
     "mejecta":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"$M_{\\rm ej}$~($M_\\odot$)"
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
     "vejecta":{
         "kind":"parameter",
         "value":1.0e4,
         "class":"parameter",
-        "latex":"$v_{\\rm ej}$~(km~s$^{-1}$)"
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
     "variance":{
         "kind":"parameter",
         "class":"parameter",
-        "latex":"$\\sigma$"
+        "latex":"\\sigma"
     },
     "densetimes":{
         "kind":"array",

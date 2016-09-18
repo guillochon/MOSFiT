@@ -1,6 +1,7 @@
 class Module:
     def __init__(self, name, **kwargs):
         self._name = name
+        self._log = False
 
     def process(self, **kwargs):
         return {}
@@ -10,6 +11,9 @@ class Module:
 
     def name(self):
         return self._name
+
+    def is_log(self):
+        return self._log
 
     def handle_requests(self, **kwargs):
         pass
