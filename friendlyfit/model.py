@@ -241,26 +241,33 @@ class Model:
 
         print_inline('Initial draws completed!\n')
         p = p0.copy()
-        frack_iters = max(round(iterations / frack_step), 1)
-        bmax = int(round(self._burn_in/float(frack_step)))
+
+        if fracking:
+            frack_iters = max(round(iterations / frack_step), 1)
+            bmax = int(round(self._burn_in/float(frack_step)))
+            loop_step = frack_step
+        else:
+            frack_iters = 1
+            loop_step = iterations
+
         for b in range(frack_iters):
             emi = 0
             st = time.time()
             for p, lnprob, lnlike in sampler.sample(
-                    p, iterations=min(frack_step, iterations)):
+                    p, iterations=min(loop_step, iterations)):
                 emi = emi + 1
                 self._emcee_est_t = float(time.time() - st) / emi * (
-                    iterations - (b * frack_step + emi))
+                    iterations - (b * loop_step + emi))
                 self.print_status(
                     desc='Running PTSampler',
                     scores=[max(x) for x in lnprob],
-                    progress=[b * frack_step + emi, iterations])
+                    progress=[b * loop_step + emi, iterations])
 
             if fracking and b <= bmax:
                 self.print_status(
                     desc='Running Basin-hopping',
                     scores=[max(x) for x in lnprob],
-                    progress=[(b + 1) * frack_step, iterations])
+                    progress=[(b + 1) * loop_step, iterations])
                 ris, rjs = [0] * psize, np.random.randint(nwalkers, size=psize)
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
@@ -277,7 +284,7 @@ class Model:
                 self.print_status(
                     desc='Running Basin-hopping',
                     scores=scores,
-                    progress=[(b + 1) * frack_step, iterations])
+                    progress=[(b + 1) * loop_step, iterations])
 
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):

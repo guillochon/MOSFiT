@@ -82,10 +82,17 @@
         "kind":"parameter",
         "class":"parameter"
     },
+    "densetimes":{
+        "kind":"array",
+        "inputs":[
+            "transient",
+            "texplosion"
+        ]
+    },
     "nickelcobalt":{
         "kind":"engine",
         "inputs":[
-            "transient",
+            "densetimes",
             "mejecta",
             "fnickel",
             "texplosion"

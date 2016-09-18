@@ -70,8 +70,8 @@ class Filters(Module):
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
             self._filter_integrals[i] = np.trapz(
-                np.array(self._transmissions[i]),
-                np.array(self._band_wavelengths[i]))
+                self._transmissions[i],
+                self._band_wavelengths[i])
 
     def find_band_index(self, name, instrument='', system=''):
         for bi, band in enumerate(self._unique_bands):

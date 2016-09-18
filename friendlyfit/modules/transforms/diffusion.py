@@ -2,6 +2,7 @@ from math import isnan
 
 import numexpr as ne
 import numpy as np
+from scipy.interpolate import interp1d
 
 from ...constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from ..module import Module
@@ -28,9 +29,15 @@ class Diffusion(Module):
         self._m_ejecta = kwargs['mejecta']
         self._v_ejecta = kwargs['vejecta']
         self._times = kwargs['times']
+        if 'densetimes' in kwargs:
+            self._dense_times = kwargs['densetimes']
+        else:
+            self._dense_times = kwargs['times']
         self._luminosities = kwargs['luminosities']
         self._times_since_exp = [(x - self._t_explosion) * DAY_CGS
                                  for x in self._times]
+        self._dense_times_since_exp = [(x - self._t_explosion) * DAY_CGS
+                                       for x in self._dense_times]
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
                                  self._m_ejecta / self._v_ejecta)
         self._trap_coeff = (self.TRAP_CONST * self._kappa_gamma *
@@ -40,6 +47,7 @@ class Diffusion(Module):
         new_lum = []
         evaled = False
         lum_cache = {}
+        min_te = min(self._dense_times_since_exp)
         for te in self._times_since_exp:
             if te <= 0.0:
                 new_lum.append(0.0)
@@ -47,12 +55,12 @@ class Diffusion(Module):
             if te in lum_cache:
                 new_lum.append(lum_cache[te])
                 continue
-            tb = np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0))
+            tb = max(np.sqrt(max(te**2 - self.MIN_EXP_ARG * td2, 0.0)), min_te)
             te2 = te**2
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
 
-            int_lums = np.interp(int_times, self._times_since_exp,
+            int_lums = np.interp(int_times, self._dense_times_since_exp,
                                  self._luminosities)
 
             if not evaled:
