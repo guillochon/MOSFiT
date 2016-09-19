@@ -15,6 +15,9 @@
                 "kcorrected":"exclude",
                 "scorrected":"exclude"
             },
+            "ebv":{
+                "value":"required"
+            },
             "lumdist":{
                 "value":"required"
             },
@@ -22,6 +25,12 @@
                 "value":"required"
             }
         }
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1.0e18,
+        "class":"parameter",
+        "latex":"n_{\\rm H,host}"
     },
     "texplosion":{
         "kind":"parameter",
@@ -121,10 +130,21 @@
             "temperature"
         ]
     },
+    "extinction":{
+        "kind":"sed",
+        "inputs":[
+            "envelopecore",
+            "nhhost"
+        ],
+        "requests":[
+            ["bandwavelengths", "filters"],
+            []
+        ]
+    },
     "filters":{
         "kind":"observable",
         "inputs":[
-            "envelopecore"
+            "extinction"
         ],
         "requests":[
             ["band_wave_ranges", "filters"]

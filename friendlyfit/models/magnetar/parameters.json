@@ -1,4 +1,9 @@
 {
+    "nhhost":{
+        "min_value":1.0e16,
+        "max_value":1.0e23,
+        "log":true
+    },
     "Pspin":{
         "min_value":1.0,
         "max_value":10.0
