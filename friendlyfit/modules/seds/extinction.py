@@ -32,11 +32,13 @@ class Extinction(SED):
         for si in range(len(self._seds)):
             cur_band = self._bands[si]
             bi = self._filters.find_band_index(cur_band)
+            # First extinct out LOS dust from MW
             eapp(
                 odonnell94(
                     np.array(self._band_wavelengths[bi]), av, self.MW_RV),
                 self._seds[si],
                 inplace=True)
+            # Then extinct out host gal (using rest wavelengths)
             eapp(
                 odonnell94(
                     np.array(self._band_rest_wavelengths[bi]), av_host,
