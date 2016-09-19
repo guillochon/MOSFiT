@@ -27,12 +27,12 @@ class Model:
         self._travis = travis
         # Load the model file.
         with open(
-                os.path.join('friendlyfit', 'models', model, model + '.json'),
+                os.path.join('mosfit', 'models', model, model + '.json'),
                 'r') as f:
             self._model = json.loads(f.read())
 
         # Load model parameter file.
-        model_pp = os.path.join('friendlyfit', 'models', model,
+        model_pp = os.path.join('mosfit', 'models', model,
                                 'parameters.json')
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
@@ -101,7 +101,7 @@ class Model:
             class_name = cur_task.get('class', task)
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
-                package='friendlyfit')
+                package='mosfit')
             mod_class = getattr(mod, mod.CLASS_NAME)
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])

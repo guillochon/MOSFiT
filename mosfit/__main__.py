@@ -1,4 +1,4 @@
-"""Entry point for FriendlyFit scripts.
+"""Entry point for MOSFiT scripts.
 """
 
 if __name__ == "__main__":

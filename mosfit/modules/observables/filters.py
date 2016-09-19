@@ -27,7 +27,7 @@ class Filters(Module):
 
         band_list = []
         with open(
-                os.path.join('friendlyfit', 'modules', 'observables',
+                os.path.join('mosfit', 'modules', 'observables',
                              'filterrules.json')) as f:
             filterrules = json.loads(f.read())
             for bi, band in enumerate(bands):
@@ -60,7 +60,7 @@ class Filters(Module):
 
         for i, band in enumerate(self._unique_bands):
             with open(
-                    os.path.join('friendlyfit', 'modules', 'observables',
+                    os.path.join('mosfit', 'modules', 'observables',
                                  'filters', band['path']), 'r') as f:
                 rows = []
                 for row in csv.reader(f, delimiter=' ', skipinitialspace=True):

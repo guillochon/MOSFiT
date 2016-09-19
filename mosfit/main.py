@@ -1,6 +1,6 @@
 import argparse
 
-from friendlyfit.fitter import Fitter
+from mosfit.fitter import Fitter
 
 
 def main():
@@ -8,14 +8,14 @@ def main():
     """
 
     parser = argparse.ArgumentParser(
-        prog='FriendlyFit',
+        prog='MOSFiT',
         description='Fit astrophysical light curves using AstroCats data.')
 
     parser.add_argument(
         '--events',
         '-e',
         dest='events',
-        default=['friendlyfit/tests/SN2006le.json'],
+        default=['mosfit/tests/SN2006le.json'],
         nargs='+')
 
     parser.add_argument(

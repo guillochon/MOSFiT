@@ -1,4 +1,4 @@
-"""FriendlyFit: Modular light curve fitting software.
+"""MOSFiT: Modular light curve fitting software.
 """
 
 __version__ = '0.1.0'
