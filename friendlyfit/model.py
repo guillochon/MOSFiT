@@ -320,8 +320,8 @@ class Model:
                   'w') as flast, open(
                       os.path.join('products', self._event_name + '.json'),
                       'w') as f:
-            json.dump(walkers_out, flast)
-            json.dump(walkers_out, f)
+            json.dump(walkers_out, flast, indent='\t', separators=(',', ':'))
+            json.dump(walkers_out, f, indent='\t', separators=(',', ':'))
 
         return (p, lnprob)
 
