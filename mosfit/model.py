@@ -26,14 +26,35 @@ class Model:
         self._model_name = model
         self._travis = travis
         # Load the model file.
-        with open(
-                os.path.join('mosfit', 'models', model, model + '.json'),
-                'r') as f:
+
+
+        model = self._model_name
+        model_dir = self._model_name
+
+
+        if '.json' in self._model_name:
+            model_dir = self._model_name.split('.json')[0]
+        else:
+            model = self._model_name + '.json'
+
+        model_path = os.path.join('mosfit', 'models', model_dir,
+                                  model)
+
+        if os.path.isfile(model):
+            model_path = model
+
+        print('Model file: ' + model_path)
+
+        with open(model_path, 'r') as f:
             self._model = json.loads(f.read())
 
         # Load model parameter file.
-        model_pp = os.path.join('mosfit', 'models', model,
-                                'parameters.json')
+        model_pp = os.path.join(
+                        os.path.split(model_path)[0],
+                        'parameters.json')
+
+        pp = model_pp
+
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
             pp = parameter_path
@@ -43,6 +64,8 @@ class Model:
         # Finally try model folder
         elif os.path.isfile(model_pp):
             pp = model_pp
+
+        print('Parameter file: ' + pp + '\n')
 
         with open(pp, 'r') as f:
             self._parameters = json.loads(f.read())
