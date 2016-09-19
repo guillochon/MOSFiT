@@ -1,4 +1,4 @@
-# MOSFiT
+<p style="text-align: center;"><img src="logo.png" alt="MOSFiT" width="400"/></p>
 
 [![Build Status](https://img.shields.io/travis/guillochon/MOSFiT.svg)](https://travis-ci.org/guillochon/MOSFiT)
 [![Coverage Status](https://coveralls.io/repos/github/guillochon/MOSFiT/badge.svg?branch=master)](https://coveralls.io/github/guillochon/MOSFiT?branch=master)
