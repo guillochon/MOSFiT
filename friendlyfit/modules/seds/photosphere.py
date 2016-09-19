@@ -1,7 +1,7 @@
 from math import pi
 
-import numpy as np
 import numexpr as ne
+import numpy as np
 from astropy import constants as c
 
 from ...constants import DAY_CGS, FOUR_PI, KM_CGS
@@ -18,6 +18,7 @@ class Photosphere(SED):
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
+    RAD_CONST = KM_CGS * DAY_CGS
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -29,6 +30,10 @@ class Photosphere(SED):
         self._temperature = kwargs['temperature']
         self._bands = kwargs['bands']
         self._v_ejecta = kwargs['vejecta']
+        self._radius2 = [(self.RAD_CONST * self._v_ejecta *
+                          (x - self._t_explosion))**2 for x in self._times]
+        self._rec_radius2 = [x / (self.STEF_CONST * self._temperature**4)
+                             for x in self._luminosities]
         xc = self.X_CONST
         fc = self.FLUX_CONST
         zp1 = 1.0 + kwargs['redshift']
@@ -37,19 +42,15 @@ class Photosphere(SED):
             cur_band = self._bands[li]
             bi = self._filters.find_band_index(cur_band)
             rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
-            # rest_freqs3 = [x**3 for x in rest_freqs]
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
-            radius = self._v_ejecta * KM_CGS * (
-                self._times[li] - self._t_explosion) * DAY_CGS
-            rec_radius = np.sqrt(lum /
-                                 (self.STEF_CONST * self._temperature**4))
-            if radius < rec_radius:
-                radius2 = radius**2
+            radius2 = self._radius2[li]
+            rec_radius2 = self._rec_radius2[li]
+            if radius2 < rec_radius2:
                 temperature = (lum / (self.STEF_CONST * radius2))**0.25
             else:
-                radius2 = rec_radius**2
+                radius2 = rec_radius2
                 temperature = self._temperature
 
             if li == 0:
@@ -57,12 +58,6 @@ class Photosphere(SED):
                                   'exp(xc * rest_freqs / temperature) - 1.0')
             else:
                 sed = ne.re_evaluate()
-            # a = [np.exp(self.X_CONST * x / temperature) - 1.0
-            #      for x in rest_freqs]
-            # sed = [
-            #     (self.FLUX_CONST * radius2 * x / y)
-            #     for x, y in zip(rest_freqs3, a)
-            # ]
             seds.append(list(sed))
 
         seds = self.add_to_existing_seds(seds, **kwargs)
