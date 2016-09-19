@@ -1,5 +1,4 @@
-<p align="center"><img src="logo.png" align="right" alt="MOSFiT" width="300"/></p>
-#MOSFiT
+<p align="center"><img src="logo.png" align="left" alt="MOSFiT" width="300"/></p>
 [![Build Status](https://img.shields.io/travis/guillochon/MOSFiT.svg)](https://travis-ci.org/guillochon/MOSFiT)
 [![Coverage Status](https://coveralls.io/repos/github/guillochon/MOSFiT/badge.svg?branch=master)](https://coveralls.io/github/guillochon/MOSFiT?branch=master)
 [![Python Version](https://img.shields.io/badge/python-3.4%2C%203.5-blue.svg)](https://www.python.org)
