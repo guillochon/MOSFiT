@@ -30,7 +30,7 @@ install:
 # Run test
 script:
     - echo "travis_fold:start:FIT Fitting test data"
-    - mpirun -np 2 coverage run -a -m mosfit --travis -i 2 -f 2
+    - mpirun -np 2 coverage run -a -m mosfit -e "mosfit/tests/SN2006le.json" --travis -i 2 -f 2
     - echo "travis_fold:end:FIT Fitting test data done"
 
 # Run coveralls

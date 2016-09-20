@@ -24,6 +24,8 @@ class Transient(Module):
             return
         name = list(self._all_data.keys())[0]
         for key in self._keys:
+            if key not in self._all_data[name]:
+                continue
             subdata = self._all_data[name][key]
             subkeys = self._keys[key]
             req_subkeys = [

@@ -2,6 +2,7 @@ import argparse
 import os
 
 from mosfit.fitter import Fitter
+
 from . import __version__
 
 
@@ -17,7 +18,7 @@ def main():
         '--events',
         '-e',
         dest='events',
-        default=['mosfit/tests/SN2006le.json'],
+        default=[''],
         nargs='+',
         help=("List of event names to be fit, delimited by spaces. If an "
               "event name contains a space, enclose the event's name in "
@@ -45,41 +46,76 @@ def main():
 
     parser.add_argument('--plot-points', dest='plot_points', default=100)
 
+    parser.add_argument('--max-time', dest='max_time', default=1000.)
+
+    parser.add_argument('--band-list', dest='band_list', default=['V'])
+
+    parser.add_argument('--band-systems', dest='band_systems', default=[''])
+
     parser.add_argument(
-        '--iterations', '-i', dest='iterations', type=int, default=1000,
+        '--band-instruments', dest='band_instruments', default=[''])
+
+    parser.add_argument(
+        '--iterations',
+        '-i',
+        dest='iterations',
+        type=int,
+        default=1000,
         help=("Number of iterations to run emcee for, including burn-in and "
               "post-burn iterations."))
 
     parser.add_argument(
-        '--num-walkers', '-N', dest='num_walkers', type=int, default=50,
+        '--num-walkers',
+        '-N',
+        dest='num_walkers',
+        type=int,
+        default=50,
         help=("Number of walkers to use in emcee, must be at least twice the "
               "total number of free parameters within the model."))
 
     parser.add_argument(
-        '--num-temps', '-T', dest='num_temps', type=int, default=2,
+        '--num-temps',
+        '-T',
+        dest='num_temps',
+        type=int,
+        default=2,
         help=("Number of temperatures to use in the parallel-tempered emcee "
               "sampler. `-T 1` is equivalent to the standard "
               "EnsembleSampler."))
 
     parser.add_argument(
-        '--no-fracking', dest='fracking', default=True, action='store_false',
+        '--no-fracking',
+        dest='fracking',
+        default=True,
+        action='store_false',
         help=("Setting this flag will skip the `fracking` step of the "
               "optimization process."))
 
     parser.add_argument(
-        '--frack-step', '-f', dest='frack_step', type=int, default=20,
+        '--frack-step',
+        '-f',
+        dest='frack_step',
+        type=int,
+        default=20,
         help=("Perform `fracking` every this number of steps while in the "
               "burn-in phase of the fitting process."))
 
     parser.add_argument(
-        '--post-burn', '-p', dest='post_burn', type=int, default=500,
+        '--post-burn',
+        '-p',
+        dest='post_burn',
+        type=int,
+        default=500,
         help=("Run emcee this many more iterations after the burn-in phase. "
               "The burn-in phase will thus be run for (i - p) iterations, "
               "where i is the total number of iterations set with `-i` and "
               "p is the value of this parameter."))
 
     parser.add_argument(
-        '--travis', dest='travis', default=False, action='store_true',
+        '--travis',
+        dest='travis',
+        default=False,
+        action='store_true',
         help=("Alters the printing of output messages such that a new line is "
               "generated with each message. Users are unlikely to need this "
               "parameter; it is included as Travis requires new lines to be "
@@ -93,17 +129,31 @@ def main():
         width = len(logo.split('\n')[0])
         aligns = '{:^' + str(width) + '}'
         print(logo)
-    print((aligns + '\n').format(
-        '### MOSFiT -- version {} ###'.format(__version__)))
+    print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
+        __version__)))
     print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
     print(aligns.format('Released under the MIT license'))
     print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
 
     # Then, fit the listed events with the listed models.
-    Fitter.fit_events(args.events, args.models, args.plot_points,
-                      args.iterations, args.num_walkers, args.num_temps,
-                      args.parameter_paths, args.fracking, args.frack_step,
-                      args.travis, args.post_burn)
+    fitargs = {
+        'events': args.events,
+        'models': args.models,
+        'plot_points': args.plot_points,
+        'max_time': args.max_time,
+        'band_list': args.band_list,
+        'band_systems': args.band_systems,
+        'band_instruments': args.band_instruments,
+        'iterations': args.iterations,
+        'num_walkers': args.num_walkers,
+        'num_temps': args.num_temps,
+        'parameter_paths': args.parameter_paths,
+        'fracking': args.fracking,
+        'frack_step': args.frack_step,
+        'travis': args.travis,
+        'post_burn': args.post_burn
+    }
+    Fitter().fit_events(**fitargs)
 
 
 if __name__ == "__main__":

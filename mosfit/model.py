@@ -177,13 +177,16 @@ class Model:
                     trees[tag].setdefault('children', {})
                     trees[tag]['children'].update(children)
 
-    def draw_walker(self, arg=''):
+    def draw_walker(self, test=True):
         """Draw a walker randomly from the full range of all parameters, reject
         walkers that return invalid scores.
         """
         p = None
         while p is None:
             draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
+            if not test:
+                p = draw
+                break
             score = self.likelihood(draw)
             if not isnan(score) and np.isfinite(score):
                 p = draw
@@ -219,9 +222,8 @@ class Model:
         self._bh_est_t = 0.0
         self._fracking = fracking
         self._burn_in = max(iterations - post_burn, 0)
-        # p0 = np.random.uniform(
-        #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
+        test_walker = iterations > 0
         lnprob = None
         sampler_args = {}
         serial = False
@@ -248,10 +250,11 @@ class Model:
                         progress=[i * nwalkers + len(p0[i]),
                                   nwalkers * ntemps])
                     if serial:
-                        p0[i].append(self.draw_walker())
+                        p0[i].append(self.draw_walker(test_walker))
                     else:
                         nmap = nwalkers - len(p0[i])
-                        p0[i].extend(pool.map(self.draw_walker, range(nmap)))
+                        p0[i].extend(
+                            pool.map(self.draw_walker, [test_walker] * nmap))
                 # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
         else:
             pool.wait()

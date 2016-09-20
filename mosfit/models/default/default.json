@@ -26,6 +26,33 @@
             }
         }
     },
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":463.4,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"d_{L}"
+    },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.1,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"z"
+    },
     "fnickel":{
         "kind":"parameter",
         "value":1.0,
@@ -110,6 +137,7 @@
         "kind":"sed",
         "inputs":[
             "texplosion",
+            "redshift",
             "diffusion",
             "temperature"
         ]
@@ -118,20 +146,24 @@
         "kind":"sed",
         "inputs":[
             "photosphere",
-            "nhhost"
+            "nhhost",
+            "ebv"
         ],
         "requests":[
             ["bandwavelengths", "filters"],
+            [],
             []
         ]
     },
     "filters":{
         "kind":"observable",
         "inputs":[
-            "extinction"
+            "extinction",
+            "lumdist"
         ],
         "requests":[
-            ["band_wave_ranges", "filters"]
+            ["band_wave_ranges", "filters"],
+            []
         ]
     },
     "likelihood":{
