@@ -31,6 +31,7 @@ install:
 script:
     - echo "travis_fold:start:FIT Fitting test data"
     - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 2 -f 2
+    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 2 --no-fracking -m magnetar
     - echo "travis_fold:end:FIT Fitting test data done"
     - echo "travis_fold:start:GEN Generating random models"
     - coverage run -a -m mosfit --travis -i 0
