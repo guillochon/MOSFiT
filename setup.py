@@ -5,7 +5,7 @@ extensions = []
 setup(
     name='mosfit',
     packages=['mosfit'],
-    version='0.1',
+    version='0.1.0',
     description=('Package that performs maximum likelihood analysis to fit '
                  'semi-analytical model predictions to observed '
                  'astronomical transient data.'),
