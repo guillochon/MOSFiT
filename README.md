@@ -11,7 +11,7 @@ To run `MOSFiT`, pass an event name to the program via the `-e` flag (the defaul
 python -m mosfit -e SN2015bn
 ```
 
-Multiple events can be fit in succession by passing a list of names separated by spaces, and event names with spaces can be specified using quotation marks:
+Multiple events can be fit in succession by passing a list of names separated by spaces (names containing spaces can be specified using quotation marks):
 
 ```bash
 python -m mosfit -e SN2015bn LSQ12dlf "SDSS-II SN 5751"
