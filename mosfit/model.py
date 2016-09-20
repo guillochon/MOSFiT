@@ -20,6 +20,8 @@ class Model:
     """Define a semi-analytical model to fit transients with.
     """
 
+    MODEL_OUTPUT_DIR = 'mosfit-products'
+
     def __init__(self,
                  parameter_path='parameters.json',
                  model='default',
@@ -345,17 +347,16 @@ class Model:
 
         if not os.path.isfile('mosfit.ipynb'):
             shutil.copy(
-                os.path.join(self._dir_path, 'mosfit.ipynb'),
+                os.path.join(self._dir_path, 'jupyter', 'mosfit.ipynb'),
                 os.path.join(os.getcwd(), 'mosfit.ipynb'))
-            print('hi')
 
-        if not os.path.exists('products'):
-            os.makedirs('products')
+        if not os.path.exists(self.MODEL_OUTPUT_DIR):
+            os.makedirs(self.MODEL_OUTPUT_DIR)
 
-        with open(os.path.join('products', 'walkers.json'),
+        with open(os.path.join(self.MODEL_OUTPUT_DIR, 'walkers.json'),
                   'w') as flast, open(
-                      os.path.join('products', self._event_name + '.json'),
-                      'w') as f:
+                      os.path.join(self.MODEL_OUTPUT_DIR,
+                                   self._event_name + '.json'), 'w') as f:
             json.dump(walkers_out, flast, indent='\t', separators=(',', ':'))
             json.dump(walkers_out, f, indent='\t', separators=(',', ':'))
 

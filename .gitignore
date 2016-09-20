@@ -3,6 +3,7 @@ cache/
 products/
 dist/
 MANIFEST
+mosfit.egg-info/
 *.pyc
 *checkpoint.ipynb
 *.so
