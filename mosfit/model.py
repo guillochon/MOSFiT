@@ -25,20 +25,17 @@ class Model:
                  travis=False):
         self._model_name = model
         self._travis = travis
+
         # Load the model file.
-
-
         model = self._model_name
         model_dir = self._model_name
-
 
         if '.json' in self._model_name:
             model_dir = self._model_name.split('.json')[0]
         else:
             model = self._model_name + '.json'
 
-        model_path = os.path.join('mosfit', 'models', model_dir,
-                                  model)
+        model_path = os.path.join('mosfit', 'models', model_dir, model)
 
         if os.path.isfile(model):
             model_path = model
@@ -50,8 +47,7 @@ class Model:
 
         # Load model parameter file.
         model_pp = os.path.join(
-                        os.path.split(model_path)[0],
-                        'parameters.json')
+            os.path.split(model_path)[0], 'parameters.json')
 
         pp = model_pp
 
