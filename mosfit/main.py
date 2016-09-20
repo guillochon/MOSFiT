@@ -44,16 +44,40 @@ def main():
               "length of this list should be equal to the length of the list "
               "of models"))
 
-    parser.add_argument('--plot-points', dest='plot_points', default=100)
-
-    parser.add_argument('--max-time', dest='max_time', default=1000.)
-
-    parser.add_argument('--band-list', dest='band_list', default=['V'])
-
-    parser.add_argument('--band-systems', dest='band_systems', default=[''])
+    parser.add_argument(
+        '--plot-points',
+        dest='plot_points',
+        default=100,
+        help=("Set the number of plot points when producing light curves from "
+              "models without fitting against any actual transient data."))
 
     parser.add_argument(
-        '--band-instruments', dest='band_instruments', default=[''])
+        '--max-time',
+        dest='max_time',
+        default=1000.,
+        help=("Set the maximum time for model light curves to be plotted "
+              "until."))
+
+    parser.add_argument(
+        '--band-list',
+        dest='band_list',
+        default=['V'],
+        help=("List of bands to plot when plotting model light curves that "
+              "are not being matched to actual transient data."))
+
+    parser.add_argument(
+        '--band-systems',
+        dest='band_systems',
+        default=[''],
+        help=("List of photometric systems corresponding to the bands listed "
+              "in `--band-list`."))
+
+    parser.add_argument(
+        '--band-instruments',
+        dest='band_instruments',
+        default=[''],
+        help=("List of instruments corresponding to the bands listed "
+              "in `--band-list`."))
 
     parser.add_argument(
         '--iterations',
