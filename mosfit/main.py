@@ -1,6 +1,8 @@
 import argparse
+import os
 
 from mosfit.fitter import Fitter
+from . import __version__
 
 
 def main():
@@ -84,8 +86,20 @@ def main():
               "produed to detected program output."))
 
     args = parser.parse_args()
-    """Then, fit the listed events with the listed models.
-    """
+
+    # Print our amazing ASCII logo.
+    with open(os.path.join('mosfit', 'logo.txt'), 'r') as f:
+        logo = f.read()
+        width = len(logo.split('\n')[0])
+        aligns = '{:^' + str(width) + '}'
+        print(logo)
+    print((aligns + '\n').format(
+        '### MOSFiT -- version {} ###'.format(__version__)))
+    print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
+    print(aligns.format('Released under the MIT license'))
+    print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
+
+    # Then, fit the listed events with the listed models.
     Fitter.fit_events(args.events, args.models, args.plot_points,
                       args.iterations, args.num_walkers, args.num_temps,
                       args.parameter_paths, args.fracking, args.frack_step,
