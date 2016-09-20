@@ -222,6 +222,7 @@ class Model:
         # p0 = np.random.uniform(
         #     low=0.0, high=1.0, size=(ntemps, nwalkers, ndim))
 
+        lnprob = None
         sampler_args = {}
         serial = False
         pool = ''
@@ -314,7 +315,8 @@ class Model:
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):
             walkers_out[xi] = self.run_stack(x, root='output')
-            walkers_out[xi]['score'] = lnprob[0][xi]
+            if lnprob is not None:
+                walkers_out[xi]['score'] = lnprob[0][xi]
             parameters = {}
             pi = 0
             for ti, task in enumerate(self._call_stack):
