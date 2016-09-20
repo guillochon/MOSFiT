@@ -26,9 +26,13 @@ install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy
     - pip install -r requirements.txt
     - pip install coveralls
+    - python setup.py install
 
 # Run test
 script:
+    - cd ..
+    - mkdir test
+    - cd test
     - echo "travis_fold:start:FIT Fitting test data"
     - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 2 -f 2
     - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 2 --no-fracking -m magnetar
