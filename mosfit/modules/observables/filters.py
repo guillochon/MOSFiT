@@ -25,10 +25,10 @@ class Filters(Module):
         systems = listify(systems)
         instruments = listify(instruments)
 
+        dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
         with open(
-                os.path.join('mosfit', 'modules', 'observables',
-                             'filterrules.json')) as f:
+                os.path.join(dir_path, 'filterrules.json')) as f:
             filterrules = json.loads(f.read())
             for bi, band in enumerate(bands):
                 for rule in filterrules:
@@ -60,8 +60,7 @@ class Filters(Module):
 
         for i, band in enumerate(self._unique_bands):
             with open(
-                    os.path.join('mosfit', 'modules', 'observables',
-                                 'filters', band['path']), 'r') as f:
+                    os.path.join(dir_path, 'filters', band['path']), 'r') as f:
                 rows = []
                 for row in csv.reader(f, delimiter=' ', skipinitialspace=True):
                     rows.append([float(x) for x in row[:2]])

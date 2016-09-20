@@ -3,6 +3,7 @@ import importlib
 import json
 import logging
 import os
+import shutil
 import time
 from collections import OrderedDict
 from math import isnan
@@ -26,6 +27,8 @@ class Model:
         self._model_name = model
         self._travis = travis
 
+        self._dir_path = os.path.dirname(os.path.realpath(__file__))
+
         # Load the model file.
         model = self._model_name
         model_dir = self._model_name
@@ -35,7 +38,7 @@ class Model:
         else:
             model = self._model_name + '.json'
 
-        model_path = os.path.join('mosfit', 'models', model_dir, model)
+        model_path = os.path.join(self._dir_path, 'models', model_dir, model)
 
         if os.path.isfile(model):
             model_path = model
@@ -339,6 +342,15 @@ class Model:
                 parameters.update({self._modules[task].name(): paramdict})
                 pi = pi + 1
             walkers_out[xi]['parameters'] = parameters
+
+        if not os.path.isfile('mosfit.ipynb'):
+            shutil.copy(
+                os.path.join(self._dir_path, 'mosfit.ipynb'),
+                os.path.join(os.getcwd(), 'mosfit.ipynb'))
+            print('hi')
+
+        if not os.path.exists('products'):
+            os.makedirs('products')
 
         with open(os.path.join('products', 'walkers.json'),
                   'w') as flast, open(

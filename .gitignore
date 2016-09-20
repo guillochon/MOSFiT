@@ -1,6 +1,8 @@
 build/
 cache/
 products/
+dist/
+MANIFEST
 *.pyc
 *checkpoint.ipynb
 *.so

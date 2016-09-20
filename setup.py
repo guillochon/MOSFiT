@@ -1,10 +1,13 @@
-from distutils.core import setup
+import os
+
+from setuptools import setup, find_packages
 
 extensions = []
 
 setup(
     name='mosfit',
-    packages=['mosfit'],
+    packages=find_packages(),
+    include_package_data=True,
     version='0.1.0',
     description=('Package that performs maximum likelihood analysis to fit '
                  'semi-analytical model predictions to observed '
@@ -14,5 +17,4 @@ setup(
     url='https://github.com/guillochon/mosfit',
     download_url='https://github.com/guillochon/mypackage/tarball/0.1',
     keywords=['astronomy', 'fitting', 'monte carlo', 'modeling'],
-    classifiers=[]
-)
+    classifiers=[])

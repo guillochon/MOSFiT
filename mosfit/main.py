@@ -10,6 +10,8 @@ def main():
     """First, parse command line arguments.
     """
 
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
     parser = argparse.ArgumentParser(
         prog='MOSFiT',
         description='Fit astrophysical light curves using AstroCats data.')
@@ -148,7 +150,7 @@ def main():
     args = parser.parse_args()
 
     # Print our amazing ASCII logo.
-    with open(os.path.join('mosfit', 'logo.txt'), 'r') as f:
+    with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
         logo = f.read()
         width = len(logo.split('\n')[0])
         aligns = '{:^' + str(width) + '}'
