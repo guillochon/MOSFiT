@@ -1,5 +1,6 @@
 import argparse
 import os
+import shutil
 
 from mosfit.fitter import Fitter
 
@@ -118,6 +119,15 @@ def main():
               "optimization process."))
 
     parser.add_argument(
+        '--no-copy-at-launch',
+        dest='copy',
+        default=True,
+        action='store_false',
+        help=("Setting this flag will prevent MOSFiT from copying the user "
+              "file hierarchy (models/modules/jupyter) to the current working "
+              "directory before fitting."))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',
@@ -160,6 +170,46 @@ def main():
     print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
     print(aligns.format('Released under the MIT license'))
     print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
+
+    # Create the user directory structure, if it doesn't already exist.
+    if args.copy:
+        print('Copying MOSFiT folder hierarchy to current working directory '
+              '(disable with --no-copy-at-launch).')
+        if not os.path.exists('jupyter'):
+            os.mkdir(os.path.join('jupyter'))
+        if not os.path.isfile(os.path.join('jupyter', 'mosfit.ipynb')):
+            shutil.copy(
+                os.path.join(dir_path, 'jupyter', 'mosfit.ipynb'),
+                os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
+
+        if not os.path.exists('modules'):
+            os.mkdir(os.path.join('modules'))
+        module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
+        for mdir in module_dirs:
+            if mdir.startswith('__'):
+                continue
+            mdir_path = os.path.join('modules', mdir)
+            if not os.path.exists(mdir_path):
+                os.mkdir(mdir_path)
+
+        if not os.path.exists('models'):
+            os.mkdir(os.path.join('models'))
+        model_dirs = next(os.walk(os.path.join(dir_path, 'models')))[1]
+        for mdir in model_dirs:
+            if mdir.startswith('__'):
+                continue
+            mdir_path = os.path.join('models', mdir)
+            if not os.path.exists(mdir_path):
+                os.mkdir(mdir_path)
+            model_files = next(os.walk(os.path.join(dir_path, 'models',
+                                                    mdir)))[2]
+            for mfil in model_files:
+                fil_path = os.path.join(os.getcwd(), 'models', mdir, mfil)
+                if os.path.isfile(fil_path):
+                    continue
+                shutil.copy(
+                    os.path.join(dir_path, 'models', mdir, mfil),
+                    os.path.join(fil_path))
 
     # Then, fit the listed events with the listed models.
     fitargs = {

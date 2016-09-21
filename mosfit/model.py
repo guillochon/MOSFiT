@@ -20,7 +20,7 @@ class Model:
     """Define a semi-analytical model to fit transients with.
     """
 
-    MODEL_OUTPUT_DIR = 'mosfit-products'
+    MODEL_OUTPUT_DIR = 'products'
 
     def __init__(self,
                  parameter_path='parameters.json',
@@ -40,10 +40,15 @@ class Model:
         else:
             model = self._model_name + '.json'
 
-        model_path = os.path.join(self._dir_path, 'models', model_dir, model)
-
         if os.path.isfile(model):
             model_path = model
+        else:
+            # Look in local hierarchy first
+            if os.path.isfile(os.path.join('models', model_dir, model)):
+                model_path = os.path.join('models', model_dir, model)
+            else:
+                model_path = os.path.join(self._dir_path, 'models', model_dir,
+                                          model)
 
         print('Model file: ' + model_path)
 
@@ -344,11 +349,6 @@ class Model:
                 parameters.update({self._modules[task].name(): paramdict})
                 pi = pi + 1
             walkers_out[xi]['parameters'] = parameters
-
-        if not os.path.isfile('mosfit.ipynb'):
-            shutil.copy(
-                os.path.join(self._dir_path, 'jupyter', 'mosfit.ipynb'),
-                os.path.join(os.getcwd(), 'mosfit.ipynb'))
 
         if not os.path.exists(self.MODEL_OUTPUT_DIR):
             os.makedirs(self.MODEL_OUTPUT_DIR)
