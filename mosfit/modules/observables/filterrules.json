@@ -98,11 +98,11 @@
             },
             "W2":{
                 "path":"UVOT_uvw2.dat",
-                "offset":1.69
+                "offset":1.73
             },
             "M2":{
                 "path":"UVOT_uvm2.dat",
-                "offset":1.73
+                "offset":1.69
             }
         }
     },
