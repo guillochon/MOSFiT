@@ -5,9 +5,9 @@ import os
 import numexpr as ne
 import numpy as np
 
-from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
-from ...utils import listify
-from ..module import Module
+from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
+from mosfit.utils import listify
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'Filters'
 

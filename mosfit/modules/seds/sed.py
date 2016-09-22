@@ -2,7 +2,7 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 
-from ..module import Module
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'SED'
 

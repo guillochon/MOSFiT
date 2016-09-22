@@ -2,7 +2,7 @@ from math import isnan
 
 import numpy as np
 
-from .engine import Engine
+from mosfit.modules.engines.engine import Engine
 
 CLASS_NAME = 'NickelCobalt'
 

@@ -3,8 +3,8 @@ from math import isnan
 import numexpr as ne
 import numpy as np
 
-from ...constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
-from .transform import Transform
+from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.modules.transforms.transform import Transform
 
 CLASS_NAME = 'Diffusion'
 

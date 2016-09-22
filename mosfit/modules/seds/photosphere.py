@@ -4,8 +4,8 @@ import numexpr as ne
 import numpy as np
 from astropy import constants as c
 
-from ...constants import DAY_CGS, FOUR_PI, KM_CGS
-from .sed import SED
+from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Photosphere'
 

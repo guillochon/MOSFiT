@@ -1,5 +1,5 @@
-from ...constants import DAY_CGS
-from ..module import Module
+from mosfit.constants import DAY_CGS
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'Transform'
 

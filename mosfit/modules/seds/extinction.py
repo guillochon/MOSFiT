@@ -3,7 +3,7 @@ import numpy as np
 from extinction import apply as eapp
 from extinction import odonnell94
 
-from .sed import SED
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Extinction'
 

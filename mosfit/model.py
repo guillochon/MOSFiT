@@ -127,9 +127,15 @@ class Model:
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             class_name = cur_task.get('class', task)
-            mod = importlib.import_module(
-                '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
-                package='mosfit')
+            mod_path = os.path.join('modules', cur_task['kind'] + 's',
+                                    class_name + '.py')
+            if not os.path.isfile(mod_path):
+                mod_path = os.path.join(self._dir_path, 'modules',
+                                        cur_task['kind'] + 's',
+                                        class_name + '.py')
+            mod_name = 'modules.' + cur_task['kind'] + 's.' + class_name
+            mod = importlib.machinery.SourceFileLoader(mod_name,
+                                                       mod_path).load_module()
             mod_class = getattr(mod, mod.CLASS_NAME)
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
