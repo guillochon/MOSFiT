@@ -34,8 +34,9 @@ script:
     - mkdir test
     - cd test
     - echo "travis_fold:start:FIT Fitting test data"
-    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 2 -f 2
-    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 2 --no-fracking -m magnetar
+    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 1 -f 1
+    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 1 --no-fracking -m magnetar
+    - mpirun -np 2 coverage run -a -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
     - echo "travis_fold:end:FIT Fitting test data done"
     - echo "travis_fold:start:GEN Generating random models"
     - coverage run -a -m mosfit --travis -i 0
