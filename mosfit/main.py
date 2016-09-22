@@ -1,6 +1,7 @@
 import argparse
 import os
 import shutil
+from textwrap import wrap
 
 from mosfit.fitter import Fitter
 
@@ -128,6 +129,16 @@ def main():
               "directory before fitting."))
 
     parser.add_argument(
+        '--force-copy-at-launch',
+        dest='force_copy',
+        default=False,
+        action='store_true',
+        help=("Setting this flag will force MOSFiT to overwrite the user "
+              "file hierarchy (models/modules/jupyter) to the current working "
+              "directory. User will be prompted before being allowed to run "
+              "with this flag."))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',
@@ -175,9 +186,20 @@ def main():
     if args.copy:
         print('Copying MOSFiT folder hierarchy to current working directory '
               '(disable with --no-copy-at-launch).')
+        fc = False
+        if args.force_copy:
+            prompt_txt = wrap(
+                "The flag `--force-copy-at-launch` has been set. Do you "
+                "really wish to overwrite your local model/module/jupyter "
+                "file hierarchy? This action cannot be reversed. "
+                "[Y/(N)]: ", width)
+            for txt in prompt_txt[:-1]:
+                print(txt)
+            user_choice = input(prompt_txt[-1] + " ")
+            fc = user_choice in ["Y", "y", "Yes", "yes"]
         if not os.path.exists('jupyter'):
             os.mkdir(os.path.join('jupyter'))
-        if not os.path.isfile(os.path.join('jupyter', 'mosfit.ipynb')):
+        if not os.path.isfile(os.path.join('jupyter', 'mosfit.ipynb')) or fc:
             shutil.copy(
                 os.path.join(dir_path, 'jupyter', 'mosfit.ipynb'),
                 os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
@@ -205,7 +227,7 @@ def main():
                                                     mdir)))[2]
             for mfil in model_files:
                 fil_path = os.path.join(os.getcwd(), 'models', mdir, mfil)
-                if os.path.isfile(fil_path):
+                if os.path.isfile(fil_path) and not fc:
                     continue
                 shutil.copy(
                     os.path.join(dir_path, 'models', mdir, mfil),
