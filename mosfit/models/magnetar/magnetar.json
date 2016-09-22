@@ -26,6 +26,33 @@
             }
         }
     },
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":463.4,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"d_{L}"
+    },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.1,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"z"
+    },
     "nhhost":{
         "kind":"parameter",
         "value":1.0e18,
@@ -35,6 +62,11 @@
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
+        "class":"parameter"
+    },
+    "temperature":{
+        "kind":"parameter",
+        "value":1.0e4,
         "class":"parameter"
     },
     "Pspin":{
@@ -117,34 +149,37 @@
             "vejecta"
         ]
     },
-    "slsn":{
+    "envelopecore":{
         "kind":"sed",
         "inputs":[
             "texplosion",
+            "redshift",
             "diffusion",
-            "vejecta",
-            "mejecta",
-            "kappa"
+            "temperature"
         ]
     },
     "extinction":{
         "kind":"sed",
         "inputs":[
-            "slsn",
-            "nhhost"
+            "envelopecore",
+            "nhhost",
+            "ebv"
         ],
         "requests":[
             ["bandwavelengths", "filters"],
+            [],
             []
         ]
     },
     "filters":{
         "kind":"observable",
         "inputs":[
-            "extinction"
+            "extinction",
+            "lumdist"
         ],
         "requests":[
-            ["band_wave_ranges", "filters"]
+            ["band_wave_ranges", "filters"],
+            []
         ]
     },
     "likelihood":{
