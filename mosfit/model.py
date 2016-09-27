@@ -133,10 +133,15 @@ class Model:
                 mod_path = os.path.join(self._dir_path, 'modules',
                                         cur_task['kind'] + 's',
                                         class_name + '.py')
-            mod_name = 'modules.' + cur_task['kind'] + 's.' + class_name
+            mod_name = 'mosfit.modules.' + cur_task['kind'] + 's.' + class_name
             mod = importlib.machinery.SourceFileLoader(mod_name,
                                                        mod_path).load_module()
             mod_class = getattr(mod, mod.CLASS_NAME)
+            # mod2 = importlib.import_module(
+            #     '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
+            #     package='mosfit')
+            # mod2_class = getattr(mod, mod.CLASS_NAME)
+            # print(mod, mod_class, mod2, mod2_class)
             if cur_task['kind'] == 'parameter' and task in self._parameters:
                 cur_task.update(self._parameters[task])
             self._modules[task] = mod_class(name=task, **cur_task)
