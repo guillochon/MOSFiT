@@ -7,9 +7,11 @@
 
 ##Getting Started
 
-To install `MOSFiT` into your Python environment, download the package and then run the `setup.py` file:
+To install `MOSFiT` into your Python environment, clone the package and then run the `setup.py` file:
 
 ```bash
+git clone https://github.com/guillochon/MOSFiT.git
+cd MOSFiT
 python setup.py install
 ```
 
