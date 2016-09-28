@@ -5,9 +5,9 @@ import os
 import numexpr as ne
 import numpy as np
 
-from ...constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
-from ...utils import listify
-from ..module import Module
+from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
+from mosfit.utils import listify
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'Filters'
 
@@ -18,6 +18,7 @@ class Filters(Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._preprocessed = False
         bands = kwargs.get('bands', '')
         systems = kwargs.get('systems', '')
         instruments = kwargs.get('instruments', '')
@@ -85,9 +86,9 @@ class Filters(Module):
         raise(ValueError('Cannot find band index!'))
 
     def process(self, **kwargs):
+        self.preprocess(**kwargs)
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
-        self._bands = kwargs['bands']
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         eff_fluxes = []
@@ -128,3 +129,10 @@ class Filters(Module):
         elif request == 'band_wave_ranges':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
         return []
+
+    def preprocess(self, **kwargs):
+        if not self._preprocessed:
+            self._bands = kwargs['bands']
+            self._band_indices = list(
+                map(self.find_band_index, self._bands))
+        self._preprocessed = True

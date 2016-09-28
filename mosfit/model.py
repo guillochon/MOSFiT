@@ -3,7 +3,6 @@ import importlib
 import json
 import logging
 import os
-import shutil
 import time
 from collections import OrderedDict
 from math import isnan
@@ -20,7 +19,7 @@ class Model:
     """Define a semi-analytical model to fit transients with.
     """
 
-    MODEL_OUTPUT_DIR = 'mosfit-products'
+    MODEL_OUTPUT_DIR = 'products'
 
     def __init__(self,
                  parameter_path='parameters.json',
@@ -40,10 +39,15 @@ class Model:
         else:
             model = self._model_name + '.json'
 
-        model_path = os.path.join(self._dir_path, 'models', model_dir, model)
-
         if os.path.isfile(model):
             model_path = model
+        else:
+            # Look in local hierarchy first
+            if os.path.isfile(os.path.join('models', model_dir, model)):
+                model_path = os.path.join('models', model_dir, model)
+            else:
+                model_path = os.path.join(self._dir_path, 'models', model_dir,
+                                          model)
 
         print('Model file: ' + model_path)
 
@@ -132,6 +136,24 @@ class Model:
             self._modules[task] = mod_class(name=task, **cur_task)
             if class_name == 'filters':
                 self._bands = self._modules[task].band_names()
+            # This is currently not functional for MPI
+            # cur_task = self._call_stack[task]
+            # class_name = cur_task.get('class', task)
+            # mod_path = os.path.join('modules', cur_task['kind'] + 's',
+            #                         class_name + '.py')
+            # if not os.path.isfile(mod_path):
+            #     mod_path = os.path.join(self._dir_path, 'modules',
+            #                             cur_task['kind'] + 's',
+            #                             class_name + '.py')
+            # mod_name = 'mosfit.modules.' + cur_task['kind'] + 's.' + class_name
+            # mod = importlib.machinery.SourceFileLoader(mod_name,
+            #                                            mod_path).load_module()
+            # mod_class = getattr(mod, mod.CLASS_NAME)
+            # if cur_task['kind'] == 'parameter' and task in self._parameters:
+            #     cur_task.update(self._parameters[task])
+            # self._modules[task] = mod_class(name=task, **cur_task)
+            # if class_name == 'filters':
+            #     self._bands = self._modules[task].band_names()
 
         for task in reversed(self._call_stack):
             cur_task = self._call_stack[task]
@@ -344,11 +366,6 @@ class Model:
                 parameters.update({self._modules[task].name(): paramdict})
                 pi = pi + 1
             walkers_out[xi]['parameters'] = parameters
-
-        if not os.path.isfile('mosfit.ipynb'):
-            shutil.copy(
-                os.path.join(self._dir_path, 'jupyter', 'mosfit.ipynb'),
-                os.path.join(os.getcwd(), 'mosfit.ipynb'))
 
         if not os.path.exists(self.MODEL_OUTPUT_DIR):
             os.makedirs(self.MODEL_OUTPUT_DIR)

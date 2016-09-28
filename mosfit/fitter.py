@@ -7,6 +7,7 @@ import requests
 from emcee.utils import MPIPool
 
 from .model import Model
+from .utils import print_inline
 
 warnings.filterwarnings("ignore")
 
@@ -56,12 +57,19 @@ class Fitter():
                     if not path or not os.path.exists(path):
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
+                        input_name = event.replace('.json', '')
+                        print('Event `{}` interpreted as supernova name, '
+                              'downloading list of superova aliases...'.format(
+                                  input_name))
                         try:
                             response = requests.get(
                                 'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/names.min.json')
+                                'supernovae/output/names.min.json',
+                                timeout=10)
                         except:
-                            print('Warning: Could not download SN names!')
+                            print_inline(
+                                'Warning: Could not download SN names (are '
+                                'you online?), using cached list.')
                         else:
                             with open(names_path, 'wb') as f:
                                 f.write(response.content)
@@ -85,13 +93,19 @@ class Fitter():
                             raise RuntimeError
                         urlname = event_name + '.json'
 
+                        print('Found event by primary name `{}` in the OSC, '
+                              'downloading data...'.format(event_name))
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
                             response = requests.get(
                                 'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/json/' + urlname)
+                                'supernovae/output/json/' + urlname,
+                                timeout=10)
                         except:
-                            print('Warning: Could not download SN data!')
+                            print_inline(
+                                'Warning: Could not download data for `{}`, '
+                                'will attempt to use cached data.'.format(
+                                    event_name))
                         else:
                             with open(name_path, 'wb') as f:
                                 f.write(response.content)
@@ -107,16 +121,17 @@ class Fitter():
                         event_name = pool.comm.recv(source=0, tag=0)
                         path = pool.comm.recv(source=0, tag=1)
                         pool.wait()
-                if pool:
-                    pool.close()
 
                 if os.path.exists(path):
                     with open(path, 'r') as f:
                         data = json.loads(f.read())
                 else:
-                    print('Error: Could not find supernova data locally or '
-                          'on the OSC.')
+                    print('Error: Could not find data for `{}` locally or '
+                          'on the OSC.'.format(event_name))
                     raise RuntimeError
+
+                if pool:
+                    pool.close()
 
             for mod_name in models:
                 for parameter_path in parameter_paths:

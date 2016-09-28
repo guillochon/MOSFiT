@@ -1,6 +1,9 @@
 import argparse
 import os
+import shutil
+from textwrap import wrap
 
+from emcee.utils import MPIPool
 from mosfit.fitter import Fitter
 
 from . import __version__
@@ -118,6 +121,25 @@ def main():
               "optimization process."))
 
     parser.add_argument(
+        '--no-copy-at-launch',
+        dest='copy',
+        default=True,
+        action='store_false',
+        help=("Setting this flag will prevent MOSFiT from copying the user "
+              "file hierarchy (models/modules/jupyter) to the current working "
+              "directory before fitting."))
+
+    parser.add_argument(
+        '--force-copy-at-launch',
+        dest='force_copy',
+        default=False,
+        action='store_true',
+        help=("Setting this flag will force MOSFiT to overwrite the user "
+              "file hierarchy (models/modules/jupyter) to the current working "
+              "directory. User will be prompted before being allowed to run "
+              "with this flag."))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',
@@ -149,17 +171,85 @@ def main():
 
     args = parser.parse_args()
 
-    # Print our amazing ASCII logo.
-    with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
-        logo = f.read()
-        width = len(logo.split('\n')[0])
-        aligns = '{:^' + str(width) + '}'
-        print(logo)
-    print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
-        __version__)))
-    print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
-    print(aligns.format('Released under the MIT license'))
-    print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
+    pool = ''
+    try:
+        pool = MPIPool()
+    except ValueError:
+        pass
+    except:
+        raise
+
+    if not pool or pool.is_master():
+        # Print our amazing ASCII logo.
+        with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
+            logo = f.read()
+            width = len(logo.split('\n')[0])
+            aligns = '{:^' + str(width) + '}'
+            print(logo)
+        print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
+            __version__)))
+        print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
+        print(aligns.format('Released under the MIT license'))
+        print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
+
+        # Create the user directory structure, if it doesn't already exist.
+        if args.copy:
+            print(
+                'Copying MOSFiT folder hierarchy to current working directory '
+                '(disable with --no-copy-at-launch).')
+            fc = False
+            if args.force_copy:
+                prompt_txt = wrap(
+                    "The flag `--force-copy-at-launch` has been set. Do you "
+                    "really wish to overwrite your local model/module/jupyter "
+                    "file hierarchy? This action cannot be reversed. "
+                    "[Y/(N)]: ", width)
+                for txt in prompt_txt[:-1]:
+                    print(txt)
+                user_choice = input(prompt_txt[-1] + " ")
+                fc = user_choice in ["Y", "y", "Yes", "yes"]
+            if not os.path.exists('jupyter'):
+                os.mkdir(os.path.join('jupyter'))
+            if not os.path.isfile(os.path.join('jupyter',
+                                               'mosfit.ipynb')) or fc:
+                shutil.copy(
+                    os.path.join(dir_path, 'jupyter', 'mosfit.ipynb'),
+                    os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
+
+            # Disabled for now as external modules don't work with MPI.
+            # if not os.path.exists('modules'):
+            #     os.mkdir(os.path.join('modules'))
+            # module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
+            # for mdir in module_dirs:
+            #     if mdir.startswith('__'):
+            #         continue
+            #     mdir_path = os.path.join('modules', mdir)
+            #     if not os.path.exists(mdir_path):
+            #         os.mkdir(mdir_path)
+
+            if not os.path.exists('models'):
+                os.mkdir(os.path.join('models'))
+            model_dirs = next(os.walk(os.path.join(dir_path, 'models')))[1]
+            for mdir in model_dirs:
+                if mdir.startswith('__'):
+                    continue
+                mdir_path = os.path.join('models', mdir)
+                if not os.path.exists(mdir_path):
+                    os.mkdir(mdir_path)
+                model_files = next(
+                    os.walk(os.path.join(dir_path, 'models', mdir)))[2]
+                for mfil in model_files:
+                    fil_path = os.path.join(os.getcwd(), 'models', mdir, mfil)
+                    if os.path.isfile(fil_path) and not fc:
+                        continue
+                    shutil.copy(
+                        os.path.join(dir_path, 'models', mdir, mfil),
+                        os.path.join(fil_path))
+    else:
+        pool.wait()
+
+    if pool:
+        pool.close()
 
     # Then, fit the listed events with the listed models.
     fitargs = {

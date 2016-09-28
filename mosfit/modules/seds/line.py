@@ -1,4 +1,4 @@
-from .sed import SED
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Line'
 

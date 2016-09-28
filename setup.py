@@ -1,16 +1,20 @@
-from setuptools import setup, find_packages
+import os
 
-extensions = []
+from setuptools import find_packages, setup
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+exec(open(os.path.join(dir_path, 'mosfit', '__init__.py')).read())
 
 setup(
     name='mosfit',
     packages=find_packages(),
     include_package_data=True,
-    version='0.1.1',
+    version=__version__,  # noqa
     description=('Package that performs maximum likelihood analysis to fit '
                  'semi-analytical model predictions to observed '
                  'astronomical transient data.'),
-    author='James Guillochon',
+    license=__license__,  # noqa
+    author=__author__,  # noqa
     author_email='guillochon@gmail.com',
     url='https://github.com/guillochon/mosfit',
     download_url='https://github.com/guillochon/mosfit/tarball/0.1.1',

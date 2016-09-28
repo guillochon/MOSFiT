@@ -5,7 +5,24 @@
 
 `MOSFiT` (**M**oduluar **O**pen-**S**ource **Fi**tter for **T**ransients) is a Python 3.x package that performs maximum likelihood analysis to fit semi-analytical model predictions to observed transient data. Data can be provided by the user, or can be pulled automatically from the [Open Supernova Catalog](https://sne.space) by its name, and thus the code can be used to fit *any* supernova within that database, or any database that shares the format described in the [OSC schema](https://github.com/astrocatalogs/supernovae/blob/master/SCHEMA.md) (such as the [Open TDE Catalog](https://tde.space) or the [Open Nova Catalog](https://opennova.space)).<br clear="all">
 
-To run `MOSFiT`, pass an event name to the program via the `-e` flag (the default model is a simple Nickel-Cobalt decay with diffusion):
+##Getting Started
+
+To install `MOSFiT` into your Python environment, clone the package and then run the `setup.py` file:
+
+```bash
+git clone https://github.com/guillochon/MOSFiT.git
+cd MOSFiT
+python setup.py install
+```
+
+Once installed, MOSFiT can be run from any directory, and it's typically convenient to make a new directory for your project.
+
+```bash
+mkdir mosfit_runs
+cd mosfit_runs
+```
+
+Then, to run `MOSFiT`, pass an event name to the program via the `-e` flag (the default model is a simple Nickel-Cobalt decay with diffusion):
 
 ```bash
 python -m mosfit -e SN2015bn
