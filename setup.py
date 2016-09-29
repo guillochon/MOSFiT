@@ -2,6 +2,9 @@ import os
 
 from setuptools import find_packages, setup
 
+with open('requirements.txt') as f:
+    required = f.read().splitlines()
+
 dir_path = os.path.dirname(os.path.realpath(__file__))
 exec(open(os.path.join(dir_path, 'mosfit', '__init__.py')).read())
 
@@ -16,6 +19,7 @@ setup(
     license=__license__,  # noqa
     author=__author__,  # noqa
     author_email='guillochon@gmail.com',
+    install_requires=required,
     url='https://github.com/guillochon/mosfit',
     download_url='https://github.com/guillochon/mosfit/tarball/0.1.1',
     keywords=['astronomy', 'fitting', 'monte carlo', 'modeling'],
