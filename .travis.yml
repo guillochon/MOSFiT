@@ -11,18 +11,12 @@ git:
 # Setup anaconda
 before_install:
 # Install packages
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "3.3" ]]; then
-          wget https://repo.continuum.io/miniconda/Miniconda3-4.0.5-Linux-x86_64.sh -O miniconda.sh;
-      else
-          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      fi
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
     - conda config --set always_yes yes --set changeps1 no
-    - if [[ "$TRAVIS_PYTHON_VERSION" != "3.3" ]];
-      then conda update -q conda;
-      fi
+    - conda update -q conda;
 install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy
     - pip install -r requirements.txt
