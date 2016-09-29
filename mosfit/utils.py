@@ -1,7 +1,19 @@
 """Miscellaneous utility functions.
 """
+from __future__ import print_function
+
 import sys
 from math import floor, log10
+
+if sys.version_info[:2] < (3, 3):
+    old_print = print
+
+    def print(*args, **kwargs):
+        flush = kwargs.pop('flush', False)
+        old_print(*args, **kwargs)
+        file = kwargs.get('file', sys.stdout)
+        if flush and file is not None:
+            file.flush()
 
 
 def is_number(s):
