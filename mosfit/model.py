@@ -49,7 +49,7 @@ class Model:
                 model_path = os.path.join(self._dir_path, 'models', model_dir,
                                           model)
 
-        print('Model file: ' + model_path)
+
 
         with open(model_path, 'r') as f:
             self._model = json.loads(f.read())
@@ -70,7 +70,17 @@ class Model:
         elif os.path.isfile(model_pp):
             pp = model_pp
 
-        print('Parameter file: ' + pp + '\n')
+        pool = ''
+        try:
+            pool = MPIPool()
+        except ValueError:
+            pass
+        except:
+            raise
+
+        if not pool or pool.is_master():
+            print('Model file: ' + model_path)
+            print('Parameter file: ' + pp + '\n')
 
         with open(pp, 'r') as f:
             self._parameters = json.loads(f.read())
