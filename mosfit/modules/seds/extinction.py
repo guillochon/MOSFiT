@@ -30,9 +30,8 @@ class Extinction(SED):
             eapp(self._mw_extinct[si], self._seds[si], inplace=True)
             # Then extinct out host gal (using rest wavelengths)
             eapp(
-                odonnell94(
-                    np.array(self._band_rest_wavelengths[bi]), av_host,
-                    self.MW_RV),
+                odonnell94(self._band_rest_wavelengths[bi], av_host,
+                           self.MW_RV),
                 self._seds[si],
                 inplace=True)
 
@@ -45,8 +44,8 @@ class Extinction(SED):
             self._bands = kwargs['bands']
             self._band_indices = list(
                 map(self._filters.find_band_index, self._bands))
-            self._band_rest_wavelengths = [[y / zp1 for y in x]
-                                           for x in self._band_wavelengths]
+            self._band_rest_wavelengths = np.array(
+                [[y / zp1 for y in x] for x in self._band_wavelengths])
             self._av_mw = self.MW_RV * self._ebv
             self._mw_extinct = []
             for si, cur_band in enumerate(self._bands):

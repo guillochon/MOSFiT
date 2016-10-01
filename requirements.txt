@@ -1,3 +1,4 @@
+Cython>=0.24.1
 numpy>=1.11.1
 emcee>=2.2.1
 astropy>=1.1.1
