@@ -90,9 +90,12 @@ class Filters(Module):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             offsets.append(self._band_offsets[bi])
+            wavs = kwargs['bandwavelengths'][bi]
+            itrans = np.interp(wavs, self._band_wavelengths[bi],
+                               self._transmissions[bi])
             yvals = [
                 x * y
-                for x, y in zip(self._transmissions[bi], kwargs['seds'][li])
+                for x, y in zip(itrans, kwargs['seds'][li])
             ]
             eff_fluxes.append(
                 np.trapz(
