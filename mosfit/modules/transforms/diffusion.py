@@ -2,7 +2,6 @@ from math import isnan
 
 import numexpr as ne
 import numpy as np
-
 from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
 
@@ -37,7 +36,7 @@ class Diffusion(Transform):
         new_lum = []
         evaled = False
         lum_cache = {}
-        min_te = min(self._dense_times_since_exp)
+        min_te = min(self._unique_times)
         for te in self._times_since_exp:
             if te <= 0.0:
                 new_lum.append(0.0)
@@ -50,8 +49,8 @@ class Diffusion(Transform):
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
 
-            int_lums = np.interp(int_times, self._dense_times_since_exp,
-                                 self._luminosities)
+            int_lums = np.interp(int_times, self._unique_times,
+                                 self._unique_luminosities)
 
             if not evaled:
                 int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '

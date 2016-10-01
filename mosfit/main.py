@@ -6,7 +6,7 @@ from textwrap import wrap
 from emcee.utils import MPIPool
 from mosfit.fitter import Fitter
 
-from . import __version__
+from mosfit import __version__
 
 
 def main():

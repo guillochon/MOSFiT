@@ -7,7 +7,7 @@ import requests
 from emcee.utils import MPIPool
 
 from .model import Model
-from .utils import print_inline
+from mosfit.utils import print_inline
 
 warnings.filterwarnings("ignore")
 

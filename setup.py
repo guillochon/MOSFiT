@@ -1,12 +1,25 @@
+import fnmatch
 import os
 
-from setuptools import find_packages, setup
+import numpy as np
+from Cython.Build import cythonize
+from setuptools import Extension, find_packages, setup
 
 with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 exec(open(os.path.join(dir_path, 'mosfit', '__init__.py')).read())
+
+matches = []
+for root, dirnames, filenames in os.walk('mosfit'):
+    for filename in fnmatch.filter(filenames, '*.pyx'):
+        matches.append(os.path.join(root, filename))
+
+extensions = [Extension(
+    x.split('.')[0], [x], include_dirs=[np.get_include()],
+    extra_compile_args=['-Wno-unused-function', '-Wno-unreachable-code'],
+    compiler_directives={'profile': True}) for x in matches]
 
 setup(
     name='mosfit',
@@ -20,6 +33,7 @@ setup(
     author=__author__,  # noqa
     author_email='guillochon@gmail.com',
     install_requires=required,
+    ext_modules=cythonize(extensions),
     url='https://github.com/guillochon/mosfit',
     download_url='https://github.com/guillochon/mosfit/tarball/0.1.1',
     keywords=['astronomy', 'fitting', 'monte carlo', 'modeling'],

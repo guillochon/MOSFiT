@@ -2,12 +2,10 @@ import csv
 import json
 import os
 
-import numexpr as ne
 import numpy as np
-
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
-from mosfit.utils import listify
 from mosfit.modules.module import Module
+from mosfit.utils import listify
 
 CLASS_NAME = 'Filters'
 
@@ -28,8 +26,7 @@ class Filters(Module):
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
-        with open(
-                os.path.join(dir_path, 'filterrules.json')) as f:
+        with open(os.path.join(dir_path, 'filterrules.json')) as f:
             filterrules = json.loads(f.read())
             for bi, band in enumerate(bands):
                 for rule in filterrules:
@@ -60,8 +57,8 @@ class Filters(Module):
         self._filter_integrals = [0.0] * self._n_bands
 
         for i, band in enumerate(self._unique_bands):
-            with open(
-                    os.path.join(dir_path, 'filters', band['path']), 'r') as f:
+            with open(os.path.join(dir_path, 'filters', band['path']),
+                      'r') as f:
                 rows = []
                 for row in csv.reader(f, delimiter=' ', skipinitialspace=True):
                     rows.append([float(x) for x in row[:2]])
@@ -69,21 +66,18 @@ class Filters(Module):
                 map(list, zip(*rows)))
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = np.trapz(
-                self._transmissions[i],
-                self._band_wavelengths[i])
+            self._filter_integrals[i] = np.trapz(self._transmissions[i],
+                                                 self._band_wavelengths[i])
 
     def find_band_index(self, name, instrument='', system=''):
         for bi, band in enumerate(self._unique_bands):
-            if (name == band['name'] and
-                instrument in self._band_insts[bi] and
+            if (name == band['name'] and instrument in self._band_insts[bi] and
                     system in self._band_systs[bi]):
                 return bi
-            if (name == band['name'] and
-                '' in self._band_insts[bi] and
+            if (name == band['name'] and '' in self._band_insts[bi] and
                     '' in self._band_systs[bi]):
                 return bi
-        raise(ValueError('Cannot find band index!'))
+        raise (ValueError('Cannot find band index!'))
 
     def process(self, **kwargs):
         self.preprocess(**kwargs)
@@ -93,25 +87,16 @@ class Filters(Module):
         self._instruments = kwargs['instruments']
         eff_fluxes = []
         offsets = []
-        for li, band in enumerate(self._luminosities):
-            cur_band = self._bands[li]
-            bi = self.find_band_index(cur_band, self._systems[li],
-                                      self._instruments[li])
-            sed = kwargs['seds'][li]
-            wavs = kwargs['bandwavelengths'][bi]
+        for li, lum in enumerate(self._luminosities):
+            bi = self._band_indices[li]
             offsets.append(self._band_offsets[bi])
-            dx = wavs[1] - wavs[0]
-            itrans = np.interp(wavs, self._band_wavelengths[bi],
-                               self._transmissions[bi])
-            # if li == 0:
-            #     ef = ne.evaluate('sum(itrans * sed)')
-            # else:
-            #     ef = ne.re_evaluate()
-            # eff_fluxes.append(dx * ef)
-            yvals = [x * y for x, y in zip(itrans, sed)]
+            yvals = [
+                x * y
+                for x, y in zip(self._transmissions[bi], kwargs['seds'][li])
+            ]
             eff_fluxes.append(
                 np.trapz(
-                    yvals, dx=dx) / self._filter_integrals[bi])
+                    yvals, dx=self._dxs[bi]) / self._filter_integrals[bi])
         mags = self.abmag(eff_fluxes, offsets)
         return {'model_magnitudes': mags}
 
@@ -133,6 +118,9 @@ class Filters(Module):
     def preprocess(self, **kwargs):
         if not self._preprocessed:
             self._bands = kwargs['bands']
-            self._band_indices = list(
-                map(self.find_band_index, self._bands))
+            self._band_indices = list(map(self.find_band_index, self._bands))
+            self._dxs = []
+            for bi in self._band_indices:
+                wavs = kwargs['bandwavelengths'][bi]
+                self._dxs.append(wavs[1] - wavs[0])
         self._preprocessed = True

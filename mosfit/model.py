@@ -12,7 +12,7 @@ import numpy as np
 from emcee.utils import MPIPool
 from scipy.optimize import basinhopping
 
-from .utils import listify, pretty_num, print_inline, round_sig
+from mosfit.utils import listify, pretty_num, print_inline, round_sig
 
 
 class Model:
@@ -225,7 +225,7 @@ class Model:
                  plot_points=[],
                  iterations=2000,
                  frack_step=100,
-                 num_walkers=100,
+                 num_walkers=50,
                  num_temps=2,
                  fracking=True,
                  post_burn=500):

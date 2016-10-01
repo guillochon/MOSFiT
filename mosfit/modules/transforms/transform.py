@@ -1,3 +1,5 @@
+import numpy as np
+
 from mosfit.constants import DAY_CGS
 from mosfit.modules.module import Module
 
@@ -27,3 +29,13 @@ class Transform(Module):
                                  for x in self._times]
         self._dense_times_since_exp = [(x - self._t_explosion) * DAY_CGS
                                        for x in self._dense_times]
+        self._unique_times = []
+        self._unique_luminosities = []
+        old_time = ''
+        for ti, time in enumerate(self._dense_times_since_exp):
+            if time != old_time:
+                self._unique_times.append(time)
+                self._unique_luminosities.append(self._luminosities[ti])
+            old_time = time
+        self._unique_times = np.array(self._unique_times)
+        self._unique_luminosities = np.array(self._unique_luminosities)
