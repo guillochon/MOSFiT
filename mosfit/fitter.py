@@ -1,13 +1,14 @@
 import json
 import os
+import shutil
+import urllib.request
 import warnings
 
 import numpy as np
-import requests
 from emcee.utils import MPIPool
+from mosfit.utils import print_inline
 
 from .model import Model
-from mosfit.utils import print_inline
 
 warnings.filterwarnings("ignore")
 
@@ -58,11 +59,12 @@ class Fitter():
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
                         input_name = event.replace('.json', '')
-                        print('Event `{}` interpreted as supernova name, '
-                              'downloading list of superova aliases...'.format(
-                                  input_name))
+                        print(
+                            'Event `{}` interpreted as supernova name, '
+                            'downloading list of supernova aliases...'.format(
+                                input_name))
                         try:
-                            response = requests.get(
+                            response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/names.min.json',
                                 timeout=10)
@@ -72,8 +74,7 @@ class Fitter():
                                 'you online?), using cached list.')
                         else:
                             with open(names_path, 'wb') as f:
-                                f.write(response.content)
-                                f.flush()
+                                shutil.copyfileobj(response, f)
                         if os.path.exists(names_path):
                             with open(names_path, 'r') as f:
                                 names = json.loads(f.read())
@@ -97,7 +98,7 @@ class Fitter():
                               'downloading data...'.format(event_name))
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
-                            response = requests.get(
+                            response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/json/' + urlname,
                                 timeout=10)
@@ -108,8 +109,7 @@ class Fitter():
                                     event_name))
                         else:
                             with open(name_path, 'wb') as f:
-                                f.write(response.content)
-                                f.flush()
+                                shutil.copyfileobj(response, f)
                         path = name_path
 
                     if os.path.exists(path):
