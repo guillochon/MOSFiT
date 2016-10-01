@@ -112,23 +112,25 @@ class Fitter():
                                 f.flush()
                         path = name_path
 
+                    if os.path.exists(path):
+                        with open(path, 'r') as f:
+                            data = json.loads(f.read())
+                    else:
+                        print('Error: Could not find data for `{}` locally or '
+                              'on the OSC.'.format(event_name))
+                        raise RuntimeError
+
                 if pool:
                     if pool.is_master():
                         for rank in range(1, pool.size + 1):
                             pool.comm.send(event_name, dest=rank, tag=0)
                             pool.comm.send(path, dest=rank, tag=1)
+                            pool.comm.send(data, dest=rank, tag=2)
                     else:
                         event_name = pool.comm.recv(source=0, tag=0)
                         path = pool.comm.recv(source=0, tag=1)
+                        data = pool.comm.recv(source=0, tag=2)
                         pool.wait()
-
-                if os.path.exists(path):
-                    with open(path, 'r') as f:
-                        data = json.loads(f.read())
-                else:
-                    print('Error: Could not find data for `{}` locally or '
-                          'on the OSC.'.format(event_name))
-                    raise RuntimeError
 
                 if pool:
                     pool.close()
