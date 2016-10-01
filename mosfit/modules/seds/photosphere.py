@@ -40,7 +40,7 @@ class Photosphere(SED):
         seds = []
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
-            rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
+            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
@@ -61,7 +61,7 @@ class Photosphere(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'bandwavelengths': self._band_wavelengths, 'seds': seds}
+        return {'samplewavelengths': self._sample_wavelengths, 'seds': seds}
 
     def preprocess(self, **kwargs):
         if not self._preprocessed:

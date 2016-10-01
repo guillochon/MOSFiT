@@ -35,7 +35,8 @@ class Extinction(SED):
                 self._seds[si],
                 inplace=True)
 
-        return {'bandwavelengths': self._band_wavelengths, 'seds': self._seds}
+        return {'samplewavelengths': self._sample_wavelengths,
+                'seds': self._seds}
 
     def preprocess(self, **kwargs):
         if not self._preprocessed:
@@ -45,7 +46,7 @@ class Extinction(SED):
             self._band_indices = list(
                 map(self._filters.find_band_index, self._bands))
             self._band_rest_wavelengths = np.array(
-                [[y / zp1 for y in x] for x in self._band_wavelengths])
+                [[y / zp1 for y in x] for x in self._sample_wavelengths])
             self._av_mw = self.MW_RV * self._ebv
             self._mw_extinct = []
             for si, cur_band in enumerate(self._bands):
@@ -53,6 +54,6 @@ class Extinction(SED):
                 # First extinct out LOS dust from MW
                 self._mw_extinct.append(
                     odonnell94(
-                        np.array(self._band_wavelengths[bi]), self._av_mw,
+                        np.array(self._sample_wavelengths[bi]), self._av_mw,
                         self.MW_RV))
         self._preprocessed = True

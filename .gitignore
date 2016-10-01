@@ -2,8 +2,8 @@ build/
 cache/
 products/
 dist/
-jupyter/
-models/
+/models/
+/jupyter/
 MANIFEST
 mosfit.egg-info/
 *.pyc
