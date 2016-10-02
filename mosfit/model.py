@@ -442,12 +442,14 @@ class Model:
         if isinstance(acor, list):
             acortstr = pretty_num(acor[0], sig=3)
             acorcstr = pretty_num(acor[1], sig=2)
-            if acor[1] < 5.0:
+            if self._travis:
+                col = ''
+            elif acor[1] < 5.0:
                 col = bcolors.FAIL
             elif acor[1] < 10.0:
                 col = bcolors.WARNING
             else:
-                col = ''
+                col = bcolors.OKGREEN
             acorstring = col
             acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
                                                                   acorcstr)
