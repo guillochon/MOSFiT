@@ -24,7 +24,7 @@ class Transform(Module):
             self._dense_luminosities = kwargs['denseluminosities']
         elif min(self._times) > self._t_explosion:
             self._dense_times = [self._t_explosion] + kwargs['times']
-            self._dense_luminosities = [0.0] + kwargs['denseluminosities']
+            self._dense_luminosities = [0.0] + kwargs['luminosities']
         self._times_since_exp = [(x - self._t_explosion) * DAY_CGS
                                  for x in self._times]
         self._dense_times_since_exp = [(x - self._t_explosion) * DAY_CGS
