@@ -36,7 +36,7 @@ class Diffusion(Transform):
         new_lum = []
         evaled = False
         lum_cache = {}
-        min_te = min(self._unique_times)
+        min_te = min(self._dense_times_since_exp)
         for te in self._times_since_exp:
             if te <= 0.0:
                 new_lum.append(0.0)
@@ -49,8 +49,8 @@ class Diffusion(Transform):
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
 
-            int_lums = np.interp(int_times, self._unique_times,
-                                 self._unique_luminosities)
+            int_lums = np.interp(int_times, self._dense_times_since_exp,
+                                 self._dense_luminosities)
 
             if not evaled:
                 int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '
