@@ -312,6 +312,7 @@ class Model:
             loop_step = iterations
 
         acort = 1.0
+        acorc = 1.0
         for b in range(frack_iters):
             if fracking and b >= bmax:
                 loop_step = iterations - self._burn_in
@@ -327,9 +328,9 @@ class Model:
                         max(x)
                         for x in sampler.get_autocorr_time(c=min(acorc, 10.0))
                     ])
-                    acor = [acort, acorc]
                 except:
-                    acor = ''
+                    pass
+                acor = [acort, acorc]
                 self._emcee_est_t = float(time.time() - st) / emi * (
                     iterations - (b * frack_step + emi))
                 self.print_status(
@@ -343,7 +344,8 @@ class Model:
                 self.print_status(
                     desc='Running Basin-hopping',
                     scores=[max(x) for x in lnprob],
-                    progress=[(b + 1) * frack_step, iterations])
+                    progress=[(b + 1) * frack_step, iterations],
+                    acor=acor)
                 ris, rjs = [0] * psize, np.random.randint(nwalkers, size=psize)
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
