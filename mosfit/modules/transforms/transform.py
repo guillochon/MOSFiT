@@ -1,5 +1,3 @@
-import numpy as np
-
 from mosfit.constants import DAY_CGS
 from mosfit.modules.module import Module
 
