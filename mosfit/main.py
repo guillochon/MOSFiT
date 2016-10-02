@@ -179,6 +179,7 @@ def main():
     except:
         raise
 
+    width = 100
     if not pool or pool.is_master():
         # Print our amazing ASCII logo.
         with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
@@ -266,6 +267,7 @@ def main():
         'parameter_paths': args.parameter_paths,
         'fracking': args.fracking,
         'frack_step': args.frack_step,
+        'wrap_length': width,
         'travis': args.travis,
         'post_burn': args.post_burn
     }

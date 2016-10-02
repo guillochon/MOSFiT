@@ -23,6 +23,7 @@ class Model:
     def __init__(self,
                  parameter_path='parameters.json',
                  model='default',
+                 wrap_length=100,
                  travis=False):
         self._model_name = model
         self._travis = travis
@@ -274,7 +275,7 @@ class Model:
             psize = pool.size
 
         if serial or pool.is_master():
-            print_inline('{} dimensions in problem.'.format(ndim))
+            print('{} dimensions in problem.\n\n'.format(ndim))
             p0 = [[] for x in range(ntemps)]
 
             for i, pt in enumerate(p0):
@@ -297,7 +298,8 @@ class Model:
         sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
                                   self.prior, **sampler_args)
 
-        print_inline('Initial draws completed!\n')
+        print_inline('Initial draws completed!')
+        print('\n\n')
         p = p0.copy()
 
         if fracking:
@@ -308,6 +310,7 @@ class Model:
             frack_iters = 1
             loop_step = iterations
 
+        acort = 1.0
         for b in range(frack_iters):
             if fracking and b >= bmax:
                 loop_step = iterations - self._burn_in
@@ -316,12 +319,23 @@ class Model:
             for p, lnprob, lnlike in sampler.sample(
                     p, iterations=min(loop_step, iterations)):
                 emi = emi + 1
+                prog = b * frack_step + emi
+                try:
+                    acorc = max(0.25 * float(prog) / acort, 1.0)
+                    acort = max([
+                        max(x)
+                        for x in sampler.get_autocorr_time(c=min(acorc, 10.0))
+                    ])
+                    acor = [acort, acorc]
+                except:
+                    acor = ''
                 self._emcee_est_t = float(time.time() - st) / emi * (
                     iterations - (b * frack_step + emi))
                 self.print_status(
                     desc='Running PTSampler',
                     scores=[max(x) for x in lnprob],
-                    progress=[b * frack_step + emi, iterations])
+                    progress=[prog, iterations],
+                    acor=acor)
             if fracking and b >= bmax:
                 break
             if fracking and b < bmax:
@@ -386,9 +400,25 @@ class Model:
 
         return (p, lnprob)
 
-    def print_status(self, desc='', scores='', progress=''):
+    def print_status(self,
+                     desc='',
+                     scores='',
+                     progress='',
+                     acor='',
+                     wrap_length=100):
         """Prints a status message showing the current state of the fitting process.
         """
+
+        class bcolors:
+            HEADER = '\033[95m'
+            OKBLUE = '\033[94m'
+            OKGREEN = '\033[92m'
+            WARNING = '\033[93m'
+            FAIL = '\033[91m'
+            ENDC = '\033[0m'
+            BOLD = '\033[1m'
+            UNDERLINE = '\033[4m'
+
         outarr = [self._event_name]
         if desc:
             outarr.append(desc)
@@ -406,16 +436,43 @@ class Model:
                 tott = 2.0 * self._emcee_est_t
             timestring = self.get_timestring(tott)
             outarr.append(timestring)
+        if isinstance(acor, list):
+            acortstr = pretty_num(acor[0], sig=3)
+            acorcstr = pretty_num(acor[1], sig=2)
+            if acor[1] < 5.0:
+                col = bcolors.FAIL
+            elif acor[1] < 10.0:
+                col = bcolors.WARNING
+            else:
+                col = ''
+            acorstring = col
+            acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
+                                                                  acorcstr)
+            acorstring = acorstring + bcolors.ENDC if col else ''
+            outarr.append(acorstring)
 
-        print_inline(' | '.join(outarr), new_line=self._travis)
+        line = ''
+        lines = ''
+        li = 0
+        for i, item in enumerate(outarr):
+            oldline = line
+            line = line + (' | ' if li > 0 else '') + item
+            li = li + 1
+            if len(line) > wrap_length:
+                li = 1
+                lines = lines + '\n' + oldline
+                line = item
+
+        lines = lines + '\n' + line
+
+        print_inline(lines, new_line=self._travis)
 
     def get_timestring(self, t):
         """Return a string showing the estimated remaining time based upon
         elapsed times for emcee and Basin-hopping.
         """
-        return ('Estimated time left: [ ' + str(
-            datetime.timedelta(seconds=(round_sig(t)))).rstrip('0').rstrip('.')
-                + ' ]')
+        td = str(datetime.timedelta(seconds=round(t)))
+        return ('Estimated time left: [ ' + td + ' ]')
 
     def get_max_depth(self, tag, parent, max_depth):
         """Return the maximum depth a given task is found in a tree.

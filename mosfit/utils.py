@@ -41,7 +41,9 @@ def listify(x):
 
 
 def print_inline(x, new_line=False):
+    lines = x.split('\n')
     if not new_line:
-        sys.stdout.write("\033[F")
-        sys.stdout.write("\033[K")
+        for line in lines:
+            sys.stdout.write("\033[F")
+            sys.stdout.write("\033[K")
     print(x, flush=True)

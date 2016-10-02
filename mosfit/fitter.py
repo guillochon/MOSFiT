@@ -34,6 +34,7 @@ class Fitter():
                    parameter_paths=[],
                    fracking=True,
                    frack_step=20,
+                   wrap_length=100,
                    travis=False,
                    post_burn=500):
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -140,6 +141,7 @@ class Fitter():
                     model = Model(
                         model=mod_name,
                         parameter_path=parameter_path,
+                        wrap_length=wrap_length,
                         travis=travis)
 
                     if not event:
