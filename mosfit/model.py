@@ -10,7 +10,7 @@ from math import isnan
 import emcee
 import numpy as np
 from emcee.utils import MPIPool
-from mosfit.utils import listify, pretty_num, print_inline, round_sig
+from mosfit.utils import listify, pretty_num, print_inline
 from scipy.optimize import basinhopping
 
 
@@ -153,7 +153,8 @@ class Model:
             #     mod_path = os.path.join(self._dir_path, 'modules',
             #                             cur_task['kind'] + 's',
             #                             class_name + '.py')
-            # mod_name = 'mosfit.modules.' + cur_task['kind'] + 's.' + class_name
+            # mod_name = ('mosfit.modules.' + cur_task['kind'] + 's.' +
+            # class_name)
             # mod = importlib.machinery.SourceFileLoader(mod_name,
             #                                            mod_path).load_module()
             # mod_class = getattr(mod, mod.CLASS_NAME)
@@ -321,7 +322,7 @@ class Model:
                 emi = emi + 1
                 prog = b * frack_step + emi
                 try:
-                    acorc = max(0.25 * float(prog) / acort, 1.0)
+                    acorc = max(0.1 * float(prog) / acort, 1.0)
                     acort = max([
                         max(x)
                         for x in sampler.get_autocorr_time(c=min(acorc, 10.0))
