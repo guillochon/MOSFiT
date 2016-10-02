@@ -10,9 +10,8 @@ from math import isnan
 import emcee
 import numpy as np
 from emcee.utils import MPIPool
-from scipy.optimize import basinhopping
-
 from mosfit.utils import listify, pretty_num, print_inline, round_sig
+from scipy.optimize import basinhopping
 
 
 class Model:
@@ -48,8 +47,6 @@ class Model:
             else:
                 model_path = os.path.join(self._dir_path, 'models', model_dir,
                                           model)
-
-
 
         with open(model_path, 'r') as f:
             self._model = json.loads(f.read())

@@ -9,3 +9,4 @@ seaborn>=0.7.1
 palettable>=2.1.1
 corner>=2.0.1
 extinction>=0.2.2
+acor>=1.1.1

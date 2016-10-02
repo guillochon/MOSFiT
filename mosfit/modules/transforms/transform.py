@@ -19,7 +19,7 @@ class Transform(Module):
         self._t_explosion = kwargs['texplosion']
         if 'densetimes' in kwargs:
             self._dense_times = kwargs['densetimes']
-            self._dense_luminosities = kwargs['denseluminosities']
+            self._dense_luminosities = kwargs['luminosities']
         elif min(self._times) > self._t_explosion:
             self._dense_times = [self._t_explosion] + kwargs['times']
             self._dense_luminosities = [0.0] + kwargs['luminosities']
