@@ -59,6 +59,7 @@ def main():
     parser.add_argument(
         '--max-time',
         dest='max_time',
+        type=float,
         default=1000.,
         help=("Set the maximum time for model light curves to be plotted "
               "until."))
