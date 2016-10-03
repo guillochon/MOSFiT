@@ -27,7 +27,8 @@ setup(
     author_email='guillochon@gmail.com',
     install_requires=required,
     url='https://github.com/guillochon/mosfit',
-    download_url='https://github.com/guillochon/mosfit/tarball/0.1.1',
+    download_url=(
+        'https://github.com/guillochon/mosfit/tarball/' + __version__),  # noqa
     keywords=['astronomy', 'fitting', 'monte carlo', 'modeling'],
     classifiers=['Development Status :: 3 - Alpha',
                  'License :: OSI Approved :: MIT License',
