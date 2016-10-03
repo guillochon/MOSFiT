@@ -2,7 +2,7 @@ from math import isnan
 
 import numexpr as ne
 import numpy as np
-from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, DAY_CGS
 from mosfit.modules.transforms.transform import Transform
 
 CLASS_NAME = 'Diffusion'
@@ -27,9 +27,9 @@ class Diffusion(Transform):
         self._m_ejecta = kwargs['mejecta']
         self._v_ejecta = kwargs['vejecta']
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
-                                 self._m_ejecta / self._v_ejecta)
+                                 self._m_ejecta / self._v_ejecta) / DAY_CGS
         self._trap_coeff = (self.TRAP_CONST * self._kappa_gamma *
-                            self._m_ejecta / (self._v_ejecta**2))
+                            self._m_ejecta / (self._v_ejecta**2)) / DAY_CGS**2
         td2, A = self._tau_diff**2, self._trap_coeff
         tbarg = self.MIN_EXP_ARG * td2
 

@@ -4,6 +4,8 @@ import numpy as np
 
 from mosfit.modules.engines.engine import Engine
 
+from mosfit.constants import DAY_CGS
+
 CLASS_NAME = 'Magnetar'
 
 
@@ -28,7 +30,7 @@ class Magnetar(Engine):
         Ep = 2.6e52 * (self._Mns / 1.4)**(3. / 2.) * self._Pspin**(-2)
 
         tp = 1.3e5 * self._Bfield**(-2) * self._Pspin**2 * (self._Mns / 1.4)**(
-            3. / 2.) * (np.sin(self._thetaPB))**(-2)
+            3. / 2.) * (np.sin(self._thetaPB))**(-2) / DAY_CGS
 
         ts = [np.inf if self._texplosion > x else (x - self._texplosion)
               for x in self._times]
