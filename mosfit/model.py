@@ -20,6 +20,20 @@ class Model:
 
     MODEL_OUTPUT_DIR = 'products'
 
+    class RandomDisplacementBounds(object):
+        """random displacement with bounds"""
+
+        STEP_SIZE = 1.0e-2
+
+        def __init__(self):
+            pass
+
+        def __call__(self, x):
+            """take a random step and ensure the new position is within the
+            bounds"""
+            return np.clip(x + np.random.uniform(
+                -self.STEP_SIZE, self.STEP_SIZE, np.shape(x)), 0.0, 1.0)
+
     def __init__(self,
                  parameter_path='parameters.json',
                  model='default',
@@ -186,7 +200,17 @@ class Model:
     def basinhop(self, x):
         """Perform Basin-hopping upon a single walker.
         """
-        bh = basinhopping(self.bhprob, x, niter=10)
+        take_step = self.RandomDisplacementBounds()
+        kwargs = {
+            'method': 'SLSQP',
+            'bounds': [(0.0, 1.0) for x in range(self._num_free_parameters)]
+        }
+        bh = basinhopping(
+            self.bhprob,
+            x,
+            niter=10,
+            minimizer_kwargs=kwargs,
+            take_step=take_step)
         return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
@@ -323,10 +347,9 @@ class Model:
                 emi = emi + 1
                 prog = b * frack_step + emi
                 try:
-                    acorc = max(0.1 * float(prog) / acort, 1.0)
+                    acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
                     acort = max([
-                        max(x)
-                        for x in sampler.get_autocorr_time(c=min(acorc, 10.0))
+                        max(x) for x in sampler.get_autocorr_time(c=acorc)
                     ])
                 except:
                     pass
