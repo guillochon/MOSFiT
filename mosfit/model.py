@@ -202,7 +202,7 @@ class Model:
         """
         take_step = self.RandomDisplacementBounds()
         kwargs = {
-            'method': 'SLSQP',
+            'method': 'L-BFGS-B',
             'bounds': [(0.0, 1.0) for x in range(self._num_free_parameters)]
         }
         bh = basinhopping(
