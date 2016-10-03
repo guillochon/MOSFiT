@@ -166,7 +166,7 @@
             "ebv"
         ],
         "requests":[
-            ["bandwavelengths", "filters"],
+            ["samplewavelengths", "filters"],
             [],
             []
         ]

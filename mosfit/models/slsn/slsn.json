@@ -154,7 +154,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "diffusion",
+            "diffusion"
         ]
     },
     "extinction":{
@@ -165,7 +165,7 @@
             "ebv"
         ],
         "requests":[
-            ["bandwavelengths", "filters"],
+            ["samplewavelengths", "filters"],
             [],
             []
         ]

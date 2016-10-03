@@ -1,10 +1,12 @@
 import json
 import os
+import shutil
+import urllib.request
 import warnings
 
 import numpy as np
-import requests
 from emcee.utils import MPIPool
+from mosfit.utils import print_inline
 
 from .model import Model
 
@@ -32,6 +34,7 @@ class Fitter():
                    parameter_paths=[],
                    fracking=True,
                    frack_step=20,
+                   wrap_length=100,
                    travis=False,
                    post_burn=500):
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -56,16 +59,23 @@ class Fitter():
                     if not path or not os.path.exists(path):
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
+                        input_name = event.replace('.json', '')
+                        print(
+                            'Event `{}` interpreted as supernova name, '
+                            'downloading list of supernova aliases...'.format(
+                                input_name))
                         try:
-                            response = requests.get(
+                            response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/names.min.json')
+                                'supernovae/output/names.min.json',
+                                timeout=10)
                         except:
-                            print('Warning: Could not download SN names!')
+                            print_inline(
+                                'Warning: Could not download SN names (are '
+                                'you online?), using cached list.')
                         else:
                             with open(names_path, 'wb') as f:
-                                f.write(response.content)
-                                f.flush()
+                                shutil.copyfileobj(response, f)
                         if os.path.exists(names_path):
                             with open(names_path, 'r') as f:
                                 names = json.loads(f.read())
@@ -85,44 +95,53 @@ class Fitter():
                             raise RuntimeError
                         urlname = event_name + '.json'
 
+                        print('Found event by primary name `{}` in the OSC, '
+                              'downloading data...'.format(event_name))
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
-                            response = requests.get(
+                            response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/json/' + urlname)
+                                'supernovae/output/json/' + urlname,
+                                timeout=10)
                         except:
-                            print('Warning: Could not download SN data!')
+                            print_inline(
+                                'Warning: Could not download data for `{}`, '
+                                'will attempt to use cached data.'.format(
+                                    event_name))
                         else:
                             with open(name_path, 'wb') as f:
-                                f.write(response.content)
-                                f.flush()
+                                shutil.copyfileobj(response, f)
                         path = name_path
+
+                    if os.path.exists(path):
+                        with open(path, 'r') as f:
+                            data = json.loads(f.read())
+                    else:
+                        print('Error: Could not find data for `{}` locally or '
+                              'on the OSC.'.format(event_name))
+                        raise RuntimeError
 
                 if pool:
                     if pool.is_master():
                         for rank in range(1, pool.size + 1):
                             pool.comm.send(event_name, dest=rank, tag=0)
                             pool.comm.send(path, dest=rank, tag=1)
+                            pool.comm.send(data, dest=rank, tag=2)
                     else:
                         event_name = pool.comm.recv(source=0, tag=0)
                         path = pool.comm.recv(source=0, tag=1)
+                        data = pool.comm.recv(source=0, tag=2)
                         pool.wait()
+
                 if pool:
                     pool.close()
-
-                if os.path.exists(path):
-                    with open(path, 'r') as f:
-                        data = json.loads(f.read())
-                else:
-                    print('Error: Could not find supernova data locally or '
-                          'on the OSC.')
-                    raise RuntimeError
 
             for mod_name in models:
                 for parameter_path in parameter_paths:
                     model = Model(
                         model=mod_name,
                         parameter_path=parameter_path,
+                        wrap_length=wrap_length,
                         travis=travis)
 
                     if not event:

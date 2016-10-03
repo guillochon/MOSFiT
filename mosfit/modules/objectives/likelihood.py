@@ -2,8 +2,8 @@ from math import isnan
 
 import numpy as np
 
-from ...constants import LIKELIHOOD_FLOOR
-from ..module import Module
+from mosfit.constants import LIKELIHOOD_FLOOR
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'Likelihood'
 

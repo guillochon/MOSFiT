@@ -3,9 +3,8 @@ from math import pi
 import numexpr as ne
 import numpy as np
 from astropy import constants as c
-
-from ...constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
-from .sed import SED
+from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'EnvelopeCore'
 
@@ -41,7 +40,7 @@ class EnvelopeCore(SED):
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
             bi = self._filters.find_band_index(cur_band)
-            rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
+            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
             # rest_freqs3 = [x**3 for x in rest_freqs]
 
             # Radius is determined via expansion, unless this would make
@@ -90,4 +89,4 @@ class EnvelopeCore(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'bandwavelengths': self._band_wavelengths, 'seds': seds}
+        return {'samplewavelengths': self._sample_wavelengths, 'seds': seds}

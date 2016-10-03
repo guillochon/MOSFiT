@@ -2,9 +2,8 @@ from math import isnan
 
 import numexpr as ne
 import numpy as np
-
-from ...constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
-from .transform import Transform
+from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.modules.transforms.transform import Transform
 
 CLASS_NAME = 'Diffusion'
 
@@ -51,7 +50,7 @@ class Diffusion(Transform):
             dt = int_times[1] - int_times[0]
 
             int_lums = np.interp(int_times, self._dense_times_since_exp,
-                                 self._luminosities)
+                                 self._dense_luminosities)
 
             if not evaled:
                 int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '

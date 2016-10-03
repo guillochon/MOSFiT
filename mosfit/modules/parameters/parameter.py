@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..module import Module
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'Parameter'
 

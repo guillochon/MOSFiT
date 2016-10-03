@@ -3,9 +3,8 @@ from math import pi
 import numexpr as ne
 import numpy as np
 from astropy import constants as c
-
-from ...constants import DAY_CGS, FOUR_PI, KM_CGS
-from .sed import SED
+from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Photosphere'
 
@@ -22,13 +21,14 @@ class Photosphere(SED):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._preprocessed = False
 
     def process(self, **kwargs):
+        self.preprocess(**kwargs)
         self._t_explosion = kwargs['texplosion']
         self._times = kwargs['times']
         self._luminosities = kwargs['luminosities']
         self._temperature = kwargs['temperature']
-        self._bands = kwargs['bands']
         self._v_ejecta = kwargs['vejecta']
         self._radius2 = [(self.RAD_CONST * self._v_ejecta *
                           (x - self._t_explosion))**2 for x in self._times]
@@ -39,9 +39,8 @@ class Photosphere(SED):
         zp1 = 1.0 + kwargs['redshift']
         seds = []
         for li, lum in enumerate(self._luminosities):
-            cur_band = self._bands[li]
-            bi = self._filters.find_band_index(cur_band)
-            rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
+            bi = self._band_indices[li]
+            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
 
             # Radius is determined via expansion, unless this would make
             # temperature lower than temperature parameter.
@@ -62,4 +61,11 @@ class Photosphere(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'bandwavelengths': self._band_wavelengths, 'seds': seds}
+        return {'samplewavelengths': self._sample_wavelengths, 'seds': seds}
+
+    def preprocess(self, **kwargs):
+        if not self._preprocessed:
+            self._bands = kwargs['bands']
+            self._band_indices = list(
+                map(self._filters.find_band_index, self._bands))
+        self._preprocessed = True

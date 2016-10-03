@@ -1,3 +1,4 @@
+include mosfit/cache/names.min.json
 global-include *.txt
 global-include *.md
 global-include *.py

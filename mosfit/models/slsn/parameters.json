@@ -27,7 +27,7 @@
     },
     "kappa":{
         "min_value":0.05,
-        "max_value":0.2,
+        "max_value":0.2
     },
     "kappagamma":{
         "min_value":1.0e-1,

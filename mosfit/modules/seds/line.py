@@ -1,4 +1,4 @@
-from .sed import SED
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Line'
 
@@ -12,7 +12,7 @@ class Line(SED):
 
     def process(self, **kwargs):
         self._seds = kwargs['seds']
-        self._band_wavelengths = kwargs['bandwavelengths']
+        self._sample_wavelengths = kwargs['samplewavelengths']
         self._luminosities = kwargs['luminosities']
         zp1 = 1.0 + kwargs['redshift']
 
@@ -20,7 +20,7 @@ class Line(SED):
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
             bi = self._filters.find_band_index(cur_band)
-            rest_freqs = [x * zp1 for x in self._band_frequencies[bi]]
+            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
 
             # Dummy function for now, needs implementation
             sed = [0.0 for x in rest_freqs]
@@ -28,4 +28,4 @@ class Line(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'bandwavelengths': self._band_wavelengths, 'seds': seds}
+        return {'samplewavelengths': self._sample_wavelengths, 'seds': seds}

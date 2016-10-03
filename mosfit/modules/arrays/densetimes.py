@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..module import Module
+from mosfit.modules.module import Module
 
 CLASS_NAME = 'DenseTimes'
 
@@ -24,11 +24,11 @@ class DenseTimes(Module):
         outputs = {}
         max_times = max(kwargs['times'])
         if max_times > kwargs['texplosion']:
-            outputs['densetimes'] = sorted([
+            outputs['densetimes'] = list(sorted(set([
                 x + self._t_explosion
                 for x in np.linspace(
                     0.0, max_times - self._t_explosion, num=self._n_times)
-            ] + self._times)
+            ] + self._times)))
         else:
             outputs['densetimes'] = kwargs['times']
         return outputs

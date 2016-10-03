@@ -1,3 +1,5 @@
+Cython>=0.24.1
+numpy>=1.11.1
 emcee>=2.2.1
 astropy>=1.1.1
 mpi4py>=2.0.0
@@ -7,3 +9,4 @@ seaborn>=0.7.1
 palettable>=2.1.1
 corner>=2.0.1
 extinction>=0.2.2
+acor>=1.1.1
