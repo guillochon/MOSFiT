@@ -67,6 +67,7 @@ def main():
         '--band-list',
         dest='band_list',
         default=['V'],
+        nargs='+',
         help=("List of bands to plot when plotting model light curves that "
               "are not being matched to actual transient data."))
 
@@ -74,6 +75,7 @@ def main():
         '--band-systems',
         dest='band_systems',
         default=[''],
+        nargs='+',
         help=("List of photometric systems corresponding to the bands listed "
               "in `--band-list`."))
 
@@ -81,6 +83,7 @@ def main():
         '--band-instruments',
         dest='band_instruments',
         default=[''],
+        nargs='+',
         help=("List of instruments corresponding to the bands listed "
               "in `--band-list`."))
 
