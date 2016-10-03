@@ -10,7 +10,7 @@ class DenseTimes(Module):
     and the last datapoint, as many transients may lack regular candence data.
     """
 
-    N_TIMES = 100
+    N_TIMES = 1000
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)

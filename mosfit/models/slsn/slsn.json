@@ -37,7 +37,7 @@
     },
     "lumdist":{
         "kind":"parameter",
-        "value":463.4,
+        "value":500,
         "class":"parameter",
         "inputs":[
             "transient"
@@ -46,7 +46,7 @@
     },
     "redshift":{
         "kind":"parameter",
-        "value":0.1,
+        "value":0.0,
         "class":"parameter",
         "inputs":[
             "transient"
