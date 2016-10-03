@@ -6,6 +6,7 @@ import warnings
 
 import numpy as np
 from emcee.utils import MPIPool
+
 from mosfit.utils import print_inline
 
 from .model import Model
@@ -26,8 +27,8 @@ class Fitter():
                    plot_points='',
                    max_time='',
                    band_list='',
-                   band_systems='',
-                   band_instruments='',
+                   band_systems=[],
+                   band_instruments=[],
                    iterations=1000,
                    num_walkers=50,
                    num_temps=2,
@@ -60,10 +61,9 @@ class Fitter():
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
                         input_name = event.replace('.json', '')
-                        print(
-                            'Event `{}` interpreted as supernova name, '
-                            'downloading list of supernova aliases...'.format(
-                                input_name))
+                        print('Event `{}` interpreted as supernova name, '
+                              'downloading list of supernova aliases...'.
+                              format(input_name))
                         try:
                             response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
@@ -173,10 +173,29 @@ class Fitter():
                             max_time=1000.,
                             plot_points=100,
                             band_list=['V'],
-                            band_systems=[''],
-                            band_instruments=['']):
+                            band_systems=[],
+                            band_instruments=[]):
         time_list = np.linspace(0.0, max_time, plot_points)
         times = np.repeat(time_list, len(band_list))
+
+        # Create lists of systems/instruments if not provided.
+        if isinstance(band_systems, str):
+            band_systems = [band_systems for x in range(len(band_list))]
+        if isinstance(band_instruments, str):
+            band_instruments = [band_instruments
+                                for x in range(len(band_list))]
+        if len(band_systems) < len(band_list):
+            rep_val = '' if len(band_systems) == 0 else band_systems[-1]
+            band_systems = band_systems + [
+                rep_val for x in range(len(band_list) - len(band_systems))
+            ]
+        if len(band_instruments) < len(band_list):
+            rep_val = '' if len(band_instruments) == 0 else band_instruments[
+                -1]
+            band_instruments = band_instruments + [
+                rep_val for x in range(len(band_list) - len(band_instruments))
+            ]
+
         bands = [i for s in [band_list for x in time_list] for i in s]
         systs = [i for s in [band_systems for x in time_list] for i in s]
         insts = [i for s in [band_instruments for x in time_list] for i in s]

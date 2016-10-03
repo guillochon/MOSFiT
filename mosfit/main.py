@@ -74,7 +74,7 @@ def main():
     parser.add_argument(
         '--band-systems',
         dest='band_systems',
-        default=[''],
+        default=[],
         nargs='+',
         help=("List of photometric systems corresponding to the bands listed "
               "in `--band-list`."))
@@ -82,7 +82,7 @@ def main():
     parser.add_argument(
         '--band-instruments',
         dest='band_instruments',
-        default=[''],
+        default=[],
         nargs='+',
         help=("List of instruments corresponding to the bands listed "
               "in `--band-list`."))
