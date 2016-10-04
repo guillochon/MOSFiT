@@ -305,6 +305,9 @@ class Model:
             sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
                                       self.prior)
 
+        if self._pool and not self._pool.is_master():
+            return
+
         print_inline('Initial draws completed!')
         print('\n\n')
         p = p0.copy()
