@@ -22,8 +22,8 @@
         "max_value":1.57079632679
     },
     "texplosion":{
-        "min_value":-100.0,
-        "max_value":100.0
+        "min_value":-1000.0,
+        "max_value":1000.0
     },
     "kappa":{
         "min_value":0.05,

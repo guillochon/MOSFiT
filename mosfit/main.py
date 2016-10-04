@@ -175,9 +175,13 @@ def main():
 
     args = parser.parse_args()
 
+    if len(args.events) == 0 and args.iterations != 0:
+        print("No events specified, setting iterations to 0.")
+        args.iterations = 0
+
     pool = ''
     try:
-        pool = MPIPool()
+        pool = MPIPool(loadbalance=True)
     except ValueError:
         pass
     except:

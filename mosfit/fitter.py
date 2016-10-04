@@ -40,15 +40,16 @@ class Fitter():
                    post_burn=500):
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
+        pool = ''
+        try:
+            pool = MPIPool(loadbalance=True)
+        except ValueError:
+            pass
+        except:
+            raise
+
         for event in events:
             if event:
-                pool = ''
-                try:
-                    pool = MPIPool()
-                except ValueError:
-                    pass
-                except:
-                    raise
                 event_name = ''
                 if not pool or pool.is_master():
                     path = ''
@@ -131,10 +132,9 @@ class Fitter():
                         event_name = pool.comm.recv(source=0, tag=0)
                         path = pool.comm.recv(source=0, tag=1)
                         data = pool.comm.recv(source=0, tag=2)
-                        pool.wait()
 
-                if pool:
-                    pool.close()
+            if pool and not pool.is_master():
+                pool.wait()
 
             for mod_name in models:
                 for parameter_path in parameter_paths:
@@ -142,6 +142,7 @@ class Fitter():
                         model=mod_name,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
+                        pool=pool,
                         travis=travis)
 
                     if not event:
@@ -167,6 +168,9 @@ class Fitter():
                         fracking=fracking,
                         frack_step=frack_step,
                         post_burn=post_burn)
+
+            if pool:
+                pool.close()
 
     def generate_dummy_data(self,
                             name,

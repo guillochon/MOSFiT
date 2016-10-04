@@ -30,19 +30,18 @@ class Filters(Module):
             filterrules = json.loads(f.read())
             for bi, band in enumerate(bands):
                 for rule in filterrules:
-                    if systems[bi] not in rule.get("systems", []):
-                        continue
-                    if instruments[bi] not in rule.get("instruments", []):
-                        continue
+                    sysinstperms = [[x, y]
+                                    for x in rule.get("systems", [''])
+                                    for y in rule.get("instruments", [''])]
                     for bnd in rule.get('filters', []):
                         if band == bnd or band == '':
-                            band_list.append(rule['filters'][bnd])
-                            band_list[-1]['systems'] = rule.get('systems', [])
-                            band_list[-1]['instruments'] = rule.get(
-                                'instruments', [])
-                            band_list[-1]['name'] = bnd
-                            if not band_list[-1].get('offset', ''):
-                                band_list[-1]['offset'] = 0.0
+                            for perm in sysinstperms:
+                                band_list.append(rule['filters'][bnd])
+                                band_list[-1]['systems'] = perm[0]
+                                band_list[-1]['instruments'] = perm[1]
+                                band_list[-1]['name'] = bnd
+                                if not band_list[-1].get('offset', ''):
+                                    band_list[-1]['offset'] = 0.0
 
         self._unique_bands = band_list
         self._band_insts = [x['instruments'] for x in self._unique_bands]
@@ -77,7 +76,7 @@ class Filters(Module):
             if (name == band['name'] and '' in self._band_insts[bi] and
                     '' in self._band_systs[bi]):
                 return bi
-        raise (ValueError('Cannot find band index!'))
+        raise ValueError('Cannot find band index!')
 
     def process(self, **kwargs):
         self.preprocess(**kwargs)
@@ -93,10 +92,7 @@ class Filters(Module):
             wavs = kwargs['samplewavelengths'][bi]
             itrans = np.interp(wavs, self._band_wavelengths[bi],
                                self._transmissions[bi])
-            yvals = [
-                x * y
-                for x, y in zip(itrans, kwargs['seds'][li])
-            ]
+            yvals = [x * y for x, y in zip(itrans, kwargs['seds'][li])]
             eff_fluxes.append(
                 np.trapz(
                     yvals, dx=self._dxs[bi]) / self._filter_integrals[bi])

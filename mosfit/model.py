@@ -9,9 +9,10 @@ from math import isnan
 
 import emcee
 import numpy as np
-from emcee.utils import MPIPool
+from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline
-from scipy.optimize import basinhopping
+from scipy.optimize import minimize
+from multiprocessing import Pool, cpu_count
 
 
 class Model:
@@ -24,9 +25,11 @@ class Model:
                  parameter_path='parameters.json',
                  model='default',
                  wrap_length=100,
+                 pool='',
                  travis=False):
         self._model_name = model
         self._travis = travis
+        self._pool = pool
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -68,15 +71,7 @@ class Model:
         elif os.path.isfile(model_pp):
             pp = model_pp
 
-        pool = ''
-        try:
-            pool = MPIPool()
-        except ValueError:
-            pass
-        except:
-            raise
-
-        if not pool or pool.is_master():
+        if not self._pool or self._pool.is_master():
             print('Model file: ' + model_path)
             print('Parameter file: ' + pp + '\n')
 
@@ -183,10 +178,20 @@ class Model:
                         requests[req] = self._modules[task].request(req)
                     self._modules[parent].handle_requests(**requests)
 
-    def basinhop(self, x):
-        """Perform Basin-hopping upon a single walker.
+    def frack(self, x):
+        """Perform fracking upon a single walker, using a local minimization
+        method.
         """
-        bh = basinhopping(self.bhprob, x, niter=10)
+        bh = minimize(
+            self.fprob,
+            x,
+            method=['L-BFGS-B', 'TNC', 'SLSQP'][np.random.choice(range(3))],
+            bounds=[(0.0, 1.0) for x in range(self._num_free_parameters)],
+            tol=1.0e-6,
+            options={
+                'maxiter': 100,
+                # 'disp': True
+            })
         return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
@@ -239,7 +244,7 @@ class Model:
                  fracking=True,
                  post_burn=500):
         """Fit the data for a given event with this model using a combination
-        of emcee and Basin-hopping.
+        of emcee and fracking.
         """
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -261,21 +266,16 @@ class Model:
 
         test_walker = iterations > 0
         lnprob = None
-        sampler_args = {}
         serial = False
-        pool = ''
-        try:
-            pool = MPIPool()
-        except ValueError:
-            psize = 1
-            serial = True
-        except:
-            raise
-        else:
-            sampler_args = {'pool': pool}
-            psize = pool.size
 
-        if serial or pool.is_master():
+        if not self._pool:
+            psize = cpu_count()
+            serial = True
+            pool = Pool(psize)
+        else:
+            psize = self._pool.size
+
+        if serial or self._pool.is_master():
             print('{} dimensions in problem.\n\n'.format(ndim))
             p0 = [[] for x in range(ntemps)]
 
@@ -290,14 +290,23 @@ class Model:
                     else:
                         nmap = nwalkers - len(p0[i])
                         p0[i].extend(
-                            pool.map(self.draw_walker, [test_walker] * nmap))
-                # p0[i].extend(pool.map(self.draw_walker, range(nwalkers)))
-        else:
-            pool.wait()
-            return
+                            self._pool.map(self.draw_walker, [test_walker] *
+                                           nmap))
 
-        sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
-                                  self.prior, **sampler_args)
+        if self._pool:
+            sampler = emcee.PTSampler(
+                ntemps,
+                nwalkers,
+                ndim,
+                self.likelihood,
+                self.prior,
+                pool=self._pool)
+        else:
+            sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
+                                      self.prior)
+
+        if self._pool and not self._pool.is_master():
+            return
 
         print_inline('Initial draws completed!')
         print('\n\n')
@@ -323,10 +332,9 @@ class Model:
                 emi = emi + 1
                 prog = b * frack_step + emi
                 try:
-                    acorc = max(0.1 * float(prog) / acort, 1.0)
+                    acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
                     acort = max([
-                        max(x)
-                        for x in sampler.get_autocorr_time(c=min(acorc, 10.0))
+                        max(x) for x in sampler.get_autocorr_time(c=acorc)
                     ])
                 except:
                     pass
@@ -342,29 +350,38 @@ class Model:
                 break
             if fracking and b < bmax:
                 self.print_status(
-                    desc='Running Basin-hopping',
+                    desc='Running Fracking',
                     scores=[max(x) for x in lnprob],
                     progress=[(b + 1) * frack_step, iterations],
                     acor=acor)
-                ris, rjs = [0] * psize, np.random.randint(nwalkers, size=psize)
+                probs = [np.exp(0.1 * x) for x in lnprob[0]]
+                probn = np.sum(probs)
+                probs = [x / probn for x in probs]
+                ris, rjs = [0] * psize, np.random.choice(
+                    range(nwalkers),
+                    psize,
+                    p=probs,
+                    replace=(psize > nwalkers))
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
                 st = time.time()
                 if serial:
-                    bhs = list(map(self.basinhop, bhwalkers))
+                    bhs = pool.map(self.frack, bhwalkers)
+                    # bhs = list(map(self.frack, bhwalkers))
                 else:
-                    bhs = pool.map(self.basinhop, bhwalkers)
+                    bhs = self._pool.map(self.frack, bhwalkers)
                 for bhi, bh in enumerate(bhs):
-                    p[ris[bhi]][rjs[bhi]] = bh.x
+                    if -bh.fun > lnprob[ris[bhi]][rjs[bhi]]:
+                        p[ris[bhi]][rjs[bhi]] = bh.x
                 self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
                 scores = [-x.fun for x in bhs]
                 self.print_status(
-                    desc='Running Basin-hopping',
+                    desc='Running Fracking',
                     scores=scores,
                     progress=[(b + 1) * frack_step, iterations])
 
-        if pool:
-            pool.close()
+        if self._pool and not self._pool.is_master():
+            return
 
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):
@@ -474,7 +491,7 @@ class Model:
 
     def get_timestring(self, t):
         """Return a string showing the estimated remaining time based upon
-        elapsed times for emcee and Basin-hopping.
+        elapsed times for emcee and fracking.
         """
         td = str(datetime.timedelta(seconds=round(t)))
         return ('Estimated time left: [ ' + td + ' ]')
@@ -505,10 +522,13 @@ class Model:
         """
         return 0.0
 
-    def bhprob(self, x):
-        """Return score for basinhopping.
+    def fprob(self, x):
+        """Return score for fracking.
         """
-        return -self.likelihood(x)
+        l = -self.likelihood(x)
+        if not np.isfinite(l):
+            return -LOCAL_LIKELIHOOD_FLOOR
+        return l
 
     def run_stack(self, x, root='objective'):
         """Run a stack of modules as defined in the model definition file. Only
