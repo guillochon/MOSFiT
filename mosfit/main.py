@@ -181,7 +181,7 @@ def main():
 
     pool = ''
     try:
-        pool = MPIPool()
+        pool = MPIPool(loadbalance=True)
     except ValueError:
         pass
     except:
