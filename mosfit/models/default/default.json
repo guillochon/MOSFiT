@@ -138,9 +138,8 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore",
-            "temperaturephot",
-            "radiusphot"
+            "diffusion",
+            "temperature"
         ]
     },
     "extinction":{
