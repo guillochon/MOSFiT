@@ -7,13 +7,13 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'slsn'
+CLASS_NAME = 'slsn_absorbed'
 
 
-class slsn(SED):
+class slsn_absorbed(SED):
     """Expanding/receding photosphere with a core+envelope
-    morphology and a blackbody spectral energy
-    distribution.
+    morphology and a blackbody spectral energy distribution, 
+    plus simple absorption in UV based on 2015bn SED
     """
 
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
