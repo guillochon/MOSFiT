@@ -42,6 +42,8 @@ class slsn(SED):
             cur_band = self._bands[li]
             bi = self._filters.find_band_index(cur_band)
             rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
+            wav_arr = np.array(self._sample_wavelengths[bi])
+
 
             # Radius is determined via expansion
             radius = self._v_ejecta * KM_CGS * (
@@ -67,7 +69,7 @@ class slsn(SED):
 
             # Compute temperature
             # Prevent weird behaviour as R_phot -> 0
-            if tau_core > 1:
+            if tau_core > 1.0:
                 temperature_phot = (lum / (radius_phot**2 *
                                 self.STEF_CONST))**0.25
             else:
@@ -83,6 +85,9 @@ class slsn(SED):
                                   'exp(xc * rest_freqs / temperature_phot) - 1.0')
             else:
                 sed = ne.re_evaluate()
+
+            # Account for UV absorption
+            sed[wav_arr < 3500] *= (0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
 
             seds.append(list(sed))
 
