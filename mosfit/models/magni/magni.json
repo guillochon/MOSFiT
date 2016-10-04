@@ -170,18 +170,27 @@
             "vejecta"
         ]
     },
-    "envelopecore":{
+    "densecore":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion"
+        ]
+    },
+    "blackbody":{
         "kind":"sed",
         "inputs":[
-            "diffusion",
+            "texplosion",
             "redshift",
-            "temperature"
+            "densecore",
+            "temperaturephot",
+            "radiusphot"
         ]
     },
     "extinction":{
         "kind":"sed",
         "inputs":[
-            "envelopecore",
+            "blackbody",
             "nhhost",
             "ebv"
         ],

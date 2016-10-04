@@ -6,10 +6,10 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Photosphere'
+CLASS_NAME = 'blackbody_floor'
 
 
-class Photosphere(SED):
+class blackbody_floor(SED):
     """Expanding/recending photosphere with a blackbody spectral energy
     distribution.
     """

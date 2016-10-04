@@ -133,19 +133,20 @@
             "vejecta"
         ]
     },
-    "photosphere":{
+    "blackbody_floor":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
-            "diffusion",
-            "temperature"
+            "densecore",
+            "temperaturephot",
+            "radiusphot"
         ]
     },
     "extinction":{
         "kind":"sed",
         "inputs":[
-            "photosphere",
+            "blackbody_floor",
             "nhhost",
             "ebv"
         ],
