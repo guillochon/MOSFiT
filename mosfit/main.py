@@ -93,7 +93,7 @@ def main():
         '-i',
         dest='iterations',
         type=int,
-        default=1000,
+        default=-1,
         help=("Number of iterations to run emcee for, including burn-in and "
               "post-burn iterations."))
 
@@ -175,9 +175,13 @@ def main():
 
     args = parser.parse_args()
 
-    if len(args.events) == 0 and args.iterations != 0:
-        print("No events specified, setting iterations to 0.")
-        args.iterations = 0
+    changed_iterations = False
+    if args.iterations == -1:
+        if len(args.events) == 1 and args.events[0] == '':
+            changed_iterations = True
+            args.iterations = 0
+        else:
+            args.iterations = 1000
 
     pool = ''
     try:
@@ -200,6 +204,9 @@ def main():
         print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
         print(aligns.format('Released under the MIT license'))
         print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
+
+        if changed_iterations:
+            print("\n\nNo events specified, setting iterations to 0.")
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
