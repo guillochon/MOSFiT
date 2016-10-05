@@ -4,9 +4,8 @@ import shutil
 from textwrap import wrap
 
 from emcee.utils import MPIPool
-from mosfit.fitter import Fitter
-
 from mosfit import __version__
+from mosfit.fitter import Fitter
 
 
 def main():
@@ -125,6 +124,14 @@ def main():
               "optimization process."))
 
     parser.add_argument(
+        '--quiet',
+        dest='quiet',
+        default=False,
+        action='store_true',
+        help=("Print minimal output upon execution. Don't display our "
+              "amazing logo :-("))
+
+    parser.add_argument(
         '--no-copy-at-launch',
         dest='copy',
         default=True,
@@ -194,19 +201,21 @@ def main():
     width = 100
     if not pool or pool.is_master():
         # Print our amazing ASCII logo.
-        with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
-            logo = f.read()
-            width = len(logo.split('\n')[0])
-            aligns = '{:^' + str(width) + '}'
-            print(logo)
-        print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
-            __version__)))
-        print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
-        print(aligns.format('Released under the MIT license'))
-        print((aligns + '\n').format('https://github.com/guillochon/MOSFiT'))
+        if not args.quiet:
+            with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
+                logo = f.read()
+                width = len(logo.split('\n')[0])
+                aligns = '{:^' + str(width) + '}'
+                print(logo)
+            print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
+                __version__)))
+            print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
+            print(aligns.format('Released under the MIT license'))
+            print((aligns + '\n').format(
+                'https://github.com/guillochon/MOSFiT'))
 
         if changed_iterations:
-            print("\n\nNo events specified, setting iterations to 0.")
+            print("No events specified, setting iterations to 0.")
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
