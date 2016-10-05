@@ -357,7 +357,7 @@ class Model:
                     scores=[max(x) for x in lnprob],
                     progress=[(b + 1) * frack_step, iterations],
                     acor=acor)
-                probs = [np.exp(0.01 * x) for x in lnprob[0]]
+                probs = [np.exp(0.1 * x) for x in lnprob[0]]
                 probn = np.sum(probs)
                 probs = [x / probn for x in probs]
                 ris, rjs = [0] * psize, np.random.choice(
@@ -368,9 +368,9 @@ class Model:
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
                 st = time.time()
-                seeds = [round(time.time() * 1000.0 + x) % 4294967295
+                seeds = [round(time.time() * 1000.0) % 4294900000 + x
                          for x in range(len(bhwalkers))]
-                frack_args = zip(bhwalkers, seeds)
+                frack_args = list(zip(bhwalkers, seeds))
                 if serial:
                     bhs = pool.map(self.frack, frack_args)
                     # bhs = list(map(self.frack, bhwalkers))
