@@ -61,9 +61,7 @@ class Model:
 
         pp = model_pp
 
-        model_pp2 = os.path.join(
-            os.path.split(model_path)[0], parameter_path)
-
+        model_pp2 = os.path.join(os.path.split(model_path)[0], parameter_path)
 
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
@@ -71,7 +69,7 @@ class Model:
         # Then try directory we are running from
         elif os.path.isfile('parameters.json'):
             pp = 'parameters.json'
-        #Then try the model directory, with the user-specified name
+        # Then try the model directory, with the user-specified name
         elif os.path.isfile(model_pp2):
             pp = model_pp
         # Finally try model folder
@@ -198,7 +196,8 @@ class Model:
             x,
             method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
             bounds=[(0.0, 1.0) for x in range(self._num_free_parameters)],
-            tol=1.0e-6, options={
+            tol=1.0e-6,
+            options={
                 'maxiter': 100,
                 # 'disp': True
             })
