@@ -149,18 +149,27 @@
             "vejecta"
         ]
     },
-    "slsn":{
+    "densecore":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion"
+        ]
+    },
+    "blackbody_slsn":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
-            "diffusion"
+            "densecore",
+            "temperaturephot",
+            "radiusphot"
         ]
     },
     "extinction":{
         "kind":"sed",
         "inputs":[
-            "slsn",
+            "blackbody_slsn",
             "nhhost",
             "ebv"
         ],

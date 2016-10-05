@@ -64,11 +64,6 @@
         "value":0.0,
         "class":"parameter"
     },
-    "temperature":{
-        "kind":"parameter",
-        "value":1.0e4,
-        "class":"parameter"
-    },
     "Pspin":{
         "kind":"parameter",
         "value":2.0,
@@ -149,19 +144,27 @@
             "vejecta"
         ]
     },
-    "envelopecore":{
+    "densecore":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion"
+        ]
+    },
+    "blackbody":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
-            "diffusion",
-            "temperature"
+            "densecore",
+            "temperaturephot",
+            "radiusphot"
         ]
     },
     "extinction":{
         "kind":"sed",
         "inputs":[
-            "envelopecore",
+            "blackbody",
             "nhhost",
             "ebv"
         ],
