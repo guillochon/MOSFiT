@@ -388,7 +388,7 @@ class Model:
             walkers_out[xi] = self.run_stack(x, root='output')
             if lnprob is not None:
                 walkers_out[xi]['score'] = lnprob[0][xi]
-            parameters = {}
+            parameters = OrderedDict()
             pi = 0
             for ti, task in enumerate(self._call_stack):
                 cur_task = self._call_stack[task]
@@ -534,8 +534,8 @@ class Model:
         """Run a stack of modules as defined in the model definition file. Only
         run functions that match the specified root.
         """
-        inputs = {}
-        outputs = {}
+        inputs = OrderedDict()
+        outputs = OrderedDict()
         pos = 0
         cur_depth = self._max_depth_all
         for task in self._call_stack:
