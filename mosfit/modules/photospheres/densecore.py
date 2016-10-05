@@ -29,9 +29,10 @@ class densecore(photosphere):
         self._m_ejecta = kwargs['mejecta']
         self._kappa = kwargs['kappa']
         slope = self.PL_ENV
+        peak = np.argmax(np.array(self._luminosities))
         rphot = []
         Tphot = []
-        temperature_last = 2.e4
+        temperature_last = 1.e5
         for li, lum in enumerate(self._luminosities):
 
             # Radius is determined via expansion
@@ -58,9 +59,13 @@ class densecore(photosphere):
 
             # Compute temperature
             # Prevent weird behaviour as R_phot -> 0
-            if tau_core > 1.0:
+            if tau_core > 1.:
                 temperature_phot = (lum / (radius_phot**2 *
                                 self.STEF_CONST))**0.25
+                if li > peak and temperature_phot > temperature_last:
+                    temperature_phot = temperature_last
+                    radius_phot = (lum / (temperature_phot**4 *
+                                    self.STEF_CONST))**0.5
             else:
                 temperature_phot = temperature_last
                 radius_phot = (lum / (temperature_phot**4 *
@@ -72,5 +77,6 @@ class densecore(photosphere):
 
             Tphot.append(temperature_phot)
 
+        Tphot[0] = Tphot[1]
 
         return {'radiusphot': rphot, 'temperaturephot': Tphot}
