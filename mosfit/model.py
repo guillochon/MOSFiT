@@ -186,7 +186,6 @@ class Model:
         seed = arg[1]
         np.random.seed(seed)
         my_choice = np.random.choice(range(3))
-        print('my choice: ' + str(my_choice))
         bh = minimize(
             self.fprob,
             x,
@@ -194,7 +193,7 @@ class Model:
             bounds=[(0.0, 1.0) for x in range(self._num_free_parameters)],
             tol=1.0e-6, options={
                 'maxiter': 100,
-                'disp': True
+                # 'disp': True
             })
         return bh
 
