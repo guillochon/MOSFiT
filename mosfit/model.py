@@ -12,7 +12,7 @@ import numpy as np
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline
 from scipy.optimize import minimize
-from multiprocessing import Pool, cpu_count
+from multiprocess import Pool, cpu_count
 
 
 class Model:
