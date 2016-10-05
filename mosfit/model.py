@@ -6,13 +6,13 @@ import os
 import time
 from collections import OrderedDict
 from math import isnan
+from multiprocessing import Pool, cpu_count
 
 import emcee
 import numpy as np
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline
 from scipy.optimize import minimize
-from multiprocessing import Pool, cpu_count
 
 
 class Model:
@@ -185,17 +185,20 @@ class Model:
                         requests[req] = self._modules[task].request(req)
                     self._modules[parent].handle_requests(**requests)
 
-    def frack(self, x):
+    def frack(self, arg):
         """Perform fracking upon a single walker, using a local minimization
         method.
         """
+        x = arg[0]
+        seed = arg[1]
+        np.random.seed(seed)
+        my_choice = np.random.choice(range(3))
         bh = minimize(
             self.fprob,
             x,
-            method=['L-BFGS-B', 'TNC', 'SLSQP'][np.random.choice(range(3))],
+            method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
             bounds=[(0.0, 1.0) for x in range(self._num_free_parameters)],
-            tol=1.0e-6,
-            options={
+            tol=1.0e-6, options={
                 'maxiter': 100,
                 # 'disp': True
             })
@@ -361,7 +364,7 @@ class Model:
                     scores=[max(x) for x in lnprob],
                     progress=[(b + 1) * frack_step, iterations],
                     acor=acor)
-                probs = [np.exp(0.1 * x) for x in lnprob[0]]
+                probs = [np.exp(0.01 * x) for x in lnprob[0]]
                 probn = np.sum(probs)
                 probs = [x / probn for x in probs]
                 ris, rjs = [0] * psize, np.random.choice(
@@ -372,11 +375,14 @@ class Model:
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
                 st = time.time()
+                seeds = [round(time.time() * 1000.0 + x) % 4294967295
+                         for x in range(len(bhwalkers))]
+                frack_args = zip(bhwalkers, seeds)
                 if serial:
-                    bhs = pool.map(self.frack, bhwalkers)
+                    bhs = pool.map(self.frack, frack_args)
                     # bhs = list(map(self.frack, bhwalkers))
                 else:
-                    bhs = self._pool.map(self.frack, bhwalkers)
+                    bhs = self._pool.map(self.frack, frack_args)
                 for bhi, bh in enumerate(bhs):
                     if -bh.fun > lnprob[ris[bhi]][rjs[bhi]]:
                         p[ris[bhi]][rjs[bhi]] = bh.x
@@ -395,7 +401,7 @@ class Model:
             walkers_out[xi] = self.run_stack(x, root='output')
             if lnprob is not None:
                 walkers_out[xi]['score'] = lnprob[0][xi]
-            parameters = {}
+            parameters = OrderedDict()
             pi = 0
             for ti, task in enumerate(self._call_stack):
                 cur_task = self._call_stack[task]
@@ -541,8 +547,8 @@ class Model:
         """Run a stack of modules as defined in the model definition file. Only
         run functions that match the specified root.
         """
-        inputs = {}
-        outputs = {}
+        inputs = OrderedDict()
+        outputs = OrderedDict()
         pos = 0
         cur_depth = self._max_depth_all
         for task in self._call_stack:

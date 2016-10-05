@@ -62,22 +62,20 @@
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
-        "class":"parameter"
-    },
-    "temperature":{
-        "kind":"parameter",
-        "value":1.0e4,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
     "Pspin":{
         "kind":"parameter",
         "value":2.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"P_{\\rm spin}\\,{\\rm (ms)}"
     },
     "Bfield":{
         "kind":"parameter",
         "value":1.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"B"
     },
     "Mns":{
         "kind":"parameter",
@@ -117,7 +115,8 @@
     },
     "variance":{
         "kind":"parameter",
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"\\sigma"
     },
     "densetimes":{
         "kind":"array",
