@@ -61,12 +61,19 @@ class Model:
 
         pp = model_pp
 
+        model_pp2 = os.path.join(
+            os.path.split(model_path)[0], parameter_path)
+
+
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
             pp = parameter_path
         # Then try directory we are running from
-        elif os.path.isfile('parameter.json'):
-            pp = 'parameter.json'
+        elif os.path.isfile('parameters.json'):
+            pp = 'parameters.json'
+        #Then try the model directory, with the user-specified name
+        elif os.path.isfile(model_pp2):
+            pp = model_pp
         # Finally try model folder
         elif os.path.isfile(model_pp):
             pp = model_pp
