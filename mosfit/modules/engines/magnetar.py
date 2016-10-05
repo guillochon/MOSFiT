@@ -30,12 +30,16 @@ class Magnetar(Engine):
         Ep = 2.6e52 * (self._Mns / 1.4)**(3. / 2.) * self._Pspin**(-2)
 
         tp = 1.3e5 * self._Bfield**(-2) * self._Pspin**2 * (self._Mns / 1.4)**(
-            3. / 2.) * (np.sin(self._thetaPB))**(-2) / DAY_CGS
+            3. / 2.) * (np.sin(self._thetaPB))**(-2)
 
         ts = [np.inf if self._texplosion > x else (x - self._texplosion)
               for x in self._times]
 
-        luminosities = [Ep / tp / (1. + t / tp)**2 for t in ts]
+        # print(ts)
+        #
+        # raise SystemExit
+        #
+        luminosities = [Ep / tp / (1. + t * DAY_CGS / tp)**2 for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
         # Add on to any existing luminosity

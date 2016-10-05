@@ -10,7 +10,7 @@ class DenseTimes(Module):
     """
 
     N_TIMES = 100
-    L_T_MIN = 1.0e-3  # in days
+    L_T_MIN = -6  # in days
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
@@ -30,7 +30,7 @@ class DenseTimes(Module):
                         x + self._t_explosion
                         for x in np.logspace(
                             self.L_T_MIN,
-                            max_times - self._t_explosion,
+                            np.log10(max_times - self._t_explosion),
                             num=self._n_times)
                     ] + self._times)))
         else:
