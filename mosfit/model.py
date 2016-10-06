@@ -83,9 +83,8 @@ class Model:
         elif os.path.isfile(model_pp):
             pp = model_pp
 
-        if self._serial or self._pool.is_master():
-            print('Model file: ' + model_path)
-            print('Parameter file: ' + pp + '\n')
+        print('Model file: ' + model_path)
+        print('Parameter file: ' + pp + '\n')
 
         with open(pp, 'r') as f:
             self._parameters = json.loads(f.read())
@@ -203,7 +202,7 @@ class Model:
             x,
             method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
             bounds=[(0.0, 1.0) for x in range(self._num_free_parameters)],
-            tol=1.0e-6,
+            # tol=1.0e-6,
             options={
                 'maxiter': 100,
                 # 'disp': True
@@ -282,25 +281,23 @@ class Model:
 
         test_walker = iterations > 0
         lnprob = None
-        serial = False
 
-        if self._serial or self._pool.is_master():
-            print('{} dimensions in problem.\n\n'.format(ndim))
-            p0 = [[] for x in range(ntemps)]
+        print('{} dimensions in problem.\n\n'.format(ndim))
+        p0 = [[] for x in range(ntemps)]
 
-            for i, pt in enumerate(p0):
-                while len(p0[i]) < nwalkers:
-                    self.print_status(
-                        desc='Drawing initial walkers',
-                        progress=[i * nwalkers + len(p0[i]),
-                                  nwalkers * ntemps])
+        for i, pt in enumerate(p0):
+            while len(p0[i]) < nwalkers:
+                self.print_status(
+                    desc='Drawing initial walkers',
+                    progress=[i * nwalkers + len(p0[i]),
+                              nwalkers * ntemps])
 
-                    nmap = nwalkers - len(p0[i])
-                    p0[i].extend(
-                        self._pool.map(self.draw_walker, [test_walker] *
-                                       nmap))
+                nmap = nwalkers - len(p0[i])
+                p0[i].extend(
+                    self._pool.map(self.draw_walker, [test_walker] *
+                                   nmap))
 
-        if serial:
+        if self._serial:
             sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
                                       self.prior)
         else:
@@ -358,14 +355,10 @@ class Model:
                     scores=[max(x) for x in lnprob],
                     progress=[(b + 1) * frack_step, iterations],
                     acor=acor)
-                probs = [np.exp(0.1 * x) for x in lnprob[0]]
-                probn = np.sum(probs)
-                probs = [x / probn for x in probs]
-                ris, rjs = [0] * self._pool_size, np.random.choice(
+                ris, rjs = [0] * self._pool_size, list(sorted(np.random.choice(
                     range(nwalkers),
                     self._pool_size,
-                    p=probs,
-                    replace=(self._pool_size > nwalkers))
+                    replace=(self._pool_size > nwalkers))))
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
                 st = time.time()
