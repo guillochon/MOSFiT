@@ -104,12 +104,7 @@ class Model:
         print('Parameter file: ' + pp + '\n')
 
         with open(pp, 'r') as f:
-            self._parameters = json.loads(f.read())
-        self._num_free_parameters = len(
-            [x for x in self._parameters
-             if ('min_value' in self._parameters[x] and 'max_value' in
-                 self._parameters[x] and self._parameters[x][
-                     'min_value'] != self._parameters[x]['max_value'])])
+            self._parameter_json = json.loads(f.read())
         self._log = logging.getLogger()
         self._modules = {}
         self._bands = []
@@ -119,8 +114,8 @@ class Model:
         # combining trees.
         root_kinds = ['output', 'objective']
 
-        trees = {}
-        self.construct_trees(self._model, trees, kinds=root_kinds)
+        self._trees = {}
+        self.construct_trees(self._model, self._trees, kinds=root_kinds)
 
         unsorted_call_stack = {}
         self._max_depth_all = -1
@@ -132,9 +127,10 @@ class Model:
                 roots = [cur_model['kind']]
             else:
                 max_depth = -1
-                for tag2 in trees:
-                    roots.extend(trees[tag2]['roots'])
-                    depth = self.get_max_depth(tag, trees[tag2], max_depth)
+                for tag2 in self._trees:
+                    roots.extend(self._trees[tag2]['roots'])
+                    depth = self.get_max_depth(tag, self._trees[tag2],
+                                               max_depth)
                     if depth > max_depth:
                         max_depth = depth
                     if depth > self._max_depth_all:
@@ -158,13 +154,14 @@ class Model:
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
+            if cur_task[
+                    'kind'] == 'parameter' and task in self._parameter_json:
+                cur_task.update(self._parameter_json[task])
             class_name = cur_task.get('class', task)
             mod = importlib.import_module(
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='mosfit')
             mod_class = getattr(mod, mod.CLASS_NAME)
-            if cur_task['kind'] == 'parameter' and task in self._parameters:
-                cur_task.update(self._parameters[task])
             self._modules[task] = mod_class(name=task, **cur_task)
             if class_name == 'filters':
                 self._bands = self._modules[task].band_names()
@@ -182,11 +179,20 @@ class Model:
             # mod = importlib.machinery.SourceFileLoader(mod_name,
             #                                            mod_path).load_module()
             # mod_class = getattr(mod, mod.CLASS_NAME)
-            # if cur_task['kind'] == 'parameter' and task in self._parameters:
-            #     cur_task.update(self._parameters[task])
+            # if cur_task['kind'] == 'parameter' and task in self._parameter_json:
+            #     cur_task.update(self._parameter_json[task])
             # self._modules[task] = mod_class(name=task, **cur_task)
             # if class_name == 'filters':
             #     self._bands = self._modules[task].band_names()
+
+        self._free_parameters = []
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
+                    'max_value' in cur_task and
+                    cur_task['min_value'] != cur_task['max_value']):
+                self._free_parameters.append(task)
+        self._num_free_parameters = len(self._free_parameters)
 
         for task in reversed(self._call_stack):
             cur_task = self._call_stack[task]
@@ -278,6 +284,9 @@ class Model:
         p = None
         while p is None:
             draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
+            draw = [self._modules[self._free_parameters[i]].prior_cdf(x)
+                    for i, x in enumerate(draw)]
+            print(draw)
             if not test:
                 p = draw
                 break
@@ -425,10 +434,7 @@ class Model:
             pi = 0
             for ti, task in enumerate(self._call_stack):
                 cur_task = self._call_stack[task]
-                if (cur_task['kind'] != 'parameter' or
-                        'min_value' not in cur_task or
-                        'max_value' not in cur_task or
-                        cur_task['min_value'] == cur_task['max_value']):
+                if task not in self._free_parameters:
                     continue
                 output = self._modules[task].process(**{'fraction': x[pi]})
                 value = list(output.values())[0]
@@ -579,9 +585,7 @@ class Model:
             if cur_task['depth'] != cur_depth:
                 inputs = outputs
             cur_depth = cur_task['depth']
-            if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
-                    'max_value' in cur_task and
-                    cur_task['min_value'] != cur_task['max_value']):
+            if task in self._free_parameters:
                 inputs.update({'fraction': x[pos]})
                 inputs.setdefault('fractions', []).append(x[pos])
                 pos = pos + 1

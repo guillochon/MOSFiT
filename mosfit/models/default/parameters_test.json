@@ -14,11 +14,16 @@
         "max_value":-1.0e-3
     },
     "temperature":{
+        "class":"powerlaw",
+        "alpha":-2.0,
         "min_value":1.0e3,
         "max_value":1.0e5,
         "log":true
     },
     "kappagamma":{
+        "class":"gaussian",
+        "mu":1.0e2,
+        "sigma":1.0e1,
         "min_value":0.1,
         "max_value":1.0e4,
         "log":true
@@ -26,7 +31,6 @@
     "mejecta":{
         "class":"powerlaw",
         "alpha":3.0,
-        "xmax":10.0,
         "min_value": 1.0,
         "max_value": 10.0,
         "log":false

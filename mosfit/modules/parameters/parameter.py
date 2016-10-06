@@ -36,11 +36,8 @@ class Parameter(Module):
         else:
             return -np.inf
 
-    def prior_cdf(self, **kwargs):
-        return max(
-            min((kwargs['fraction'] *
-                 (self._max_value - self._min_value) + self._min_value),
-                self._max_value), self._min_value)
+    def prior_cdf(self, y):
+        return y
 
     def process(self, **kwargs):
         """Initialize a parameter based upon either a fixed value or a
@@ -54,7 +51,10 @@ class Parameter(Module):
 
             value = self._value
         else:
-            value = self.prior_cdf(**kwargs)
+            value = max(
+                min((kwargs['fraction'] *
+                     (self._max_value - self._min_value) + self._min_value),
+                    self._max_value), self._min_value)
             if self._log:
                 value = np.exp(value)
         return {self._name: value}
