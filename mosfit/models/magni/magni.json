@@ -127,6 +127,7 @@
     },
     "variance":{
         "kind":"parameter",
+        "value":1.0,
         "class":"parameter",
         "latex":"\\sigma"
     },

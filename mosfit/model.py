@@ -12,7 +12,7 @@ import emcee
 import numpy as np
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline
-from scipy.optimize import minimize
+from scipy.optimize import basinhopping, differential_evolution, minimize
 
 
 class Model:
@@ -20,6 +20,20 @@ class Model:
     """
 
     MODEL_OUTPUT_DIR = 'products'
+
+    class RandomDisplacementBounds(object):
+        """random displacement with bounds"""
+
+        def __init__(self, xmin, xmax, stepsize=0.5):
+            self.xmin = xmin
+            self.xmax = xmax
+            self.stepsize = stepsize
+
+        def __call__(self, x):
+            """take a random step but ensure the new position is within the bounds"""
+            return np.clip(x + np.random.uniform(-self.stepsize, self.stepsize,
+                                                 np.shape(x)), self.xmin,
+                           self.xmax)
 
     def __init__(self,
                  parameter_path='parameters.json',
@@ -66,9 +80,10 @@ class Model:
         model_pp = os.path.join(
             os.path.split(model_path)[0], 'parameters.json')
 
-        pp = model_pp
+        pp = ''
 
-        model_pp2 = os.path.join(os.path.split(model_path)[0], parameter_path)
+        selected_pp = os.path.join(
+            os.path.split(model_path)[0], parameter_path)
 
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
@@ -77,11 +92,13 @@ class Model:
         elif os.path.isfile('parameters.json'):
             pp = 'parameters.json'
         # Then try the model directory, with the user-specified name
-        elif os.path.isfile(model_pp2):
-            pp = model_pp
+        elif os.path.isfile(selected_pp):
+            pp = selected_pp
         # Finally try model folder
         elif os.path.isfile(model_pp):
             pp = model_pp
+        else:
+            raise ValueError('Could not find parameter file!')
 
         print('Model file: ' + model_path)
         print('Parameter file: ' + pp + '\n')
@@ -193,24 +210,40 @@ class Model:
         """Perform fracking upon a single walker, using a local minimization
         method.
         """
-        x = arg[0]
-        seed = arg[1]
-        np.random.seed(seed)
+        x = np.array(arg[0])
+        step = 0.1
+        # seed = arg[1]
+        # np.random.seed(seed)
         # my_choice = np.random.choice(range(3))
-        my_choice = 0
-        my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
-        opt_dict = {}
-        if my_method in ['TNC', 'SLSQP']:
-            opt_dict['maxiter'] = 100
-        elif my_method == 'L-BFGS-B':
-            opt_dict['maxfun'] = 5000
-        bh = minimize(
-            self.fprob,
-            x,
-            method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
-            bounds=[(0.0, 1.0) for y in range(self._num_free_parameters)],
-            # tol=1.0e-6,
-            options=opt_dict)
+        # my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
+        # opt_dict = {'disp': True}
+        # if my_method in ['TNC', 'SLSQP']:
+        #     opt_dict['maxiter'] = 100
+        # elif my_method == 'L-BFGS-B':
+        #     opt_dict['maxfun'] = 5000
+        # bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
+
+        bounds = list(
+            zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
+
+        bh = differential_evolution(
+            self.fprob, bounds, disp=True, polish=False, maxiter=20)
+        # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
+        # bh = basinhopping(
+        #     self.fprob,
+        #     x,
+        #     disp=True,
+        #     niter=10,
+        #     take_step=take_step,
+        #     minimizer_kwargs={'method': "L-BFGS-B",
+        #                       'bounds': bounds})
+        # bh = minimize(
+        #     self.fprob,
+        #     x,
+        #     method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
+        #     bounds=bounds,
+        #     # tol=1.0e-6,
+        #     options=opt_dict)
         return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
