@@ -12,7 +12,7 @@ import emcee
 import numpy as np
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline
-from scipy.optimize import basinhopping, differential_evolution, minimize
+from scipy.optimize import differential_evolution
 
 
 class Model:
@@ -20,20 +20,6 @@ class Model:
     """
 
     MODEL_OUTPUT_DIR = 'products'
-
-    class RandomDisplacementBounds(object):
-        """random displacement with bounds"""
-
-        def __init__(self, xmin, xmax, stepsize=0.5):
-            self.xmin = xmin
-            self.xmax = xmax
-            self.stepsize = stepsize
-
-        def __call__(self, x):
-            """take a random step but ensure the new position is within the bounds"""
-            return np.clip(x + np.random.uniform(-self.stepsize, self.stepsize,
-                                                 np.shape(x)), self.xmin,
-                           self.xmax)
 
     def __init__(self,
                  parameter_path='parameters.json',
@@ -179,7 +165,8 @@ class Model:
             # mod = importlib.machinery.SourceFileLoader(mod_name,
             #                                            mod_path).load_module()
             # mod_class = getattr(mod, mod.CLASS_NAME)
-            # if cur_task['kind'] == 'parameter' and task in self._parameter_json:
+            # if (cur_task['kind'] == 'parameter' and task in
+            #         self._parameter_json):
             #     cur_task.update(self._parameter_json[task])
             # self._modules[task] = mod_class(name=task, **cur_task)
             # if class_name == 'filters':
@@ -556,15 +543,19 @@ class Model:
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
-    def prior(self, data):
+    def prior(self, x):
         """Return score related to paramater priors.
         """
-        return 0.0
+        prior = 0.0
+        for pi, par in enumerate(self._free_parameters):
+            lprior = self._modules[par].lnprior_pdf(x[pi])
+            prior = prior + lprior
+        return prior
 
     def fprob(self, x):
         """Return score for fracking.
         """
-        l = -self.likelihood(x)
+        l = -(self.likelihood(x) + self.prior(x))
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l

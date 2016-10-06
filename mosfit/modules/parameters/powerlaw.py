@@ -12,19 +12,20 @@ class PowerLaw(Parameter):
         super().__init__(**kwargs)
         self._alpha = kwargs.get('alpha', None)
         if self._log:
-            miv = np.exp(self._min_value)
-            mav = np.exp(self._max_value)
+            self._miv = np.exp(self._min_value)
+            self._mav = np.exp(self._max_value)
         else:
-            miv = self._min_value
-            mav = self._max_value
-        self._mivap1 = miv**(self._alpha + 1.0)
-        self._mavap1 = mav**(self._alpha + 1.0)
+            self._miv = self._min_value
+            self._mav = self._max_value
+        self._mivap1 = self._miv**(self._alpha + 1.0)
+        self._mavap1 = self._mav**(self._alpha + 1.0)
         self._miavap1 = self._mavap1 - self._mivap1
         self._cdf_exp = 1.0 / (self._alpha + 1.0)
 
-    def lnprior_pdf(self, value):
-        return np.log(self._alpha / self._min_value) - self._alpha * np.log(
-            value / self._min_value)
+    def lnprior_pdf(self, x):
+        value = self.value(x)
+        return np.log(((value - self._miv) / (self._mav - self._miv))
+                      **self._alpha)
 
     def prior_cdf(self, u):
         value = ((self._mivap1 + u * self._miavap1)**self._cdf_exp)

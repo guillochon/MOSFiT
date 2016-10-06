@@ -30,20 +30,24 @@ class Parameter(Module):
     def latex(self):
         return self._latex
 
-    def lnprior_pdf(self, value):
-        if (value <= self._max_value) & (value >= self._min_value):
-            return 0.0
-        else:
-            return -np.inf
+    def lnprior_pdf(self, x):
+        return 0.0
 
     def prior_cdf(self, u):
         return u
+
+    def value(self, f):
+        value = np.clip(f *
+                        (self._max_value - self._min_value) + self._min_value,
+                        self._min_value, self._max_value)
+        if self._log:
+            value = np.exp(value)
+        return value
 
     def process(self, **kwargs):
         """Initialize a parameter based upon either a fixed value or a
         distribution, if one is defined.
         """
-
         if self._min_value is None or self._max_value is None:
             # If this parameter is not free and is already set, then skip
             if self._name in kwargs:
@@ -51,10 +55,6 @@ class Parameter(Module):
 
             value = self._value
         else:
-            value = max(
-                min((kwargs['fraction'] *
-                     (self._max_value - self._min_value) + self._min_value),
-                    self._max_value), self._min_value)
-            if self._log:
-                value = np.exp(value)
+            value = self.value(kwargs['fraction'])
+
         return {self._name: value}

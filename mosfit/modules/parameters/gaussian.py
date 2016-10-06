@@ -27,9 +27,11 @@ class Gaussian(Parameter):
         if not self._sigma:
             raise ValueError('Need to set a value for sigma!')
 
-    def lnprior_pdf(self, value):
-        return (np.log(1. / (np.sqrt(4. * np.pi) * self._sigma)) -
-                (value - self._mu)**2 / (2. * self._sigma**2))
+    def lnprior_pdf(self, x):
+        value = self.value(x)
+        if self._log:
+            value = np.log(value)
+        return -(value - self._mu)**2 / (2. * self._sigma**2)
 
     def prior_cdf(self, u):
         value = (erfinv(2.0 * u - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
