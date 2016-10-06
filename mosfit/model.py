@@ -286,7 +286,6 @@ class Model:
             draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
             draw = [self._modules[self._free_parameters[i]].prior_cdf(x)
                     for i, x in enumerate(draw)]
-            print(draw)
             if not test:
                 p = draw
                 break
