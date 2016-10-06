@@ -108,7 +108,8 @@ class Model:
         self._num_free_parameters = len(
             [x for x in self._parameters
              if ('min_value' in self._parameters[x] and 'max_value' in
-                 self._parameters[x])])
+                 self._parameters[x] and self._parameters[x][
+                     'min_value'] != self._parameters[x]['max_value'])])
         self._log = logging.getLogger()
         self._modules = {}
         self._bands = []
@@ -426,7 +427,8 @@ class Model:
                 cur_task = self._call_stack[task]
                 if (cur_task['kind'] != 'parameter' or
                         'min_value' not in cur_task or
-                        'max_value' not in cur_task):
+                        'max_value' not in cur_task or
+                        cur_task['min_value'] == cur_task['max_value']):
                     continue
                 output = self._modules[task].process(**{'fraction': x[pi]})
                 value = list(output.values())[0]
@@ -578,7 +580,8 @@ class Model:
                 inputs = outputs
             cur_depth = cur_task['depth']
             if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
-                    'max_value' in cur_task):
+                    'max_value' in cur_task and
+                    cur_task['min_value'] != cur_task['max_value']):
                 inputs.update({'fraction': x[pos]})
                 inputs.setdefault('fractions', []).append(x[pos])
                 pos = pos + 1
