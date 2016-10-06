@@ -17,32 +17,22 @@ class Gaussian(Parameter):
         super().__init__(**kwargs)
         self._mu = kwargs.get('mu', None)
         self._sigma = kwargs.get('sigma', None)
-        # Scale to min/max_value
         if self._log:
-            miv = np.exp(self._min_value)
-            mav = np.exp(self._max_value)
-        else:
-            miv = self._min_value
-            mav = self._max_value
-        self._mu = (self._mu - miv) / (mav - miv)
-        self._sigma = (self._sigma - miv) / (mav - miv)
-        self._pos = kwargs.get('pos', False)
+            self._mu = np.log(self._mu)
+            self._sigma = np.log(10.0**self._sigma)
 
         if not self._mu:
-            raise ValueError('Need to set a value for mu')
+            raise ValueError('Need to set a value for mu!')
 
         if not self._sigma:
-            raise ValueError('Need to set a value for sigma')
+            raise ValueError('Need to set a value for sigma!')
 
     def lnprior_pdf(self, value):
         return (np.log(1. / (np.sqrt(4. * np.pi) * self._sigma)) -
                 (value - self._mu)**2 / (2. * self._sigma**2))
 
-    def prior_cdf(self, y):
-        value = (erfinv(2.0 * y - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
+    def prior_cdf(self, u):
+        value = (erfinv(2.0 * u - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
+        value = (value - self._min_value) / (self._max_value - self._min_value)
 
-        if self._pos:
-            return max(value, 0.0)
-
-        else:
-            return value
+        return np.clip(value, 0.0, 1.0)

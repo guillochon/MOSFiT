@@ -36,8 +36,8 @@ class Parameter(Module):
         else:
             return -np.inf
 
-    def prior_cdf(self, y):
-        return y
+    def prior_cdf(self, u):
+        return u
 
     def process(self, **kwargs):
         """Initialize a parameter based upon either a fixed value or a

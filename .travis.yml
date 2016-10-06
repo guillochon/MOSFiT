@@ -34,7 +34,7 @@ script:
     - echo "travis_fold:end:FIT Fitting test data done"
     - echo "travis_fold:start:GEN Generating random models"
     - coverage run -a -m mosfit --travis -i 0
-    - coverage run -m mosfit -i 0 -m default -P parameters_test.json
+    - coverage run -m mosfit -i 0 -m default -P parameters_test.json --force-copy-at-launch
     - echo "travis_fold:end:GEN Generating random models done"
 
 # Run coveralls

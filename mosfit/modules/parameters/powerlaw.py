@@ -11,7 +11,6 @@ class PowerLaw(Parameter):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._alpha = kwargs.get('alpha', None)
-        # Scale to min/max_value
         if self._log:
             miv = np.exp(self._min_value)
             mav = np.exp(self._max_value)
@@ -27,8 +26,8 @@ class PowerLaw(Parameter):
         return np.log(self._alpha / self._min_value) - self._alpha * np.log(
             value / self._min_value)
 
-    def prior_cdf(self, y):
-        value = ((self._mivap1 + y * self._miavap1)**self._cdf_exp)
+    def prior_cdf(self, u):
+        value = ((self._mivap1 + u * self._miavap1)**self._cdf_exp)
         if self._log:
             value = np.log(value)
         value = (value - self._min_value) / (self._max_value - self._min_value)

@@ -23,7 +23,7 @@
     "kappagamma":{
         "class":"gaussian",
         "mu":1.0e2,
-        "sigma":1.0e1,
+        "sigma":1.0,
         "min_value":0.1,
         "max_value":1.0e4,
         "log":true
