@@ -3,7 +3,6 @@ from math import pi
 import numexpr as ne
 import numpy as np
 from astropy import constants as c
-
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.seds.sed import SED
 
@@ -44,13 +43,19 @@ class blackbody_slsn(SED):
             temperature_phot = self._temperature_phot[li]
 
             if li == 0:
-                sed = ne.evaluate('fc * radius_phot**2 * rest_freqs**3 / '
-                                  'exp(xc * rest_freqs / temperature_phot) - 1.0')
+                sed = ne.evaluate(
+                    'fc * radius_phot**2 * rest_freqs**3 / '
+                    '(exp(xc * rest_freqs / temperature_phot) - 1.0)')
             else:
                 sed = ne.re_evaluate()
 
+            sed = np.nan_to_num(sed)
+
             # Account for UV absorption
-            sed[wav_arr < 3500] *= (0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
+            sed[wav_arr < 3500] *= (
+                0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
+
+            sed[sed < 0.0] = 0.0
 
             seds.append(list(sed))
 

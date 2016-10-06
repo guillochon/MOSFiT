@@ -18,6 +18,8 @@ class Likelihood(Module):
     def process(self, **kwargs):
         self._model_mags = kwargs['model_magnitudes']
         self._fractions = kwargs['fractions']
+        if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
+            return {'value': LIKELIHOOD_FLOOR}
         for mag in self._model_mags:
             if isnan(mag):
                 return {'value': LIKELIHOOD_FLOOR}
@@ -32,10 +34,6 @@ class Likelihood(Module):
              for x, y, z in zip(self._model_mags, self._mags, self._e_mags)])
         if isnan(value):
             return {'value': LIKELIHOOD_FLOOR}
-
-        x = self._fractions
-        if min(x) < 0.0 or max(x) > 1.0:
-            value = LIKELIHOOD_FLOOR
         # if min(x) < 0.0:
         #     value = value + self._n_mags * np.sum([y for y in x if y < 0.0])
         # if max(x) > 1.0:

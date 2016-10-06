@@ -1,7 +1,5 @@
 import numpy as np
-
 from mosfit.modules.module import Module
-
 
 CLASS_NAME = 'Parameter'
 
@@ -25,16 +23,17 @@ class Parameter(Module):
     def latex(self):
         return self._latex
 
-
-    def lnprior_pdf(self,value):
+    def lnprior_pdf(self, value):
         if (value <= self._max_value) & (value >= self._min_value):
             return 0.0
         else:
             return -np.inf
 
     def prior_cdf(self, **kwargs):
-        return max(min((kwargs['fraction'] * (self._max_value - self._min_value) +
-                        self._min_value), self._max_value), self._min_value)
+        return max(
+            min((kwargs['fraction'] *
+                 (self._max_value - self._min_value) + self._min_value),
+                self._max_value), self._min_value)
 
     def process(self, **kwargs):
         """Initialize a parameter based upon either a fixed value or a

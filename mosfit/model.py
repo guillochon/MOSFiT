@@ -196,17 +196,21 @@ class Model:
         x = arg[0]
         seed = arg[1]
         np.random.seed(seed)
-        my_choice = np.random.choice(range(3))
+        # my_choice = np.random.choice(range(3))
+        my_choice = 0
+        my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
+        opt_dict = {}
+        if my_method in ['TNC', 'SLSQP']:
+            opt_dict['maxiter'] = 100
+        elif my_method == 'L-BFGS-B':
+            opt_dict['maxfun'] = 5000
         bh = minimize(
             self.fprob,
             x,
             method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
-            bounds=[(0.0, 1.0) for x in range(self._num_free_parameters)],
+            bounds=[(0.0, 1.0) for y in range(self._num_free_parameters)],
             # tol=1.0e-6,
-            options={
-                'maxiter': 100,
-                # 'disp': True
-            })
+            options=opt_dict)
         return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
@@ -289,13 +293,11 @@ class Model:
             while len(p0[i]) < nwalkers:
                 self.print_status(
                     desc='Drawing initial walkers',
-                    progress=[i * nwalkers + len(p0[i]),
-                              nwalkers * ntemps])
+                    progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
 
                 nmap = nwalkers - len(p0[i])
                 p0[i].extend(
-                    self._pool.map(self.draw_walker, [test_walker] *
-                                   nmap))
+                    self._pool.map(self.draw_walker, [test_walker] * nmap))
 
         if self._serial:
             sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
@@ -355,20 +357,24 @@ class Model:
                     scores=[max(x) for x in lnprob],
                     progress=[(b + 1) * frack_step, iterations],
                     acor=acor)
-                ris, rjs = [0] * self._pool_size, list(sorted(np.random.choice(
-                    range(nwalkers),
-                    self._pool_size,
-                    replace=(self._pool_size > nwalkers))))
+                ijperms = [[x, y] for x in range(ntemps)
+                           for y in range(nwalkers)]
+                selijs = [ijperms[x]
+                          for x in np.random.choice(
+                              range(len(ijperms)),
+                              self._pool_size,
+                              replace=(self._pool_size > nwalkers))]
 
-                bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
+                bhwalkers = [p[i][j] for i, j in selijs]
+
                 st = time.time()
                 seeds = [round(time.time() * 1000.0) % 4294900000 + x
                          for x in range(len(bhwalkers))]
                 frack_args = list(zip(bhwalkers, seeds))
                 bhs = self._pool.map(self.frack, frack_args)
                 for bhi, bh in enumerate(bhs):
-                    if -bh.fun > lnprob[ris[bhi]][rjs[bhi]]:
-                        p[ris[bhi]][rjs[bhi]] = bh.x
+                    if -bh.fun > lnprob[selijs[bhi][0]][selijs[bhi][1]]:
+                        p[selijs[bhi][0]][selijs[bhi][1]] = bh.x
                 self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
                 scores = [-x.fun for x in bhs]
                 self.print_status(
