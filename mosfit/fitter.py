@@ -138,6 +138,7 @@ class Fitter():
 
             if not serial and not pool.is_master():
                 pool.wait()
+                return
 
             for mod_name in models:
                 for parameter_path in parameter_paths:
