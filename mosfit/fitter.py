@@ -3,10 +3,10 @@ import os
 import shutil
 import urllib.request
 import warnings
+from multiprocessing import Pool
 
 import numpy as np
 from emcee.utils import MPIPool
-
 from mosfit.utils import print_inline
 
 from .model import Model
@@ -41,17 +41,19 @@ class Fitter():
         dir_path = os.path.dirname(os.path.realpath(__file__))
 
         pool = ''
+        serial = False
         try:
             pool = MPIPool(loadbalance=True)
         except ValueError:
-            pass
+            serial = True
+            pool = Pool()
         except:
             raise
 
         for event in events:
             if event:
                 event_name = ''
-                if not pool or pool.is_master():
+                if serial or pool.is_master():
                     path = ''
                     # If the event name ends in .json, assume a path
                     if event.endswith('.json'):
@@ -62,9 +64,10 @@ class Fitter():
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
                         input_name = event.replace('.json', '')
-                        print('Event `{}` interpreted as supernova name, '
-                              'downloading list of supernova aliases...'.
-                              format(input_name))
+                        print(
+                            'Event `{}` interpreted as supernova name, '
+                            'downloading list of supernova aliases...'.format(
+                                input_name))
                         try:
                             response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
@@ -122,7 +125,7 @@ class Fitter():
                               'on the OSC.'.format(event_name))
                         raise RuntimeError
 
-                if pool:
+                if not serial:
                     if pool.is_master():
                         for rank in range(1, pool.size + 1):
                             pool.comm.send(event_name, dest=rank, tag=0)
@@ -133,7 +136,7 @@ class Fitter():
                         path = pool.comm.recv(source=0, tag=1)
                         data = pool.comm.recv(source=0, tag=2)
 
-            if pool and not pool.is_master():
+            if not serial and not pool.is_master():
                 pool.wait()
 
             for mod_name in models:

@@ -6,7 +6,7 @@ import os
 import time
 from collections import OrderedDict
 from math import isnan
-from multiprocessing import Pool, cpu_count
+from multiprocessing import cpu_count
 
 import emcee
 import numpy as np
@@ -30,6 +30,13 @@ class Model:
         self._model_name = model
         self._travis = travis
         self._pool = pool
+
+        if hasattr(self._pool, 'size'):
+            self._serial = False
+            self._pool_size = self._pool.size
+        else:
+            self._serial = True
+            self._pool_size = cpu_count()
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -76,7 +83,7 @@ class Model:
         elif os.path.isfile(model_pp):
             pp = model_pp
 
-        if not self._pool or self._pool.is_master():
+        if self._serial or self._pool.is_master():
             print('Model file: ' + model_path)
             print('Parameter file: ' + pp + '\n')
 
@@ -277,14 +284,7 @@ class Model:
         lnprob = None
         serial = False
 
-        if not self._pool:
-            psize = cpu_count()
-            serial = True
-            pool = Pool(psize)
-        else:
-            psize = self._pool.size
-
-        if serial or self._pool.is_master():
+        if self._serial or self._pool.is_master():
             print('{} dimensions in problem.\n\n'.format(ndim))
             p0 = [[] for x in range(ntemps)]
 
@@ -294,15 +294,16 @@ class Model:
                         desc='Drawing initial walkers',
                         progress=[i * nwalkers + len(p0[i]),
                                   nwalkers * ntemps])
-                    if serial:
-                        p0[i].append(self.draw_walker(test_walker))
-                    else:
-                        nmap = nwalkers - len(p0[i])
-                        p0[i].extend(
-                            self._pool.map(self.draw_walker, [test_walker] *
-                                           nmap))
 
-        if self._pool:
+                    nmap = nwalkers - len(p0[i])
+                    p0[i].extend(
+                        self._pool.map(self.draw_walker, [test_walker] *
+                                       nmap))
+
+        if serial:
+            sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
+                                      self.prior)
+        else:
             sampler = emcee.PTSampler(
                 ntemps,
                 nwalkers,
@@ -310,12 +311,6 @@ class Model:
                 self.likelihood,
                 self.prior,
                 pool=self._pool)
-        else:
-            sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
-                                      self.prior)
-
-        if self._pool and not self._pool.is_master():
-            return
 
         print_inline('Initial draws completed!')
         print('\n\n')
@@ -366,22 +361,18 @@ class Model:
                 probs = [np.exp(0.1 * x) for x in lnprob[0]]
                 probn = np.sum(probs)
                 probs = [x / probn for x in probs]
-                ris, rjs = [0] * psize, np.random.choice(
+                ris, rjs = [0] * self._pool_size, np.random.choice(
                     range(nwalkers),
-                    psize,
+                    self._pool_size,
                     p=probs,
-                    replace=(psize > nwalkers))
+                    replace=(self._pool_size > nwalkers))
 
                 bhwalkers = [p[i][j] for i, j in zip(ris, rjs)]
                 st = time.time()
                 seeds = [round(time.time() * 1000.0) % 4294900000 + x
                          for x in range(len(bhwalkers))]
                 frack_args = list(zip(bhwalkers, seeds))
-                if serial:
-                    bhs = pool.map(self.frack, frack_args)
-                    # bhs = list(map(self.frack, bhwalkers))
-                else:
-                    bhs = self._pool.map(self.frack, frack_args)
+                bhs = self._pool.map(self.frack, frack_args)
                 for bhi, bh in enumerate(bhs):
                     if -bh.fun > lnprob[ris[bhi]][rjs[bhi]]:
                         p[ris[bhi]][rjs[bhi]] = bh.x
@@ -391,9 +382,6 @@ class Model:
                     desc='Running Fracking',
                     scores=scores,
                     progress=[(b + 1) * frack_step, iterations])
-
-        if self._pool and not self._pool.is_master():
-            return
 
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):
@@ -567,3 +555,11 @@ class Model:
 
             if cur_task['kind'] == root:
                 return outputs
+
+    def __getstate__(self):
+        """Avoid pickling pool itself when distributing to pool
+        (see https://goo.gl/xUm0IO).
+        """
+        self_dict = self.__dict__.copy()
+        del self_dict['_pool']
+        return self_dict
