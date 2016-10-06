@@ -3,6 +3,7 @@ import importlib
 import json
 import logging
 import os
+import sys
 import time
 from collections import OrderedDict
 from math import isnan
@@ -11,7 +12,7 @@ from multiprocessing import cpu_count
 import emcee
 import numpy as np
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.utils import listify, pretty_num, print_inline
+from mosfit.utils import listify, pretty_num, print_inline, prompt
 from scipy.optimize import differential_evolution
 
 
@@ -30,6 +31,7 @@ class Model:
         self._model_name = model
         self._travis = travis
         self._pool = pool
+        self._wrap_length = wrap_length
 
         if hasattr(self._pool, 'size'):
             self._serial = False
@@ -354,62 +356,72 @@ class Model:
 
         acort = 1.0
         acorc = 1.0
-        for b in range(frack_iters):
-            if fracking and b >= bmax:
-                loop_step = iterations - self._burn_in
-            emi = 0
-            st = time.time()
-            for p, lnprob, lnlike in sampler.sample(
-                    p, iterations=min(loop_step, iterations)):
-                emi = emi + 1
-                prog = b * frack_step + emi
-                try:
-                    acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
-                    acort = max([
-                        max(x) for x in sampler.get_autocorr_time(c=acorc)
-                    ])
-                except:
-                    pass
-                acor = [acort, acorc]
-                self._emcee_est_t = float(time.time() - st) / emi * (
-                    iterations - (b * frack_step + emi))
-                self.print_status(
-                    desc='Running PTSampler',
-                    scores=[max(x) for x in lnprob],
-                    progress=[prog, iterations],
-                    acor=acor)
-            if fracking and b >= bmax:
-                break
-            if fracking and b < bmax:
-                self.print_status(
-                    desc='Running Fracking',
-                    scores=[max(x) for x in lnprob],
-                    progress=[(b + 1) * frack_step, iterations],
-                    acor=acor)
-                ijperms = [[x, y] for x in range(ntemps)
-                           for y in range(nwalkers)]
-                selijs = [ijperms[x]
-                          for x in np.random.choice(
-                              range(len(ijperms)),
-                              self._pool_size,
-                              replace=(self._pool_size > nwalkers))]
-
-                bhwalkers = [p[i][j] for i, j in selijs]
-
+        try:
+            for b in range(frack_iters):
+                if fracking and b >= bmax:
+                    loop_step = iterations - self._burn_in
+                emi = 0
                 st = time.time()
-                seeds = [round(time.time() * 1000.0) % 4294900000 + x
-                         for x in range(len(bhwalkers))]
-                frack_args = list(zip(bhwalkers, seeds))
-                bhs = self._pool.map(self.frack, frack_args)
-                for bhi, bh in enumerate(bhs):
-                    if -bh.fun > lnprob[selijs[bhi][0]][selijs[bhi][1]]:
-                        p[selijs[bhi][0]][selijs[bhi][1]] = bh.x
-                self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
-                scores = [-x.fun for x in bhs]
-                self.print_status(
-                    desc='Running Fracking',
-                    scores=scores,
-                    progress=[(b + 1) * frack_step, iterations])
+                for p, lnprob, lnlike in sampler.sample(
+                        p, iterations=min(loop_step, iterations)):
+                    emi = emi + 1
+                    prog = b * frack_step + emi
+                    try:
+                        acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
+                        acort = max([
+                            max(x) for x in sampler.get_autocorr_time(c=acorc)
+                        ])
+                    except:
+                        pass
+                    acor = [acort, acorc]
+                    self._emcee_est_t = float(time.time() - st) / emi * (
+                        iterations - (b * frack_step + emi))
+                    self.print_status(
+                        desc='Running PTSampler',
+                        scores=[max(x) for x in lnprob],
+                        progress=[prog, iterations],
+                        acor=acor)
+                if fracking and b >= bmax:
+                    break
+                if fracking and b < bmax:
+                    self.print_status(
+                        desc='Running Fracking',
+                        scores=[max(x) for x in lnprob],
+                        progress=[(b + 1) * frack_step, iterations],
+                        acor=acor)
+                    ijperms = [[x, y]
+                               for x in range(ntemps) for y in range(nwalkers)]
+                    selijs = [ijperms[x]
+                              for x in np.random.choice(
+                                  range(len(ijperms)),
+                                  self._pool_size,
+                                  replace=(self._pool_size > nwalkers))]
+
+                    bhwalkers = [p[i][j] for i, j in selijs]
+
+                    st = time.time()
+                    seeds = [round(time.time() * 1000.0) % 4294900000 + x
+                             for x in range(len(bhwalkers))]
+                    frack_args = list(zip(bhwalkers, seeds))
+                    bhs = self._pool.map(self.frack, frack_args)
+                    for bhi, bh in enumerate(bhs):
+                        if -bh.fun > lnprob[selijs[bhi][0]][selijs[bhi][1]]:
+                            p[selijs[bhi][0]][selijs[bhi][1]] = bh.x
+                    self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
+                    scores = [-x.fun for x in bhs]
+                    self.print_status(
+                        desc='Running Fracking',
+                        scores=scores,
+                        progress=[(b + 1) * frack_step, iterations])
+        except KeyboardInterrupt:
+            if (not prompt(
+                    'You have interrupted the Monte Carlo. Do you wish to '
+                    'save the incomplete run to disk? Previous results will '
+                    'be overwritten.', self._wrap_length)):
+                self._pool.close()
+                sys.exit()
+        except:
+            raise
 
         walkers_out = OrderedDict()
         for xi, x in enumerate(p[0]):

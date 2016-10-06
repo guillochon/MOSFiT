@@ -7,7 +7,7 @@ from multiprocessing import Pool
 
 import numpy as np
 from emcee.utils import MPIPool
-from mosfit.utils import print_inline
+from mosfit.utils import init_worker, print_inline
 
 from .model import Model
 
@@ -46,7 +46,7 @@ class Fitter():
             pool = MPIPool(loadbalance=True)
         except ValueError:
             serial = True
-            pool = Pool()
+            pool = Pool(None, init_worker)
         except:
             raise
 
@@ -137,7 +137,10 @@ class Fitter():
                         data = pool.comm.recv(source=0, tag=2)
 
             if not serial and not pool.is_master():
-                pool.wait()
+                try:
+                    pool.wait()
+                except KeyboardInterrupt:
+                    pass
                 return
 
             for mod_name in models:
