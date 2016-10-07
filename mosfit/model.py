@@ -414,11 +414,13 @@ class Model:
                         scores=scores,
                         progress=[(b + 1) * frack_step, iterations])
         except KeyboardInterrupt:
+            self._pool.close()
+            if self._serial:
+                self._pool.terminate()
             if (not prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '
                     'be overwritten.', self._wrap_length)):
-                self._pool.close()
                 sys.exit()
         except:
             raise
