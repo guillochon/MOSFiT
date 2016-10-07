@@ -120,6 +120,7 @@ class Fitter():
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.loads(f.read())
+                        print('Event file: ' + path)
                     else:
                         print('Error: Could not find data for `{}` locally or '
                               'on the OSC.'.format(event_name))

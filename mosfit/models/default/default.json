@@ -26,6 +26,11 @@
             }
         }
     },
+    "default_upper_limit_error":{
+        "kind":"parameter",
+        "value":0.1,
+        "class":"constant"
+    },
     "ebv":{
         "kind":"parameter",
         "value":0.0,
@@ -181,7 +186,8 @@
         "inputs":[
             "transient",
             "variance",
-            "filters"
+            "filters",
+            "default_upper_limit_error"
         ]
     },
     "fitlc":{

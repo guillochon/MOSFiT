@@ -26,7 +26,8 @@ class Likelihood(Module):
         self._mags = kwargs['magnitudes']
         self._e_mags = kwargs['e_magnitudes']
         self._upper_limits = kwargs['upperlimits']
-        self._e_mags = [0.1 if x == '' and self._upper_limits[i] else x
+        self._e_mags = [kwargs['default_upper_limit_error']
+                        if x == '' and self._upper_limits[i] else x
                         for i, x in enumerate(self._e_mags)]
         self._n_mags = len(self._mags)
 
