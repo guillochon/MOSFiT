@@ -36,6 +36,7 @@ script:
     - coverage run --source=mosfit -a -m mosfit --travis -i 0
     - coverage run --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
     - echo "travis_fold:end:GEN Generating random models done"
+    - ls -lh
 
 # Run coveralls
 after_success:
