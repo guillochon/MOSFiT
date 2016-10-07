@@ -5,11 +5,11 @@
             "photometry":{
                 "time":["required", "numeric"],
                 "magnitude":["required", "numeric"],
-                "e_magnitude":["required", "numeric"],
+                "e_magnitude":["optional", "numeric"],
                 "band":"required",
                 "instrument":"optional",
                 "system":"optional",
-                "upperlimit":"exclude",
+                "upperlimit":"optional",
                 "includeshost":"exclude",
                 "host":"exclude",
                 "kcorrected":"exclude",
@@ -37,7 +37,7 @@
     },
     "lumdist":{
         "kind":"parameter",
-        "value":500,
+        "value":500.0,
         "class":"parameter",
         "inputs":[
             "transient"
