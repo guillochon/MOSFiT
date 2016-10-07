@@ -207,7 +207,7 @@ class Model:
         method.
         """
         x = np.array(arg[0])
-        step = 0.1
+        step = 1.0
         # seed = arg[1]
         # np.random.seed(seed)
         # my_choice = np.random.choice(range(3))
