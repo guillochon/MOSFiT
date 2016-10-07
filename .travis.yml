@@ -18,8 +18,8 @@ before_install:
     - conda update -q conda;
 install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION python-coveralls
     - pip install -r requirements.txt
-    - pip install coveralls
     - python setup.py install
 
 # Run test
