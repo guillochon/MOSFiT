@@ -17,8 +17,8 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda;
 install:
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy
-    - conda install -c omnia --yes python=$TRAVIS_PYTHON_VERSION python-coveralls
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py
+    - pip install coveralls
     - pip install -r requirements.txt
     - python setup.py install
 
@@ -36,6 +36,7 @@ script:
     - coverage run -a -m mosfit --travis -i 0
     - coverage run -m mosfit -i 0 -m default -P parameters_test.json
     - echo "travis_fold:end:GEN Generating random models done"
+    - cd ../MOSFiT
 
 # Run coveralls
 after_success:
