@@ -1,7 +1,6 @@
 from math import isnan
 
 import numpy as np
-
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 
@@ -26,12 +25,16 @@ class Likelihood(Module):
         self._variance2 = kwargs['variance']**2
         self._mags = kwargs['magnitudes']
         self._e_mags = kwargs['e_magnitudes']
+        self._upper_limits = kwargs['upperlimits']
+        self._e_mags = [0.1 if x == '' and self._upper_limits[i] else x
+                        for i, x in enumerate(self._e_mags)]
         self._n_mags = len(self._mags)
 
         value = -0.5 * np.sum(
-            [(x - y)**2 /
+            [(x - y if not u or x > y else 0.0)**2 /
              (z**2 + self._variance2) + np.log(self._variance2 + z**2)
-             for x, y, z in zip(self._model_mags, self._mags, self._e_mags)])
+             for x, y, z, u in zip(self._model_mags, self._mags, self._e_mags,
+                                   self._upper_limits)])
         if isnan(value):
             return {'value': LIKELIHOOD_FLOOR}
         # if min(x) < 0.0:
