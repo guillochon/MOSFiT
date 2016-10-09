@@ -20,7 +20,7 @@ install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy
     - pip install coveralls
     - pip install -r requirements.txt
-    - python setup.py install --single-version-externally-managed
+    - python setup.py install
 
 # Run test
 script:
