@@ -20,7 +20,7 @@ install:
     - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy jupyter
     - pip install coveralls
     - pip install -r requirements.txt
-    - coverage run setup.py install
+    - coverage run -p setup.py install
 
 # Run test
 script:
@@ -30,8 +30,8 @@ script:
     - mpirun -np 2 coverage run -p --source=mosfit -a -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
     - echo "travis_fold:end:FIT Fitting test data done"
     - echo "travis_fold:start:GEN Generating random models"
-    - coverage run --source=mosfit -a -m mosfit --travis -i 0
-    - coverage run --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
+    - coverage run -p --source=mosfit -a -m mosfit --travis -i 0
+    - coverage run -p --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
     - echo "travis_fold:end:GEN Generating random models done"
     - echo "travis_fold:start:JUP Testing Jupyter notebooks"
     - echo "travis_fold:end:JUP Testing Jupyter notebooks"
