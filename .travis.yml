@@ -25,17 +25,17 @@ install:
 # Run test
 script:
     - echo "travis_fold:start:FIT Fitting test data"
-    - mpirun -np 2 coverage run --source=mosfit -a -m mosfit -e SN2006le --travis -i 1 -f 1 -p 0
-    - mpirun -np 2 coverage run --source=mosfit -a -m mosfit -e SN2006le --travis -i 1 --no-fracking -m magnetar
-    - mpirun -np 2 coverage run --source=mosfit -a -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
+    - mpirun -np 2 coverage run -p --source=mosfit -a -m mosfit -e SN2006le --travis -i 1 -f 1 -p 0
+    - mpirun -np 2 coverage run -p --source=mosfit -a -m mosfit -e SN2006le --travis -i 1 --no-fracking -m magnetar
+    - mpirun -np 2 coverage run -p --source=mosfit -a -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
     - echo "travis_fold:end:FIT Fitting test data done"
     - echo "travis_fold:start:GEN Generating random models"
     - coverage run --source=mosfit -a -m mosfit --travis -i 0
     - coverage run --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
     - echo "travis_fold:end:GEN Generating random models done"
     - echo "travis_fold:start:JUP Testing Jupyter notebooks"
-    - jupyter nbconvert --to script mosfit.ipynb
     - echo "travis_fold:end:JUP Testing Jupyter notebooks"
+    - coverage combine
 
 # Run coveralls
 after_success:
