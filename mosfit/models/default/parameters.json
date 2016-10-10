@@ -10,8 +10,8 @@
         "log":true
     },
     "texplosion":{
-        "min_value":-1000.0,
-        "max_value":-1.0e-3
+        "min_value":-500.0,
+        "max_value":500.0
     },
     "temperature":{
         "min_value":1.0e3,
