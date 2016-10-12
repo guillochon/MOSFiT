@@ -11,9 +11,10 @@ from multiprocessing import cpu_count
 
 import emcee
 import numpy as np
-from bayes_opt import BayesianOptimization
+# from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline, prompt
+from scipy.optimize import differential_evolution
 
 
 class Model:
@@ -225,23 +226,23 @@ class Model:
         bounds = list(
             zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
 
-        # bh = differential_evolution(
-        #     self.fprob, bounds, disp=True, polish=False, maxiter=20)
-        # return bh
-
-        bo = BayesianOptimization(self.boprob, dict(
-            [('x' + str(i),
-              (np.clip(x[i] - step, 0.0, 1.0), np.clip(x[i] + step, 0.0, 1.0)))
-             for i in range(len(x))]))
-
-        bo.explore(dict([('x' + str(i), [x[i]]) for i in range(len(x))]))
-
-        bo.maximize(init_points=0, n_iter=100, acq='ei')
-
-        bh = self.outClass()
-        bh.x = [x[1] for x in sorted(bo.res['max']['max_params'].items())]
-        bh.fun = -bo.res['max']['max_val']
+        bh = differential_evolution(
+            self.fprob, bounds, disp=True, polish=False, maxiter=20)
         return bh
+
+        # bo = BayesianOptimization(self.boprob, dict(
+        #     [('x' + str(i),
+        #       (np.clip(x[i] - step, 0.0, 1.0), np.clip(x[i] + step, 0.0, 1.0)))
+        #      for i in range(len(x))]))
+        #
+        # bo.explore(dict([('x' + str(i), [x[i]]) for i in range(len(x))]))
+        #
+        # bo.maximize(init_points=0, n_iter=100, acq='ei')
+        #
+        # bh = self.outClass()
+        # bh.x = [x[1] for x in sorted(bo.res['max']['max_params'].items())]
+        # bh.fun = -bo.res['max']['max_val']
+        # return bh
 
         # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
         # bh = basinhopping(
