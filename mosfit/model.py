@@ -14,7 +14,8 @@ import numpy as np
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, pretty_num, print_inline, prompt
-from scipy.optimize import differential_evolution
+# from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
 
 
 class Model:
@@ -215,19 +216,38 @@ class Model:
         seed = arg[1]
         np.random.seed(seed)
         # my_choice = np.random.choice(range(3))
-        # my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
-        # opt_dict = {'disp': True}
-        # if my_method in ['TNC', 'SLSQP']:
-        #     opt_dict['maxiter'] = 100
-        # elif my_method == 'L-BFGS-B':
-        #     opt_dict['maxfun'] = 5000
+        my_choice = 0
+        my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
+        opt_dict = {'disp': True}
+        if my_method in ['TNC', 'SLSQP']:
+            opt_dict['maxiter'] = 100
+        elif my_method == 'L-BFGS-B':
+            opt_dict['maxfun'] = 5000
         # bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
 
         bounds = list(
             zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
 
-        bh = differential_evolution(
-            self.fprob, bounds, disp=True, polish=False, maxiter=20)
+        # bh = differential_evolution(
+        #     self.fprob, bounds, disp=True, polish=False, maxiter=20)
+        # return bh
+
+        # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
+        # bh = basinhopping(
+        #     self.fprob,
+        #     x,
+        #     disp=True,
+        #     niter=10,
+        #     take_step=take_step,
+        #     minimizer_kwargs={'method': "L-BFGS-B",
+        #                       'bounds': bounds})
+        bh = minimize(
+            self.fprob,
+            x,
+            method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
+            bounds=bounds,
+            # tol=1.0e-6,
+            options=opt_dict)
         return bh
 
         # bo = BayesianOptimization(self.boprob, dict(
@@ -242,24 +262,6 @@ class Model:
         # bh = self.outClass()
         # bh.x = [x[1] for x in sorted(bo.res['max']['max_params'].items())]
         # bh.fun = -bo.res['max']['max_val']
-        # return bh
-
-        # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
-        # bh = basinhopping(
-        #     self.fprob,
-        #     x,
-        #     disp=True,
-        #     niter=10,
-        #     take_step=take_step,
-        #     minimizer_kwargs={'method': "L-BFGS-B",
-        #                       'bounds': bounds})
-        # bh = minimize(
-        #     self.fprob,
-        #     x,
-        #     method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
-        #     bounds=bounds,
-        #     # tol=1.0e-6,
-        #     options=opt_dict)
         # return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
