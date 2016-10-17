@@ -24,9 +24,8 @@ class CSM(Engine):
         self._kappa = kwargs['kappa']
         self._R0 = kwargs['r0'] * 1.496e13 #AU to cm
         self._mejecta = kwargs['mejecta'] * 1.9884e33#Msol to grms
-        self._mnickel = kwargs['mejecta'] * kwargs['fnickel']
         self._mcsm = kwargs['mcsm'] * 1.9884e33
-        self._rho = 10.**(kwargs['rho'])
+        self._rho = kwargs['rho']
         self._vph = kwargs['vejecta'] * 1.e5
         self._Esn = 3. * self._vph**2 / 10. * self._mejecta
         self._texplosion = kwargs['texplosion']
