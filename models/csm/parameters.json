@@ -1,10 +1,8 @@
 {
     "nhhost":{
-        "value":0.0
-    },
-    "fnickel":{
-        "min_value":0.0,
-        "max_value":0.0
+        "min_value":1.0e16,
+        "max_value":1.0e23,
+        "log":true
     },
     "n":{
         "min_value":6.0,
@@ -20,37 +18,34 @@
     },
     "mcsm":{
         "min_value":0.1,
-        "max_value":2.0
+        "max_value":10.0
     },
     "texplosion":{
         "value":0.0
     },
-    "temperature":{
-        "min_value":1.0e4,
-        "max_value":1.0e4,
-        "log":true
-    },
     "kappagamma":{
-        "min_value":0.2,
-        "max_value":0.2,
+        "value":1.0e-2,
+        "max_value":1.0e3,
         "log":true
     },
     "mejecta":{
         "min_value":2.0,
-        "max_value":7.0
+        "max_value":100.0,
+        "log":true
     },
     "vejecta":{
-        "min_value":1.0e4,
-        "max_value":1.0e4,
+        "min_value":1.0e3,
+        "max_value":1.0e5,
         "log":true
     },
     "rho":{
-        "min_value":-13.0,
-        "max_value":-11.0
+        "min_value":1.0e-13,
+        "max_value":1.0e-11,
+        "log":true
     },
     "variance":{
         "min_value":1.0e-5,
-        "max_value":1.0e-5,
+        "max_value":1.0e1,
         "log":true
     }
 }
