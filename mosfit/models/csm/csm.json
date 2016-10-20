@@ -37,7 +37,7 @@
     },
     "lumdist":{
         "kind":"parameter",
-        "value":500,
+        "value":1.0e-5,
         "class":"parameter",
         "inputs":[
             "transient"
@@ -55,7 +55,7 @@
     },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e18,
+        "value":0.0,
         "class":"parameter",
         "latex":"n_{\\rm H,host}"
     },
@@ -67,13 +67,13 @@
     },
     "n":{
         "kind":"parameter",
-        "value":8.0,
+        "value":12.0,
         "class":"parameter",
         "latex":"n"
     },
     "s":{
         "kind":"parameter",
-        "value":2.0,
+        "value":0.0,
         "class":"parameter",
         "latex":"s"
     },
@@ -91,13 +91,13 @@
     },
     "mcsm":{
         "kind":"parameter",
-        "value":1.0,
+        "value":5.01,
         "class":"parameter",
-        "latex":"M_{\\rm CSM}"
+        "latex":"\\M_{\\rm CSM}"
     },
     "kappa":{
         "kind":"parameter",
-        "value":0.2,
+        "value":0.33,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
@@ -109,7 +109,7 @@
     },
    "rho":{
         "kind":"parameter",
-        "value":-11.0,
+        "value":1.0e-12,
         "class":"parameter",
         "latex":"\\rho"
     },
@@ -160,13 +160,16 @@
             "densetimes"
         ]
     },
-    "diffusion":{
+    "diffusion_csm":{
         "kind":"transform",
         "inputs":[
             "csm",
             "kappa",
-            "kappagamma",
+            "r0",
+            "s",
+            "rho",
             "mejecta",
+            "mcsm",
             "texplosion",
             "vejecta"
         ]
@@ -175,7 +178,7 @@
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion",
+            "diffusion_csm",
             "temperature"
         ]
     },
