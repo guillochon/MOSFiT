@@ -226,6 +226,10 @@ class Fitter():
                     req_key_values={'band': self._model._bands},
                     subtract_minimum_keys=['times'])
 
+        # Run through once to set all inits
+        self._model.likelihood(
+            [0.0 for x in range(self._model._num_free_parameters)])
+
         self._event_name = event_name
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
