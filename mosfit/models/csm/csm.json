@@ -48,7 +48,7 @@
         "kind":"parameter",
         "value":5.01,
         "class":"parameter",
-        "latex":"\\M_{\\rm CSM}"
+        "latex":"M_{\\rm CSM}"
     },
     "kappa":{
         "kind":"parameter",
