@@ -1,10 +1,12 @@
 {
     "nhhost":{
-        "value":0.0
+        "min_value":1.0e16,
+        "max_value":1.0e23,
+        "log":true
     },
     "texplosion":{
-        "min_value":-500,
-        "max_value":500
+        "min_value":-500.0,
+        "max_value":500.0
     },
     "n":{
         "value":12.0
@@ -17,17 +19,23 @@
     },
     "mcsm":{
         "min_value":0.1,
-        "max_value":10.0
+        "max_value":30.0,
+        "log":true
     },
     "mejecta":{
-        "min_value":1.0,
-        "max_value":10.0
+        "min_value":0.1,
+        "max_value":30.0,
+        "log":true
     },
     "vejecta":{
-        "value":4.0e3
+        "min_value":1.0e3,
+        "max_value":1.0e5,
+        "log":true
     },
     "rho":{
-        "value":1.0e-13
+        "min_value":1.0e-15,
+        "max_value":1.0e-11,
+        "log":true
     },
     "variance":{
         "min_value":1.0e-5,
