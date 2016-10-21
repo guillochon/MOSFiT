@@ -116,11 +116,12 @@ class Filters(Module):
         return []
 
     def preprocess(self, **kwargs):
-        if not self._preprocessed:
-            self._bands = kwargs['bands']
-            self._band_indices = list(map(self.find_band_index, self._bands))
-            self._dxs = []
-            for bi in self._band_indices:
-                wavs = kwargs['samplewavelengths'][bi]
-                self._dxs.append(wavs[1] - wavs[0])
+        if self._preprocessed:
+            return
+        self._bands = kwargs['bands']
+        self._band_indices = list(map(self.find_band_index, self._bands))
+        self._dxs = []
+        for bi in self._band_indices:
+            wavs = kwargs['samplewavelengths'][bi]
+            self._dxs.append(wavs[1] - wavs[0])
         self._preprocessed = True

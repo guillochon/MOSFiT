@@ -6,6 +6,8 @@
                 "time":["required", "numeric"],
                 "magnitude":["required", "numeric"],
                 "e_magnitude":["optional", "numeric"],
+                "e_upper_magnitude":["optional", "numeric"],
+                "e_lower_magnitude":["optional", "numeric"],
                 "band":"required",
                 "instrument":"optional",
                 "system":"optional",
