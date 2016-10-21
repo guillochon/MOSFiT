@@ -6,7 +6,7 @@ from math import isnan
 CLASS_NAME = 'CSM'
 
 class CSM(Engine):
-    """Magnetar spin-down engine
+    """CSM energy injection.
 
         input luminosity calculation from http://adsabs.harvard.edu/abs/2012ApJ...746..121C
         with coefficients from http://adsabs.harvard.edu/abs/1982ApJ...258..790C

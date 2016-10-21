@@ -1,21 +1,30 @@
-import datetime
 import importlib
 import json
 import logging
 import os
-import sys
-import time
+import pickle
 from collections import OrderedDict
 from math import isnan
 from multiprocessing import cpu_count
 
-import emcee
 import numpy as np
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.utils import listify, pretty_num, print_inline, prompt
+from mosfit.utils import listify
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
+
+
+def likelihood(x, likelihood):
+    """External call to likelihood to avoid pickling whole class.
+    """
+    return likelihood(x)
+
+
+def prior(x, prior):
+    """External call to prior to avoid pickling whole class.
+    """
+    return prior(x)
 
 
 class Model:
@@ -31,19 +40,10 @@ class Model:
                  parameter_path='parameters.json',
                  model='default',
                  wrap_length=100,
-                 pool='',
-                 travis=False):
+                 is_master=''):
         self._model_name = model
-        self._travis = travis
-        self._pool = pool
+        self._is_master = is_master
         self._wrap_length = wrap_length
-
-        if hasattr(self._pool, 'size'):
-            self._serial = False
-            self._pool_size = self._pool.size
-        else:
-            self._serial = True
-            self._pool_size = cpu_count()
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -93,8 +93,9 @@ class Model:
         else:
             raise ValueError('Could not find parameter file!')
 
-        print('Model file: ' + model_path)
-        print('Parameter file: ' + pp + '\n')
+        if self._is_master:
+            print('Model file: ' + model_path)
+            print('Parameter file: ' + pp + '\n')
 
         with open(pp, 'r') as f:
             self._parameter_json = json.loads(f.read())
@@ -212,25 +213,34 @@ class Model:
         method.
         """
         x = np.array(arg[0])
-        step = 0.1
+        step = 0.01
         seed = arg[1]
         np.random.seed(seed)
-        # my_choice = np.random.choice(range(3))
-        my_choice = 0
+        my_choice = np.random.choice(range(3))
+        # my_choice = 0
         my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
         opt_dict = {'disp': True}
         if my_method in ['TNC', 'SLSQP']:
             opt_dict['maxiter'] = 100
         elif my_method == 'L-BFGS-B':
             opt_dict['maxfun'] = 5000
-        # bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
+        bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
 
-        bounds = list(
-            zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
+        # bounds = list(
+        #     zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
 
         # bh = differential_evolution(
         #     self.fprob, bounds, disp=True, polish=False, maxiter=20)
         # return bh
+
+        bh = minimize(
+            self.fprob,
+            x,
+            method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
+            bounds=bounds,
+            # tol=1.0e-6,
+            options=opt_dict)
+        return bh
 
         # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
         # bh = basinhopping(
@@ -241,14 +251,6 @@ class Model:
         #     take_step=take_step,
         #     minimizer_kwargs={'method': "L-BFGS-B",
         #                       'bounds': bounds})
-        bh = minimize(
-            self.fprob,
-            x,
-            method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
-            bounds=bounds,
-            # tol=1.0e-6,
-            options=opt_dict)
-        return bh
 
         # bo = BayesianOptimization(self.boprob, dict(
         #     [('x' + str(i),
@@ -257,12 +259,16 @@ class Model:
         #
         # bo.explore(dict([('x' + str(i), [x[i]]) for i in range(len(x))]))
         #
-        # bo.maximize(init_points=0, n_iter=100, acq='ei')
+        # bo.maximize(init_points=0, n_iter=20, acq='ei')
         #
         # bh = self.outClass()
         # bh.x = [x[1] for x in sorted(bo.res['max']['max_params'].items())]
         # bh.fun = -bo.res['max']['max_val']
         # return bh
+
+        m = Minuit(self.fprob)
+        m.migrad()
+        return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root.
@@ -294,9 +300,12 @@ class Model:
         """
         p = None
         while p is None:
-            draw = np.random.uniform(low=0.0, high=1.0, size=self._n_dim)
-            draw = [self._modules[self._free_parameters[i]].prior_cdf(x)
-                    for i, x in enumerate(draw)]
+            draw = np.random.uniform(
+                low=0.0, high=1.0, size=self._num_free_parameters)
+            draw = [
+                self._modules[self._free_parameters[i]].prior_cdf(x)
+                for i, x in enumerate(draw)
+            ]
             if not test:
                 p = draw
                 break
@@ -304,259 +313,6 @@ class Model:
             if not isnan(score) and np.isfinite(score):
                 p = draw
         return p
-
-    def fit_data(self,
-                 data,
-                 event_name='',
-                 plot_points=[],
-                 iterations=2000,
-                 frack_step=100,
-                 num_walkers=50,
-                 num_temps=2,
-                 fracking=True,
-                 post_burn=500):
-        """Fit the data for a given event with this model using a combination
-        of emcee and fracking.
-        """
-        for task in self._call_stack:
-            cur_task = self._call_stack[task]
-            self._modules[task].set_event_name(event_name)
-            if cur_task['kind'] == 'data':
-                self._modules[task].set_data(
-                    data,
-                    req_key_values={'band': self._bands},
-                    subtract_minimum_keys=['times'])
-
-        ntemps, ndim, nwalkers = (num_temps, self._num_free_parameters,
-                                  num_walkers)
-        self._event_name = event_name
-        self._n_dim = ndim
-        self._emcee_est_t = 0.0
-        self._bh_est_t = 0.0
-        self._fracking = fracking
-        self._burn_in = max(iterations - post_burn, 0)
-
-        test_walker = iterations > 0
-        lnprob = None
-
-        print('{} dimensions in problem.\n\n'.format(ndim))
-        p0 = [[] for x in range(ntemps)]
-
-        for i, pt in enumerate(p0):
-            while len(p0[i]) < nwalkers:
-                self.print_status(
-                    desc='Drawing initial walkers',
-                    progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
-
-                nmap = nwalkers - len(p0[i])
-                p0[i].extend(
-                    self._pool.map(self.draw_walker, [test_walker] * nmap))
-
-        if self._serial:
-            sampler = emcee.PTSampler(ntemps, nwalkers, ndim, self.likelihood,
-                                      self.prior)
-        else:
-            sampler = emcee.PTSampler(
-                ntemps,
-                nwalkers,
-                ndim,
-                self.likelihood,
-                self.prior,
-                pool=self._pool)
-
-        print_inline('Initial draws completed!')
-        print('\n\n')
-        p = p0.copy()
-
-        if fracking:
-            frack_iters = max(round(iterations / frack_step), 1)
-            bmax = int(round(self._burn_in / float(frack_step)))
-            loop_step = frack_step
-        else:
-            frack_iters = 1
-            loop_step = iterations
-
-        acort = 1.0
-        acorc = 1.0
-        try:
-            for b in range(frack_iters):
-                if fracking and b >= bmax:
-                    loop_step = iterations - self._burn_in
-                emi = 0
-                st = time.time()
-                for p, lnprob, lnlike in sampler.sample(
-                        p, iterations=min(loop_step, iterations)):
-                    emi = emi + 1
-                    prog = b * frack_step + emi
-                    try:
-                        acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
-                        acort = max([
-                            max(x) for x in sampler.get_autocorr_time(c=acorc)
-                        ])
-                    except:
-                        pass
-                    acor = [acort, acorc]
-                    self._emcee_est_t = float(time.time() - st) / emi * (
-                        iterations - (b * frack_step + emi))
-                    self.print_status(
-                        desc='Running PTSampler',
-                        scores=[max(x) for x in lnprob],
-                        progress=[prog, iterations],
-                        acor=acor)
-                if fracking and b >= bmax:
-                    break
-                if fracking and b < bmax:
-                    self.print_status(
-                        desc='Running Fracking',
-                        scores=[max(x) for x in lnprob],
-                        progress=[(b + 1) * frack_step, iterations],
-                        acor=acor)
-                    ijperms = [[x, y]
-                               for x in range(ntemps) for y in range(nwalkers)]
-                    selijs = [ijperms[x]
-                              for x in np.random.choice(
-                                  range(len(ijperms)),
-                                  self._pool_size,
-                                  replace=(self._pool_size > nwalkers))]
-
-                    bhwalkers = [p[i][j] for i, j in selijs]
-
-                    st = time.time()
-                    seeds = [round(time.time() * 1000.0) % 4294900000 + x
-                             for x in range(len(bhwalkers))]
-                    frack_args = list(zip(bhwalkers, seeds))
-                    bhs = self._pool.map(self.frack, frack_args)
-                    for bhi, bh in enumerate(bhs):
-                        if -bh.fun > lnprob[selijs[bhi][0]][selijs[bhi][1]]:
-                            p[selijs[bhi][0]][selijs[bhi][1]] = bh.x
-                    self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
-                    scores = [-x.fun for x in bhs]
-                    self.print_status(
-                        desc='Running Fracking',
-                        scores=scores,
-                        progress=[(b + 1) * frack_step, iterations])
-        except KeyboardInterrupt:
-            self._pool.close()
-            if self._serial:
-                self._pool.terminate()
-            if (not prompt(
-                    'You have interrupted the Monte Carlo. Do you wish to '
-                    'save the incomplete run to disk? Previous results will '
-                    'be overwritten.', self._wrap_length)):
-                sys.exit()
-        except:
-            raise
-
-        walkers_out = OrderedDict()
-        for xi, x in enumerate(p[0]):
-            walkers_out[xi] = self.run_stack(x, root='output')
-            if lnprob is not None:
-                walkers_out[xi]['score'] = lnprob[0][xi]
-            parameters = OrderedDict()
-            pi = 0
-            for ti, task in enumerate(self._call_stack):
-                cur_task = self._call_stack[task]
-                if task not in self._free_parameters:
-                    continue
-                output = self._modules[task].process(**{'fraction': x[pi]})
-                value = list(output.values())[0]
-                paramdict = {
-                    'value': value,
-                    'fraction': x[pi],
-                    'latex': self._modules[task].latex(),
-                    'log': self._modules[task].is_log()
-                }
-                parameters.update({self._modules[task].name(): paramdict})
-                pi = pi + 1
-            walkers_out[xi]['parameters'] = parameters
-
-        if not os.path.exists(self.MODEL_OUTPUT_DIR):
-            os.makedirs(self.MODEL_OUTPUT_DIR)
-
-        with open(os.path.join(self.MODEL_OUTPUT_DIR, 'walkers.json'),
-                  'w') as flast, open(
-                      os.path.join(self.MODEL_OUTPUT_DIR,
-                                   self._event_name + '.json'), 'w') as f:
-            json.dump(walkers_out, flast, indent='\t', separators=(',', ':'))
-            json.dump(walkers_out, f, indent='\t', separators=(',', ':'))
-
-        return (p, lnprob)
-
-    def print_status(self,
-                     desc='',
-                     scores='',
-                     progress='',
-                     acor='',
-                     wrap_length=100):
-        """Prints a status message showing the current state of the fitting process.
-        """
-
-        class bcolors:
-            HEADER = '\033[95m'
-            OKBLUE = '\033[94m'
-            OKGREEN = '\033[92m'
-            WARNING = '\033[93m'
-            FAIL = '\033[91m'
-            ENDC = '\033[0m'
-            BOLD = '\033[1m'
-            UNDERLINE = '\033[4m'
-
-        outarr = [self._event_name]
-        if desc:
-            outarr.append(desc)
-        if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join(
-                [pretty_num(x) for x in scores]) + ' ]'
-            outarr.append(scorestring)
-        if isinstance(progress, list):
-            progressstring = 'Progress: [ {}/{} ]'.format(*progress)
-            outarr.append(progressstring)
-        if self._emcee_est_t + self._bh_est_t > 0.0:
-            if self._bh_est_t > 0.0 or not self._fracking:
-                tott = self._emcee_est_t + self._bh_est_t
-            else:
-                tott = 2.0 * self._emcee_est_t
-            timestring = self.get_timestring(tott)
-            outarr.append(timestring)
-        if isinstance(acor, list):
-            acortstr = pretty_num(acor[0], sig=3)
-            acorcstr = pretty_num(acor[1], sig=2)
-            if self._travis:
-                col = ''
-            elif acor[1] < 5.0:
-                col = bcolors.FAIL
-            elif acor[1] < 10.0:
-                col = bcolors.WARNING
-            else:
-                col = bcolors.OKGREEN
-            acorstring = col
-            acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
-                                                                  acorcstr)
-            acorstring = acorstring + bcolors.ENDC if col else ''
-            outarr.append(acorstring)
-
-        line = ''
-        lines = ''
-        li = 0
-        for i, item in enumerate(outarr):
-            oldline = line
-            line = line + (' | ' if li > 0 else '') + item
-            li = li + 1
-            if len(line) > wrap_length:
-                li = 1
-                lines = lines + '\n' + oldline
-                line = item
-
-        lines = lines + '\n' + line
-
-        print_inline(lines, new_line=self._travis)
-
-    def get_timestring(self, t):
-        """Return a string showing the estimated remaining time based upon
-        elapsed times for emcee and fracking.
-        """
-        td = str(datetime.timedelta(seconds=round(t)))
-        return ('Estimated time left: [ ' + td + ' ]')
 
     def get_max_depth(self, tag, parent, max_depth):
         """Return the maximum depth a given task is found in a tree.
@@ -635,6 +391,14 @@ class Model:
         """Avoid pickling pool itself when distributing to pool
         (see https://goo.gl/xUm0IO).
         """
-        self_dict = self.__dict__.copy()
-        del self_dict['_pool']
-        return self_dict
+        # return {
+        #     'run_stack': self.run_stack,
+        #     '_num_free_parameters': self._num_free_parameters,
+        #     '_modules': self._modules,
+        #     '_free_parameters': self._free_parameters,
+        #     '_max_depth_all': self._max_depth_all,
+        #     '_call_stack': self._call_stack
+        # }
+        print('pickling model because im dumb', flush=True)
+        return self.__dict__
+        # return self_dict

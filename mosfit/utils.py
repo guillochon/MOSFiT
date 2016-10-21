@@ -51,6 +51,10 @@ def print_inline(x, new_line=False):
     print(x, flush=True)
 
 
+def print_wrapped(text, wrap_length=100):
+    print(wrap(text, wrap_length))
+
+
 def prompt(text, wrap_length=100, kind='bool'):
     if kind == 'bool':
         choices = ' (Y/[N])'
