@@ -171,7 +171,8 @@
         "inputs":[
             "transient",
             "variance",
-            "filters"
+            "filters",
+            "default_upper_limit_error"
         ]
     },
     "fitlc":{
