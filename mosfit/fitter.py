@@ -297,11 +297,11 @@ class Fitter():
                 for p, lnprob, lnlike in sampler.sample(
                         p, iterations=min(loop_step, iterations)):
                     # Redraw bad walkers
-                    print(lnprob)
                     for ti, tprob in enumerate(lnprob):
                         for wi, wprob in enumerate(tprob):
-                            if wprob <= -1.0e10 or np.isnan(wprob):
-                                print(ti, wi)
+                            if wprob <= LIKELIHOOD_FLOOR or np.isnan(wprob):
+                                print('Warning: Bad walker position detected, '
+                                      'indicates variable mismatch.')
                                 p[ti][wi] = draw_walker()
                     emi = emi + 1
                     prog = b * frack_step + emi
