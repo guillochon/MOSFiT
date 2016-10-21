@@ -253,7 +253,10 @@ class Fitter():
         model = self._model
 
         if not pool.is_master():
-            pool.wait()
+            try:
+                pool.wait()
+            except KeyboardInterrupt:
+                pass
             return
 
         ntemps, ndim, nwalkers = (num_temps, model._num_free_parameters,
