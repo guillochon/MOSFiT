@@ -324,8 +324,8 @@ class Fitter():
                         lnprob[x][y]
                         for x in range(ntemps) for y in range(nwalkers)
                     ])
-                    ijprobs /= sum(ijprobs)
-                    ijprobs = [np.exp(-x) for x in ijprobs]
+                    ijprobs -= max(ijprobs)
+                    ijprobs = [np.exp(x) for x in ijprobs]
                     ijprobs /= sum(ijprobs)
                     selijs = [
                         ijperms[x]
@@ -333,7 +333,7 @@ class Fitter():
                             range(len(ijperms)),
                             pool_size,
                             p=ijprobs,
-                            replace=(pool_size > nwalkers))
+                            replace=(pool_size > len(ijperms)))
                     ]
 
                     bhwalkers = [p[i][j] for i, j in selijs]
@@ -344,7 +344,7 @@ class Fitter():
                         for x in range(len(bhwalkers))
                     ]
                     frack_args = list(zip(bhwalkers, seeds))
-                    bhs = pool.map(model.frack, frack_args)
+                    bhs = pool.map(frack, frack_args)
                     for bhi, bh in enumerate(bhs):
                         if -bh.fun > lnprob[selijs[bhi][0]][selijs[bhi][1]]:
                             p[selijs[bhi][0]][selijs[bhi][1]] = bh.x
