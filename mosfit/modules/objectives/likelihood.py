@@ -24,17 +24,19 @@ class Likelihood(Module):
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
             return {'value': LIKELIHOOD_FLOOR}
         for mi, mag in enumerate(self._model_mags):
-            if isnan(mag) or (not self._upper_limits[mi] and
-                              not np.isfinite(mag)):
+            if (not self._upper_limits[mi] and
+                    (isnan(mag) or not np.isfinite(mag))):
                 return {'value': LIKELIHOOD_FLOOR}
         self._variance2 = kwargs['variance']**2
-        self._e_mags = [kwargs['default_upper_limit_error']
-                        if x == '' and self._upper_limits[i] else x
-                        for i, x in enumerate(self._e_mags)]
+        self._e_mags = [
+            kwargs['default_upper_limit_error']
+            if x == '' and self._upper_limits[i] else x
+            for i, x in enumerate(self._e_mags)
+        ]
         self._n_mags = len(self._mags)
 
         sum_members = [
-            (x - y if not u or x < y else 0.0)**2 /
+            (x - y if not u or (x < y and not isnan(x)) else 0.0)**2 /
             (z**2 + self._variance2) + np.log(self._variance2 + z**2)
             for x, y, z, u in zip(self._model_mags, self._mags, self._e_mags,
                                   self._upper_limits)
