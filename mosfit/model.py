@@ -33,6 +33,16 @@ class Model:
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
 
+        # Load the basic model file.
+        if os.path.isfile(os.path.join('models', 'model.json')):
+            basic_model_path = os.path.join('models', 'model.json')
+        else:
+            basic_model_path = os.path.join(self._dir_path, 'models',
+                                            'model.json')
+
+        with open(basic_model_path, 'r') as f:
+            self._model = json.loads(f.read(), object_pairs_hook=OrderedDict)
+
         # Load the model file.
         model = self._model_name
         model_dir = self._model_name
@@ -53,7 +63,9 @@ class Model:
                                           model)
 
         with open(model_path, 'r') as f:
-            self._model = json.loads(f.read(), object_pairs_hook=OrderedDict)
+            self._model.update(
+                json.loads(
+                    f.read(), object_pairs_hook=OrderedDict))
 
         # Load model parameter file.
         model_pp = os.path.join(

@@ -1,31 +1,4 @@
 {
-    "transient":{
-        "kind":"data",
-        "keys":{
-            "photometry":{
-                "time":["required", "numeric"],
-                "magnitude":["required", "numeric"],
-                "e_magnitude":["required", "numeric"],
-                "band":"required",
-                "instrument":"optional",
-                "system":"optional",
-                "upperlimit":"optional",
-                "includeshost":"exclude",
-                "host":"exclude",
-                "kcorrected":"exclude",
-                "scorrected":"exclude"
-            },
-            "ebv":{
-                "value":"required"
-            },
-            "lumdist":{
-                "value":"required"
-            },
-            "redshift":{
-                "value":"required"
-            }
-        }
-    },
     "ebv":{
         "kind":"parameter",
         "value":0.0,
@@ -34,24 +7,6 @@
             "transient"
         ],
         "latex":"E({\\rm B} - {\\rm V})"
-    },
-    "lumdist":{
-        "kind":"parameter",
-        "value":1.0e-5,
-        "class":"parameter",
-        "inputs":[
-            "transient"
-        ],
-        "latex":"d_{L}"
-    },
-    "redshift":{
-        "kind":"parameter",
-        "value":0.0,
-        "class":"parameter",
-        "inputs":[
-            "transient"
-        ],
-        "latex":"z"
     },
     "nhhost":{
         "kind":"parameter",
@@ -124,11 +79,6 @@
         "value":1.0e4,
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
-    },
-    "variance":{
-        "kind":"parameter",
-        "class":"parameter",
-        "latex":"\\sigma"
     },
     "temperature":{
         "kind":"parameter",

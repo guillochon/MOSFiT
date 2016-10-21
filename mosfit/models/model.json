@@ -1,0 +1,58 @@
+{
+    "transient":{
+        "kind":"data",
+        "keys":{
+            "photometry":{
+                "time":["required", "numeric"],
+                "magnitude":["required", "numeric"],
+                "e_magnitude":["optional", "numeric"],
+                "band":"required",
+                "instrument":"optional",
+                "system":"optional",
+                "upperlimit":"optional",
+                "includeshost":"exclude",
+                "host":"exclude",
+                "kcorrected":"exclude",
+                "scorrected":"exclude"
+            },
+            "ebv":{
+                "value":"required"
+            },
+            "lumdist":{
+                "value":"required"
+            },
+            "redshift":{
+                "value":"required"
+            }
+        }
+    },
+    "default_upper_limit_error":{
+        "kind":"parameter",
+        "value":0.1,
+        "class":"constant"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":1.0e-5,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"d_{L}"
+    },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"z"
+    },
+    "variance":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\sigma"
+    }
+}
