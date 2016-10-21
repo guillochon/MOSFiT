@@ -2,6 +2,7 @@ import numpy as np
 from scipy import interpolate
 from mosfit.modules.engines.engine import Engine
 from math import isnan
+from mosfit.constants import M_SUN_CGS
 
 CLASS_NAME = 'CSM'
 
@@ -18,7 +19,7 @@ class CSM(Engine):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        self._s = kwargs['s'] #preset in the model name for now
+        self._s = kwargs['s']
         self._delta = kwargs['delta'] # [0,3)
         self._n = kwargs['n'] # [6,10]
         self._kappa = kwargs['kappa']
@@ -27,7 +28,7 @@ class CSM(Engine):
         self._mcsm = kwargs['mcsm'] * 1.9884e33
         self._rho = kwargs['rho']
         self._vph = kwargs['vejecta'] * 1.e5
-        self._Esn = 3. * self._vph**2 / 10. * self._mejecta
+        self._Esn = 3. * self._vph**2 * self._mejecta / 10. 
         self._texplosion = kwargs['texplosion']
 
 
@@ -62,13 +63,16 @@ class CSM(Engine):
         Br_func = interpolate.interp1d(ns,Brs)
         A_func = interpolate.interp1d(ns,As)
 
-        self._Bf, self._Br, self._A = Bf_func(self._n),Br_func(self._n),A_func(self._n)
+        self._Bf = Bf_func(self._n)
+        self._Br = Br_func(self._n)
+        self._A = A_func(self._n)
 
 
         self._q = self._rho * self._R0**self._s    # scaling constant for CSM density profile
 
         self._Rcsm = ((3.0 - self._s) / (4.0 * np.pi * self._q) * self._mcsm + self._R0 ** (3.0 - self._s))\
                      ** (1.0 / (3.0 - self._s))  # outer radius of CSM shell
+
 
         self._Rph = abs((-2.0 * (1.0 - self._s) / (3.0 * self._kappa * self._q) + self._Rcsm ** (1.0 - self._s))
                         **(1.0 / (1.0 - self._s))) # radius of photosphere (should be within CSM)
@@ -87,10 +91,7 @@ class CSM(Engine):
                         * self._g_n)) ** (1.0 / (3.0 - self._n))) ** ((self._n-self._s) / (self._s - 3.0))    # time at which reverse shock sweeps up all ejecta - reverse shock power input then terminates
 
 
-        self._t0 = (self._kappa * (self._mejecta+self._Mcsm_th)) / (13.8 * c * self._Rph)
-                        # diffusion timescale for radioactive energy input
 
-        self._t1 = (self._kappa * self._mcsm) / (13.8 * c * self._Rph)   # diffusion timescale for shock energy in shell
 
         ts = [np.inf if self._texplosion > x else (x - self._texplosion)
               for x in self._times]
