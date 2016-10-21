@@ -386,19 +386,3 @@ class Model:
 
             if cur_task['kind'] == root:
                 return outputs
-
-    def __getstate__(self):
-        """Avoid pickling pool itself when distributing to pool
-        (see https://goo.gl/xUm0IO).
-        """
-        # return {
-        #     'run_stack': self.run_stack,
-        #     '_num_free_parameters': self._num_free_parameters,
-        #     '_modules': self._modules,
-        #     '_free_parameters': self._free_parameters,
-        #     '_max_depth_all': self._max_depth_all,
-        #     '_call_stack': self._call_stack
-        # }
-        print('pickling model because im dumb', flush=True)
-        return self.__dict__
-        # return self_dict
