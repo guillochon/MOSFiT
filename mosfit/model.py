@@ -4,12 +4,11 @@ import logging
 import os
 from collections import OrderedDict
 from math import isnan
-from multiprocessing import cpu_count
 
 import numpy as np
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.utils import listify
+from mosfit.utils import listify, print_wrapped
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
 
@@ -81,8 +80,8 @@ class Model:
             raise ValueError('Could not find parameter file!')
 
         if self._is_master:
-            print('Model file: ' + model_path)
-            print('Parameter file: ' + pp + '\n')
+            print_wrapped('Model file: ' + model_path, wrap_length)
+            print_wrapped('Parameter file: ' + pp + '\n', wrap_length)
 
         with open(pp, 'r') as f:
             self._parameter_json = json.loads(
@@ -254,9 +253,9 @@ class Model:
         # bh.fun = -bo.res['max']['max_val']
         # return bh
 
-        m = Minuit(self.fprob)
-        m.migrad()
-        return bh
+        # m = Minuit(self.fprob)
+        # m.migrad()
+        # return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root.

@@ -9,7 +9,7 @@
                 "band":"required",
                 "instrument":"optional",
                 "system":"optional",
-                "upperlimit":"exclude",
+                "upperlimit":"optional",
                 "includeshost":"exclude",
                 "host":"exclude",
                 "kcorrected":"exclude",
