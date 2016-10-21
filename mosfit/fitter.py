@@ -10,6 +10,7 @@ from collections import OrderedDict
 
 import emcee
 import numpy as np
+from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import pretty_num, print_inline, prompt
 from schwimmbad import MPIPool, SerialPool
 
@@ -102,7 +103,8 @@ class Fitter():
                                 shutil.copyfileobj(response, f)
                         if os.path.exists(names_path):
                             with open(names_path, 'r') as f:
-                                names = json.loads(f.read())
+                                names = json.loads(
+                                    f.read(), object_pairs_hook=OrderedDict)
                         else:
                             print('Error: Could not read list of SN names!')
                             raise RuntimeError
@@ -139,7 +141,8 @@ class Fitter():
 
                     if os.path.exists(path):
                         with open(path, 'r') as f:
-                            data = json.loads(f.read())
+                            data = json.loads(
+                                f.read(), object_pairs_hook=OrderedDict)
                         print('Event file: ' + path)
                     else:
                         print('Error: Could not find data for `{}` locally or '
@@ -293,6 +296,13 @@ class Fitter():
                 st = time.time()
                 for p, lnprob, lnlike in sampler.sample(
                         p, iterations=min(loop_step, iterations)):
+                    # Redraw bad walkers
+                    print(lnprob)
+                    for ti, tprob in enumerate(lnprob):
+                        for wi, wprob in enumerate(tprob):
+                            if wprob <= -1.0e10 or np.isnan(wprob):
+                                print(ti, wi)
+                                p[ti][wi] = draw_walker()
                     emi = emi + 1
                     prog = b * frack_step + emi
                     try:
@@ -326,14 +336,15 @@ class Fitter():
                     ])
                     ijprobs -= max(ijprobs)
                     ijprobs = [np.exp(x) for x in ijprobs]
-                    ijprobs /= sum(ijprobs)
+                    ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
+                    nonzeros = len([x for x in ijprobs if x > 0.0])
                     selijs = [
                         ijperms[x]
                         for x in np.random.choice(
                             range(len(ijperms)),
                             pool_size,
                             p=ijprobs,
-                            replace=(pool_size > len(ijperms)))
+                            replace=(pool_size > nonzeros))
                     ]
 
                     bhwalkers = [p[i][j] for i, j in selijs]
@@ -478,7 +489,8 @@ class Fitter():
             outarr.append(desc)
         if isinstance(scores, list):
             scorestring = 'Best scores: [ ' + ', '.join(
-                [pretty_num(x) for x in scores]) + ' ]'
+                [pretty_num(x) if not np.isnan(x) else 'NaN'
+                 for x in scores]) + ' ]'
             outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)

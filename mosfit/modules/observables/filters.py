@@ -1,6 +1,7 @@
 import csv
 import json
 import os
+from collections import OrderedDict
 
 import numpy as np
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
@@ -27,7 +28,7 @@ class Filters(Module):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
         with open(os.path.join(dir_path, 'filterrules.json')) as f:
-            filterrules = json.loads(f.read())
+            filterrules = json.loads(f.read(), object_pairs_hook=OrderedDict)
             for bi, band in enumerate(bands):
                 for rule in filterrules:
                     sysinstperms = [[x, y]

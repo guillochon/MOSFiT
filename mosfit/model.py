@@ -14,18 +14,6 @@ from mosfit.utils import listify
 from scipy.optimize import minimize
 
 
-def likelihood(x, likelihood):
-    """External call to likelihood to avoid pickling whole class.
-    """
-    return likelihood(x)
-
-
-def prior(x, prior):
-    """External call to prior to avoid pickling whole class.
-    """
-    return prior(x)
-
-
 class Model:
     """Define a semi-analytical model to fit transients with.
     """
@@ -66,7 +54,7 @@ class Model:
                                           model)
 
         with open(model_path, 'r') as f:
-            self._model = json.loads(f.read())
+            self._model = json.loads(f.read(), object_pairs_hook=OrderedDict)
 
         # Load model parameter file.
         model_pp = os.path.join(
@@ -97,9 +85,10 @@ class Model:
             print('Parameter file: ' + pp + '\n')
 
         with open(pp, 'r') as f:
-            self._parameter_json = json.loads(f.read())
+            self._parameter_json = json.loads(
+                f.read(), object_pairs_hook=OrderedDict)
         self._log = logging.getLogger()
-        self._modules = {}
+        self._modules = OrderedDict()
         self._bands = []
 
         # Load the call tree for the model. Work our way in reverse from the
@@ -107,10 +96,10 @@ class Model:
         # combining trees.
         root_kinds = ['output', 'objective']
 
-        self._trees = {}
+        self._trees = OrderedDict()
         self.construct_trees(self._model, self._trees, kinds=root_kinds)
 
-        unsorted_call_stack = {}
+        unsorted_call_stack = OrderedDict()
         self._max_depth_all = -1
         for tag in self._model:
             cur_model = self._model[tag]
@@ -193,7 +182,7 @@ class Model:
             if 'requests' in cur_task:
                 inputs = listify(cur_task.get('inputs', []))
                 for i, inp in enumerate(inputs):
-                    requests = {}
+                    requests = OrderedDict()
                     parent = ''
                     for par in self._call_stack:
                         if par == inp:
@@ -283,14 +272,14 @@ class Model:
                 trees[tag] = entry
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
-                    children = {}
+                    children = OrderedDict()
                     self.construct_trees(
                         d,
                         children,
                         name=inp,
                         roots=new_roots,
                         depth=depth + 1)
-                    trees[tag].setdefault('children', {})
+                    trees[tag].setdefault('children', OrderedDict())
                     trees[tag]['children'].update(children)
 
     def draw_walker(self, test=True):
