@@ -54,5 +54,23 @@
         "value":1.0,
         "class":"parameter",
         "latex":"\\sigma"
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "transient",
+            "variance",
+            "filters",
+            "default_upper_limit_error"
+        ]
+    },
+    "fitlc":{
+        "kind":"output",
+        "inputs":[
+            "likelihood",
+            "transient",
+            "filters"
+        ],
+        "class":"lightcurve"
     }
 }

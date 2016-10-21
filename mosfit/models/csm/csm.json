@@ -165,23 +165,5 @@
             ["band_wave_ranges", "filters"],
             []
         ]
-    },
-    "likelihood":{
-        "kind":"objective",
-        "inputs":[
-            "transient",
-            "variance",
-            "filters",
-            "default_upper_limit_error"
-        ]
-    },
-    "fitlc":{
-        "kind":"output",
-        "inputs":[
-            "likelihood",
-            "transient",
-            "filters"
-        ],
-        "class":"lightcurve"
     }
 }
