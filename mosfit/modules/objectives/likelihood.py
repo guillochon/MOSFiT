@@ -30,7 +30,7 @@ class Likelihood(Module):
         sum_members = [
             (x - y if not u or (x < y and not isnan(x)) else 0.0)**2 / (
                 (el if x > y else eu)**2 + self._variance2) +
-            np.log(self._variance2 + 0.5 * ((0.0 if u else el)**2 + eu**2))
+            np.log(self._variance2 + 0.5 * (el**2 + eu**2))
             for x, y, eu, el, u in zip(self._model_mags, self._mags,
                                        self._e_u_mags, self._e_l_mags,
                                        self._upper_limits)

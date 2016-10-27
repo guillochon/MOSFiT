@@ -11,7 +11,7 @@ from collections import OrderedDict
 import emcee
 import numpy as np
 from mosfit.constants import LIKELIHOOD_FLOOR
-from mosfit.utils import pretty_num, print_inline, prompt
+from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
 from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
@@ -143,10 +143,12 @@ class Fitter():
                         with open(path, 'r') as f:
                             data = json.loads(
                                 f.read(), object_pairs_hook=OrderedDict)
-                        print('Event file: ' + path)
+                        print_wrapped('Event file: ' + path, self._wrap_length)
                     else:
-                        print('Error: Could not find data for `{}` locally or '
-                              'on the OSC.'.format(self._event_name))
+                        print_wrapped(
+                            'Error: Could not find data for `{}` locally or '
+                            'on the OSC.'.format(self._event_name),
+                            self._wrap_length)
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
@@ -338,11 +340,12 @@ class Fitter():
                     ijperms = [[x, y]
                                for x in range(ntemps) for y in range(nwalkers)]
                     ijprobs = np.array([
-                        lnprob[x][y]
+                        1.0
+                        # lnprob[x][y]
                         for x in range(ntemps) for y in range(nwalkers)
                     ])
                     ijprobs -= max(ijprobs)
-                    ijprobs = [np.exp(x) for x in ijprobs]
+                    ijprobs = [np.exp(0.1 * x) for x in ijprobs]
                     ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
                     nonzeros = len([x for x in ijprobs if x > 0.0])
                     selijs = [

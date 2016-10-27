@@ -57,7 +57,7 @@ def print_wrapped(text, wrap_length=100):
 
 def prompt(text, wrap_length=100, kind='bool'):
     if kind == 'bool':
-        choices = ' (Y/[N])'
+        choices = ' (y/[n])'
     else:
         raise ValueError('Unknown prompt kind.')
     prompt_txt = wrap(text + choices, wrap_length)

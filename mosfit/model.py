@@ -213,34 +213,32 @@ class Model:
         method.
         """
         x = np.array(arg[0])
-        step = 0.01
         seed = arg[1]
         np.random.seed(seed)
         my_choice = np.random.choice(range(3))
         # my_choice = 0
         my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
-        opt_dict = {'disp': True}
+        opt_dict = {'disp': False}
         if my_method in ['TNC', 'SLSQP']:
             opt_dict['maxiter'] = 100
         elif my_method == 'L-BFGS-B':
             opt_dict['maxfun'] = 5000
         bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
 
-        # bounds = list(
-        #     zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
-
-        # bh = differential_evolution(
-        #     self.fprob, bounds, disp=True, polish=False, maxiter=20)
-        # return bh
-
         bh = minimize(
             self.fprob,
             x,
-            method=['L-BFGS-B', 'TNC', 'SLSQP'][my_choice],
+            method=my_method,
             bounds=bounds,
-            # tol=1.0e-6,
+            tol=1.0e-3,
             options=opt_dict)
-        return bh
+
+        # step = 1.0
+        # bounds = list(
+        #     zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
+        #
+        # bh = differential_evolution(
+        #     self.fprob, bounds, disp=True, polish=False, maxiter=10)
 
         # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
         # bh = basinhopping(
@@ -254,7 +252,8 @@ class Model:
 
         # bo = BayesianOptimization(self.boprob, dict(
         #     [('x' + str(i),
-        #       (np.clip(x[i] - step, 0.0, 1.0), np.clip(x[i] + step, 0.0, 1.0)))
+        #       (np.clip(x[i] - step, 0.0, 1.0),
+        #        np.clip(x[i] + step, 0.0, 1.0)))
         #      for i in range(len(x))]))
         #
         # bo.explore(dict([('x' + str(i), [x[i]]) for i in range(len(x))]))
@@ -264,11 +263,10 @@ class Model:
         # bh = self.outClass()
         # bh.x = [x[1] for x in sorted(bo.res['max']['max_params'].items())]
         # bh.fun = -bo.res['max']['max_val']
-        # return bh
 
         # m = Minuit(self.fprob)
         # m.migrad()
-        # return bh
+        return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root.
