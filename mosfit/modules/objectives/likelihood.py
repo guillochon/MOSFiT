@@ -23,18 +23,17 @@ class Likelihood(Module):
             return {'value': LIKELIHOOD_FLOOR}
         for mi, mag in enumerate(self._model_mags):
             if (not self._upper_limits[mi] and
-                    (isnan(mag) or not np.isfinite(mag))):
+                (isnan(mag) or not np.isfinite(mag))):
                 return {'value': LIKELIHOOD_FLOOR}
         self._variance2 = kwargs['variance']**2
 
-        sum_members = [
-            (x - y if not u or (x < y and not isnan(x)) else 0.0)**2 / (
-                (el if x > y else eu)**2 + self._variance2) +
-            np.log(self._variance2 + 0.5 * (el**2 + eu**2))
-            for x, y, eu, el, u in zip(self._model_mags, self._mags,
-                                       self._e_u_mags, self._e_l_mags,
-                                       self._upper_limits)
-        ]
+        sum_members = [(x - y
+                        if not u or (x < y and not isnan(x)) else 0.0)**2 / (
+                            (el if x > y else eu)**2 + self._variance2) +
+                       np.log(self._variance2 + 0.5 * (el**2 + eu**2))
+                       for x, y, eu, el, u in zip(
+                           self._model_mags, self._mags, self._e_u_mags,
+                           self._e_l_mags, self._upper_limits)]
         value = -0.5 * np.sum(sum_members)
         if isnan(value):
             return {'value': LIKELIHOOD_FLOOR}
@@ -57,11 +56,14 @@ class Likelihood(Module):
         self._e_u_mags = [
             kwargs['default_upper_limit_error']
             if (e == '' and eu == '' and self._upper_limits[i]) else
-            (e if eu == '' else e)
+            (kwargs['default_no_error_bar_error']
+             if (e == '' and eu == '') else (e if eu == '' else eu))
             for i, (e, eu) in enumerate(zip(self._e_mags, self._e_u_mags))
         ]
         self._e_l_mags = [
-            0.0 if self._upper_limits[i] else (e if el == '' else e)
+            0.0 if self._upper_limits[i] else
+            (kwargs['default_no_error_bar_error']
+             if (e == '' and el == '') else (e if el == '' else el))
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
         ]
         self._n_mags = len(self._mags)
