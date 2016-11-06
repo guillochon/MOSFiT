@@ -19,7 +19,7 @@ before_install:
     - conda update -q conda;
 install:
     - if [[ "$TRAVIS_PYTHON_VERSION" == "3.6-dev" ]];
-      then export TPV="3.6.0b2"; else
+      then export TPV="3.6.0a3"; else
       export TPV=$TRAVIS_PYTHON_VERSION;
       fi
     - conda install --yes python=$TPV matplotlib mpi4py scipy jupyter
