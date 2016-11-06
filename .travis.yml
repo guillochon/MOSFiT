@@ -18,7 +18,12 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda;
 install:
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy jupyter
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "3.6-dev"]]; then
+        export TPV="3.6.0b3";
+      else
+        export TPV=$TRAVIS_PYTHON_VERSION
+      fi
+    - conda install --yes python=$TPV matplotlib mpi4py scipy jupyter
     - pip install coveralls
     - pip install -r requirements.txt
     - coverage run -p setup.py install
