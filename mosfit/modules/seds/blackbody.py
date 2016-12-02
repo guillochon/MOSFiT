@@ -44,10 +44,13 @@ class blackbody(SED):
             temperature_phot = self._temperature_phot[li]
 
             if li == 0:
-                sed = ne.evaluate('fc * radius_phot**2 * rest_freqs**3 / '
-                                  'exp(xc * rest_freqs / temperature_phot) - 1.0')
+                sed = ne.evaluate(
+                    'fc * radius_phot**2 * rest_freqs**3 / '
+                    '(exp(xc * rest_freqs / temperature_phot) - 1.0)')
             else:
                 sed = ne.re_evaluate()
+
+            sed = np.nan_to_num(sed)
 
             seds.append(list(sed))
 

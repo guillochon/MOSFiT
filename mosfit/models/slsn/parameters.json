@@ -22,26 +22,26 @@
         "max_value":1.57079632679
     },
     "texplosion":{
-        "min_value":-1000.0,
-        "max_value":1000.0
+        "min_value":-500.0,
+        "max_value":500.0
     },
     "kappa":{
         "min_value":0.05,
         "max_value":0.2
     },
     "kappagamma":{
-        "min_value":1.0e-1,
+        "min_value":0.1,
         "max_value":1.0e4,
         "log":true
     },
     "mejecta":{
-        "min_value":1.0e-1,
+        "min_value":1.0e-3,
         "max_value":100.0,
         "log":true
     },
     "vejecta":{
-        "min_value":5.0e3,
-        "max_value":3.0e4,
+        "min_value":1.0e3,
+        "max_value":1.0e5,
         "log":true
     },
     "variance":{

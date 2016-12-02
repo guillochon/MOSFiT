@@ -4,7 +4,7 @@ import numexpr as ne
 import numpy as np
 from astropy import constants as c
 
-from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.photospheres.photosphere import photosphere
 
 CLASS_NAME = 'densecore'
@@ -49,7 +49,7 @@ class densecore(photosphere):
             tau_e = self._kappa * rho_core * radius / (slope - 1.0)
 
             # Find location of photosphere in envelope/core
-            if tau_e > 0.667:
+            if tau_e > (2.0/3.0):
                 radius_phot = (2.0 * (slope - 1.0) /
                                (3.0 * self._kappa * rho_core * radius
                                 **slope))**(1.0 / (1.0 - slope))

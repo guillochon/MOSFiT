@@ -1,11 +1,15 @@
 import csv
 import json
 import os
+import shutil
+import urllib
+from collections import OrderedDict
 
 import numpy as np
+from astropy.io.votable import parse as voparse
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import listify
+from mosfit.utils import listify, print_inline
 
 CLASS_NAME = 'Filters'
 
@@ -27,7 +31,7 @@ class Filters(Module):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
         with open(os.path.join(dir_path, 'filterrules.json')) as f:
-            filterrules = json.loads(f.read())
+            filterrules = json.loads(f.read(), object_pairs_hook=OrderedDict)
             for bi, band in enumerate(bands):
                 for rule in filterrules:
                     sysinstperms = [[x, y]
@@ -56,8 +60,41 @@ class Filters(Module):
         self._filter_integrals = [0.0] * self._n_bands
 
         for i, band in enumerate(self._unique_bands):
-            with open(os.path.join(dir_path, 'filters', band['path']),
-                      'r') as f:
+            if 'SVO' in band:
+                xml_path = os.path.join(dir_path, '..', '..', 'cache',
+                                        band['SVO'].replace('/', '_') + '.xml')
+                if not os.path.exists(xml_path):
+                    print('Downloading bandpass {} from SVO.'.format(band[
+                        'SVO']))
+                    try:
+                        response = urllib.request.urlopen(
+                            'http://svo2.cab.inta-csic.es/svo/theory/fps3/'
+                            'fps.php?PhotCalID=' + band['SVO'],
+                            timeout=10)
+                    except:
+                        print_inline(
+                            'Warning: Could not download SVO filter (are '
+                            'you online?), using cached filter.')
+                    else:
+                        with open(xml_path, 'wb') as f:
+                            shutil.copyfileobj(response, f)
+
+                if os.path.exists(xml_path):
+                    vo_tab = voparse(xml_path)
+                    vo_dat = vo_tab.get_first_table().array
+                    vo_string = '\n'.join(
+                        [' '.join([str(y) for y in x]) for x in vo_dat])
+                    path = os.path.join(dir_path, '..', '..', 'cache',
+                                        band['SVO'].replace('/', '_') + '.dat')
+                    with open(path, 'w') as f:
+                        f.write(vo_string)
+                else:
+                    print('Error: Could not read SVO filter!')
+                    raise RuntimeError
+            else:
+                path = band['path']
+
+            with open(os.path.join(dir_path, 'filters', path), 'r') as f:
                 rows = []
                 for row in csv.reader(f, delimiter=' ', skipinitialspace=True):
                     rows.append([float(x) for x in row[:2]])
@@ -115,11 +152,12 @@ class Filters(Module):
         return []
 
     def preprocess(self, **kwargs):
-        if not self._preprocessed:
-            self._bands = kwargs['bands']
-            self._band_indices = list(map(self.find_band_index, self._bands))
-            self._dxs = []
-            for bi in self._band_indices:
-                wavs = kwargs['samplewavelengths'][bi]
-                self._dxs.append(wavs[1] - wavs[0])
+        if self._preprocessed:
+            return
+        self._bands = kwargs['bands']
+        self._band_indices = list(map(self.find_band_index, self._bands))
+        self._dxs = []
+        for bi in self._band_indices:
+            wavs = kwargs['samplewavelengths'][bi]
+            self._dxs.append(wavs[1] - wavs[0])
         self._preprocessed = True

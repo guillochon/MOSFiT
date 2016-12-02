@@ -2,16 +2,16 @@ Engines
 - [ ] `Disk`
 - [ ] `EllipticalDisk`
 - [ ] `Jet`
-- [ ] `CSM`
+- [x] `CSM`
 
 Transforms
 - [ ] `Viscosity`
 - [ ] `Reprocessing`
 
 SEDs
-- [ ] `Extinction`
+- [x] `Extinction`
 
 Output
-- [ ] Model LCs
+- [x] Model LCs
 - [ ] Model SEDs
-- [ ] Walker distributions
+- [x] Walker distributions

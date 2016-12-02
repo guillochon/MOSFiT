@@ -1,7 +1,8 @@
 language: python
 python:
-    - 3.4
-    - 3.5
+    - "3.4"
+    - "3.5"
+    - "3.6-dev"
 notifications:
     slack: astrochats:tV2KNwL9jXSGSv5KhulGNVro
 git:
@@ -17,24 +18,30 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda;
 install:
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy
-    - pip install -r requirements.txt
+    - if [[ "$TRAVIS_PYTHON_VERSION" == "3.6-dev" ]];
+      then export TPV="3.5.2"; else
+      export TPV=$TRAVIS_PYTHON_VERSION;
+      fi
+    - conda install --yes python=$TPV matplotlib mpi4py scipy jupyter
     - pip install coveralls
-    - python setup.py install
+    - pip install -r requirements.txt
+    - coverage run -p setup.py install
 
 # Run test
 script:
-    - cd ..
-    - mkdir test
-    - cd test
     - echo "travis_fold:start:FIT Fitting test data"
-    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 1 -f 1
-    - mpirun -np 2 coverage run -a -m mosfit -e SN2006le --travis -i 1 --no-fracking -m magnetar
-    - mpirun -np 2 coverage run -a -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
+    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le --travis -i 1 -f 1 -p 0
+    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le.json --travis -i 1 --no-fracking -m magnetar
+    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
+    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m csm
     - echo "travis_fold:end:FIT Fitting test data done"
     - echo "travis_fold:start:GEN Generating random models"
-    - coverage run -a -m mosfit --travis -i 0
+    - coverage run -p --source=mosfit -m mosfit --travis -i 0
+    - coverage run -p --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
     - echo "travis_fold:end:GEN Generating random models done"
+    - echo "travis_fold:start:JUP Testing Jupyter notebooks"
+    - echo "travis_fold:end:JUP Testing Jupyter notebooks"
+    - coverage combine
 
 # Run coveralls
 after_success:

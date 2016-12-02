@@ -10,7 +10,7 @@
     },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e18,
+        "value":0.0,
         "class":"parameter",
         "latex":"n_{\\rm H,host}"
     },
@@ -20,33 +20,39 @@
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
-    "Pspin":{
+    "n":{
         "kind":"parameter",
-        "value":2.0,
+        "value":12.0,
         "class":"parameter",
-        "latex":"P_{\\rm spin}\\,{\\rm (ms)}"
+        "latex":"n"
     },
-    "Bfield":{
+    "s":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"s"
+    },
+    "delta":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"B"
+        "latex":"delta"
     },
-    "Mns":{
+    "r0":{
         "kind":"parameter",
         "value":2.0,
         "class":"parameter",
-        "latex":"M_{\\rm NS}\\,(M_\\odot)"
+        "latex":"R_{0}"
     },
-    "thetaPB":{
+    "mcsm":{
         "kind":"parameter",
-        "value":0.785398163,
+        "value":5.01,
         "class":"parameter",
-        "latex":"\\theta_{\\rm PB}"
+        "latex":"M_{\\rm CSM}"
     },
     "kappa":{
         "kind":"parameter",
-        "value":0.2,
+        "value":0.33,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
@@ -55,6 +61,12 @@
         "value":10.0,
         "class":"parameter",
         "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+   "rho":{
+        "kind":"parameter",
+        "value":1.0e-12,
+        "class":"parameter",
+        "latex":"\\rho"
     },
     "mejecta":{
         "kind":"parameter",
@@ -68,6 +80,12 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
+    "temperature":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"T_{\\min}\\,{\\rm (K)}"
+    },
     "densetimes":{
         "kind":"array",
         "inputs":[
@@ -75,34 +93,43 @@
             "texplosion"
         ]
     },
-    "magnetar":{
+    "csm":{
         "kind":"engine",
         "inputs":[
-            "densetimes",
+            "transient",
+            "n",
+            "s",
+            "delta",
+            "r0",
             "mejecta",
-            "Pspin",
-            "Bfield",
-            "Mns",
-            "thetaPB",
-            "texplosion"
+            "mcsm",
+            "rho",
+            "vejecta",
+            "texplosion",
+            "kappa",
+            "densetimes"
         ]
     },
-    "diffusion":{
+    "diffusion_csm":{
         "kind":"transform",
         "inputs":[
-            "magnetar",
+            "csm",
             "kappa",
-            "kappagamma",
+            "r0",
+            "s",
+            "rho",
             "mejecta",
+            "mcsm",
             "texplosion",
             "vejecta"
         ]
     },
-    "densecore":{
+    "temperature_floor":{
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion"
+            "diffusion_csm",
+            "temperature"
         ]
     },
     "blackbody":{
@@ -110,7 +137,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore",
+            "temperature_floor",
             "temperaturephot",
             "radiusphot"
         ]

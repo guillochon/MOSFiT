@@ -74,6 +74,46 @@
     },
     {
         "systems":[
+            "SDSS"
+        ],
+        "instruments":[
+            "SDSS"
+        ],
+        "filters":{
+            "u":{
+                "SVO":"SLOAN/SDSS.u/ST"
+            },
+            "g":{
+                "SVO":"SLOAN/SDSS.g/ST"
+            },
+            "r":{
+                "SVO":"SLOAN/SDSS.r/ST"
+            },
+            "i":{
+                "SVO":"SLOAN/SDSS.i/ST"
+            },
+            "z":{
+                "SVO":"SLOAN/SDSS.z/ST"
+            },
+            "u'":{
+                "SVO":"SLOAN/SDSS.u/ST"
+            },
+            "g'":{
+                "SVO":"SLOAN/SDSS.g/ST"
+            },
+            "r'":{
+                "SVO":"SLOAN/SDSS.r/ST"
+            },
+            "i'":{
+                "SVO":"SLOAN/SDSS.i/ST"
+            },
+            "z'":{
+                "SVO":"SLOAN/SDSS.z/ST"
+            }
+        }
+    },
+    {
+        "systems":[
             "Vega"
         ],
         "instruments":[

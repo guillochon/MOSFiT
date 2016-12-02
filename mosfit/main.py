@@ -1,11 +1,11 @@
 import argparse
 import os
 import shutil
-from textwrap import wrap
 
 from emcee.utils import MPIPool
 from mosfit import __version__
 from mosfit.fitter import Fitter
+from mosfit.utils import prompt
 
 
 def main():
@@ -224,15 +224,10 @@ def main():
                 '(disable with --no-copy-at-launch).')
             fc = False
             if args.force_copy:
-                prompt_txt = wrap(
+                fc = prompt(
                     "The flag `--force-copy-at-launch` has been set. Do you "
                     "really wish to overwrite your local model/module/jupyter "
-                    "file hierarchy? This action cannot be reversed. "
-                    "[Y/(N)]: ", width)
-                for txt in prompt_txt[:-1]:
-                    print(txt)
-                user_choice = input(prompt_txt[-1] + " ")
-                fc = user_choice in ["Y", "y", "Yes", "yes"]
+                    "file hierarchy? This action cannot be reversed.", width)
             if not os.path.exists('jupyter'):
                 os.mkdir(os.path.join('jupyter'))
             if not os.path.isfile(os.path.join('jupyter',
