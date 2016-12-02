@@ -12,6 +12,7 @@ class Transient(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
+        self._data_determined_parameters = []
 
     def process(self, **kwargs):
         return self._data
@@ -44,9 +45,11 @@ class Transient(Module):
                     continue
                 if any([x in entry for x in exc_subkeys]):
                     continue
-                if any([x in entry and
-                        (not is_number(entry[x]) or np.isnan(float(entry[x])))
-                        for x in num_subkeys]):
+                if any([
+                        x in entry and
+                    (not is_number(entry[x]) or np.isnan(float(entry[x])))
+                        for x in num_subkeys
+                ]):
                     continue
                 skip_key = False
                 for qkey in req_key_values:
@@ -67,16 +70,22 @@ class Transient(Module):
             if isinstance(self._data[key], list):
                 if not any(is_number(x) for x in self._data[key]):
                     continue
-                self._data[key] = [float(x) if is_number(x) else x
-                                   for x in self._data[key]]
-                num_values = [x for x in self._data[key]
-                              if isinstance(x, float)]
+                self._data[key] = [
+                    float(x) if is_number(x) else x for x in self._data[key]
+                ]
+                num_values = [
+                    x for x in self._data[key] if isinstance(x, float)
+                ]
                 self._data['min_' + key] = min(num_values)
                 self._data['max_' + key] = max(num_values)
             else:
                 if is_number(self._data[key]):
                     self._data[key] = float(self._data[key])
+                    self._data_determined_parameters.append(key)
 
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]
             self._data[qkey] = [x - minv for x in self._data[qkey]]
+
+    def get_data_determined_parameters(self):
+        return self._data_determined_parameters

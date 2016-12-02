@@ -21,10 +21,10 @@
                 "value":"required"
             },
             "lumdist":{
-                "value":"required"
+                "value":"optional"
             },
             "redshift":{
-                "value":"required"
+                "value":"optional"
             }
         }
     },
@@ -40,7 +40,9 @@
     },
     "lumdist":{
         "kind":"parameter",
-        "value":1.0e-5,
+        "min_value":1.0e-4,
+        "max_value":10.0e4,
+        "log":true,
         "class":"parameter",
         "inputs":[
             "transient"
@@ -49,10 +51,10 @@
     },
     "redshift":{
         "kind":"parameter",
-        "value":0.0,
-        "class":"parameter",
+        "class":"redshift",
         "inputs":[
-            "transient"
+            "transient",
+            "lumdist"
         ],
         "latex":"z"
     },

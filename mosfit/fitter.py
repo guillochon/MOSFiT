@@ -219,6 +219,7 @@ class Fitter():
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
+        fixed_parameters = []
         for task in self._model._call_stack:
             cur_task = self._model._call_stack[task]
             self._model._modules[task].set_event_name(event_name)
@@ -227,6 +228,10 @@ class Fitter():
                     data,
                     req_key_values={'band': self._model._bands},
                     subtract_minimum_keys=['times'])
+                fixed_parameters.extend(self._model._modules[task]
+                                        .get_data_determined_parameters())
+
+        self._model.determine_free_parameters(fixed_parameters)
 
         # Run through once to set all inits
         self._model.likelihood(

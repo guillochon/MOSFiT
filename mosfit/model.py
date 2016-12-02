@@ -180,11 +180,13 @@ class Model:
             # if class_name == 'filters':
             #     self._bands = self._modules[task].band_names()
 
+    def determine_free_parameters(self, extra_fixed_parameters):
         self._free_parameters = []
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if (cur_task['kind'] == 'parameter' and 'min_value' in cur_task and
-                    'max_value' in cur_task and
+            if (task not in extra_fixed_parameters and
+                    cur_task['kind'] == 'parameter' and
+                    'min_value' in cur_task and 'max_value' in cur_task and
                     cur_task['min_value'] != cur_task['max_value']):
                 self._free_parameters.append(task)
         self._num_free_parameters = len(self._free_parameters)
