@@ -86,13 +86,6 @@
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
-    "densetimes":{
-        "kind":"array",
-        "inputs":[
-            "transient",
-            "texplosion"
-        ]
-    },
     "csm":{
         "kind":"engine",
         "inputs":[

@@ -47,7 +47,6 @@ class Likelihood(Module):
     def preprocess(self, **kwargs):
         if self._preprocessed:
             return
-        self._times = kwargs['times']
         self._mags = kwargs['magnitudes']
         self._e_u_mags = kwargs['e_upper_magnitudes']
         self._e_l_mags = kwargs['e_lower_magnitudes']

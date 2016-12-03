@@ -24,8 +24,6 @@ class blackbody(SED):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        self._t_explosion = kwargs['texplosion']
-        self._times = kwargs['times']
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['bands']
         self._radius_phot = kwargs['radiusphot']

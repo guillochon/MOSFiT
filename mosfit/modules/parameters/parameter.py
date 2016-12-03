@@ -48,7 +48,8 @@ class Parameter(Module):
         """Initialize a parameter based upon either a fixed value or a
         distribution, if one is defined.
         """
-        if self._min_value is None or self._max_value is None:
+        if (self._name in kwargs or self._min_value is None or
+                self._max_value is None):
             # If this parameter is not free and is already set, then skip
             if self._name in kwargs:
                 return {}

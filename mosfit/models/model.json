@@ -74,6 +74,20 @@
             "default_no_error_bar_error"
         ]
     },
+    "resttimes":{
+        "kind":"array",
+        "inputs":[
+            "transient",
+            "redshift",
+            "texplosion"
+        ]
+    },
+    "densetimes":{
+        "kind":"array",
+        "inputs":[
+            "resttimes"
+        ]
+    },
     "fitlc":{
         "kind":"output",
         "inputs":[
