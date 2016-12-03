@@ -174,7 +174,7 @@ class Fitter():
                         model=mod_name,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
-                        is_master=pool.is_master())
+                        pool=pool)
 
                     if not event:
                         print('No event specified, generating dummy data.')
@@ -382,8 +382,6 @@ class Fitter():
                         progress=[(b + 1) * frack_step, iterations])
         except KeyboardInterrupt:
             pool.close()
-            if pool_size == 1:
-                pool.terminate()
             if (not prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '

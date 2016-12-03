@@ -1,7 +1,8 @@
 class Module:
-    def __init__(self, name, **kwargs):
+    def __init__(self, name, pool, **kwargs):
         self._name = name
         self._log = False
+        self._pool = pool
 
     def process(self, **kwargs):
         return {}

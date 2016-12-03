@@ -26,9 +26,10 @@ class Model:
                  parameter_path='parameters.json',
                  model='default',
                  wrap_length=100,
-                 is_master=''):
+                 pool=None):
         self._model_name = model
-        self._is_master = is_master
+        self._pool = pool
+        self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -156,7 +157,8 @@ class Model:
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='mosfit')
             mod_class = getattr(mod, mod.CLASS_NAME)
-            self._modules[task] = mod_class(name=task, **cur_task)
+            self._modules[task] = mod_class(
+                name=task, pool=pool, **cur_task)
             if class_name == 'filters':
                 self._bands = self._modules[task].band_names()
             # This is currently not functional for MPI
