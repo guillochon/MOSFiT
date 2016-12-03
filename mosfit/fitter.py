@@ -271,7 +271,7 @@ class Fitter():
 
         test_walker = iterations > 0
         lnprob = None
-        pool_size = pool.size
+        pool_size = max(pool.size, 1)
 
         print('{} dimensions in problem.\n\n'.format(ndim))
         p0 = [[] for x in range(ntemps)]
