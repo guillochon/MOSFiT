@@ -97,6 +97,17 @@ def main():
               "post-burn iterations."))
 
     parser.add_argument(
+        '--smooth-times',
+        '-S',
+        dest='smooth_times',
+        type=int,
+        default=-1,
+        help=("Add this many more fictitious observations between the first "
+              "and last observed times. Setting this value to `0` will "
+              "guarantee that all observed bands/instrument/system "
+              "combinations have a point at all observed epochs."))
+
+    parser.add_argument(
         '--num-walkers',
         '-N',
         dest='num_walkers',
@@ -288,7 +299,8 @@ def main():
         'frack_step': args.frack_step,
         'wrap_length': width,
         'travis': args.travis,
-        'post_burn': args.post_burn
+        'post_burn': args.post_burn,
+        'smooth_times': args.smooth_times
     }
     Fitter().fit_events(**fitargs)
 

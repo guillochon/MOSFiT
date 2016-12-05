@@ -31,9 +31,10 @@ class Likelihood(Module):
                         if not u or (x < y and not isnan(x)) else 0.0)**2 / (
                             (el if x > y else eu)**2 + self._variance2) +
                        np.log(self._variance2 + 0.5 * (el**2 + eu**2))
-                       for x, y, eu, el, u in zip(
+                       for x, y, eu, el, u, o in zip(
                            self._model_mags, self._mags, self._e_u_mags,
-                           self._e_l_mags, self._upper_limits)]
+                           self._e_l_mags, self._upper_limits, self._observed)
+                       if o]
         value = -0.5 * np.sum(sum_members)
         if isnan(value):
             return {'value': LIKELIHOOD_FLOOR}
@@ -52,6 +53,7 @@ class Likelihood(Module):
         self._e_l_mags = kwargs['e_lower_magnitudes']
         self._e_mags = kwargs['e_magnitudes']
         self._upper_limits = kwargs['upperlimits']
+        self._observed = kwargs['observed']
         self._e_u_mags = [
             kwargs['default_upper_limit_error']
             if (e == '' and eu == '' and self._upper_limits[i]) else

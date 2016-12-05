@@ -11,7 +11,7 @@
                 "band":"required",
                 "instrument":"optional",
                 "system":"optional",
-                "upperlimit":"optional",
+                "upperlimit":["optional","boolean"],
                 "includeshost":"exclude",
                 "host":"exclude",
                 "kcorrected":"exclude",

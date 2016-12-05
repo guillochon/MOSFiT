@@ -17,7 +17,11 @@ class Transient(Module):
     def process(self, **kwargs):
         return self._data
 
-    def set_data(self, all_data, req_key_values={}, subtract_minimum_keys=[]):
+    def set_data(self,
+                 all_data,
+                 req_key_values={},
+                 subtract_minimum_keys=[],
+                 smooth_times=-1):
         self._all_data = all_data
         self._data = {}
         if not self._all_data:
@@ -35,6 +39,9 @@ class Transient(Module):
             ]
             num_subkeys = [
                 x for x in subkeys if 'numeric' in listify(subkeys[x])
+            ]
+            boo_subkeys = [
+                x for x in subkeys if 'boolean' in listify(subkeys[x])
             ]
             exc_subkeys = [
                 x for x in subkeys if 'exclude' in listify(subkeys[x])
@@ -60,11 +67,12 @@ class Transient(Module):
                 if skip_key:
                     continue
                 for x in subkeys:
+                    falseval = False if x in boo_subkeys else ''
                     if x == 'value':
-                        self._data[key] = entry.get(x, '')
+                        self._data[key] = entry.get(x, falseval)
                     else:
-                        self._data.setdefault(x + 's',
-                                              []).append(entry.get(x, ''))
+                        self._data.setdefault(
+                            x + 's', []).append(entry.get(x, falseval))
 
         for key in self._data.copy():
             if isinstance(self._data[key], list):
@@ -82,6 +90,47 @@ class Transient(Module):
                 if is_number(self._data[key]):
                     self._data[key] = float(self._data[key])
                     self._data_determined_parameters.append(key)
+
+        if 'times' in self._data and smooth_times >= 0:
+            obs = list(
+                zip(*(self._data['systems'], self._data['instruments'],
+                      self._data['bands'])))
+
+            uniqueobs = []
+            for o in obs:
+                if o not in uniqueobs:
+                    uniqueobs.append(o)
+
+            mint, maxt = min(self._data['times']), max(self._data['times'])
+            alltimes = list(
+                sorted(
+                    set([x for x in self._data['times']] + (
+                        np.linspace(mint, maxt, smooth_times)
+                        if smooth_times > 0 else []))))
+
+            obslist = list(
+                zip(*(self._data['times'], self._data['systems'], self._data[
+                    'instruments'], self._data['bands'], self._data[
+                        'magnitudes'], self._data['e_magnitudes'],
+                      self._data['e_lower_magnitudes'], self._data[
+                          'e_upper_magnitudes'], self._data['upperlimits'],
+                      [True for x in range(len(self._data['times']))])))
+
+            for t in alltimes:
+                for o in uniqueobs:
+                    newobs = (t, o[0], o[1], o[2], None, None, None, None,
+                              False, False)
+                    if newobs not in obslist:
+                        obslist.append(newobs)
+
+            obslist.sort(key=lambda x: x[0])
+
+            (self._data['times'], self._data['systems'],
+             self._data['instruments'], self._data['bands'],
+             self._data['magnitudes'], self._data['e_magnitudes'],
+             self._data['e_lower_magnitudes'],
+             self._data['e_upper_magnitudes'], self._data['upperlimits'],
+             self._data['observed']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]

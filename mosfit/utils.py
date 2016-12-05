@@ -19,6 +19,8 @@ if sys.version_info[:2] < (3, 3):
 
 
 def is_number(s):
+    if isinstance(s, bool):
+        return False
     try:
         float(s)
         return True
