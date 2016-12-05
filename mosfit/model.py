@@ -378,6 +378,7 @@ class Model:
                 continue
             if cur_task['depth'] != cur_depth:
                 inputs = outputs
+            inputs.update({'root': root})
             cur_depth = cur_task['depth']
             if task in self._free_parameters:
                 inputs.update({'fraction': x[pos]})
