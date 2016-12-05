@@ -104,9 +104,9 @@ class Transient(Module):
             mint, maxt = min(self._data['times']), max(self._data['times'])
             alltimes = list(
                 sorted(
-                    set([x for x in self._data['times']] + (
-                        np.linspace(mint, maxt, smooth_times)
-                        if smooth_times > 0 else []))))
+                    set([x for x in self._data['times']] +
+                        list(np.linspace(mint, maxt, smooth_times))
+                        if smooth_times > 0 else [])))
 
             obslist = list(
                 zip(*(self._data['times'], self._data['systems'], self._data[
