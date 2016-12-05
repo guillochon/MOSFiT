@@ -19,7 +19,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     version=__version__,  # noqa
-    description=('Package that performs maximum likelihood analysis to fit '
+    description=('Maximum likelihood analysis for fitting '
                  'semi-analytical model predictions to observed '
                  'astronomical transient data.'),
     license=__license__,  # noqa
