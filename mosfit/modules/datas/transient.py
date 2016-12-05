@@ -131,6 +131,9 @@ class Transient(Module):
              self._data['e_lower_magnitudes'],
              self._data['e_upper_magnitudes'], self._data['upperlimits'],
              self._data['observed']) = zip(*obslist)
+        else:
+            self._data[
+                'observed'] = [True for x in range(len(self._data['times']))]
 
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]
