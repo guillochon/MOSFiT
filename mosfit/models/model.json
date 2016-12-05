@@ -74,10 +74,16 @@
             "default_no_error_bar_error"
         ]
     },
+    "alltimes":{
+        "kind":"array",
+        "inputs":[
+            "transient"
+        ]
+    },
     "resttimes":{
         "kind":"array",
         "inputs":[
-            "transient",
+            "alltimes",
             "redshift",
             "texplosion"
         ]
