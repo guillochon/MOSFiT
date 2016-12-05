@@ -125,7 +125,12 @@ class Filters(Module):
         raise ValueError('Cannot find band index!')
 
     def process(self, **kwargs):
-        self.preprocess(**kwargs)
+        self._bands = kwargs['all_bands']
+        self._band_indices = list(map(self.find_band_index, self._bands))
+        self._dxs = []
+        for bi in self._band_indices:
+            wavs = kwargs['samplewavelengths'][bi]
+            self._dxs.append(wavs[1] - wavs[0])
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']
@@ -159,14 +164,3 @@ class Filters(Module):
         elif request == 'band_wave_ranges':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
         return []
-
-    def preprocess(self, **kwargs):
-        if self._preprocessed:
-            return
-        self._bands = kwargs['bands']
-        self._band_indices = list(map(self.find_band_index, self._bands))
-        self._dxs = []
-        for bi in self._band_indices:
-            wavs = kwargs['samplewavelengths'][bi]
-            self._dxs.append(wavs[1] - wavs[0])
-        self._preprocessed = True

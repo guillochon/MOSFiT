@@ -104,36 +104,23 @@ class Transient(Module):
             mint, maxt = min(self._data['times']), max(self._data['times'])
             alltimes = list(
                 sorted(
-                    set([x for x in self._data['times']] +
-                        list(np.linspace(mint, maxt, smooth_times))
-                        if smooth_times > 0 else [])))
+                    set([x for x in self._data['times']] + (list(
+                        np.linspace(mint, maxt, smooth_times))
+                        if smooth_times > 0 else []))))
 
-            obslist = list(
-                zip(*(self._data['times'], self._data['systems'], self._data[
-                    'instruments'], self._data['bands'], self._data[
-                        'magnitudes'], self._data['e_magnitudes'],
-                      self._data['e_lower_magnitudes'], self._data[
-                          'e_upper_magnitudes'], self._data['upperlimits'],
-                      [True for x in range(len(self._data['times']))])))
-
+            obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = (t, o[0], o[1], o[2], None, None, None, None,
-                              False, False)
+                    newobs = (t, o[0], o[1], o[2])
                     if newobs not in obslist:
                         obslist.append(newobs)
 
             obslist.sort(key=lambda x: x[0])
 
-            (self._data['times'], self._data['systems'],
-             self._data['instruments'], self._data['bands'],
-             self._data['magnitudes'], self._data['e_magnitudes'],
-             self._data['e_lower_magnitudes'],
-             self._data['e_upper_magnitudes'], self._data['upperlimits'],
-             self._data['observed']) = zip(*obslist)
-        else:
-            self._data[
-                'observed'] = [True for x in range(len(self._data['times']))]
+            if len(obslist):
+                (self._data['extra_times'], self._data['extra_systems'],
+                 self._data['extra_instruments'],
+                 self._data['extra_bands']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]

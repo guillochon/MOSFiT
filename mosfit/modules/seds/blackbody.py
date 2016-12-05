@@ -25,7 +25,7 @@ class blackbody(SED):
 
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
-        self._bands = kwargs['obsbands']
+        self._bands = kwargs['all_bands']
         self._radius_phot = kwargs['radiusphot']
         self._temperature_phot = kwargs['temperaturephot']
         xc = self.X_CONST

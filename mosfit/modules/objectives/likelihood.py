@@ -27,14 +27,16 @@ class Likelihood(Module):
                 return {'value': LIKELIHOOD_FLOOR}
         self._variance2 = kwargs['variance']**2
 
-        sum_members = [(x - y
-                        if not u or (x < y and not isnan(x)) else 0.0)**2 / (
-                            (el if x > y else eu)**2 + self._variance2) +
-                       np.log(self._variance2 + 0.5 * (el**2 + eu**2))
-                       for x, y, eu, el, u, o in zip(
-                           self._model_mags, self._mags, self._e_u_mags,
-                           self._e_l_mags, self._upper_limits, self._observed)
-                       if o]
+        sum_members = [
+            (x - y if not u or (x < y and not isnan(x)) else 0.0)**2 / (
+                (el if x > y else eu)**2 + self._variance2) +
+            np.log(self._variance2 + 0.5 * (el**2 + eu**2))
+            for x, y, eu, el, u in zip(self._model_mags, [
+                i for i, o in zip(self._mags, self._observed) if o
+            ], [i for i, o in zip(self._e_u_mags, self._observed) if o], [
+                i for i, o in zip(self._e_l_mags, self._observed) if o
+            ], [i for i, o in zip(self._upper_limits, self._observed) if o])
+        ]
         value = -0.5 * np.sum(sum_members)
         if isnan(value):
             return {'value': LIKELIHOOD_FLOOR}
