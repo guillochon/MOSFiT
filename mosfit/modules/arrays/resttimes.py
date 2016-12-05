@@ -1,4 +1,3 @@
-import numpy as np
 from mosfit.modules.module import Module
 
 CLASS_NAME = 'RestTimes'
