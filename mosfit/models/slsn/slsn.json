@@ -68,13 +68,6 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
-    "densetimes":{
-        "kind":"array",
-        "inputs":[
-            "transient",
-            "texplosion"
-        ]
-    },
     "magnetar":{
         "kind":"engine",
         "inputs":[

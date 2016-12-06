@@ -42,7 +42,7 @@ class Extinction(SED):
         if not self._preprocessed:
             zp1 = 1.0 + kwargs['redshift']
             self._ebv = kwargs['ebv']
-            self._bands = kwargs['bands']
+            self._bands = kwargs['all_bands']
             self._band_indices = list(
                 map(self._filters.find_band_index, self._bands))
             self._band_rest_wavelengths = np.array(

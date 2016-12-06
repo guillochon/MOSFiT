@@ -179,5 +179,33 @@
             }
         },
         "note":"From http://www.astronomy.ohio-state.edu/~martini/usefuldata.html"
+    },
+    {
+        "systems":[
+            "Vega"
+        ],
+        "filters":{
+            "U":{
+                "SVO":"Generic/Johnson.U/Vega"
+            },
+            "B":{
+                "SVO":"Generic/Johnson.B/Vega"
+            },
+            "V":{
+                "SVO":"Generic/Johnson.V/Vega"
+            },
+            "R":{
+                "SVO":"Generic/Johnson.R/Vega"
+            },
+            "I":{
+                "SVO":"Generic/Johnson.I/Vega"
+            },
+            "J":{
+                "SVO":"Generic/Johnson.J/Vega"
+            },
+            "M":{
+                "SVO":"Generic/Johnson.M/Vega"
+            }
+        }
     }
 ]

@@ -14,7 +14,7 @@ class LightCurve(Module):
     def process(self, **kwargs):
         output = {}
         for key in ['magnitudes', 'e_magnitudes', 'model_magnitudes',
-                    'bands', 'times']:
-            output[key] = kwargs[key]
+                    'all_bands', 'all_times', 'observed']:
+            output[key.replace('all_', '')] = kwargs[key]
 
         return output

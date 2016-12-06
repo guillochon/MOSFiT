@@ -66,10 +66,10 @@ def main():
     parser.add_argument(
         '--band-list',
         dest='band_list',
-        default=['V'],
+        default=[],
         nargs='+',
-        help=("List of bands to plot when plotting model light curves that "
-              "are not being matched to actual transient data."))
+        help=("List of additional bands to plot when plotting model light "
+              "curves that are not being matched to actual transient data."))
 
     parser.add_argument(
         '--band-systems',
@@ -95,6 +95,36 @@ def main():
         default=-1,
         help=("Number of iterations to run emcee for, including burn-in and "
               "post-burn iterations."))
+
+    parser.add_argument(
+        '--smooth-times',
+        '-S',
+        dest='smooth_times',
+        type=int,
+        const=0,
+        default=-1,
+        nargs='?',
+        action='store',
+        help=("Add this many more fictitious observations between the first "
+              "and last observed times. Setting this value to `0` will "
+              "guarantee that all observed bands/instrument/system "
+              "combinations have a point at all observed epochs."))
+
+    parser.add_argument(
+        '--extrapolate-time',
+        '-E',
+        dest='extrapolate_time',
+        type=float,
+        default=0.0,
+        nargs='*',
+        help=(
+            "Extend model light curves this many days before/after "
+            "first/last observation. Can be a list of two elements, in which "
+            "case the first element is the amount of time before the first "
+            "observation to extrapolate, and the second element is the amount "
+            "of time before the last observation to extrapolate. Value is set "
+            "to `0.0` days if option not set, `100.0` days "
+            "by default if no arguments are given."))
 
     parser.add_argument(
         '--num-walkers',
@@ -181,6 +211,10 @@ def main():
               "produed to detected program output."))
 
     args = parser.parse_args()
+
+    if (isinstance(args.extrapolate_time, list) and
+            len(args.extrapolate_time) == 0):
+        args.extrapolate_time = 100.0
 
     changed_iterations = False
     if args.iterations == -1:
@@ -288,7 +322,9 @@ def main():
         'frack_step': args.frack_step,
         'wrap_length': width,
         'travis': args.travis,
-        'post_burn': args.post_burn
+        'post_burn': args.post_burn,
+        'smooth_times': args.smooth_times,
+        'extrapolate_time': args.extrapolate_time
     }
     Fitter().fit_events(**fitargs)
 
