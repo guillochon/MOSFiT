@@ -121,27 +121,27 @@
         ],
         "filters":{
             "U":{
-                "path":"SVO:Swift/UVOT.U/AB",
+                "path":"SVO:Swift/UVOT.U/Vega",
                 "offset":1.02
             },
             "B":{
-                "path":"SVO:Swift/UVOT.B/AB",
+                "path":"SVO:Swift/UVOT.B/Vega",
                 "offset":-0.13
             },
             "V":{
-                "path":"SVO:Swift/UVOT.V/AB",
+                "path":"SVO:Swift/UVOT.V/Vega",
                 "offset":-0.01
             },
             "W1":{
-                "path":"SVO:Swift/UVOT.UVW1/AB",
+                "path":"SVO:Swift/UVOT.UVW1/Vega",
                 "offset":1.51
             },
             "W2":{
-                "path":"SVO:Swift/UVOT.UVW2/AB",
+                "path":"SVO:Swift/UVOT.UVW2/Vega",
                 "offset":1.73
             },
             "M2":{
-                "path":"SVO:Swift/UVOT.UVM2/AB",
+                "path":"SVO:Swift/UVOT.UVM2/Vega",
                 "offset":1.69
             }
         }
