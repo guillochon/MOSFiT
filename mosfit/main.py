@@ -115,13 +115,16 @@ def main():
         '-E',
         dest='extrapolate_time',
         type=float,
-        const=100.0,
         default=0.0,
-        nargs='?',
-        action='store',
-        help=("Extend model light curves this many days before/after "
-              "first/last observation. `0.0` days if not set, `100.0` days "
-              "by default if set."))
+        nargs='*',
+        help=(
+            "Extend model light curves this many days before/after "
+            "first/last observation. Can be a list of two elements, in which "
+            "case the first element is the amount of time before the first "
+            "observation to extrapolate, and the second element is the amount "
+            "of time before the last observation to extrapolate. Value is set "
+            "to `0.0` days if option not set, `100.0` days "
+            "by default if no arguments are given."))
 
     parser.add_argument(
         '--num-walkers',
@@ -208,6 +211,9 @@ def main():
               "produed to detected program output."))
 
     args = parser.parse_args()
+
+    if len(args.extrapolate_time) == 0:
+        args.extrapolate_time = 100.0
 
     changed_iterations = False
     if args.iterations == -1:

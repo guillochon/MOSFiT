@@ -102,13 +102,15 @@ class Transient(Module):
                 if o not in uniqueobs:
                     uniqueobs.append(o)
 
-            mint, maxt = (min(self._data['times']) - extrapolate_time,
-                          max(self._data['times']) + extrapolate_time)
+            minet, maxet = (tuple(extrapolate_time)
+                            if isinstance(extrapolate_time, list) else
+                            (extrapolate_time, extrapolate_time))
+            mint, maxt = (min(self._data['times']) - minet,
+                          max(self._data['times']) + maxet)
             alltimes = list(
                 sorted(
-                    set([x for x in self._data['times']] + (list(
-                        np.linspace(mint, maxt, smooth_times)) if smooth_times
-                                                            > 0 else []))))
+                    set([x for x in self._data['times']] + list(
+                        np.linspace(mint, maxt, max(smooth_times, 2))))))
             currobslist = list(
                 zip(*(self._data['times'], self._data['systems'], self._data[
                     'instruments'], self._data['bands'])))
