@@ -81,34 +81,34 @@
         ],
         "filters":{
             "u":{
-                "SVO":"SLOAN/SDSS.u/ST"
+                "SVO":"SLOAN/SDSS.u/AB"
             },
             "g":{
-                "SVO":"SLOAN/SDSS.g/ST"
+                "SVO":"SLOAN/SDSS.g/AB"
             },
             "r":{
-                "SVO":"SLOAN/SDSS.r/ST"
+                "SVO":"SLOAN/SDSS.r/AB"
             },
             "i":{
-                "SVO":"SLOAN/SDSS.i/ST"
+                "SVO":"SLOAN/SDSS.i/AB"
             },
             "z":{
-                "SVO":"SLOAN/SDSS.z/ST"
+                "SVO":"SLOAN/SDSS.z/AB"
             },
             "u'":{
-                "SVO":"SLOAN/SDSS.u/ST"
+                "SVO":"SLOAN/SDSS.u/AB"
             },
             "g'":{
-                "SVO":"SLOAN/SDSS.g/ST"
+                "SVO":"SLOAN/SDSS.g/AB"
             },
             "r'":{
-                "SVO":"SLOAN/SDSS.r/ST"
+                "SVO":"SLOAN/SDSS.r/AB"
             },
             "i'":{
-                "SVO":"SLOAN/SDSS.i/ST"
+                "SVO":"SLOAN/SDSS.i/AB"
             },
             "z'":{
-                "SVO":"SLOAN/SDSS.z/ST"
+                "SVO":"SLOAN/SDSS.z/AB"
             }
         }
     },
@@ -121,27 +121,27 @@
         ],
         "filters":{
             "U":{
-                "path":"bess_u.dat",
+                "path":"SVO:Swift/UVOT.U/AB",
                 "offset":1.02
             },
             "B":{
-                "path":"bess_b.dat",
+                "path":"SVO:Swift/UVOT.B/AB",
                 "offset":-0.13
             },
             "V":{
-                "path":"bess_v.dat",
+                "path":"SVO:Swift/UVOT.V/AB",
                 "offset":-0.01
             },
             "W1":{
-                "path":"UVOT_uvw1.dat",
+                "path":"SVO:Swift/UVOT.UVW1/AB",
                 "offset":1.51
             },
             "W2":{
-                "path":"UVOT_uvw2.dat",
+                "path":"SVO:Swift/UVOT.UVW2/AB",
                 "offset":1.73
             },
             "M2":{
-                "path":"UVOT_uvm2.dat",
+                "path":"SVO:Swift/UVOT.UVM2/AB",
                 "offset":1.69
             }
         }
