@@ -121,27 +121,27 @@
         ],
         "filters":{
             "U":{
-                "path":"SVO:Swift/UVOT.U/Vega",
+                "path":"UVOT_u.dat",
                 "offset":1.02
             },
             "B":{
-                "path":"SVO:Swift/UVOT.B/Vega",
+                "path":"UVOT_b.dat",
                 "offset":-0.13
             },
             "V":{
-                "path":"SVO:Swift/UVOT.V/Vega",
+                "path":"UVOT_v.dat",
                 "offset":-0.01
             },
             "W1":{
-                "path":"SVO:Swift/UVOT.UVW1/Vega",
+                "path":"UVOT_uvw1.dat",
                 "offset":1.51
             },
             "W2":{
-                "path":"SVO:Swift/UVOT.UVW2/Vega",
+                "path":"UVOT_uvw2.dat",
                 "offset":1.73
             },
             "M2":{
-                "path":"SVO:Swift/UVOT.UVM2/Vega",
+                "path":"UVOT_uvm2.dat",
                 "offset":1.69
             }
         }
