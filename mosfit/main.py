@@ -66,10 +66,10 @@ def main():
     parser.add_argument(
         '--band-list',
         dest='band_list',
-        default=['V'],
+        default=[],
         nargs='+',
-        help=("List of bands to plot when plotting model light curves that "
-              "are not being matched to actual transient data."))
+        help=("List of additional bands to plot when plotting model light "
+              "curves that are not being matched to actual transient data."))
 
     parser.add_argument(
         '--band-systems',

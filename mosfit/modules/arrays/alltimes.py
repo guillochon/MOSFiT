@@ -4,7 +4,8 @@ CLASS_NAME = 'AllTimes'
 
 
 class AllTimes(Module):
-    """This class converts the observed times to rest-frame times.
+    """Create lists of observations that are either only real observations or
+    also include interpolations/extrapolations.
     """
 
     def __init__(self, **kwargs):

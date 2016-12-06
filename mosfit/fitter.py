@@ -51,7 +51,7 @@ class Fitter():
                    models=[],
                    plot_points='',
                    max_time='',
-                   band_list='',
+                   band_list=[],
                    band_systems=[],
                    band_instruments=[],
                    iterations=1000,
@@ -198,7 +198,10 @@ class Fitter():
                         fracking=fracking,
                         post_burn=post_burn,
                         smooth_times=smooth_times,
-                        extrapolate_time=extrapolate_time)
+                        extrapolate_time=extrapolate_time,
+                        band_list=band_list,
+                        band_systems=band_systems,
+                        band_instruments=band_instruments)
 
                     self.fit_data(
                         event_name=self._event_name,
@@ -220,7 +223,10 @@ class Fitter():
                   fracking=True,
                   post_burn=500,
                   smooth_times=-1,
-                  extrapolate_time=0.0):
+                  extrapolate_time=0.0,
+                  band_list=[],
+                  band_systems=[],
+                  band_instruments=[]):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -234,7 +240,10 @@ class Fitter():
                     req_key_values={'band': self._model._bands},
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
-                    extrapolate_time=extrapolate_time)
+                    extrapolate_time=extrapolate_time,
+                    band_list=band_list,
+                    band_systems=band_systems,
+                    band_instruments=band_instruments)
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
 
@@ -253,7 +262,7 @@ class Fitter():
     def fit_data(self,
                  event_name='',
                  iterations=2000,
-                 frack_step=100,
+                 frack_step=20,
                  num_walkers=50,
                  num_temps=2,
                  fracking=True,
@@ -435,33 +444,34 @@ class Fitter():
                             name,
                             max_time=1000.,
                             plot_points=100,
-                            band_list=['V'],
+                            band_list=[],
                             band_systems=[],
                             band_instruments=[]):
         time_list = np.linspace(0.0, max_time, plot_points)
-        times = np.repeat(time_list, len(band_list))
+        band_list_all = ['V'] if len(band_list) == 0 else band_list
+        times = np.repeat(time_list, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
         if isinstance(band_systems, str):
-            band_systems = [band_systems for x in range(len(band_list))]
+            band_systems = [band_systems for x in range(len(band_list_all))]
         if isinstance(band_instruments, str):
             band_instruments = [
-                band_instruments for x in range(len(band_list))
+                band_instruments for x in range(len(band_list_all))
             ]
-        if len(band_systems) < len(band_list):
+        if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val for x in range(len(band_list) - len(band_systems))
+                rep_val for x in range(len(band_list_all) - len(band_systems))
             ]
-        if len(band_instruments) < len(band_list):
+        if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
                 -1]
             band_instruments = band_instruments + [
                 rep_val
-                for x in range(len(band_list) - len(band_instruments))
+                for x in range(len(band_list_all) - len(band_instruments))
             ]
 
-        bands = [i for s in [band_list for x in time_list] for i in s]
+        bands = [i for s in [band_list_all for x in time_list] for i in s]
         systs = [i for s in [band_systems for x in time_list] for i in s]
         insts = [i for s in [band_instruments for x in time_list] for i in s]
 

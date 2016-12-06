@@ -22,7 +22,10 @@ class Transient(Module):
                  req_key_values={},
                  subtract_minimum_keys=[],
                  smooth_times=-1,
-                 extrapolate_time=0.0):
+                 extrapolate_time=0.0,
+                 band_list=[],
+                 band_systems=[],
+                 band_instruments=[]):
         self._all_data = all_data
         self._data = {}
         if not self._all_data:
@@ -96,6 +99,12 @@ class Transient(Module):
             obs = list(
                 zip(*(self._data['systems'], self._data['instruments'],
                       self._data['bands'])))
+            if len(band_list):
+                obs.extend(
+                    list(
+                        zip(*(band_systems
+                              if len(band_systems) else [''], band_instruments
+                              if len(band_instruments) else [''], band_list))))
 
             uniqueobs = []
             for o in obs:
