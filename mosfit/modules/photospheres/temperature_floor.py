@@ -22,7 +22,7 @@ class temperature_floor(photosphere):
 
     def process(self, **kwargs):
         self._rest_t_explosion = kwargs['resttexplosion']
-        self._times = kwargs['resttimes']
+        self._times = kwargs['rest_times']
         self._luminosities = kwargs['luminosities']
         self._temperature = kwargs['temperature']
         self._v_ejecta = kwargs['vejecta']

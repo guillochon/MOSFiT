@@ -105,17 +105,20 @@ class Transient(Module):
             alltimes = list(
                 sorted(
                     set([x for x in self._data['times']] + (list(
-                        np.linspace(mint, maxt, smooth_times))
-                        if smooth_times > 0 else []))))
+                        np.linspace(mint, maxt, smooth_times)) if smooth_times
+                                                            > 0 else []))))
+            currobslist = list(
+                zip(*(self._data['times'], self._data['systems'], self._data[
+                    'instruments'], self._data['bands'])))
 
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
                     newobs = (t, o[0], o[1], o[2])
-                    if newobs not in obslist:
+                    if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 
-            obslist.sort(key=lambda x: x[0])
+            obslist.sort()
 
             if len(obslist):
                 (self._data['extra_times'], self._data['extra_systems'],
@@ -125,6 +128,10 @@ class Transient(Module):
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]
             self._data[qkey] = [x - minv for x in self._data[qkey]]
+            if 'extra_' + qkey in self._data:
+                self._data['extra_' + qkey] = [
+                    x - minv for x in self._data['extra_' + qkey]
+                ]
 
     def get_data_determined_parameters(self):
         return self._data_determined_parameters

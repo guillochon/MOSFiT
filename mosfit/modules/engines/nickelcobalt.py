@@ -19,10 +19,10 @@ class NickelCobalt(Engine):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        if 'densetimes' in kwargs:
-            self._times = kwargs['densetimes']
+        if 'dense_times' in kwargs:
+            self._times = kwargs['dense_times']
         else:
-            self._times = kwargs['resttimes']
+            self._times = kwargs['rest_times']
         self._mnickel = kwargs['fnickel'] * kwargs['mejecta']
         self._rest_t_explosion = kwargs['resttexplosion']
 

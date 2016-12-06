@@ -15,6 +15,6 @@ class LightCurve(Module):
         output = {}
         for key in ['magnitudes', 'e_magnitudes', 'model_magnitudes',
                     'all_bands', 'all_times', 'observed']:
-            output[key] = kwargs[key.replace('all_', '')]
+            output[key.replace('all_', '')] = kwargs[key]
 
         return output

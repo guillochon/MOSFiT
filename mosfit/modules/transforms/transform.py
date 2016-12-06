@@ -14,10 +14,10 @@ class Transform(Module):
         return {}
 
     def set_times_lums(self, **kwargs):
-        self._times = kwargs['resttimes']
+        self._times = kwargs['rest_times']
         self._rest_t_explosion = kwargs['resttexplosion']
-        if 'densetimes' in kwargs:
-            self._dense_times = kwargs['densetimes']
+        if 'dense_times' in kwargs:
+            self._dense_times = kwargs['dense_times']
             self._dense_luminosities = kwargs['luminosities']
         elif min(self._times) > self._rest_t_explosion:
             self._dense_times = [self._rest_t_explosion] + self._times

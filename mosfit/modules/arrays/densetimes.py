@@ -18,13 +18,13 @@ class DenseTimes(Module):
             'n_times'] if 'n_times' in kwargs else self.N_TIMES
 
     def process(self, **kwargs):
-        self._rest_times = kwargs['resttimes']
+        self._rest_times = kwargs['rest_times']
         self._t_explosion = kwargs['texplosion']
 
         outputs = {}
         max_times = max(self._rest_times)
         if max_times > self._t_explosion:
-            outputs['densetimes'] = list(
+            outputs['dense_times'] = list(
                 sorted(
                     set([0.0] + [
                         x + self._t_explosion
@@ -34,5 +34,5 @@ class DenseTimes(Module):
                             num=self._n_times)
                     ] + self._rest_times)))
         else:
-            outputs['densetimes'] = self._rest_times
+            outputs['dense_times'] = self._rest_times
         return outputs

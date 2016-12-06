@@ -23,7 +23,7 @@ class AllTimes(Module):
                           kwargs['extra_instruments'], kwargs['extra_bands'],
                           [False for x in range(len(kwargs['extra_times']))])))
             )
-            obslist.sort(key=lambda x: x[0])
+            obslist.sort()
 
             (self._times, self._systems, self._instruments, self._bands,
              self._observed) = zip(*obslist)

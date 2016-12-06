@@ -22,7 +22,7 @@ class densecore(photosphere):
 
     def process(self, **kwargs):
         self._rest_t_explosion = kwargs['resttexplosion']
-        self._times = kwargs['resttimes']
+        self._times = kwargs['rest_times']
         self._luminosities = kwargs['luminosities']
         self._v_ejecta = kwargs['vejecta']
         self._m_ejecta = kwargs['mejecta']

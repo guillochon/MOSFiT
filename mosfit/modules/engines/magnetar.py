@@ -15,10 +15,10 @@ class Magnetar(Engine):
         super().__init__(**kwargs)
 
     def process(self, **kwargs):
-        if 'densetimes' in kwargs:
-            self._times = kwargs['densetimes']
+        if 'dense_times' in kwargs:
+            self._times = kwargs['dense_times']
         else:
-            self._times = kwargs['resttimes']
+            self._times = kwargs['rest_times']
         self._Pspin = kwargs['Pspin']
         self._Bfield = kwargs['Bfield']
         self._Mns = kwargs['Mns']

@@ -15,7 +15,7 @@ class RestTimes(Module):
         self._t_explosion = kwargs['texplosion']
 
         outputs = {}
-        outputs['resttimes'] = [
+        outputs['rest_times'] = [
             x / (1.0 + kwargs['redshift']) for x in self._times
         ]
         outputs['resttexplosion'] = self._t_explosion / (

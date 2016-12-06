@@ -31,10 +31,10 @@ class CSM(Engine):
         self._Esn = 3. * self._vph**2 * self._mejecta / 10.
         self._rest_t_explosion = kwargs['resttexplosion']
 
-        if 'densetimes' in kwargs:
-            self._times = kwargs['densetimes']
+        if 'dense_times' in kwargs:
+            self._times = kwargs['dense_times']
         else:
-            self._times = kwargs['resttimes']
+            self._times = kwargs['rest_times']
 
         self._g_n = (1.0 / (4.0 * np.pi * (self._n - self._delta)) * (
             2.0 * (5.0 - self._delta) * (self._n - 5.0) * self._Esn)**(
