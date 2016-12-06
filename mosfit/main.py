@@ -127,6 +127,13 @@ def main():
             "by default if no arguments are given."))
 
     parser.add_argument(
+        '--suffix',
+        '-s',
+        dest='suffix',
+        default='',
+        help=("Append custom string to output file name to prevent overwrite"))
+
+    parser.add_argument(
         '--num-walkers',
         '-N',
         dest='num_walkers',
@@ -324,7 +331,8 @@ def main():
         'travis': args.travis,
         'post_burn': args.post_burn,
         'smooth_times': args.smooth_times,
-        'extrapolate_time': args.extrapolate_time
+        'extrapolate_time': args.extrapolate_time,
+        'suffix': args.suffix
     }
     Fitter().fit_events(**fitargs)
 
