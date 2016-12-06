@@ -212,7 +212,8 @@ def main():
 
     args = parser.parse_args()
 
-    if len(args.extrapolate_time) == 0:
+    if (isinstance(args.extrapolate_time, list) and
+            len(args.extrapolate_time) == 0):
         args.extrapolate_time = 100.0
 
     changed_iterations = False
