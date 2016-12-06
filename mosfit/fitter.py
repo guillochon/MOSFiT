@@ -63,7 +63,8 @@ class Fitter():
                    wrap_length=100,
                    travis=False,
                    post_burn=500,
-                   smooth_times=-1):
+                   smooth_times=-1,
+                   extrapolate_time=0.0):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
@@ -196,7 +197,8 @@ class Fitter():
                         iterations=iterations,
                         fracking=fracking,
                         post_burn=post_burn,
-                        smooth_times=smooth_times)
+                        smooth_times=smooth_times,
+                        extrapolate_time=extrapolate_time)
 
                     self.fit_data(
                         event_name=self._event_name,
@@ -217,7 +219,8 @@ class Fitter():
                   iterations=2000,
                   fracking=True,
                   post_burn=500,
-                  smooth_times=-1):
+                  smooth_times=-1,
+                  extrapolate_time=0.0):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -230,7 +233,8 @@ class Fitter():
                     data,
                     req_key_values={'band': self._model._bands},
                     subtract_minimum_keys=['times'],
-                    smooth_times=smooth_times)
+                    smooth_times=smooth_times,
+                    extrapolate_time=extrapolate_time)
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
 

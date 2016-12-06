@@ -21,7 +21,8 @@ class Transient(Module):
                  all_data,
                  req_key_values={},
                  subtract_minimum_keys=[],
-                 smooth_times=-1):
+                 smooth_times=-1,
+                 extrapolate_time=0.0):
         self._all_data = all_data
         self._data = {}
         if not self._all_data:
@@ -101,7 +102,8 @@ class Transient(Module):
                 if o not in uniqueobs:
                     uniqueobs.append(o)
 
-            mint, maxt = min(self._data['times']), max(self._data['times'])
+            mint, maxt = (min(self._data['times']) - extrapolate_time,
+                          max(self._data['times']) + extrapolate_time)
             alltimes = list(
                 sorted(
                     set([x for x in self._data['times']] + (list(

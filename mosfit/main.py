@@ -101,11 +101,27 @@ def main():
         '-S',
         dest='smooth_times',
         type=int,
+        const=0,
         default=-1,
+        nargs='?',
+        action='store',
         help=("Add this many more fictitious observations between the first "
               "and last observed times. Setting this value to `0` will "
               "guarantee that all observed bands/instrument/system "
               "combinations have a point at all observed epochs."))
+
+    parser.add_argument(
+        '--extrapolate-time',
+        '-E',
+        dest='extrapolate_time',
+        type=float,
+        const=100.0,
+        default=0.0,
+        nargs='?',
+        action='store',
+        help=("Extend model light curves this many days before/after "
+              "first/last observation. `0.0` days if not set, `100.0` days "
+              "by default if set."))
 
     parser.add_argument(
         '--num-walkers',
@@ -300,7 +316,8 @@ def main():
         'wrap_length': width,
         'travis': args.travis,
         'post_burn': args.post_burn,
-        'smooth_times': args.smooth_times
+        'smooth_times': args.smooth_times,
+        'extrapolate_time': args.extrapolate_time
     }
     Fitter().fit_events(**fitargs)
 
