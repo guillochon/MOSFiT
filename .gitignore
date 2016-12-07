@@ -2,6 +2,8 @@ build/
 cache/
 products/
 dist/
+mosfit/modules/observables/filters/*.dat
+mosfit/modules/observables/filters/*.xml
 /models/
 /jupyter/
 MANIFEST

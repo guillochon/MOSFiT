@@ -48,27 +48,27 @@ class Filters(Module):
                                 band_list[-1]['instruments'] = perm[1]
                                 band_list[-1]['bandsets'] = perm[2]
                                 band_list[-1]['name'] = bnd
-                                if not band_list[-1].get('offset', ''):
-                                    band_list[-1]['offset'] = 0.0
 
         self._unique_bands = band_list
         self._band_insts = [x['instruments'] for x in self._unique_bands]
         self._band_bsets = [x['bandsets'] for x in self._unique_bands]
         self._band_systs = [x['systems'] for x in self._unique_bands]
         self._band_names = [x['name'] for x in self._unique_bands]
-        self._band_offsets = [x['offset'] for x in self._unique_bands]
         self._n_bands = len(self._unique_bands)
         self._band_wavelengths = [[] for i in range(self._n_bands)]
         self._transmissions = [[] for i in range(self._n_bands)]
         self._min_waves = [0.0] * self._n_bands
         self._max_waves = [0.0] * self._n_bands
         self._filter_integrals = [0.0] * self._n_bands
+        self._band_offsets = [0.0] * self._n_bands
 
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
+                systems = ['AB']
+                zps = [0.0]
                 if 'SVO' in band:
                     photsystem = band['SVO'].split('/')[-1]
-                    systems = ['AB']
+                    zpfluxes = []
                     if photsystem not in systems:
                         systems.append(photsystem)
                     for sys in systems:
@@ -85,7 +85,8 @@ class Filters(Module):
                                 svopath))
                             try:
                                 response = urllib.request.urlopen(
-                                    'http://svo2.cab.inta-csic.es/svo/theory/fps3/'
+                                    'http://svo2.cab.inta-csic.es'
+                                    '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
                                     timeout=10)
                             except:
@@ -98,6 +99,17 @@ class Filters(Module):
 
                         if os.path.exists(xml_path):
                             vo_tab = voparse(xml_path)
+                            # need to account for zeropoint type
+                            for resource in vo_tab.resources:
+                                for param in resource.params:
+                                    if param.name == 'ZeroPoint':
+                                        zpfluxes.append(param.value)
+                                        if sys != 'AB':
+                                            # 0th element is AB flux
+                                            zps.append(2.5 * np.log10(
+                                                zpfluxes[0] / zpfluxes[-1]))
+                                    else:
+                                        continue
                             vo_dat = vo_tab.get_first_table().array
                             vo_string = '\n'.join([
                                 ' '.join([str(y) for y in x]) for x in vo_dat
@@ -117,8 +129,10 @@ class Filters(Module):
                         rows.append([float(x) for x in row[:2]])
                 for rank in range(1, self._pool.size + 1):
                     self._pool.comm.send(rows, dest=rank, tag=3)
+                    self._pool.comm.send(zps, dest=rank, tag=4)
             else:
                 rows = self._pool.comm.recv(source=0, tag=3)
+                zps = self._pool.comm.recv(source=0, tag=4)
 
             self._band_wavelengths[i], self._transmissions[i] = list(
                 map(list, zip(*rows)))
@@ -126,6 +140,14 @@ class Filters(Module):
             self._max_waves[i] = max(self._band_wavelengths[i])
             self._filter_integrals[i] = np.trapz(self._transmissions[i],
                                                  self._band_wavelengths[i])
+
+            if 'offset' in band:
+                self._band_offsets[i] = band['offset']
+            elif 'SVO' in band:
+                self._band_offsets[i] = zps[-1]
+
+        if self._pool.is_master():
+            print(list(zip(*(self._band_names, self._band_offsets))))
 
     def find_band_index(self, name, instrument='', bandset='', system=''):
         for bi, band in enumerate(self._unique_bands):

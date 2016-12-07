@@ -11,66 +11,61 @@
         ],
         "filters":{
             "U":{
-                "path":"bess_u.dat",
-                "offset":0.79
+                "SVO":"Generic/Bessell.U/Vega"
             },
             "B":{
-                "path":"bess_b.dat",
-                "offset":-0.09
+                "SVO":"Generic/Bessell.B/Vega"
             },
             "V":{
-                "path":"bess_v.dat",
-                "offset":0.02
+                "SVO":"Generic/Bessell.V/Vega"
             },
             "R":{
-                "path":"bess_r.dat",
-                "offset":0.21
+                "SVO":"Generic/Bessell.R/Vega"
             },
             "I":{
-                "path":"bess_i.dat",
-                "offset":0.45
+                "SVO":"Generic/Bessell.I/Vega"
             },
             "J":{
-                "path":"J.dat",
-                "offset":0.91
+                "SVO":"2MASS/2MASS.J/Vega"
             },
             "H":{
-                "path":"H.dat",
-                "offset":1.39
+                "SVO":"2MASS/2MASS.H/Vega"
             },
             "K":{
-                "path":"K.dat",
-                "offset":1.85
+                "SVO":"2MASS/2MASS.Ks/Vega"
+            },
+            "Ks":{
+                "SVO":"2MASS/2MASS.Ks/Vega"
             },
             "u":{
-                "path":"sdss_u_atm.dat"
+                "SVO":"SLOAN/SDSS.u/AB"
             },
             "g":{
-                "path":"sdss_g_atm.dat"
+                "SVO":"SLOAN/SDSS.g/AB"
             },
             "r":{
-                "path":"sdss_r_atm.dat"
+                "SVO":"SLOAN/SDSS.r/AB"
             },
             "i":{
-                "path":"sdss_i_atm.dat"
+                "SVO":"SLOAN/SDSS.i/AB"
             },
             "z":{
-                "path":"sdss_z_atm.dat"
+                "SVO":"SLOAN/SDSS.z/AB"
             },
             "u'":{
-                "path":"sdss_u_atm.dat"
+                "SVO":"SLOAN/SDSS.u/AB"
             },
             "g'":{
-                "path":"sdss_g_atm.dat"
+                "SVO":"SLOAN/SDSS.g/AB"
             },
             "r'":{
-                "path":"sdss_r_atm.dat"
+                "SVO":"SLOAN/SDSS.r/AB"
             },
             "i'":{
-                "path":"sdss_i_atm.dat"
+                "SVO":"SLOAN/SDSS.i/AB"
             },
             "z'":{
-                "path":"sdss_z_atm.dat"
+                "SVO":"SLOAN/SDSS.z/AB"
             }
         },
         "note":"offset values from http://swift.gsfc.nasa.gov/analysis/uvot_digest/zeropts.html"
@@ -126,32 +121,37 @@
             "UVOT"
         ],
         "bandsets":[
-            ""
+            "",
+            "Swift",
+            "UVOT"
         ],
         "filters":{
             "U":{
-                "path":"UVOT_u.dat",
-                "offset":1.02
+                "SVO":"Swift/UVOT.U/Vega"
             },
             "B":{
-                "path":"UVOT_b.dat",
-                "offset":-0.13
+                "SVO":"Swift/UVOT.B/Vega"
             },
             "V":{
-                "path":"UVOT_v.dat",
-                "offset":-0.01
+                "SVO":"Swift/UVOT.V/Vega"
+            },
+            "UVW1":{
+                "SVO":"Swift/UVOT.UVW1/Vega"
+            },
+            "UVW2":{
+                "SVO":"Swift/UVOT.UVW2/Vega"
+            },
+            "UVM2":{
+                "SVO":"Swift/UVOT.UVM2/Vega"
             },
             "W1":{
-                "path":"UVOT_uvw1.dat",
-                "offset":1.51
+                "SVO":"Swift/UVOT.UVW1/Vega"
             },
             "W2":{
-                "path":"UVOT_uvw2.dat",
-                "offset":1.73
+                "SVO":"Swift/UVOT.UVW2/Vega"
             },
             "M2":{
-                "path":"UVOT_uvm2.dat",
-                "offset":1.69
+                "SVO":"Swift/UVOT.UVM2/Vega"
             }
         }
     },
@@ -192,6 +192,9 @@
     {
         "systems":[
             "Vega"
+        ],
+        "bandsets":[
+            "Johnson"
         ],
         "filters":{
             "U":{
