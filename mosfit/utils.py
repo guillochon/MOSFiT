@@ -72,3 +72,11 @@ def prompt(text, wrap_length=100, kind='bool'):
 
 def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+def is_master():
+    try:
+        from mpi4py import MPI
+        return MPI.COMM_WORLD.Get_rank() == 0
+    except ImportError:
+        return True
