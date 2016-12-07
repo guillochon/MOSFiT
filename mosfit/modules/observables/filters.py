@@ -155,6 +155,11 @@ class Filters(Module):
                     bandset in self._band_bsets[bi] and
                     system in self._band_systs[bi]):
                 return bi
+            if (name == band['name'] and instrument in self._band_insts[bi] and
+                    system in self._band_systs[bi]):
+                return bi
+            if (name == band['name'] and system in self._band_systs[bi]):
+                return bi
             if (name == band['name'] and '' in self._band_insts[bi] and
                     '' in self._band_bsets[bi] and '' in self._band_systs[bi]):
                 return bi

@@ -1,14 +1,5 @@
 [
     {
-        "systems":[
-            ""
-        ],
-        "instruments":[
-            ""
-        ],
-        "bandsets":[
-            ""
-        ],
         "filters":{
             "U":{
                 "SVO":"Generic/Bessell.U/Vega"
@@ -67,18 +58,45 @@
             "z'":{
                 "SVO":"SLOAN/SDSS.z/AB"
             }
-        },
-        "note":"offset values from http://swift.gsfc.nasa.gov/analysis/uvot_digest/zeropts.html"
+        }
     },
     {
         "systems":[
+            "",
+            "Vega"
+        ],
+        "bandsets":[
+            "Bessell"
+        ],
+        "filters":{
+            "U":{
+                "SVO":"Generic/Bessell.U/Vega"
+            },
+            "B":{
+                "SVO":"Generic/Bessell.B/Vega"
+            },
+            "V":{
+                "SVO":"Generic/Bessell.V/Vega"
+            },
+            "R":{
+                "SVO":"Generic/Bessell.R/Vega"
+            },
+            "I":{
+                "SVO":"Generic/Bessell.I/Vega"
+            }
+        }
+    },
+    {
+        "systems":[
+            "AB",
             "SDSS"
         ],
         "instruments":[
             "SDSS"
         ],
         "bandsets":[
-            ""
+            "",
+            "SDSS"
         ],
         "filters":{
             "u":{
@@ -157,40 +175,6 @@
     },
     {
         "systems":[
-            "AB",
-            "Johnson",
-            "Bessel"
-        ],
-        "filters":{
-            "U":{
-                "path":"bess_u.dat"
-            },
-            "B":{
-                "path":"bess_b.dat"
-            },
-            "V":{
-                "path":"bess_v.dat"
-            },
-            "R":{
-                "path":"bess_r.dat"
-            },
-            "I":{
-                "path":"bess_i.dat"
-            },
-            "J":{
-                "path":"J.dat"
-            },
-            "H":{
-                "path":"H.dat"
-            },
-            "K":{
-                "path":"K.dat"
-            }
-        },
-        "note":"From http://www.astronomy.ohio-state.edu/~martini/usefuldata.html"
-    },
-    {
-        "systems":[
             "Vega"
         ],
         "bandsets":[
@@ -219,5 +203,79 @@
                 "SVO":"Generic/Johnson.M/Vega"
             }
         }
-    }
+    },
+    {
+        "systems":[
+            "AB"
+        ],
+        "instruments":[
+            "",
+            "PS1",
+            "GPC"
+        ],
+        "bandsets":[
+            "",
+            "PS1",
+            "GPC"
+        ],
+        "filters":{
+            "g":{
+                "SVO":"PAN-STARRS/PS1.g/AB"
+            },
+            "r":{
+                "SVO":"PAN-STARRS/PS1.r/AB"
+            },
+            "i":{
+                "SVO":"PAN-STARRS/PS1.i/AB"
+            },
+            "z":{
+                "SVO":"PAN-STARRS/PS1.z/AB"
+            },
+            "y":{
+                "SVO":"PAN-STARRS/PS1.y/AB"
+            },
+            "w":{
+                "SVO":"PAN-STARRS/PS1.w/AB"
+            },
+            "gp1":{
+                "SVO":"PAN-STARRS/PS1.g/AB"
+            },
+            "rp1":{
+                "SVO":"PAN-STARRS/PS1.r/AB"
+            },
+            "ip1":{
+                "SVO":"PAN-STARRS/PS1.i/AB"
+            },
+            "zp1":{
+                "SVO":"PAN-STARRS/PS1.z/AB"
+            },
+            "yp1":{
+                "SVO":"PAN-STARRS/PS1.y/AB"
+            },
+            "wp1":{
+                "SVO":"PAN-STARRS/PS1.w/AB"
+            },
+            "gP1":{
+                "SVO":"PAN-STARRS/PS1.g/AB"
+            },
+            "rP1":{
+                "SVO":"PAN-STARRS/PS1.r/AB"
+            },
+            "iP1":{
+                "SVO":"PAN-STARRS/PS1.i/AB"
+            },
+            "zP1":{
+                "SVO":"PAN-STARRS/PS1.z/AB"
+            },
+            "yP1":{
+                "SVO":"PAN-STARRS/PS1.y/AB"
+            },
+            "wP1":{
+                "SVO":"PAN-STARRS/PS1.w/AB"
+            },
+            "open":{
+                "SVO":"PAN-STARRS/PS1.open/AB"
+            }
+        }
+    },
 ]
