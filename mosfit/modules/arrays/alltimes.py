@@ -27,13 +27,13 @@ class AllTimes(Module):
             )
             obslist.sort()
 
-            (self._times, self._systems, self._instruments, self._bands,
-             self._observed) = zip(*obslist)
+            (self._times, self._systems, self._instruments, self._bandsets,
+             self._bands, self._observed) = zip(*obslist)
         else:
             self._times = kwargs['times']
             self._systems = kwargs['systems']
-            self._bandsets = kwargs['bandsets']
             self._instruments = kwargs['instruments']
+            self._bandsets = kwargs['bandsets']
             self._bands = kwargs['bands']
             self._observed = [True for x in kwargs['times']]
 
