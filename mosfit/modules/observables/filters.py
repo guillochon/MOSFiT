@@ -146,9 +146,6 @@ class Filters(Module):
             elif 'SVO' in band:
                 self._band_offsets[i] = zps[-1]
 
-        if self._pool.is_master():
-            print(list(zip(*(self._band_names, self._band_offsets))))
-
     def find_band_index(self, name, instrument='', bandset='', system=''):
         for bi, band in enumerate(self._unique_bands):
             if (name == band['name'] and instrument in self._band_insts[bi] and
