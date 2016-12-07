@@ -67,38 +67,46 @@ class Filters(Module):
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
                 if 'SVO' in band:
-                    path = os.path.join(dir_path, 'filters',
-                                        band['SVO'].replace('/', '_') + '.dat')
+                    photsystem = band['SVO'].split('/')[-1]
+                    systems = ['AB']
+                    if photsystem not in systems:
+                        systems.append(photsystem)
+                    for sys in systems:
+                        svopath = '/'.join(band['SVO'].split('/')
+                                           [:-1]) + '/' + sys
+                        path = os.path.join(dir_path, 'filters',
+                                            svopath.replace('/', '_') + '.dat')
 
-                    xml_path = os.path.join(
-                        dir_path, 'filters',
-                        band['SVO'].replace('/', '_') + '.xml')
-                    if not os.path.exists(xml_path):
-                        print('Downloading bandpass {} from SVO.'.format(band[
-                            'SVO']))
-                        try:
-                            response = urllib.request.urlopen(
-                                'http://svo2.cab.inta-csic.es/svo/theory/fps3/'
-                                'fps.php?PhotCalID=' + band['SVO'],
-                                timeout=10)
-                        except:
-                            print_inline(
-                                'Warning: Could not download SVO filter (are '
-                                'you online?), using cached filter.')
+                        xml_path = os.path.join(
+                            dir_path, 'filters',
+                            svopath.replace('/', '_') + '.xml')
+                        if not os.path.exists(xml_path):
+                            print('Downloading bandpass {} from SVO.'.format(
+                                svopath))
+                            try:
+                                response = urllib.request.urlopen(
+                                    'http://svo2.cab.inta-csic.es/svo/theory/fps3/'
+                                    'fps.php?PhotCalID=' + svopath,
+                                    timeout=10)
+                            except:
+                                print_inline(
+                                    'Warning: Could not download SVO filter (are '
+                                    'you online?), using cached filter.')
+                            else:
+                                with open(xml_path, 'wb') as f:
+                                    shutil.copyfileobj(response, f)
+
+                        if os.path.exists(xml_path):
+                            vo_tab = voparse(xml_path)
+                            vo_dat = vo_tab.get_first_table().array
+                            vo_string = '\n'.join([
+                                ' '.join([str(y) for y in x]) for x in vo_dat
+                            ])
+                            with open(path, 'w') as f:
+                                f.write(vo_string)
                         else:
-                            with open(xml_path, 'wb') as f:
-                                shutil.copyfileobj(response, f)
-
-                    if os.path.exists(xml_path):
-                        vo_tab = voparse(xml_path)
-                        vo_dat = vo_tab.get_first_table().array
-                        vo_string = '\n'.join(
-                            [' '.join([str(y) for y in x]) for x in vo_dat])
-                        with open(path, 'w') as f:
-                            f.write(vo_string)
-                    else:
-                        print('Error: Could not read SVO filter!')
-                        raise RuntimeError
+                            print('Error: Could not read SVO filter!')
+                            raise RuntimeError
                 else:
                     path = band['path']
 
