@@ -32,7 +32,6 @@ script:
     - echo "travis_fold:start:FIT Fitting test data"
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le --travis -i 1 -f 1 -p 0
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le.json --travis -i 1 --no-fracking -m magnetar
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m csm
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0
     - echo "travis_fold:end:FIT Fitting test data done"
