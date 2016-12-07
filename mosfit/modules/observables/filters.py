@@ -67,11 +67,11 @@ class Filters(Module):
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
                 if 'SVO' in band:
-                    path = os.path.join(dir_path, '..', '..', 'cache',
+                    path = os.path.join(dir_path, 'filters',
                                         band['SVO'].replace('/', '_') + '.dat')
 
                     xml_path = os.path.join(
-                        dir_path, '..', '..', 'cache',
+                        dir_path, 'filters',
                         band['SVO'].replace('/', '_') + '.xml')
                     if not os.path.exists(xml_path):
                         print('Downloading bandpass {} from SVO.'.format(band[
