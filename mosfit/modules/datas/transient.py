@@ -114,8 +114,8 @@ class Transient(Module):
                     uniqueobs.append(o)
 
             minet, maxet = (tuple(extrapolate_time)
-                            if isinstance(extrapolate_time, list) else
-                            (extrapolate_time, extrapolate_time))
+                            if len(extrapolate_time) == 2 else
+                            (extrapolate_time[0], extrapolate_time[0]))
             mint, maxt = (min(self._data['times']) - minet,
                           max(self._data['times']) + maxet)
             alltimes = list(
