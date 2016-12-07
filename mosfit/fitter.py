@@ -65,7 +65,8 @@ class Fitter():
                    travis=False,
                    post_burn=500,
                    smooth_times=-1,
-                   extrapolate_time=0.0):
+                   extrapolate_time=0.0,
+                   suffix=''):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
@@ -214,7 +215,8 @@ class Fitter():
                         fracking=fracking,
                         frack_step=frack_step,
                         post_burn=post_burn,
-                        pool=pool)
+                        pool=pool,
+                        suffix=suffix)
 
                     if pool.is_master():
                         pool.close()
@@ -272,7 +274,8 @@ class Fitter():
                  num_temps=2,
                  fracking=True,
                  post_burn=500,
-                 pool=''):
+                 pool='',
+                 suffix=''):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -439,7 +442,8 @@ class Fitter():
         with open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                   'w') as flast, open(
                       os.path.join(model.MODEL_OUTPUT_DIR,
-                                   self._event_name + '.json'), 'w') as f:
+                                   self._event_name + '_' + suffix +
+                                   '.json'), 'w') as f:
             json.dump(walkers_out, flast, indent='\t', separators=(',', ':'))
             json.dump(walkers_out, f, indent='\t', separators=(',', ':'))
 

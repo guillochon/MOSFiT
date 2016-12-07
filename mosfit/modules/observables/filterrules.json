@@ -87,34 +87,34 @@
         ],
         "filters":{
             "u":{
-                "SVO":"SLOAN/SDSS.u/ST"
+                "SVO":"SLOAN/SDSS.u/AB"
             },
             "g":{
-                "SVO":"SLOAN/SDSS.g/ST"
+                "SVO":"SLOAN/SDSS.g/AB"
             },
             "r":{
-                "SVO":"SLOAN/SDSS.r/ST"
+                "SVO":"SLOAN/SDSS.r/AB"
             },
             "i":{
-                "SVO":"SLOAN/SDSS.i/ST"
+                "SVO":"SLOAN/SDSS.i/AB"
             },
             "z":{
-                "SVO":"SLOAN/SDSS.z/ST"
+                "SVO":"SLOAN/SDSS.z/AB"
             },
             "u'":{
-                "SVO":"SLOAN/SDSS.u/ST"
+                "SVO":"SLOAN/SDSS.u/AB"
             },
             "g'":{
-                "SVO":"SLOAN/SDSS.g/ST"
+                "SVO":"SLOAN/SDSS.g/AB"
             },
             "r'":{
-                "SVO":"SLOAN/SDSS.r/ST"
+                "SVO":"SLOAN/SDSS.r/AB"
             },
             "i'":{
-                "SVO":"SLOAN/SDSS.i/ST"
+                "SVO":"SLOAN/SDSS.i/AB"
             },
             "z'":{
-                "SVO":"SLOAN/SDSS.z/ST"
+                "SVO":"SLOAN/SDSS.z/AB"
             }
         }
     },
@@ -130,15 +130,15 @@
         ],
         "filters":{
             "U":{
-                "path":"bess_u.dat",
+                "path":"UVOT_u.dat",
                 "offset":1.02
             },
             "B":{
-                "path":"bess_b.dat",
+                "path":"UVOT_b.dat",
                 "offset":-0.13
             },
             "V":{
-                "path":"bess_v.dat",
+                "path":"UVOT_v.dat",
                 "offset":-0.01
             },
             "W1":{
