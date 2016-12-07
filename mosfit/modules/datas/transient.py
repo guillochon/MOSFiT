@@ -138,7 +138,7 @@ class Transient(Module):
 
             if len(obslist):
                 (self._data['extra_times'], self._data['extra_systems'],
-                 self._data['extra_instruments'], self._data['exta_bandsets'],
+                 self._data['extra_instruments'], self._data['extra_bandsets'],
                  self._data['extra_bands']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
