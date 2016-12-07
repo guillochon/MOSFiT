@@ -25,7 +25,8 @@ class Transient(Module):
                  extrapolate_time=0.0,
                  band_list=[],
                  band_systems=[],
-                 band_instruments=[]):
+                 band_instruments=[],
+                 band_bandsets=[]):
         self._all_data = all_data
         self._data = {}
         if not self._all_data:
@@ -98,13 +99,14 @@ class Transient(Module):
         if 'times' in self._data and smooth_times >= 0:
             obs = list(
                 zip(*(self._data['systems'], self._data['instruments'],
-                      self._data['bands'])))
+                      self._data['bandsets'], self._data['bands'])))
             if len(band_list):
                 obs.extend(
                     list(
                         zip(*(band_systems
                               if len(band_systems) else [''], band_instruments
-                              if len(band_instruments) else [''], band_list))))
+                              if len(band_instruments) else [''], band_bandsets
+                              if len(band_bandsets) else [''], band_list))))
 
             uniqueobs = []
             for o in obs:
@@ -122,12 +124,13 @@ class Transient(Module):
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
             currobslist = list(
                 zip(*(self._data['times'], self._data['systems'], self._data[
-                    'instruments'], self._data['bands'])))
+                    'instruments'], self._data['bandsets'], self._data['bands']
+                      )))
 
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = (t, o[0], o[1], o[2])
+                    newobs = (t, o[0], o[1], o[2], o[3])
                     if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 
@@ -135,7 +138,7 @@ class Transient(Module):
 
             if len(obslist):
                 (self._data['extra_times'], self._data['extra_systems'],
-                 self._data['extra_instruments'],
+                 self._data['extra_instruments'], self._data['exta_bandsets'],
                  self._data['extra_bands']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:

@@ -6,6 +6,9 @@
         "instruments":[
             ""
         ],
+        "bandsets":[
+            ""
+        ],
         "filters":{
             "U":{
                 "path":"bess_u.dat",
@@ -79,6 +82,9 @@
         "instruments":[
             "SDSS"
         ],
+        "bandsets":[
+            ""
+        ],
         "filters":{
             "u":{
                 "SVO":"SLOAN/SDSS.u/ST"
@@ -118,6 +124,9 @@
         ],
         "instruments":[
             "UVOT"
+        ],
+        "bandsets":[
+            ""
         ],
         "filters":{
             "U":{

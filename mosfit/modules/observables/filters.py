@@ -24,9 +24,11 @@ class Filters(Module):
         bands = kwargs.get('bands', '')
         systems = kwargs.get('systems', '')
         instruments = kwargs.get('instruments', '')
+        bandsets = kwargs.get('bandsets', '')
         bands = listify(bands)
         systems = listify(systems)
         instruments = listify(instruments)
+        bandsets = listify(bandsets)
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
@@ -34,21 +36,24 @@ class Filters(Module):
             filterrules = json.loads(f.read(), object_pairs_hook=OrderedDict)
             for bi, band in enumerate(bands):
                 for rule in filterrules:
-                    sysinstperms = [[x, y]
-                                    for x in rule.get("systems", [''])
-                                    for y in rule.get("instruments", [''])]
+                    sysinstperms = [[x, y, z]
+                                    for x in rule.get('systems', [''])
+                                    for y in rule.get('instruments', [''])
+                                    for z in rule.get('bandsets', [''])]
                     for bnd in rule.get('filters', []):
                         if band == bnd or band == '':
                             for perm in sysinstperms:
                                 band_list.append(rule['filters'][bnd])
                                 band_list[-1]['systems'] = perm[0]
                                 band_list[-1]['instruments'] = perm[1]
+                                band_list[-1]['bandsets'] = perm[2]
                                 band_list[-1]['name'] = bnd
                                 if not band_list[-1].get('offset', ''):
                                     band_list[-1]['offset'] = 0.0
 
         self._unique_bands = band_list
         self._band_insts = [x['instruments'] for x in self._unique_bands]
+        self._band_bsets = [x['bandsets'] for x in self._unique_bands]
         self._band_systs = [x['systems'] for x in self._unique_bands]
         self._band_names = [x['name'] for x in self._unique_bands]
         self._band_offsets = [x['offset'] for x in self._unique_bands]
@@ -114,13 +119,14 @@ class Filters(Module):
             self._filter_integrals[i] = np.trapz(self._transmissions[i],
                                                  self._band_wavelengths[i])
 
-    def find_band_index(self, name, instrument='', system=''):
+    def find_band_index(self, name, instrument='', bandset='', system=''):
         for bi, band in enumerate(self._unique_bands):
             if (name == band['name'] and instrument in self._band_insts[bi] and
+                    bandset in self._band_bsets[bi] and
                     system in self._band_systs[bi]):
                 return bi
             if (name == band['name'] and '' in self._band_insts[bi] and
-                    '' in self._band_systs[bi]):
+                    '' in self._band_bsets[bi] and '' in self._band_systs[bi]):
                 return bi
         raise ValueError('Cannot find band index!')
 
@@ -135,6 +141,7 @@ class Filters(Module):
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
+        self._bandsets = kwargs['bandsets']
         eff_fluxes = []
         offsets = []
         for li, lum in enumerate(self._luminosities):

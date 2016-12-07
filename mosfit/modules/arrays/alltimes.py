@@ -17,11 +17,12 @@ class AllTimes(Module):
             obslist = (
                 list(
                     zip(*(kwargs['times'], kwargs['systems'], kwargs[
-                        'instruments'], kwargs['bands'],
+                        'instruments'], kwargs['bandsets'], kwargs['bands'],
                           [True for x in range(len(kwargs['times']))]))) +
                 list(
-                    zip(*(kwargs['extra_times'], kwargs['extra_systems'],
-                          kwargs['extra_instruments'], kwargs['extra_bands'],
+                    zip(*(kwargs['extra_times'], kwargs[
+                        'extra_systems'], kwargs['extra_instruments'], kwargs[
+                            'extra_bandsets'], kwargs['extra_bands'],
                           [False for x in range(len(kwargs['extra_times']))])))
             )
             obslist.sort()
@@ -31,6 +32,7 @@ class AllTimes(Module):
         else:
             self._times = kwargs['times']
             self._systems = kwargs['systems']
+            self._bandsets = kwargs['bandsets']
             self._instruments = kwargs['instruments']
             self._bands = kwargs['bands']
             self._observed = [True for x in kwargs['times']]

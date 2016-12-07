@@ -88,6 +88,14 @@ def main():
               "in `--band-list`."))
 
     parser.add_argument(
+        '--band-bandsets',
+        dest='band_bandsets',
+        default=[],
+        nargs='+',
+        help=("List of bandsets corresponding to the bands listed "
+              "in `--band-list`."))
+
+    parser.add_argument(
         '--iterations',
         '-i',
         dest='iterations',
@@ -314,6 +322,7 @@ def main():
         'band_list': args.band_list,
         'band_systems': args.band_systems,
         'band_instruments': args.band_instruments,
+        'band_bandsets': args.band_bandsets,
         'iterations': args.iterations,
         'num_walkers': args.num_walkers,
         'num_temps': args.num_temps,

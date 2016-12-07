@@ -54,6 +54,7 @@ class Fitter():
                    band_list=[],
                    band_systems=[],
                    band_instruments=[],
+                   band_bandsets=[],
                    iterations=1000,
                    num_walkers=50,
                    num_temps=2,
@@ -187,7 +188,8 @@ class Fitter():
                             'plot_points': plot_points,
                             'band_list': band_list,
                             'band_systems': band_systems,
-                            'band_instruments': band_instruments
+                            'band_instruments': band_instruments,
+                            'band_bandsets': band_bandsets
                         }
                         data = self.generate_dummy_data(**gen_args)
 
@@ -201,7 +203,8 @@ class Fitter():
                         extrapolate_time=extrapolate_time,
                         band_list=band_list,
                         band_systems=band_systems,
-                        band_instruments=band_instruments)
+                        band_instruments=band_instruments,
+                        band_bandsets=band_bandsets)
 
                     self.fit_data(
                         event_name=self._event_name,
@@ -226,7 +229,8 @@ class Fitter():
                   extrapolate_time=0.0,
                   band_list=[],
                   band_systems=[],
-                  band_instruments=[]):
+                  band_instruments=[],
+                  band_bandsets=[]):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -243,7 +247,8 @@ class Fitter():
                     extrapolate_time=extrapolate_time,
                     band_list=band_list,
                     band_systems=band_systems,
-                    band_instruments=band_instruments)
+                    band_instruments=band_instruments,
+                    band_bandsets=band_bandsets)
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
 
@@ -446,7 +451,8 @@ class Fitter():
                             plot_points=100,
                             band_list=[],
                             band_systems=[],
-                            band_instruments=[]):
+                            band_instruments=[],
+                            band_bandsets=[]):
         time_list = np.linspace(0.0, max_time, plot_points)
         band_list_all = ['V'] if len(band_list) == 0 else band_list
         times = np.repeat(time_list, len(band_list_all))
@@ -458,10 +464,13 @@ class Fitter():
             band_instruments = [
                 band_instruments for x in range(len(band_list_all))
             ]
+        if isinstance(band_bandsets, str):
+            band_bandsets = [band_bandsets for x in range(len(band_list_all))]
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val for x in range(len(band_list_all) - len(band_systems))
+                rep_val
+                for x in range(len(band_list_all) - len(band_systems))
             ]
         if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
@@ -470,10 +479,17 @@ class Fitter():
                 rep_val
                 for x in range(len(band_list_all) - len(band_instruments))
             ]
+        if len(band_bandsets) < len(band_list_all):
+            rep_val = '' if len(band_bandsets) == 0 else band_bandsets[-1]
+            band_bandsets = band_bandsets + [
+                rep_val
+                for x in range(len(band_list_all) - len(band_bandsets))
+            ]
 
         bands = [i for s in [band_list_all for x in time_list] for i in s]
         systs = [i for s in [band_systems for x in time_list] for i in s]
         insts = [i for s in [band_instruments for x in time_list] for i in s]
+        bsets = [i for s in [band_bandsets for x in time_list] for i in s]
 
         data = {name: {'photometry': []}}
         for ti, tim in enumerate(times):
@@ -491,6 +507,8 @@ class Fitter():
                 photodict['system'] = systs[ti]
             if insts[ti]:
                 photodict['instrument'] = insts[ti]
+            if bsets[ti]:
+                photodict['instrument'] = bsets[ti]
             data[name]['photometry'].append(photodict)
 
         return data

@@ -10,6 +10,7 @@
                 "e_lower_magnitude":["optional", "numeric"],
                 "band":"required",
                 "instrument":"optional",
+                "bandset":"optional",
                 "system":"optional",
                 "upperlimit":["optional","boolean"],
                 "includeshost":"exclude",
