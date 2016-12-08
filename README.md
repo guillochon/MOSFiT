@@ -32,7 +32,7 @@ python -m mosfit -e LSQ12dlf
 Multiple events can be fit in succession by passing a list of names separated by spaces (names containing spaces can be specified using quotation marks):
 
 ```bash
-python -m mosfit -e LSQ12dlf LSQ12dlf "SDSS-II SN 5751"
+python -m mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 ```
 
 MOSFiT is parallelized and can be run in parallel by prepending `mpirun -np #`, where `#` is the number of processors in your machine +1 for the master process. So, if you computer has 4 processors, the above command would be:
