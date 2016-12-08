@@ -101,7 +101,8 @@
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion"
+            "diffusion",
+            "temperature"
         ]
     },
     "blackbody_slsn":{
@@ -110,7 +111,6 @@
             "texplosion",
             "redshift",
             "temperature_floor",
-            "temperaturephot",
             "radiusphot"
         ]
     },
