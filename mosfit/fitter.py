@@ -148,7 +148,8 @@ class Fitter():
                         with open(path, 'r') as f:
                             data = json.loads(
                                 f.read(), object_pairs_hook=OrderedDict)
-                        print_wrapped('Event file: ' + path, self._wrap_length)
+                        print_wrapped('Event file:', self._wrap_length)
+                        print_wrapped('  ' + path, self._wrap_length)
                     else:
                         print_wrapped(
                             'Error: Could not find data for `{}` locally or '
@@ -206,7 +207,8 @@ class Fitter():
                         band_list=band_list,
                         band_systems=band_systems,
                         band_instruments=band_instruments,
-                        band_bandsets=band_bandsets)
+                        band_bandsets=band_bandsets,
+                        pool=pool)
 
                     self.fit_data(
                         event_name=self._event_name,
@@ -233,7 +235,8 @@ class Fitter():
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
-                  band_bandsets=[]):
+                  band_bandsets=[],
+                  pool=''):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -258,8 +261,24 @@ class Fitter():
         self._model.determine_free_parameters(fixed_parameters)
 
         # Run through once to set all inits
-        self._model.likelihood(
-            [0.0 for x in range(self._model._num_free_parameters)])
+        outputs = self._model.run_stack(
+            [0.0 for x in range(self._model._num_free_parameters)],
+            root='objective')
+
+        # Collect observed band info
+        if pool.is_master() and 'filters' in self._model._modules:
+            print_wrapped('Bands being used for current transient:')
+            bis = []
+            for oi, obs in enumerate(outputs['observed']):
+                if obs:
+                    bis.append(self._model._modules['filters'].find_band_index(
+                        outputs['all_bands'][oi],
+                        system=outputs['all_systems'][oi],
+                        instrument=outputs['all_instruments'][oi]))
+            bis = list(set(bis))
+            svonames = list(sorted(['  ' + self._model._modules['filters']
+                          ._unique_bands[bi]['SVO'] for bi in bis]))
+            print('\n'.join(svonames))
 
         self._event_name = event_name
         self._emcee_est_t = 0.0

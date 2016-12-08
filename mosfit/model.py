@@ -93,9 +93,12 @@ class Model:
             raise ValueError('Could not find parameter file!')
 
         if self._is_master:
-            print_wrapped('Basic model file: ' + basic_model_path, wrap_length)
-            print_wrapped('Model file: ' + model_path, wrap_length)
-            print_wrapped('Parameter file: ' + pp + '\n', wrap_length)
+            print_wrapped('Basic model file:', wrap_length)
+            print_wrapped('  ' + basic_model_path, wrap_length)
+            print_wrapped('Model file:', wrap_length)
+            print_wrapped('  ' + model_path, wrap_length)
+            print_wrapped('Parameter file:', wrap_length)
+            print_wrapped('  ' + pp + '\n', wrap_length)
 
         with open(pp, 'r') as f:
             self._parameter_json = json.loads(
