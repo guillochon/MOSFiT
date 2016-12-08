@@ -1,5 +1,3 @@
-from math import isnan
-
 import numexpr as ne
 import numpy as np
 from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, DAY_CGS
@@ -62,7 +60,7 @@ class Diffusion(Transform):
             #     np.exp((t**2 - te**2) / td2) * (1.0 - np.exp(-A / te**2))
             #     for t, l in zip(int_times, int_lums)
             # ]
-            int_arg = [0.0 if isnan(x) else x for x in int_arg]
+            int_arg[np.isnan(int_arg)] = 0.0
             lum_val = np.trapz(int_arg, dx=dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)

@@ -22,6 +22,8 @@ class Filters(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._preprocessed = False
+        self._bands = []
+
         bands = kwargs.get('bands', '')
         bands = listify(bands)
 
@@ -185,8 +187,10 @@ class Filters(Module):
         raise ValueError('Cannot find band index!')
 
     def process(self, **kwargs):
+        old_bands = self._bands
         self._bands = kwargs['all_bands']
-        self._band_indices = list(map(self.find_band_index, self._bands))
+        if old_bands != self._bands:
+            self._band_indices = list(map(self.find_band_index, self._bands))
         self._dxs = []
         for bi in self._band_indices:
             wavs = kwargs['samplewavelengths'][bi]
