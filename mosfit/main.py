@@ -5,7 +5,7 @@ import shutil
 from emcee.utils import MPIPool
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import prompt
+from mosfit.utils import is_master, prompt
 
 
 def main():
@@ -239,16 +239,8 @@ def main():
         else:
             args.iterations = 1000
 
-    pool = ''
-    try:
-        pool = MPIPool(loadbalance=True)
-    except ValueError:
-        pass
-    except:
-        raise
-
     width = 100
-    if not pool or pool.is_master():
+    if is_master():
         # Print our amazing ASCII logo.
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
@@ -314,11 +306,6 @@ def main():
                     shutil.copy(
                         os.path.join(dir_path, 'models', mdir, mfil),
                         os.path.join(fil_path))
-    else:
-        pool.wait()
-
-    if pool:
-        pool.close()
 
     # Then, fit the listed events with the listed models.
     fitargs = {
