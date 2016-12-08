@@ -277,5 +277,38 @@
                 "SVO":"PAN-STARRS/PS1.open/AB"
             }
         }
+    },
+    {
+        "systems":[
+            "Vega"
+        ],
+        "instruments":[
+            "",
+            "LSST"
+        ],
+        "bandsets":[
+            "",
+            "LSST"
+        ],
+        "filters":{
+            "u":{
+                "SVO":"LSST/LSST.u/Vega"
+            },
+            "g":{
+                "SVO":"LSST/LSST.g/Vega"
+            },
+            "r":{
+                "SVO":"LSST/LSST.r/Vega"
+            },
+            "i":{
+                "SVO":"LSST/LSST.i/Vega"
+            },
+            "z":{
+                "SVO":"LSST/LSST.z/Vega"
+            },
+            "y":{
+                "SVO":"LSST/LSST.y/Vega"
+            }
+        }
     }
 ]
