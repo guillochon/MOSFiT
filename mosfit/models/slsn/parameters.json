@@ -22,7 +22,7 @@
     },
     "texplosion":{
         "min_value":-100.0,
-        "max_value":0.0
+        "max_value":100.0
     },
     "kappa":{
         "min_value":0.05,
@@ -34,17 +34,17 @@
         "log":true
     },
     "mejecta":{
-        "min_value":1.0,
+        "min_value":0.1,
         "max_value":100.0,
         "log":true
     },
     "vejecta":{
         "min_value":5.0e3,
-        "max_value":2.0e4,
+        "max_value":2.0e4
     },
     "temperature":{
         "min_value":3.0e3,
-        "max_value":8.0e3,
+        "max_value":1.0e4
     },
     "variance":{
         "min_value":1.0e-3,
