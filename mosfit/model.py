@@ -217,7 +217,7 @@ class Model:
         method.
         """
         x = np.array(arg[0])
-        step = 0.1
+        step = 0.2
         seed = arg[1]
         np.random.seed(seed)
         my_choice = np.random.choice(range(3))
@@ -228,7 +228,7 @@ class Model:
             opt_dict['maxiter'] = 100
         elif my_method == 'L-BFGS-B':
             opt_dict['maxfun'] = 5000
-        bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
+        # bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
         bounds = list(
             zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
 

@@ -23,32 +23,37 @@ class Filters(Module):
         super().__init__(**kwargs)
         self._preprocessed = False
         bands = kwargs.get('bands', '')
-        systems = kwargs.get('systems', '')
-        instruments = kwargs.get('instruments', '')
-        bandsets = kwargs.get('bandsets', '')
         bands = listify(bands)
-        systems = listify(systems)
-        instruments = listify(instruments)
-        bandsets = listify(bandsets)
+
+        syst_syns = {'': 'Vega', 'SDSS': 'AB'}
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
-        with open(os.path.join(dir_path, 'filterrules.json')) as f:
-            filterrules = json.loads(f.read(), object_pairs_hook=OrderedDict)
-            for bi, band in enumerate(bands):
-                for rule in filterrules:
-                    sysinstperms = [[x, y, z]
-                                    for x in rule.get('systems', [''])
-                                    for y in rule.get('instruments', [''])
-                                    for z in rule.get('bandsets', [''])]
-                    for bnd in rule.get('filters', []):
-                        if band == bnd or band == '':
-                            for perm in sysinstperms:
-                                band_list.append(rule['filters'][bnd])
-                                band_list[-1]['systems'] = perm[0]
-                                band_list[-1]['instruments'] = perm[1]
-                                band_list[-1]['bandsets'] = perm[2]
-                                band_list[-1]['name'] = bnd
+
+        if self._pool.is_master():
+            with open(os.path.join(dir_path, 'filterrules.json')) as f:
+                filterrules = json.load(f, object_pairs_hook=OrderedDict)
+            for rank in range(1, self._pool.size + 1):
+                self._pool.comm.send(filterrules, dest=rank, tag=5)
+        else:
+            filterrules = self._pool.comm.recv(source=0, tag=5)
+
+        for bi, band in enumerate(bands):
+            for rule in filterrules:
+                sysinstperms = [
+                    {'systems': xx, 'instruments': yy, 'bandsets': zz}
+                    for xx in list(
+                        set(rule.get('systems', []) + ['AB', 'Vega', '']))
+                    for yy in rule.get('instruments', [''])
+                    for zz in rule.get('bandsets', [''])
+                ]
+                for bnd in rule.get('filters', []):
+                    if band == bnd or band == '':
+                        for perm in sysinstperms:
+                            new_band = rule['filters'][bnd].copy()
+                            new_band.update(perm.copy())
+                            new_band['name'] = bnd
+                            band_list.append(new_band)
 
         self._unique_bands = band_list
         self._band_insts = [x['instruments'] for x in self._unique_bands]
@@ -71,13 +76,14 @@ class Filters(Module):
                 systems = ['AB']
                 zps = [0.0]
                 if 'SVO' in band:
-                    photsystem = band['SVO'].split('/')[-1]
-                    zpfluxes = []
+                    photsystem = self._band_systs[i]
+                    if photsystem in syst_syns:
+                        photsystem = syst_syns[photsystem]
                     if photsystem not in systems:
                         systems.append(photsystem)
+                    zpfluxes = []
                     for sys in systems:
-                        svopath = '/'.join(band['SVO'].split('/')
-                                           [:-1]) + '/' + sys
+                        svopath = band['SVO'] + '/' + sys
                         path = os.path.join(dir_path, 'filters',
                                             svopath.replace('/', '_') + '.dat')
 

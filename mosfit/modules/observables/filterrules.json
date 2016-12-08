@@ -2,93 +2,88 @@
     {
         "filters":{
             "U":{
-                "SVO":"Generic/Bessell.U/Vega"
+                "SVO":"Generic/Bessell.U"
             },
             "B":{
-                "SVO":"Generic/Bessell.B/Vega"
+                "SVO":"Generic/Bessell.B"
             },
             "V":{
-                "SVO":"Generic/Bessell.V/Vega"
+                "SVO":"Generic/Bessell.V"
             },
             "R":{
-                "SVO":"Generic/Bessell.R/Vega"
+                "SVO":"Generic/Bessell.R"
             },
             "I":{
-                "SVO":"Generic/Bessell.I/Vega"
+                "SVO":"Generic/Bessell.I"
             },
             "J":{
-                "SVO":"2MASS/2MASS.J/Vega"
+                "SVO":"2MASS/2MASS.J"
             },
             "H":{
-                "SVO":"2MASS/2MASS.H/Vega"
+                "SVO":"2MASS/2MASS.H"
             },
             "K":{
-                "SVO":"2MASS/2MASS.Ks/Vega"
+                "SVO":"2MASS/2MASS.Ks"
             },
             "Ks":{
-                "SVO":"2MASS/2MASS.Ks/Vega"
+                "SVO":"2MASS/2MASS.Ks"
             },
             "u":{
-                "SVO":"SLOAN/SDSS.u/AB"
+                "SVO":"SLOAN/SDSS.u"
             },
             "g":{
-                "SVO":"SLOAN/SDSS.g/AB"
+                "SVO":"SLOAN/SDSS.g"
             },
             "r":{
-                "SVO":"SLOAN/SDSS.r/AB"
+                "SVO":"SLOAN/SDSS.r"
             },
             "i":{
-                "SVO":"SLOAN/SDSS.i/AB"
+                "SVO":"SLOAN/SDSS.i"
             },
             "z":{
-                "SVO":"SLOAN/SDSS.z/AB"
+                "SVO":"SLOAN/SDSS.z"
             },
             "u'":{
-                "SVO":"SLOAN/SDSS.u/AB"
+                "SVO":"SLOAN/SDSS.u"
             },
             "g'":{
-                "SVO":"SLOAN/SDSS.g/AB"
+                "SVO":"SLOAN/SDSS.g"
             },
             "r'":{
-                "SVO":"SLOAN/SDSS.r/AB"
+                "SVO":"SLOAN/SDSS.r"
             },
             "i'":{
-                "SVO":"SLOAN/SDSS.i/AB"
+                "SVO":"SLOAN/SDSS.i"
             },
             "z'":{
-                "SVO":"SLOAN/SDSS.z/AB"
+                "SVO":"SLOAN/SDSS.z"
             }
         }
     },
     {
-        "systems":[
-            "",
-            "Vega"
-        ],
         "bandsets":[
             "Bessell"
         ],
         "filters":{
             "U":{
-                "SVO":"Generic/Bessell.U/Vega"
+                "SVO":"Generic/Bessell.U"
             },
             "B":{
-                "SVO":"Generic/Bessell.B/Vega"
+                "SVO":"Generic/Bessell.B"
             },
             "V":{
-                "SVO":"Generic/Bessell.V/Vega"
+                "SVO":"Generic/Bessell.V"
             },
             "R":{
-                "SVO":"Generic/Bessell.R/Vega"
+                "SVO":"Generic/Bessell.R"
             },
             "I":{
-                "SVO":"Generic/Bessell.I/Vega"
+                "SVO":"Generic/Bessell.I"
             }
         }
     },
     {
         "systems":[
-            "AB",
             "SDSS"
         ],
         "instruments":[
@@ -100,41 +95,38 @@
         ],
         "filters":{
             "u":{
-                "SVO":"SLOAN/SDSS.u/AB"
+                "SVO":"SLOAN/SDSS.u"
             },
             "g":{
-                "SVO":"SLOAN/SDSS.g/AB"
+                "SVO":"SLOAN/SDSS.g"
             },
             "r":{
-                "SVO":"SLOAN/SDSS.r/AB"
+                "SVO":"SLOAN/SDSS.r"
             },
             "i":{
-                "SVO":"SLOAN/SDSS.i/AB"
+                "SVO":"SLOAN/SDSS.i"
             },
             "z":{
-                "SVO":"SLOAN/SDSS.z/AB"
+                "SVO":"SLOAN/SDSS.z"
             },
             "u'":{
-                "SVO":"SLOAN/SDSS.u/AB"
+                "SVO":"SLOAN/SDSS.u"
             },
             "g'":{
-                "SVO":"SLOAN/SDSS.g/AB"
+                "SVO":"SLOAN/SDSS.g"
             },
             "r'":{
-                "SVO":"SLOAN/SDSS.r/AB"
+                "SVO":"SLOAN/SDSS.r"
             },
             "i'":{
-                "SVO":"SLOAN/SDSS.i/AB"
+                "SVO":"SLOAN/SDSS.i"
             },
             "z'":{
-                "SVO":"SLOAN/SDSS.z/AB"
+                "SVO":"SLOAN/SDSS.z"
             }
         }
     },
     {
-        "systems":[
-            "Vega"
-        ],
         "instruments":[
             "UVOT"
         ],
@@ -145,71 +137,64 @@
         ],
         "filters":{
             "U":{
-                "SVO":"Swift/UVOT.U/Vega"
+                "SVO":"Swift/UVOT.U"
             },
             "B":{
-                "SVO":"Swift/UVOT.B/Vega"
+                "SVO":"Swift/UVOT.B"
             },
             "V":{
-                "SVO":"Swift/UVOT.V/Vega"
+                "SVO":"Swift/UVOT.V"
             },
             "UVW1":{
-                "SVO":"Swift/UVOT.UVW1/Vega"
+                "SVO":"Swift/UVOT.UVW1"
             },
             "UVW2":{
-                "SVO":"Swift/UVOT.UVW2/Vega"
+                "SVO":"Swift/UVOT.UVW2"
             },
             "UVM2":{
-                "SVO":"Swift/UVOT.UVM2/Vega"
+                "SVO":"Swift/UVOT.UVM2"
             },
             "W1":{
-                "SVO":"Swift/UVOT.UVW1/Vega"
+                "SVO":"Swift/UVOT.UVW1"
             },
             "W2":{
-                "SVO":"Swift/UVOT.UVW2/Vega"
+                "SVO":"Swift/UVOT.UVW2"
             },
             "M2":{
-                "SVO":"Swift/UVOT.UVM2/Vega"
+                "SVO":"Swift/UVOT.UVM2"
             }
         }
     },
     {
-        "systems":[
-            "Vega"
-        ],
         "bandsets":[
             "Johnson"
         ],
         "filters":{
             "U":{
-                "SVO":"Generic/Johnson.U/Vega"
+                "SVO":"Generic/Johnson.U"
             },
             "B":{
-                "SVO":"Generic/Johnson.B/Vega"
+                "SVO":"Generic/Johnson.B"
             },
             "V":{
-                "SVO":"Generic/Johnson.V/Vega"
+                "SVO":"Generic/Johnson.V"
             },
             "R":{
-                "SVO":"Generic/Johnson.R/Vega"
+                "SVO":"Generic/Johnson.R"
             },
             "I":{
-                "SVO":"Generic/Johnson.I/Vega"
+                "SVO":"Generic/Johnson.I"
             },
             "J":{
-                "SVO":"Generic/Johnson.J/Vega"
+                "SVO":"Generic/Johnson.J"
             },
             "M":{
-                "SVO":"Generic/Johnson.M/Vega"
+                "SVO":"Generic/Johnson.M"
             }
         }
     },
     {
-        "systems":[
-            "AB"
-        ],
         "instruments":[
-            "",
             "PS1",
             "GPC"
         ],
@@ -220,70 +205,66 @@
         ],
         "filters":{
             "g":{
-                "SVO":"PAN-STARRS/PS1.g/AB"
+                "SVO":"PAN-STARRS/PS1.g"
             },
             "r":{
-                "SVO":"PAN-STARRS/PS1.r/AB"
+                "SVO":"PAN-STARRS/PS1.r"
             },
             "i":{
-                "SVO":"PAN-STARRS/PS1.i/AB"
+                "SVO":"PAN-STARRS/PS1.i"
             },
             "z":{
-                "SVO":"PAN-STARRS/PS1.z/AB"
+                "SVO":"PAN-STARRS/PS1.z"
             },
             "y":{
-                "SVO":"PAN-STARRS/PS1.y/AB"
+                "SVO":"PAN-STARRS/PS1.y"
             },
             "w":{
-                "SVO":"PAN-STARRS/PS1.w/AB"
+                "SVO":"PAN-STARRS/PS1.w"
             },
             "gp1":{
-                "SVO":"PAN-STARRS/PS1.g/AB"
+                "SVO":"PAN-STARRS/PS1.g"
             },
             "rp1":{
-                "SVO":"PAN-STARRS/PS1.r/AB"
+                "SVO":"PAN-STARRS/PS1.r"
             },
             "ip1":{
-                "SVO":"PAN-STARRS/PS1.i/AB"
+                "SVO":"PAN-STARRS/PS1.i"
             },
             "zp1":{
-                "SVO":"PAN-STARRS/PS1.z/AB"
+                "SVO":"PAN-STARRS/PS1.z"
             },
             "yp1":{
-                "SVO":"PAN-STARRS/PS1.y/AB"
+                "SVO":"PAN-STARRS/PS1.y"
             },
             "wp1":{
-                "SVO":"PAN-STARRS/PS1.w/AB"
+                "SVO":"PAN-STARRS/PS1.w"
             },
             "gP1":{
-                "SVO":"PAN-STARRS/PS1.g/AB"
+                "SVO":"PAN-STARRS/PS1.g"
             },
             "rP1":{
-                "SVO":"PAN-STARRS/PS1.r/AB"
+                "SVO":"PAN-STARRS/PS1.r"
             },
             "iP1":{
-                "SVO":"PAN-STARRS/PS1.i/AB"
+                "SVO":"PAN-STARRS/PS1.i"
             },
             "zP1":{
-                "SVO":"PAN-STARRS/PS1.z/AB"
+                "SVO":"PAN-STARRS/PS1.z"
             },
             "yP1":{
-                "SVO":"PAN-STARRS/PS1.y/AB"
+                "SVO":"PAN-STARRS/PS1.y"
             },
             "wP1":{
-                "SVO":"PAN-STARRS/PS1.w/AB"
+                "SVO":"PAN-STARRS/PS1.w"
             },
             "open":{
-                "SVO":"PAN-STARRS/PS1.open/AB"
+                "SVO":"PAN-STARRS/PS1.open"
             }
         }
     },
     {
-        "systems":[
-            "Vega"
-        ],
         "instruments":[
-            "",
             "LSST"
         ],
         "bandsets":[
@@ -292,22 +273,22 @@
         ],
         "filters":{
             "u":{
-                "SVO":"LSST/LSST.u/Vega"
+                "SVO":"LSST/LSST.u"
             },
             "g":{
-                "SVO":"LSST/LSST.g/Vega"
+                "SVO":"LSST/LSST.g"
             },
             "r":{
-                "SVO":"LSST/LSST.r/Vega"
+                "SVO":"LSST/LSST.r"
             },
             "i":{
-                "SVO":"LSST/LSST.i/Vega"
+                "SVO":"LSST/LSST.i"
             },
             "z":{
-                "SVO":"LSST/LSST.z/Vega"
+                "SVO":"LSST/LSST.z"
             },
             "y":{
-                "SVO":"LSST/LSST.y/Vega"
+                "SVO":"LSST/LSST.y"
             }
         }
     }
