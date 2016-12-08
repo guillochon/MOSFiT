@@ -10,7 +10,7 @@
     },
     "Bfield":{
         "min_value":0.1,
-        "max_value":10.0,
+        "max_value":10.0
     },
     "Mns":{
         "min_value":1.0,
