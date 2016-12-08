@@ -10,9 +10,10 @@ from collections import OrderedDict
 
 import emcee
 import numpy as np
+from schwimmbad import MPIPool, SerialPool
+
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
-from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -441,9 +442,9 @@ class Fitter():
 
         with open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                   'w') as flast, open(
-                      os.path.join(model.MODEL_OUTPUT_DIR,
-                                   self._event_name + '_' + suffix +
-                                   '.json'), 'w') as f:
+                      os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
+                          ('_' + suffix)
+                          if suffix else '') + '.json'), 'w') as f:
             json.dump(walkers_out, flast, indent='\t', separators=(',', ':'))
             json.dump(walkers_out, f, indent='\t', separators=(',', ':'))
 
