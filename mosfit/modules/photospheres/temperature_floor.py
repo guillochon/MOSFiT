@@ -10,8 +10,7 @@ CLASS_NAME = 'temperature_floor'
 
 
 class temperature_floor(photosphere):
-    """Expanding/receding photosphere with a dense core + low-mass power-law
-    envelope
+    """Photosphere that expands and cools with ejecta then recedes at constant final temperature
     """
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
