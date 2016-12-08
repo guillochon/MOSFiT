@@ -16,3 +16,4 @@ DAY_CGS = (1.0 * u.day).cgs.value
 M_SUN_CGS = c.M_sun.cgs.value
 KM_CGS = 1.0e5
 C_CGS = c.c.cgs.value
+FOE = 1.0e51
