@@ -200,10 +200,6 @@ class Filters(Module):
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._dxs = []
-        for bi in self._band_indices:
-            wavs = kwargs['sample_wavelengths'][bi]
-            self._dxs.append(wavs[1] - wavs[0])
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']
@@ -213,6 +209,8 @@ class Filters(Module):
         offsets = []
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
+            wavs = kwargs['sample_wavelengths'][bi]
+            dx = wavs[1] - wavs[0]
             offsets.append(self._band_offsets[bi])
             wavs = kwargs['sample_wavelengths'][bi]
             itrans = np.interp(wavs, self._band_wavelengths[bi],
@@ -220,7 +218,7 @@ class Filters(Module):
             yvals = [x * y for x, y in zip(itrans, kwargs['seds'][li])]
             eff_fluxes.append(
                 np.trapz(
-                    yvals, dx=self._dxs[bi]) / self._filter_integrals[bi])
+                    yvals, dx=dx) / self._filter_integrals[bi])
         mags = self.abmag(eff_fluxes, offsets)
         return {'model_magnitudes': mags}
 
