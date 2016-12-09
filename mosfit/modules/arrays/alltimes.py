@@ -10,8 +10,14 @@ class AllTimes(Module):
 
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
+        self._bands = []
+        self._systems = []
+        self._instruments = []
+        self._bandsets = []
 
     def process(self, **kwargs):
+        old_bands = (self._systems, self._instruments, self._bandsets,
+                     self._bands)
         if (kwargs.get('root', 'output') == 'output' and
                 'extra_times' in kwargs):
             obslist = (
@@ -43,12 +49,15 @@ class AllTimes(Module):
         outputs['all_instruments'] = self._instruments
         outputs['all_bandsets'] = self._bandsets
         outputs['all_bands'] = self._bands
-        outputs['all_band_indices'] = [
-            self._filters.find_band_index(
-                w, instrument=x, bandset=y, system=z)
-            for w, x, y, z in zip(self._bands, self._instruments,
-                                  self._bandsets, self._systems)
-        ]
+        if old_bands != (self._systems, self._instruments, self._bandsets,
+                         self._bands):
+            self._all_band_indices = [
+                self._filters.find_band_index(
+                    w, instrument=x, bandset=y, system=z)
+                for w, x, y, z in zip(self._bands, self._instruments,
+                                      self._bandsets, self._systems)
+            ]
+        outputs['all_band_indices'] = self._all_band_indices
         outputs['observed'] = self._observed
         return outputs
 
