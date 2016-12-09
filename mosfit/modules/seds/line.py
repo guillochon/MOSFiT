@@ -12,14 +12,16 @@ class Line(SED):
 
     def process(self, **kwargs):
         self._seds = kwargs['seds']
-        self._sample_wavelengths = kwargs['samplewavelengths']
+        self._bands = kwargs['all_bands']
+        self._band_indices = kwargs['all_band_indices']
+        self._sample_wavelengths = kwargs['sample_wavelengths']
         self._luminosities = kwargs['luminosities']
         zp1 = 1.0 + kwargs['redshift']
 
         seds = []
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
-            bi = self._filters.find_band_index(cur_band)
+            bi = self._band_indices[li]
             rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
 
             # Dummy function for now, needs implementation
@@ -28,4 +30,4 @@ class Line(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'samplewavelengths': self._sample_wavelengths, 'seds': seds}
+        return {'sample_wavelengths': self._sample_wavelengths, 'seds': seds}

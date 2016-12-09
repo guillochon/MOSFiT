@@ -26,6 +26,7 @@ class blackbody(SED):
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
+        self._band_indices = kwargs['all_band_indices']
         self._radius_phot = kwargs['radiusphot']
         self._temperature_phot = kwargs['temperaturephot']
         xc = self.X_CONST
@@ -35,7 +36,7 @@ class blackbody(SED):
         seds = []
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
-            bi = self._filters.find_band_index(cur_band)
+            bi = self._band_indices[li]
             rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
             wav_arr = np.array(self._sample_wavelengths[bi])
             radius_phot = self._radius_phot[li]
@@ -54,4 +55,4 @@ class blackbody(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'samplewavelengths': self._sample_wavelengths, 'seds': seds}
+        return {'sample_wavelengths': self._sample_wavelengths, 'seds': seds}

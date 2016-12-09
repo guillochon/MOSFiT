@@ -196,24 +196,15 @@ class Model:
                 self._free_parameters.append(task)
         self._num_free_parameters = len(self._free_parameters)
 
+    def exchange_requests(self):
         for task in reversed(self._call_stack):
             cur_task = self._call_stack[task]
             if 'requests' in cur_task:
-                inputs = listify(cur_task.get('inputs', []))
-                for i, inp in enumerate(inputs):
-                    requests = OrderedDict()
-                    parent = ''
-                    for par in self._call_stack:
-                        if par == inp:
-                            parent = par
-                    if not parent:
-                        self._log.error(
-                            "Couldn't find parent task for  {}!".format(inp))
-                        raise ValueError
-                    reqs = cur_task['requests'][i]
-                    for req in reqs:
-                        requests[req] = self._modules[task].request(req)
-                    self._modules[parent].handle_requests(**requests)
+                requests = OrderedDict()
+                reqs = cur_task['requests']
+                for req in reqs:
+                    requests[req] = self._modules[reqs[req]].send_request(req)
+                self._modules[task].receive_requests(**requests)
 
     def frack(self, arg):
         """Perform fracking upon a single walker, using a local minimization

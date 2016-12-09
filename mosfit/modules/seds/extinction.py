@@ -19,8 +19,21 @@ class Extinction(SED):
 
     def process(self, **kwargs):
         self.preprocess(**kwargs)
+        zp1 = 1.0 + kwargs['redshift']
         self._seds = kwargs['seds']
         self._nh_host = kwargs['nhhost']
+        self._bands = kwargs['all_bands']
+        self._band_indices = kwargs['all_band_indices']
+        self._band_rest_wavelengths = np.array(
+            [[y / zp1 for y in x] for x in self._sample_wavelengths])
+        self._mw_extinct = []
+        for si, cur_band in enumerate(self._bands):
+            bi = self._band_indices[si]
+            # First extinct out LOS dust from MW
+            self._mw_extinct.append(
+                odonnell94(
+                    np.array(self._sample_wavelengths[bi]), self._av_mw,
+                    self.MW_RV))
 
         av_host = self._nh_host / 1.8e21
 
@@ -35,25 +48,11 @@ class Extinction(SED):
                 self._seds[si],
                 inplace=True)
 
-        return {'samplewavelengths': self._sample_wavelengths,
+        return {'sample_wavelengths': self._sample_wavelengths,
                 'seds': self._seds}
 
     def preprocess(self, **kwargs):
         if not self._preprocessed:
-            zp1 = 1.0 + kwargs['redshift']
             self._ebv = kwargs['ebv']
-            self._bands = kwargs['all_bands']
-            self._band_indices = list(
-                map(self._filters.find_band_index, self._bands))
-            self._band_rest_wavelengths = np.array(
-                [[y / zp1 for y in x] for x in self._sample_wavelengths])
             self._av_mw = self.MW_RV * self._ebv
-            self._mw_extinct = []
-            for si, cur_band in enumerate(self._bands):
-                bi = self._filters.find_band_index(cur_band)
-                # First extinct out LOS dust from MW
-                self._mw_extinct.append(
-                    odonnell94(
-                        np.array(self._sample_wavelengths[bi]), self._av_mw,
-                        self.MW_RV))
         self._preprocessed = True

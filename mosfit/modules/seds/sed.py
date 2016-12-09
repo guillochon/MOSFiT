@@ -16,11 +16,9 @@ class SED(Module):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self._sample_wavelengths = []
-        self._filters = []
 
-    def handle_requests(self, **requests):
-        self._filters = requests.get('filters', [])
-        self._sample_wavelengths = requests.get('samplewavelengths', [])
+    def receive_requests(self, **requests):
+        self._sample_wavelengths = requests.get('sample_wavelengths', [])
         if not self._sample_wavelengths:
             wave_ranges = requests.get('band_wave_ranges', [])
             if not wave_ranges:
@@ -38,9 +36,7 @@ class SED(Module):
                         for x, y in zip(old_seds, list(new_seds))]
         return new_seds
 
-    def request(self, request):
-        if request == 'filters':
-            return self._filters
-        elif request == 'samplewavelengths':
+    def send_request(self, request):
+        if request == 'sample_wavelengths':
             return self._sample_wavelengths
         return []

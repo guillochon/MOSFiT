@@ -260,6 +260,8 @@ class Fitter():
 
         self._model.determine_free_parameters(fixed_parameters)
 
+        self._model.exchange_requests()
+
         # Run through once to set all inits
         outputs = self._model.run_stack(
             [0.0 for x in range(self._model._num_free_parameters)],
@@ -268,16 +270,13 @@ class Fitter():
         # Collect observed band info
         if pool.is_master() and 'filters' in self._model._modules:
             print_wrapped('Bands being used for current transient:')
-            bis = []
-            for oi, obs in enumerate(outputs['observed']):
-                if obs:
-                    bis.append(self._model._modules['filters'].find_band_index(
-                        outputs['all_bands'][oi],
-                        system=outputs['all_systems'][oi],
-                        instrument=outputs['all_instruments'][oi]))
+            bis = outputs['all_band_indices']
             bis = list(set(bis))
-            svonames = list(sorted(['  ' + self._model._modules['filters']
-                          ._unique_bands[bi]['SVO'] for bi in bis]))
+            svonames = list(
+                sorted([
+                    '  ' + self._model._modules['filters']
+                    ._unique_bands[bi]['SVO'] for bi in bis
+                ]))
             print('\n'.join(svonames))
 
         self._event_name = event_name

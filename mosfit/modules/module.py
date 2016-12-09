@@ -7,7 +7,7 @@ class Module:
     def process(self, **kwargs):
         return {}
 
-    def request(self, request):
+    def send_request(self, request):
         return []
 
     def name(self):
@@ -16,7 +16,7 @@ class Module:
     def is_log(self):
         return self._log
 
-    def handle_requests(self, **kwargs):
+    def receive_requests(self, **kwargs):
         pass
 
     def set_event_name(self, event_name):

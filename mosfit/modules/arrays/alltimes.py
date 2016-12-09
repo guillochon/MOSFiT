@@ -41,6 +41,16 @@ class AllTimes(Module):
         outputs['all_times'] = self._times
         outputs['all_systems'] = self._systems
         outputs['all_instruments'] = self._instruments
+        outputs['all_bandsets'] = self._bandsets
         outputs['all_bands'] = self._bands
+        outputs['all_band_indices'] = [
+            self._filters.find_band_index(
+                w, instrument=x, bandset=y, system=z)
+            for w, x, y, z in zip(self._bands, self._instruments,
+                                  self._bandsets, self._systems)
+        ]
         outputs['observed'] = self._observed
         return outputs
+
+    def receive_requests(self, **requests):
+        self._filters = requests.get('filters', None)

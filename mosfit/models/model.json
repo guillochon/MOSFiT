@@ -79,7 +79,10 @@
         "kind":"array",
         "inputs":[
             "transient"
-        ]
+        ],
+        "requests":{
+            "filters": "filters"
+        }
     },
     "resttimes":{
         "kind":"array",

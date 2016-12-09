@@ -43,9 +43,14 @@ class Filters(Module):
         for bi, band in enumerate(bands):
             for rule in filterrules:
                 sysinstperms = [
-                    {'systems': xx, 'instruments': yy, 'bandsets': zz}
+                    {
+                        'systems': xx,
+                        'instruments': yy,
+                        'bandsets': zz
+                    }
                     for xx in list(
-                        set(rule.get('systems', []) + ['AB', 'Vega', '']))
+                        sorted(
+                            set(rule.get('systems', []) + ['AB', 'Vega', ''])))
                     for yy in rule.get('instruments', [''])
                     for zz in rule.get('bandsets', [''])
                 ]
@@ -170,30 +175,34 @@ class Filters(Module):
             elif 'SVO' in band:
                 self._band_offsets[i] = zps[-1]
 
-    def find_band_index(self, name, instrument='', bandset='', system=''):
-        for bi, band in enumerate(self._unique_bands):
-            if (name == band['name'] and instrument in self._band_insts[bi] and
-                    bandset in self._band_bsets[bi] and
-                    system in self._band_systs[bi]):
-                return bi
-            if (name == band['name'] and instrument in self._band_insts[bi] and
-                    system in self._band_systs[bi]):
-                return bi
-            if (name == band['name'] and system in self._band_systs[bi]):
-                return bi
-            if (name == band['name'] and '' in self._band_insts[bi] and
-                    '' in self._band_bsets[bi] and '' in self._band_systs[bi]):
-                return bi
+    def find_band_index(self, band, instrument='', bandset='', system=''):
+        for i in range(4):
+            for bi, bnd in enumerate(self._unique_bands):
+                if (i == 0 and band == bnd['name'] and
+                        instrument in self._band_insts[bi] and
+                        bandset in self._band_bsets[bi] and
+                        system in self._band_systs[bi]):
+                    return bi
+                elif (i == 1 and band == bnd['name'] and
+                      instrument in self._band_insts[bi] and
+                      system in self._band_systs[bi]):
+                    return bi
+                elif (i == 2 and band == bnd['name'] and
+                      system in self._band_systs[bi]):
+                    return bi
+                elif (i == 3 and band == bnd['name'] and
+                      '' in self._band_insts[bi] and
+                      '' in self._band_bsets[bi] and
+                      '' in self._band_systs[bi]):
+                    return bi
         raise ValueError('Cannot find band index!')
 
     def process(self, **kwargs):
-        old_bands = self._bands
         self._bands = kwargs['all_bands']
-        if old_bands != self._bands:
-            self._band_indices = list(map(self.find_band_index, self._bands))
+        self._band_indices = kwargs['all_band_indices']
         self._dxs = []
         for bi in self._band_indices:
-            wavs = kwargs['samplewavelengths'][bi]
+            wavs = kwargs['sample_wavelengths'][bi]
             self._dxs.append(wavs[1] - wavs[0])
         self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
         self._luminosities = kwargs['luminosities']
@@ -205,7 +214,7 @@ class Filters(Module):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             offsets.append(self._band_offsets[bi])
-            wavs = kwargs['samplewavelengths'][bi]
+            wavs = kwargs['sample_wavelengths'][bi]
             itrans = np.interp(wavs, self._band_wavelengths[bi],
                                self._transmissions[bi])
             yvals = [x * y for x, y in zip(itrans, kwargs['seds'][li])]
@@ -223,7 +232,7 @@ class Filters(Module):
                  (AB_OFFSET - y - MAG_FAC * (np.log10(x) - self._dist_const)))
                 for x, y in zip(eff_fluxes, offsets)]
 
-    def request(self, request):
+    def send_request(self, request):
         if request == 'filters':
             return self
         elif request == 'band_wave_ranges':

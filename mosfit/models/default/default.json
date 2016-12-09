@@ -92,7 +92,10 @@
             "temperature_floor",
             "temperaturephot",
             "radiusphot"
-        ]
+        ],
+        "requests":{
+            "band_wave_ranges": "filters"
+        }
     },
     "extinction":{
         "kind":"sed",
@@ -101,21 +104,15 @@
             "nhhost",
             "ebv"
         ],
-        "requests":[
-            ["samplewavelengths", "filters"],
-            [],
-            []
-        ]
+        "requests":{
+            "band_wave_ranges": "filters"
+        }
     },
     "filters":{
         "kind":"observable",
         "inputs":[
             "extinction",
             "lumdist"
-        ],
-        "requests":[
-            ["band_wave_ranges", "filters"],
-            []
         ]
     }
 }
