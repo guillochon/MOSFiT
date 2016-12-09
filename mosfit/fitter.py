@@ -108,8 +108,8 @@ class Fitter():
                                 shutil.copyfileobj(response, f)
                         if os.path.exists(names_path):
                             with open(names_path, 'r') as f:
-                                names = json.loads(
-                                    f.read(), object_pairs_hook=OrderedDict)
+                                names = json.load(
+                                    f, object_pairs_hook=OrderedDict)
                         else:
                             print('Error: Could not read list of SN names!')
                             raise RuntimeError
@@ -146,8 +146,8 @@ class Fitter():
 
                     if os.path.exists(path):
                         with open(path, 'r') as f:
-                            data = json.loads(
-                                f.read(), object_pairs_hook=OrderedDict)
+                            data = json.load(
+                                f, object_pairs_hook=OrderedDict)
                         print_wrapped('Event file:', self._wrap_length)
                         print_wrapped('  ' + path, self._wrap_length)
                     else:

@@ -6,11 +6,12 @@ from collections import OrderedDict
 from math import isnan
 
 import numpy as np
+# from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
+
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.utils import listify, print_wrapped
-# from scipy.optimize import differential_evolution
-from scipy.optimize import minimize
 
 
 class Model:
@@ -42,7 +43,7 @@ class Model:
                                             'model.json')
 
         with open(basic_model_path, 'r') as f:
-            self._model = json.loads(f.read(), object_pairs_hook=OrderedDict)
+            self._model = json.load(f, object_pairs_hook=OrderedDict)
 
         # Load the model file.
         model = self._model_name
@@ -64,9 +65,7 @@ class Model:
                                           model)
 
         with open(model_path, 'r') as f:
-            self._model.update(
-                json.loads(
-                    f.read(), object_pairs_hook=OrderedDict))
+            self._model.update(json.load(f, object_pairs_hook=OrderedDict))
 
         # Load model parameter file.
         model_pp = os.path.join(
@@ -101,8 +100,7 @@ class Model:
             print_wrapped('  ' + pp + '\n', wrap_length)
 
         with open(pp, 'r') as f:
-            self._parameter_json = json.loads(
-                f.read(), object_pairs_hook=OrderedDict)
+            self._parameter_json = json.load(f, object_pairs_hook=OrderedDict)
         self._log = logging.getLogger()
         self._modules = OrderedDict()
         self._bands = []
@@ -160,8 +158,7 @@ class Model:
                 '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
                 package='mosfit')
             mod_class = getattr(mod, mod.CLASS_NAME)
-            self._modules[task] = mod_class(
-                name=task, pool=pool, **cur_task)
+            self._modules[task] = mod_class(name=task, pool=pool, **cur_task)
             if class_name == 'filters':
                 self._bands = self._modules[task].band_names()
             # This is currently not functional for MPI
