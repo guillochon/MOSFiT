@@ -212,7 +212,6 @@ class Filters(Module):
             wavs = kwargs['sample_wavelengths'][bi]
             dx = wavs[1] - wavs[0]
             offsets.append(self._band_offsets[bi])
-            wavs = kwargs['sample_wavelengths'][bi]
             itrans = np.interp(wavs, self._band_wavelengths[bi],
                                self._transmissions[bi])
             yvals = [x * y for x, y in zip(itrans, kwargs['seds'][li])]
