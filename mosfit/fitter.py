@@ -172,6 +172,8 @@ class Fitter():
                     data = pool.comm.recv(source=0, tag=2)
                     pool.wait()
 
+                self._event_path = path
+
                 if pool.is_master():
                     pool.close()
 
@@ -438,14 +440,20 @@ class Fitter():
         except:
             raise
 
-        entry = Entry(name=self._event_name)
+        entry = Entry.init_from_file(
+            catalog=None,
+            name=self._event_name,
+            path=self._event_path,
+            merge=False,
+            pop_schema=False)
+
         source = entry.add_source(name='MOSFiT paper')
         modeldict = {
             MODEL.NAME: self._model._model_name,
             MODEL.CODE: 'MOSFiT',
             MODEL.DATE: time.strftime("%Y/%m/%d"),
-            MODEL.VERSION: __version__ + ' [' + subprocess.getoutput(
-                'git rev-parse --short HEAD').strip() + ']',
+            MODEL.VERSION: __version__ + ' [' +
+            subprocess.getoutput('git rev-parse --short HEAD').strip() + ']',
             MODEL.SOURCE: source
         }
         modelnum = entry.add_model(**modeldict)
@@ -455,7 +463,7 @@ class Fitter():
             for i in range(len(output['times'])):
                 photodict = {
                     PHOTOMETRY.BAND: output['bands'][i],
-                    PHOTOMETRY.TIME: output['times'][i],
+                    PHOTOMETRY.TIME: output['times'][i] + output['min_times'],
                     PHOTOMETRY.MAGNITUDE: output['model_magnitudes'][i],
                     PHOTOMETRY.MODEL: modelnum,
                     PHOTOMETRY.SOURCE: source,
@@ -479,9 +487,7 @@ class Fitter():
                 }
                 parameters.update({model._modules[task].name(): paramdict})
                 pi = pi + 1
-            realdict = {
-                REALIZATION.PARAMETERS: parameters
-            }
+            realdict = {REALIZATION.PARAMETERS: parameters}
             if lnprob is not None:
                 realdict[REALIZATION.SCORE] = str(lnprob[0][xi])
             entry[ENTRY.MODELS][0].add_realization(**realdict)
