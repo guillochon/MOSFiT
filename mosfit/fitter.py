@@ -445,6 +445,7 @@ class Fitter():
         except:
             raise
 
+        print_inline('Saving output to disk...')
         if self._event_path:
             entry = Entry.init_from_file(
                 catalog=None,
@@ -487,6 +488,12 @@ class Fitter():
                     PHOTOMETRY.SOURCE: source,
                     PHOTOMETRY.REALIZATION: str(xi + 1)
                 }
+                if output['systems'][i]:
+                    photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                if output['bandsets'][i]:
+                    photodict[PHOTOMETRY.BAND_SET] = output['bandsets'][i]
+                if output['instruments'][i]:
+                    photodict[PHOTOMETRY.INSTRUMENT] = output['instruments'][i]
                 entry.add_photometry(
                     compare_against_existing=False, **photodict)
 

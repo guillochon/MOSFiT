@@ -10,7 +10,7 @@ from astropy.io.votable import parse as voparse
 
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import listify, print_inline
+from mosfit.utils import listify, print_inline, syst_syns
 
 CLASS_NAME = 'Filters'
 
@@ -27,8 +27,6 @@ class Filters(Module):
         bands = kwargs.get('bands', '')
         bands = listify(bands)
 
-        syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega'}
-
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
 
@@ -44,7 +42,7 @@ class Filters(Module):
             for rule in filterrules:
                 sysinstperms = [
                     {
-                        'systems': syst_syns.get(xx, xx),
+                        'systems': xx,
                         'instruments': yy,
                         'bandsets': zz
                     }

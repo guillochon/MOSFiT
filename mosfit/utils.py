@@ -18,6 +18,9 @@ if sys.version_info[:2] < (3, 3):
             file.flush()
 
 
+syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega'}
+
+
 def is_number(s):
     if isinstance(s, bool):
         return False
