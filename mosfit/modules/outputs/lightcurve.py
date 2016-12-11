@@ -22,6 +22,6 @@ class LightCurve(Module):
         ]:
             output[key.replace('all_', '')] = kwargs[key]
 
-        entry = Entry(kwargs['name'])
+        # entry = Entry(kwargs['name'])
 
         return output
