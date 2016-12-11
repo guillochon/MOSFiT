@@ -280,11 +280,15 @@ class Fitter():
             print_wrapped('Bands being used for current transient:')
             bis = outputs['all_band_indices']
             bis = list(set(bis))
+            band_len = max([
+                len(self._model._modules['filters']._unique_bands[bi]['SVO'])
+                for bi in bis
+            ])
             svonames = list(
-                sorted([
-                    '  ' + self._model._modules['filters']
-                    ._unique_bands[bi]['SVO'] for bi in bis
-                ]))
+                sorted([('  ' + self._model._modules['filters']._unique_bands[
+                    bi]['SVO'].ljust(band_len) + ' [' + self._model._modules[
+                        'filters']
+                         ._unique_bands[bi]['systems'] + ']') for bi in bis]))
             print('\n'.join(svonames))
 
         self._event_name = event_name

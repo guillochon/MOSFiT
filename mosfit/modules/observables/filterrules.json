@@ -1,5 +1,9 @@
 [
     {
+        "bandsets":[
+            "Standard",
+            ""
+        ],
         "filters":{
             "U":{
                 "SVO":"Generic/Bessell.U"

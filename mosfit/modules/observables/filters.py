@@ -27,7 +27,7 @@ class Filters(Module):
         bands = kwargs.get('bands', '')
         bands = listify(bands)
 
-        syst_syns = {'': 'Vega', 'SDSS': 'AB'}
+        syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega'}
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
@@ -44,7 +44,7 @@ class Filters(Module):
             for rule in filterrules:
                 sysinstperms = [
                     {
-                        'systems': xx,
+                        'systems': syst_syns.get(xx, xx),
                         'instruments': yy,
                         'bandsets': zz
                     }
