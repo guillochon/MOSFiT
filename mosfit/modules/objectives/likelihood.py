@@ -1,6 +1,7 @@
 from math import isnan
 
 import numpy as np
+
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 
@@ -22,8 +23,8 @@ class Likelihood(Module):
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
             return {'value': LIKELIHOOD_FLOOR}
         for mi, mag in enumerate(self._model_mags):
-            if (not self._upper_limits[mi] and
-                (isnan(mag) or not np.isfinite(mag))):
+            if not self._upper_limits[mi] and (isnan(mag) or
+                                               not np.isfinite(mag)):
                 return {'value': LIKELIHOOD_FLOOR}
         self._variance2 = kwargs['variance']**2
 

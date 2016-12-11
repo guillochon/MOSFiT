@@ -456,8 +456,16 @@ class Fitter():
             entry = Entry(name=self._event_name)
 
         source = entry.add_source(name='MOSFiT paper')
+        model_setup = {}
+        for ti, task in enumerate(model._call_stack):
+            task_copy = model._call_stack[task].copy()
+            if (task_copy['kind'] == 'parameter' and
+                    task in model._parameter_json):
+                task_copy.update(model._parameter_json[task])
+            model_setup[task] = task_copy
         modeldict = {
             MODEL.NAME: self._model._model_name,
+            MODEL.SETUP: model_setup,
             MODEL.CODE: 'MOSFiT',
             MODEL.DATE: time.strftime("%Y/%m/%d"),
             MODEL.VERSION: __version__ + ' [' +
@@ -469,6 +477,8 @@ class Fitter():
         for xi, x in enumerate(p[0]):
             output = model.run_stack(x, root='output')
             for i in range(len(output['times'])):
+                if not np.isfinite(output['model_magnitudes'][i]):
+                    continue
                 photodict = {
                     PHOTOMETRY.BAND: output['bands'][i],
                     PHOTOMETRY.TIME: output['times'][i] + output['min_times'],
@@ -500,6 +510,7 @@ class Fitter():
                 realdict[REALIZATION.SCORE] = str(lnprob[0][xi])
             entry[ENTRY.MODELS][0].add_realization(**realdict)
 
+        entry.sanitize()
         oentry = entry._ordered(entry)
 
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
