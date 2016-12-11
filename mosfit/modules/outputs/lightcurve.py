@@ -1,4 +1,6 @@
 from mosfit.modules.module import Module
+from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.entry import Entry, ENTRY
 
 CLASS_NAME = 'LightCurve'
 
@@ -19,5 +21,7 @@ class LightCurve(Module):
                 'observed'
         ]:
             output[key.replace('all_', '')] = kwargs[key]
+
+        entry = Entry(kwargs['name'])
 
         return output
