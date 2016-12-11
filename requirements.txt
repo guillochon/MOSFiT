@@ -11,5 +11,5 @@ corner>=2.0.1
 extinction>=0.2.2
 acor>=1.1.1
 schwimmbad>=0.2.1
-astrocats>=0.2.13
+astrocats>=0.2.14
 nbstripout>=0.2.9
