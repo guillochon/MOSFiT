@@ -21,3 +21,6 @@ class Module:
 
     def set_event_name(self, event_name):
         self._event_name = event_name
+
+    def get_bibcode(self):
+        return ''

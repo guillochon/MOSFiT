@@ -32,6 +32,7 @@ class Transient(Module):
         if not self._all_data:
             return
         name = list(self._all_data.keys())[0]
+        self._data['name'] = name
         for key in self._keys:
             if key not in self._all_data[name]:
                 continue

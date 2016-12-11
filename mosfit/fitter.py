@@ -2,6 +2,7 @@ import datetime
 import json
 import os
 import shutil
+import subprocess
 import sys
 import time
 import urllib.request
@@ -10,8 +11,13 @@ from collections import OrderedDict
 
 import emcee
 import numpy as np
+from astrocats.catalog.entry import ENTRY, Entry
+from astrocats.catalog.model import MODEL
+from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.realization import REALIZATION
 from schwimmbad import MPIPool, SerialPool
 
+from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
 
@@ -146,8 +152,7 @@ class Fitter():
 
                     if os.path.exists(path):
                         with open(path, 'r') as f:
-                            data = json.load(
-                                f, object_pairs_hook=OrderedDict)
+                            data = json.load(f, object_pairs_hook=OrderedDict)
                         print_wrapped('Event file:', self._wrap_length)
                         print_wrapped('  ' + path, self._wrap_length)
                     else:
@@ -433,11 +438,32 @@ class Fitter():
         except:
             raise
 
-        walkers_out = OrderedDict()
+        entry = Entry(name=self._event_name)
+        source = entry.add_source(name='MOSFiT paper')
+        modeldict = {
+            MODEL.NAME: self._model._model_name,
+            MODEL.CODE: 'MOSFiT',
+            MODEL.DATE: time.strftime("%Y/%m/%d"),
+            MODEL.VERSION: __version__ + ' [' + subprocess.getoutput(
+                'git rev-parse --short HEAD').strip() + ']',
+            MODEL.SOURCE: source
+        }
+        modelnum = entry.add_model(**modeldict)
+
         for xi, x in enumerate(p[0]):
-            walkers_out[xi] = model.run_stack(x, root='output')
-            if lnprob is not None:
-                walkers_out[xi]['score'] = lnprob[0][xi]
+            output = model.run_stack(x, root='output')
+            for i in range(len(output['times'])):
+                photodict = {
+                    PHOTOMETRY.BAND: output['bands'][i],
+                    PHOTOMETRY.TIME: output['times'][i],
+                    PHOTOMETRY.MAGNITUDE: output['model_magnitudes'][i],
+                    PHOTOMETRY.MODEL: modelnum,
+                    PHOTOMETRY.SOURCE: source,
+                    PHOTOMETRY.REALIZATION: str(xi + 1)
+                }
+                entry.add_photometry(
+                    compare_against_existing=False, **photodict)
+
             parameters = OrderedDict()
             pi = 0
             for ti, task in enumerate(model._call_stack):
@@ -453,7 +479,14 @@ class Fitter():
                 }
                 parameters.update({model._modules[task].name(): paramdict})
                 pi = pi + 1
-            walkers_out[xi]['parameters'] = parameters
+            realdict = {
+                REALIZATION.PARAMETERS: parameters
+            }
+            if lnprob is not None:
+                realdict[REALIZATION.SCORE] = str(lnprob[0][xi])
+            entry[ENTRY.MODELS][0].add_realization(**realdict)
+
+        oentry = entry._ordered(entry)
 
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
@@ -463,8 +496,8 @@ class Fitter():
                       os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
                           ('_' + suffix)
                           if suffix else '') + '.json'), 'w') as f:
-            json.dump(walkers_out, flast, indent='\t', separators=(',', ':'))
-            json.dump(walkers_out, f, indent='\t', separators=(',', ':'))
+            json.dump(oentry, flast, indent='\t', separators=(',', ':'))
+            json.dump(oentry, f, indent='\t', separators=(',', ':'))
 
         return (p, lnprob)
 
