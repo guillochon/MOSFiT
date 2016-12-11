@@ -79,8 +79,9 @@ class Fitter():
         self._wrap_length = wrap_length
 
         for event in events:
+            self._event_name = 'Batch'
+            self._event_path = ''
             if event:
-                self._event_name = ''
                 try:
                     pool = MPIPool()
                 except:
@@ -440,12 +441,15 @@ class Fitter():
         except:
             raise
 
-        entry = Entry.init_from_file(
-            catalog=None,
-            name=self._event_name,
-            path=self._event_path,
-            merge=False,
-            pop_schema=False)
+        if self._event_path:
+            entry = Entry.init_from_file(
+                catalog=None,
+                name=self._event_name,
+                path=self._event_path,
+                merge=False,
+                pop_schema=False)
+        else:
+            entry = Entry(name=self._event_name)
 
         source = entry.add_source(name='MOSFiT paper')
         modeldict = {
