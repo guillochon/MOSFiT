@@ -2,10 +2,9 @@ import argparse
 import os
 import shutil
 
-from emcee.utils import MPIPool
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import is_master, prompt
+from mosfit.utils import is_master, prompt, print_wrapped
 
 
 def main():
@@ -230,6 +229,10 @@ def main():
     if (isinstance(args.extrapolate_time, list) and
             len(args.extrapolate_time) == 0):
         args.extrapolate_time = 100.0
+
+    if len(args.band_list) and args.smooth_times == -1:
+        print_wrapped('Enabling -S as extra bands were defined.')
+        args.smooth_times = 0
 
     changed_iterations = False
     if args.iterations == -1:

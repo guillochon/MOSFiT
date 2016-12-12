@@ -103,17 +103,25 @@ class Transient(Module):
                 zip(*(self._data['systems'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'])))
             if len(band_list):
-                obs.extend(
-                    list(
-                        zip(*(band_systems
-                              if len(band_systems) else [''], band_instruments
-                              if len(band_instruments) else [''], band_bandsets
-                              if len(band_bandsets) else [''], band_list))))
+                b_insts = band_instruments if len(band_instruments) == len(
+                    band_list) else ([band_instruments[0] for x in band_list]
+                                     if len(band_instruments) else
+                                     ['' for x in band_list])
+                b_systs = band_systems if len(band_systems) == len(
+                    band_list) else ([band_systems[0] for x in band_list]
+                                     if len(band_systems) else
+                                     ['' for x in band_list])
+                b_bsets = band_bandsets if len(band_bandsets) == len(
+                    band_list) else ([band_bandsets[0] for x in band_list]
+                                     if len(band_bandsets) else
+                                     ['' for x in band_list])
+                obs.extend(list(zip(*(b_systs, b_insts, b_bsets, band_list))))
 
             uniqueobs = []
             for o in obs:
-                if o not in uniqueobs:
-                    uniqueobs.append(o)
+                to = tuple(o)
+                if to not in uniqueobs:
+                    uniqueobs.append(to)
 
             minet, maxet = (tuple(extrapolate_time)
                             if len(extrapolate_time) == 2 else
@@ -132,7 +140,7 @@ class Transient(Module):
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = (t, o[0], o[1], o[2], o[3])
+                    newobs = tuple((t, o[0], o[1], o[2], o[3]))
                     if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 

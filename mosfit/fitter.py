@@ -273,13 +273,21 @@ class Fitter():
         # Run through once to set all inits
         outputs = self._model.run_stack(
             [0.0 for x in range(self._model._num_free_parameters)],
-            root='objective')
+            root='output')
 
         # Collect observed band info
         if pool.is_master() and 'filters' in self._model._modules:
-            print_wrapped('Bands being used for current transient:')
-            bis = outputs['all_band_indices']
-            bis = list(set(bis))
+            print_wrapped('Bands being used for current transient:',
+                          self._wrap_length)
+            bis = list(set(outputs['all_band_indices']))
+            ois = []
+            for bi in bis:
+                ois.append(
+                    any([
+                        y
+                        for x, y in zip(outputs['all_band_indices'], outputs[
+                            'observed']) if x == bi
+                    ]))
             band_len = max([
                 len(self._model._modules['filters']._unique_bands[bi]['SVO'])
                 for bi in bis
@@ -289,14 +297,17 @@ class Fitter():
             filterrows = [
                 s[3]
                 for s in list(
-                    sorted([(ubs[bi]['systems'], ubs[bi]['bandsets'],
-                             filts._average_wavelengths[bi], ('  ' + ubs[bi][
-                                 'SVO'].ljust(band_len) + ' [' + ','.join(
-                                     set(
-                                         filter(None, (ubs[bi]['bandsets'],
-                                                       ubs[bi]['systems'])))
-                                 ) + ']').replace(' []', '')) for bi in bis]))
+                    sorted([(ubs[bis[i]]['systems'], ubs[bis[i]][
+                        'bandsets'], filts._average_wavelengths[bis[i]], (
+                            ' ' + (' ' if ois[i] else '*') + ubs[bis[i]]['SVO']
+                            .ljust(band_len) + ' [' + ','.join(
+                                set(
+                                    filter(None, (ubs[bis[i]]['bandsets'], ubs[
+                                        bis[i]]['systems'])))) + ']'
+                        ).replace(' []', '')) for i in range(len(bis))]))
             ]
+            if not all(ois):
+                filterrows.append('  (* = Not observed in this band)')
             print('\n'.join(filterrows))
 
         self._event_name = event_name
@@ -453,7 +464,7 @@ class Fitter():
         except:
             raise
 
-        print_inline('Saving output to disk...')
+        print_wrapped('Saving output to disk...', self._wrap_length)
         if self._event_path:
             entry = Entry.init_from_file(
                 catalog=None,
