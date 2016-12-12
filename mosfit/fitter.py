@@ -98,18 +98,21 @@ class Fitter():
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
                         input_name = event.replace('.json', '')
-                        print('Event `{}` interpreted as supernova name, '
-                              'downloading list of supernova aliases...'.
-                              format(input_name))
+                        print_wrapped(
+                            'Event `{}` interpreted as supernova '
+                            'name, downloading list of supernova '
+                            'aliases...'.format(input_name),
+                            wrap_length=self._wrap_length)
                         try:
                             response = urllib.request.urlopen(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/names.min.json',
                                 timeout=10)
                         except:
-                            print_inline(
+                            print_wrapped(
                                 'Warning: Could not download SN names (are '
-                                'you online?), using cached list.')
+                                'you online?), using cached list.',
+                                wrap_length=self._wrap_length)
                         else:
                             with open(names_path, 'wb') as f:
                                 shutil.copyfileobj(response, f)
@@ -133,8 +136,10 @@ class Fitter():
                             raise RuntimeError
                         urlname = self._event_name + '.json'
 
-                        print('Found event by primary name `{}` in the OSC, '
-                              'downloading data...'.format(self._event_name))
+                        print_wrapped(
+                            'Found event by primary name `{}` in the OSC, '
+                            'downloading data...'.format(self._event_name),
+                            wrap_length=self._wrap_length)
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
                             response = urllib.request.urlopen(
@@ -142,10 +147,11 @@ class Fitter():
                                 'supernovae/output/json/' + urlname,
                                 timeout=10)
                         except:
-                            print_inline(
+                            print_wrapped(
                                 'Warning: Could not download data for `{}`, '
                                 'will attempt to use cached data.'.format(
-                                    self._event_name))
+                                    self._event_name),
+                                wrap_length=self._wrap_length)
                         else:
                             with open(name_path, 'wb') as f:
                                 shutil.copyfileobj(response, f)
@@ -624,8 +630,7 @@ class Fitter():
                      desc='',
                      scores='',
                      progress='',
-                     acor='',
-                     wrap_length=100):
+                     acor=''):
         """Prints a status message showing the current state of the fitting process.
         """
 
@@ -681,7 +686,7 @@ class Fitter():
             oldline = line
             line = line + (' | ' if li > 0 else '') + item
             li = li + 1
-            if len(line) > wrap_length:
+            if len(line) > self._wrap_length:
                 li = 1
                 lines = lines + '\n' + oldline
                 line = item

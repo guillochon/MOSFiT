@@ -263,9 +263,9 @@ def main():
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
-            print(
+            print_wrapped(
                 'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).')
+                '(disable with --no-copy-at-launch).', wrap_length=width)
             fc = False
             if args.force_copy:
                 fc = prompt(
