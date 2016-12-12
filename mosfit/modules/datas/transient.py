@@ -81,6 +81,10 @@ class Transient(Module):
                         self._data.setdefault(
                             x + 's', []).append(entry.get(x, falseval))
 
+        if 'times' not in self._data or 'magnitudes' not in self._data:
+            print('No fittable data in `{}`!'.format(name))
+            return False
+
         for key in self._data.copy():
             if isinstance(self._data[key], list):
                 if not any(is_number(x) for x in self._data[key]):
@@ -123,11 +127,10 @@ class Transient(Module):
                 if to not in uniqueobs:
                     uniqueobs.append(to)
 
-            minet, maxet = (
-                extrapolate_time, extrapolate_time) if isinstance(
-                    extrapolate_time, (float, int)) else (
-                        (tuple(extrapolate_time) if len(extrapolate_time) == 2
-                         else (extrapolate_time[0], extrapolate_time[0])))
+            minet, maxet = (extrapolate_time, extrapolate_time) if isinstance(
+                extrapolate_time, (float, int)) else (
+                    (tuple(extrapolate_time) if len(extrapolate_time) == 2 else
+                     (extrapolate_time[0], extrapolate_time[0])))
             mint, maxt = (min(self._data['times']) - minet,
                           max(self._data['times']) + maxet)
             alltimes = list(
@@ -160,6 +163,8 @@ class Transient(Module):
                 self._data['extra_' + qkey] = [
                     x - minv for x in self._data['extra_' + qkey]
                 ]
+
+        return True
 
     def get_data_determined_parameters(self):
         return self._data_determined_parameters
