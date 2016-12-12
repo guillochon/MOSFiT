@@ -43,5 +43,4 @@ setup(
         'Programming Language :: Python :: 3 :: Only',
         'Topic :: Scientific/Engineering :: Astronomy',
         'Topic :: Scientific/Engineering :: Physics'
-    ],
-    zip_safe=True)
+    ])
