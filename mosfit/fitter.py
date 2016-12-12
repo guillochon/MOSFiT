@@ -284,12 +284,20 @@ class Fitter():
                 len(self._model._modules['filters']._unique_bands[bi]['SVO'])
                 for bi in bis
             ])
-            svonames = list(
-                sorted([('  ' + self._model._modules['filters']._unique_bands[
-                    bi]['SVO'].ljust(band_len) + ' [' + self._model._modules[
-                        'filters']
-                         ._unique_bands[bi]['systems'] + ']') for bi in bis]))
-            print('\n'.join(svonames))
+            filts = self._model._modules['filters']
+            ubs = filts._unique_bands
+            filterrows = [
+                s[3]
+                for s in list(
+                    sorted([(ubs[bi]['systems'], ubs[bi]['bandsets'],
+                             filts._average_wavelengths[bi], ('  ' + ubs[bi][
+                                 'SVO'].ljust(band_len) + ' [' + ','.join(
+                                     set(
+                                         filter(None, (ubs[bi]['bandsets'],
+                                                       ubs[bi]['systems'])))
+                                 ) + ']').replace(' []', '')) for bi in bis]))
+            ]
+            print('\n'.join(filterrows))
 
         self._event_name = event_name
         self._emcee_est_t = 0.0

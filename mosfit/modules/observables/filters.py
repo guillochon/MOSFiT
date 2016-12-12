@@ -71,6 +71,7 @@ class Filters(Module):
         self._min_waves = [0.0] * self._n_bands
         self._max_waves = [0.0] * self._n_bands
         self._filter_integrals = [0.0] * self._n_bands
+        self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
 
         if self._pool.is_master():
@@ -167,6 +168,11 @@ class Filters(Module):
             self._max_waves[i] = max(self._band_wavelengths[i])
             self._filter_integrals[i] = np.trapz(self._transmissions[i],
                                                  self._band_wavelengths[i])
+            self._average_wavelengths[i] = np.trapz([
+                x * y
+                for x, y in zip(self._transmissions[i], self._band_wavelengths[
+                    i])
+            ], self._band_wavelengths[i]) / self._filter_integrals[i]
 
             if 'offset' in band:
                 self._band_offsets[i] = band['offset']
