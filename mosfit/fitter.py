@@ -9,17 +9,17 @@ import urllib.request
 import warnings
 from collections import OrderedDict
 
-import emcee
 import numpy as np
+
+import emcee
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
-from schwimmbad import MPIPool, SerialPool
-
 from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
+from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -128,7 +128,8 @@ class Fitter():
                             self._event_name = event
                         else:
                             for name in names:
-                                if event in names[name]:
+                                if (event in names[name] or
+                                        'SN' + event in names[name]):
                                     self._event_name = name
                                     break
                         if not self._event_name:
@@ -210,7 +211,7 @@ class Fitter():
                         }
                         data = self.generate_dummy_data(**gen_args)
 
-                    self.load_data(
+                    success = self.load_data(
                         data,
                         event_name=self._event_name,
                         iterations=iterations,
@@ -224,16 +225,17 @@ class Fitter():
                         band_bandsets=band_bandsets,
                         pool=pool)
 
-                    self.fit_data(
-                        event_name=self._event_name,
-                        iterations=iterations,
-                        num_walkers=num_walkers,
-                        num_temps=num_temps,
-                        fracking=fracking,
-                        frack_step=frack_step,
-                        post_burn=post_burn,
-                        pool=pool,
-                        suffix=suffix)
+                    if success:
+                        self.fit_data(
+                            event_name=self._event_name,
+                            iterations=iterations,
+                            num_walkers=num_walkers,
+                            num_temps=num_temps,
+                            fracking=fracking,
+                            frack_step=frack_step,
+                            post_burn=post_burn,
+                            pool=pool,
+                            suffix=suffix)
 
                     if pool.is_master():
                         pool.close()
@@ -259,7 +261,7 @@ class Fitter():
             cur_task = self._model._call_stack[task]
             self._model._modules[task].set_event_name(event_name)
             if cur_task['kind'] == 'data':
-                self._model._modules[task].set_data(
+                success = self._model._modules[task].set_data(
                     data,
                     req_key_values={'band': self._model._bands},
                     subtract_minimum_keys=['times'],
@@ -269,6 +271,8 @@ class Fitter():
                     band_systems=band_systems,
                     band_instruments=band_instruments,
                     band_bandsets=band_bandsets)
+                if not success:
+                    return False
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
 
@@ -321,6 +325,8 @@ class Fitter():
         self._bh_est_t = 0.0
         self._fracking = fracking
         self._burn_in = max(iterations - post_burn, 0)
+
+        return True
 
     def fit_data(self,
                  event_name='',
@@ -582,8 +588,7 @@ class Fitter():
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val
-                for x in range(len(band_list_all) - len(band_systems))
+                rep_val for x in range(len(band_list_all) - len(band_systems))
             ]
         if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
@@ -626,11 +631,7 @@ class Fitter():
 
         return data
 
-    def print_status(self,
-                     desc='',
-                     scores='',
-                     progress='',
-                     acor=''):
+    def print_status(self, desc='', scores='', progress='', acor=''):
         """Prints a status message showing the current state of the fitting process.
         """
 
