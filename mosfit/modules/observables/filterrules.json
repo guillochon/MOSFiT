@@ -87,6 +87,20 @@
         }
     },
     {
+        "instruments":[
+            "CFH12k",
+            "P48"
+        ],
+        "filters":{
+            "R":{
+                "SVO":"CFHT/CFH12k.R"
+            },
+            "r":{
+                "SVO":"CFHT/CFH12k.R"
+            }
+        }
+    },
+    {
         "bandsets":[
             "Bessell"
         ],
