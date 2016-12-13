@@ -345,6 +345,7 @@ def main():
         'post_burn': args.post_burn,
         'smooth_times': args.smooth_times,
         'extrapolate_time': args.extrapolate_time,
+        'limit_fitting_mjds': args.limit_fitting_mjds,
         'suffix': args.suffix
     }
     Fitter().fit_events(**fitargs)
