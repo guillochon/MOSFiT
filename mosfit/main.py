@@ -134,6 +134,20 @@ def main():
             "by default if no arguments are given."))
 
     parser.add_argument(
+        '--limit-fitting-mjds',
+        '-L',
+        dest='limit_fitting_mjds',
+        type=float,
+        default=False,
+        nargs=2,
+        help=(
+          "Only include observations with MJDs within the specified range, "
+          "e.g. `-L 54123 54234` will exclude observations outside this "
+          "range. If specified without an argument, any upper limit "
+          "observations before the last upper limit before the first "
+          "detection in a given band will not be included in the fitting."))
+
+    parser.add_argument(
         '--suffix',
         '-s',
         dest='suffix',

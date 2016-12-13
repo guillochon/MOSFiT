@@ -1,3 +1,5 @@
+from collections import OrderedDict
+
 import numpy as np
 
 from mosfit.modules.module import Module
@@ -24,6 +26,7 @@ class Transient(Module):
                  subtract_minimum_keys=[],
                  smooth_times=-1,
                  extrapolate_time=0.0,
+                 limit_fitting_mjds=False,
                  band_list=[],
                  band_systems=[],
                  band_instruments=[],
@@ -44,6 +47,12 @@ class Transient(Module):
                 if not isinstance(subkeys, dict) or 'required' in listify(
                     subkeys[x])
             ]
+            # Move time to front as it will be limited by `limit_fitting_mjds`
+            if 'time' in req_subkeys:
+                newsubkeys = OrderedDict(({'time': subkeys['time']}))
+                del subkeys['time']
+                newsubkeys.update(subkeys)
+                subkeys = newsubkeys
             num_subkeys = [
                 x for x in subkeys if 'numeric' in listify(subkeys[x])
             ]
@@ -78,6 +87,12 @@ class Transient(Module):
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
+                        if limit_fitting_mjds is not False and x == 'time':
+                            val = float(entry.get(x, None))
+                            print(val, limit_fitting_mjds)
+                            if (val < limit_fitting_mjds[0] or
+                                    val > limit_fitting_mjds[1]):
+                                break
                         self._data.setdefault(
                             x + 's', []).append(entry.get(x, falseval))
 
