@@ -64,6 +64,25 @@
             },
             "ROTSE":{
                 "SVO":"Generic/Bessell.R"
+            },
+            "FUV":{
+                "SVO":"GALEX/GALEX.FUV"
+            },
+            "NUV":{
+                "SVO":"GALEX/GALEX.NUV"
+            }
+        }
+    },
+    {
+        "instruments":[
+            "GALEX"
+        ],
+        "filters":{
+            "FUV":{
+                "SVO":"GALEX/GALEX.FUV"
+            },
+            "NUV":{
+                "SVO":"GALEX/GALEX.NUV"
             }
         }
     },
