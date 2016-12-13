@@ -1,5 +1,3 @@
-from collections import OrderedDict
-
 import numpy as np
 
 from mosfit.modules.module import Module
@@ -27,6 +25,8 @@ class Transient(Module):
                  smooth_times=-1,
                  extrapolate_time=0.0,
                  limit_fitting_mjds=False,
+                 exclude_bands=[],
+                 exclude_instruments=[],
                  band_list=[],
                  band_systems=[],
                  band_instruments=[],
@@ -47,12 +47,6 @@ class Transient(Module):
                 if not isinstance(subkeys, dict) or 'required' in listify(
                     subkeys[x])
             ]
-            # Move time to front as it will be limited by `limit_fitting_mjds`
-            if 'time' in req_subkeys:
-                newsubkeys = OrderedDict(({'time': subkeys['time']}))
-                del subkeys['time']
-                newsubkeys.update(subkeys)
-                subkeys = newsubkeys
             num_subkeys = [
                 x for x in subkeys if 'numeric' in listify(subkeys[x])
             ]
@@ -74,6 +68,7 @@ class Transient(Module):
                         for x in num_subkeys
                 ]):
                     continue
+
                 skip_key = False
                 for qkey in req_key_values:
                     if (qkey in entry and
@@ -82,16 +77,31 @@ class Transient(Module):
                         break
                 if skip_key:
                     continue
+
+                skip_entry = False
+                for x in subkeys:
+                    if limit_fitting_mjds is not False and x == 'time':
+                        val = float(entry.get(x, None))
+                        if (val < limit_fitting_mjds[0] or
+                                val > limit_fitting_mjds[1]):
+                            skip_entry = True
+                            break
+                    if exclude_bands is not False and x == 'band':
+                        if entry.get(x, '') in exclude_bands:
+                            skip_entry = True
+                            break
+                    if exclude_instruments is not False and x == 'band':
+                        if entry.get(x, '') in exclude_instruments:
+                            skip_entry = True
+                            break
+                if skip_entry:
+                    continue
+
                 for x in subkeys:
                     falseval = False if x in boo_subkeys else ''
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
-                        if limit_fitting_mjds is not False and x == 'time':
-                            val = float(entry.get(x, None))
-                            if (val < limit_fitting_mjds[0] or
-                                    val > limit_fitting_mjds[1]):
-                                break
                         self._data.setdefault(
                             x + 's', []).append(entry.get(x, falseval))
 

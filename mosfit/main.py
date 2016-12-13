@@ -95,6 +95,21 @@ def main():
               "in `--band-list`."))
 
     parser.add_argument(
+        '--exclude-bands',
+        dest='exclude_bands',
+        default=[],
+        nargs='+',
+        help=("List of bands to exclude in fitting."))
+
+    parser.add_argument(
+        '--exclude-instruments',
+        dest='exclude_instruments',
+        default=[],
+        nargs='+',
+        help=("List of instruments to exclude in fitting corresponding to "
+              "the bands listed in `--exclude-bands`."))
+
+    parser.add_argument(
         '--iterations',
         '-i',
         dest='iterations',
@@ -346,6 +361,8 @@ def main():
         'smooth_times': args.smooth_times,
         'extrapolate_time': args.extrapolate_time,
         'limit_fitting_mjds': args.limit_fitting_mjds,
+        'exclude_bands': args.exclude_bands,
+        'exclude_instruments': args.exclude_instruments,
         'suffix': args.suffix
     }
     Fitter().fit_events(**fitargs)

@@ -74,6 +74,8 @@ class Fitter():
                    smooth_times=-1,
                    extrapolate_time=0.0,
                    limit_fitting_mjds=False,
+                   exclude_bands=[],
+                   exclude_instruments=[],
                    suffix=''):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -221,6 +223,8 @@ class Fitter():
                         smooth_times=smooth_times,
                         extrapolate_time=extrapolate_time,
                         limit_fitting_mjds=limit_fitting_mjds,
+                        exclude_bands=exclude_bands,
+                        exclude_instruments=exclude_instruments,
                         band_list=band_list,
                         band_systems=band_systems,
                         band_instruments=band_instruments,
@@ -251,6 +255,8 @@ class Fitter():
                   smooth_times=-1,
                   extrapolate_time=0.0,
                   limit_fitting_mjds=False,
+                  exclude_bands=[],
+                  exclude_instruments=[],
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
@@ -271,6 +277,8 @@ class Fitter():
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
                     limit_fitting_mjds=limit_fitting_mjds,
+                    exclude_bands=exclude_bands,
+                    exclude_instruments=exclude_instruments,
                     band_list=band_list,
                     band_systems=band_systems,
                     band_instruments=band_instruments,
