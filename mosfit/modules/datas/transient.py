@@ -87,7 +87,6 @@ class Transient(Module):
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
-                        print(limit_fitting_mjds, x, entry.get(x, falseval))
                         if limit_fitting_mjds is not False and x == 'time':
                             val = float(entry.get(x, None))
                             if (val < limit_fitting_mjds[0] or
