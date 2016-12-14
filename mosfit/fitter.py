@@ -507,8 +507,8 @@ class Fitter():
 
                     st = time.time()
                     seeds = [
-                        int(round(time.time() * 1000.0) % 4294900000 + x
-                        for x in range(len(bhwalkers)))
+                        int(round(time.time() * 1000.0)) % 4294900000 + x
+                        for x in range(len(bhwalkers))
                     ]
                     frack_args = list(zip(bhwalkers, seeds))
                     bhs = pool.map(frack, frack_args)
