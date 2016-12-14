@@ -436,7 +436,7 @@ class Fitter():
 
         print_inline('Initial draws completed!')
         print('\n\n')
-        p = p0.copy()
+        p = list(p0)
 
         if fracking:
             frack_iters = max(round(iterations / frack_step), 1)
