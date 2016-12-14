@@ -1,3 +1,5 @@
 [run]
 omit =
     mosfit/plotting.py
+exclude_lines =
+    except KeyboardInterrupt:

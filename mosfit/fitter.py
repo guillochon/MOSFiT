@@ -688,7 +688,7 @@ class Fitter():
             if insts[ti]:
                 photodict['instrument'] = insts[ti]
             if bsets[ti]:
-                photodict['instrument'] = bsets[ti]
+                photodict['bandset'] = bsets[ti]
             data[name]['photometry'].append(photodict)
 
         return data
