@@ -135,6 +135,12 @@
             },
             "I":{
                 "SVO":"Generic/Cousins.I"
+            },
+            "Rc":{
+                "SVO":"Generic/Cousins.R"
+            },
+            "Ic":{
+                "SVO":"Generic/Cousins.I"
             }
         }
     },

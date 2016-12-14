@@ -1,6 +1,7 @@
 import datetime
 import json
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -20,7 +21,8 @@ from schwimmbad import MPIPool, SerialPool
 
 from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
-from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
+from mosfit.utils import (is_number, pretty_num, print_inline, print_wrapped,
+                          prompt)
 
 from .model import Model
 
@@ -138,19 +140,48 @@ class Fitter():
                                     self._event_name = name
                                     break
                         if not self._event_name:
-                            matches = get_close_matches(
-                                event, list(names.keys()), n=5)
-                            response = prompt(
-                                'No exact match to given event '
-                                'found. Did you mean one of the '
-                                'following events?',
-                                kind='select',
-                                options=matches)
-                            if response:
-                                self._event_name = response
+                            namekeys = []
+                            for name in names:
+                                namekeys.extend(names[name])
+                            matches = set(
+                                get_close_matches(
+                                    event, namekeys, n=5, cutoff=0.8))
+                            # matches = []
+                            if len(matches) < 5 and is_number(event[0]):
+                                print_wrapped(
+                                    'Could not find event, performing '
+                                    'extended name search...',
+                                    wrap_length=self._wrap_length)
+                                snprefixes = set()
+                                for name in names:
+                                    ind = re.search("\d", name)
+                                    if ind and ind.start() > 0:
+                                        snprefixes.add(name[:ind.start()])
+                                snprefixes = list(snprefixes)
+                                for prefix in snprefixes:
+                                    testname = prefix + event
+                                    new_matches = get_close_matches(
+                                        testname, namekeys, cutoff=0.95, n=1)
+                                    if len(new_matches):
+                                        matches.add(new_matches[0])
+                                    if len(matches) == 5:
+                                        break
+                            if len(matches):
+                                response = prompt(
+                                    'No exact match to given event '
+                                    'found. Did you mean one of the '
+                                    'following events?',
+                                    kind='select',
+                                    options=list(matches))
+                                if response:
+                                    for name in names:
+                                        if response in names[name]:
+                                            self._event_name = name
+                                            break
                         if not self._event_name:
-                            print('Error: Could not find event by that name!')
-                            raise RuntimeError
+                            print_wrapped('Could not find event by that name, '
+                                          'skipping!', self._wrap_length)
+                            continue
                         urlname = self._event_name + '.json'
 
                         print_wrapped(
