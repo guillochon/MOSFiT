@@ -16,19 +16,13 @@ from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
-from schwimmbad import MPIPool, SerialPool
-
 from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
-from mosfit.utils import (is_number, pretty_num, print_inline, print_wrapped,
-                          prompt)
+from mosfit.utils import (get_url_file_handle, is_number, pretty_num,
+                          print_inline, print_wrapped, prompt)
+from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
-
-try:
-    from urllib.request import urlopen
-except:
-    from urllib import urlretrieve as urlopen
 
 warnings.filterwarnings("ignore")
 
@@ -115,7 +109,7 @@ class Fitter():
                             'aliases...'.format(input_name),
                             wrap_length=self._wrap_length)
                         try:
-                            response = urlopen(
+                            response = get_url_file_handle(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/names.min.json',
                                 timeout=10)
@@ -124,6 +118,7 @@ class Fitter():
                                 'Warning: Could not download SN names (are '
                                 'you online?), using cached list.',
                                 wrap_length=self._wrap_length)
+                            raise
                         else:
                             with open(names_path, 'wb') as f:
                                 shutil.copyfileobj(response, f)
@@ -194,7 +189,7 @@ class Fitter():
                             wrap_length=self._wrap_length)
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
-                            response = urlopen(
+                            response = get_url_file_handle(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/json/' + urlname,
                                 timeout=10)

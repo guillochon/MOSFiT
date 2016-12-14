@@ -21,6 +21,14 @@ if sys.version_info[:2] < (3, 3):
 syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega'}
 
 
+def get_url_file_handle(url, timeout=10):
+    if sys.version_info[0] >= 3:
+        from urllib.request import urlopen
+    else:
+        from urllib2 import urlopen
+    return urlopen(url, timeout=timeout)
+
+
 def is_number(s):
     if isinstance(s, bool):
         return False

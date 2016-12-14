@@ -6,15 +6,9 @@ from collections import OrderedDict
 
 import numpy as np
 from astropy.io.votable import parse as voparse
-
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import listify, print_inline, syst_syns
-
-try:
-    from urllib.request import urlopen
-except:
-    from urllib import urlretrieve as urlopen
+from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
 
 CLASS_NAME = 'Filters'
 
@@ -104,7 +98,7 @@ class Filters(Module):
                             print('Downloading bandpass {} from SVO.'.format(
                                 svopath))
                             try:
-                                response = urlopen(
+                                response = get_url_file_handle(
                                     'http://svo2.cab.inta-csic.es'
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
