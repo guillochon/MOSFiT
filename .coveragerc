@@ -1,0 +1,3 @@
+[run]
+omit =
+    mosfit/plotting.py
