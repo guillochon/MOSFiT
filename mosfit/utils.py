@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import signal
 import sys
+from builtins import input
 from math import floor, log10
 from textwrap import fill
 
