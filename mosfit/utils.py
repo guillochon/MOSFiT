@@ -5,7 +5,7 @@ from __future__ import print_function
 import signal
 import sys
 from math import floor, log10
-from textwrap import wrap
+from textwrap import fill
 
 if sys.version_info[:2] < (3, 3):
     old_print = print
@@ -29,6 +29,21 @@ def is_number(s):
         return True
     except ValueError:
         return False
+
+
+def is_integer(s):
+    if isinstance(s, list) and not isinstance(s, str):
+        try:
+            [int(x) for x in s]
+            return True
+        except ValueError:
+            return False
+    else:
+        try:
+            int(s)
+            return True
+        except ValueError:
+            return False
 
 
 def pretty_num(x, sig=4):
@@ -57,20 +72,35 @@ def print_inline(x, new_line=False):
 
 
 def print_wrapped(text, wrap_length=100):
-    print('\n'.join(wrap(text, wrap_length)))
+    print(fill(text, wrap_length))
 
 
-def prompt(text, wrap_length=100, kind='bool'):
+def prompt(text, wrap_length=100, kind='bool', options=None):
     if kind == 'bool':
         choices = ' (y/[n])'
+    elif kind == 'select':
+        choices = '\n' + '\n'.join(
+            [str(i + 1) + '. ' + options[i] for i in range(len(options))] + [
+                'N. None of the above, skip this event.\nEnter selection [1-' +
+                str(len(options)) + '/N]:'
+            ])
     else:
         raise ValueError('Unknown prompt kind.')
-    prompt_txt = wrap(text + choices, wrap_length)
+
+    prompt_txt = (text + choices).split('\n')
     for txt in prompt_txt[:-1]:
-        print(txt)
-    user_choice = input(prompt_txt[-1] + " ")
+        ptxt = fill(txt, wrap_length, replace_whitespace=False)
+        print(ptxt)
+    user_choice = input(
+        fill(
+            prompt_txt[-1], wrap_length, replace_whitespace=False) + " ")
     if kind == 'bool':
         return user_choice in ["Y", "y", "Yes", "yes"]
+    elif kind == 'select':
+        if (is_integer(user_choice) and
+                int(user_choice) in list(range(1, len(options)))):
+            return options[int(user_choice) - 1]
+        return False
 
 
 def init_worker():

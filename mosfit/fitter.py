@@ -8,18 +8,19 @@ import time
 import urllib.request
 import warnings
 from collections import OrderedDict
-
-import numpy as np
+from difflib import get_close_matches
 
 import emcee
+import numpy as np
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
+from schwimmbad import MPIPool, SerialPool
+
 from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
-from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -81,8 +82,9 @@ class Fitter():
         self._travis = travis
         self._wrap_length = wrap_length
 
+        self._event_name = 'Batch'
         for event in events:
-            self._event_name = 'Batch'
+            self._event_name = ''
             self._event_path = ''
             if event:
                 try:
@@ -135,6 +137,17 @@ class Fitter():
                                         'SN' + event in names[name]):
                                     self._event_name = name
                                     break
+                        if not self._event_name:
+                            matches = get_close_matches(
+                                event, list(names.keys()), n=5)
+                            response = prompt(
+                                'No exact match to given event '
+                                'found. Did you mean one of the '
+                                'following events?',
+                                kind='select',
+                                options=matches)
+                            if response:
+                                self._event_name = response
                         if not self._event_name:
                             print('Error: Could not find event by that name!')
                             raise RuntimeError
@@ -480,6 +493,7 @@ class Fitter():
                         progress=[(b + 1) * frack_step, iterations])
         except KeyboardInterrupt:
             pool.close()
+            print(self._wrap_length)
             if (not prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '
@@ -600,7 +614,8 @@ class Fitter():
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val for x in range(len(band_list_all) - len(band_systems))
+                rep_val
+                for x in range(len(band_list_all) - len(band_systems))
             ]
         if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
