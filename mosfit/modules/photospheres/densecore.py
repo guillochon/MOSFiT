@@ -1,12 +1,11 @@
 from math import pi
 
-import numexpr as ne
 import numpy as np
 from astropy import constants as c
 from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
 
-CLASS_NAME = 'densecore'
+CLASS_NAME = 'DenseCore'
 
 
 class DenseCore(Photosphere):

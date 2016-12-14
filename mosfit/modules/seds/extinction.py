@@ -1,6 +1,6 @@
 import numpy as np
 
-import extinction
+from extinction import odonnell94, apply as eapp
 from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Extinction'
@@ -30,7 +30,7 @@ class Extinction(SED):
             bi = self._band_indices[si]
             # First extinct out LOS dust from MW
             self._mw_extinct.append(
-                extinction.odonnell94(
+                odonnell94(
                     np.array(self._sample_wavelengths[bi]), self._av_mw,
                     self.MW_RV))
 
@@ -39,12 +39,11 @@ class Extinction(SED):
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]
             # First extinct out LOS dust from MW
-            extinction.apply(
-                self._mw_extinct[si], self._seds[si], inplace=True)
+            eapp(self._mw_extinct[si], self._seds[si], inplace=True)
             # Then extinct out host gal (using rest wavelengths)
-            extinction.apply(
-                extinction.odonnell94(self._band_rest_wavelengths[bi], av_host,
-                                      self.MW_RV),
+            eapp(
+                odonnell94(self._band_rest_wavelengths[bi], av_host,
+                                self.MW_RV),
                 self._seds[si],
                 inplace=True)
 

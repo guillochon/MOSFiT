@@ -2,7 +2,6 @@ import csv
 import json
 import os
 import shutil
-from urllib import request
 from collections import OrderedDict
 
 import numpy as np
@@ -11,6 +10,11 @@ from astropy.io.votable import parse as voparse
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import listify, print_inline, syst_syns
+
+try:
+    from urllib.request import urlopen
+except:
+    from urllib import urlretrieve as urlopen
 
 CLASS_NAME = 'Filters'
 
@@ -100,7 +104,7 @@ class Filters(Module):
                             print('Downloading bandpass {} from SVO.'.format(
                                 svopath))
                             try:
-                                response = request.urlopen(
+                                response = urlopen(
                                     'http://svo2.cab.inta-csic.es'
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
@@ -201,8 +205,7 @@ class Filters(Module):
                     return bi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` with '
-            'instrument `{}`!'.
-            format(band, bandset, instrument))
+            'instrument `{}`!'.format(band, bandset, instrument))
 
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
