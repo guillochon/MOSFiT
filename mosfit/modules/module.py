@@ -1,4 +1,4 @@
-class Module:
+class Module(object):
     def __init__(self, name, pool, **kwargs):
         self._name = name
         self._log = False

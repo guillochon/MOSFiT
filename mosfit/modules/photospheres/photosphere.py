@@ -1,17 +1,11 @@
-import numpy as np
-from astropy import constants as c
-from astropy import units as u
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'photosphere'
+CLASS_NAME = 'Photosphere'
 
 
-class photosphere(Module):
+class Photosphere(Module):
     """Template class for photosphere Modules.
     """
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def process(self, **kwargs):
         return {}

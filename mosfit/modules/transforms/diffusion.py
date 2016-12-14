@@ -14,9 +14,6 @@ class Diffusion(Transform):
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS**2)
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']

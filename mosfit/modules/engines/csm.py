@@ -15,9 +15,6 @@ class CSM(Engine):
 
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self._s = kwargs['s']
         self._delta = kwargs['delta']  # [0,3)

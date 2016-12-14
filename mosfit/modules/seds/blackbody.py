@@ -20,9 +20,6 @@ class blackbody(SED):
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']

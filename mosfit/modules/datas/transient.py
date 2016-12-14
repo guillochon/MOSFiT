@@ -11,7 +11,7 @@ class Transient(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Transient, self).__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
         self._data_determined_parameters = []
 

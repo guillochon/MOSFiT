@@ -7,9 +7,6 @@ class RestTimes(Module):
     """This class converts the observed times to rest-frame times.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self._times = kwargs['all_times']
         self._t_explosion = kwargs['texplosion']

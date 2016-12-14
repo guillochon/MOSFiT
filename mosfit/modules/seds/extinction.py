@@ -1,8 +1,7 @@
 import numpy as np
-from mosfit.modules.seds.sed import SED
 
-from extinction import apply as eapp
-from extinction import odonnell94
+import extinction
+from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Extinction'
 
@@ -14,7 +13,7 @@ class Extinction(SED):
     MW_RV = 3.1
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Extinction, self).__init__(**kwargs)
         self._preprocessed = False
 
     def process(self, **kwargs):
@@ -31,7 +30,7 @@ class Extinction(SED):
             bi = self._band_indices[si]
             # First extinct out LOS dust from MW
             self._mw_extinct.append(
-                odonnell94(
+                extinction.odonnell94(
                     np.array(self._sample_wavelengths[bi]), self._av_mw,
                     self.MW_RV))
 
@@ -40,16 +39,19 @@ class Extinction(SED):
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]
             # First extinct out LOS dust from MW
-            eapp(self._mw_extinct[si], self._seds[si], inplace=True)
+            extinction.apply(
+                self._mw_extinct[si], self._seds[si], inplace=True)
             # Then extinct out host gal (using rest wavelengths)
-            eapp(
-                odonnell94(self._band_rest_wavelengths[bi], av_host,
-                           self.MW_RV),
+            extinction.apply(
+                extinction.odonnell94(self._band_rest_wavelengths[bi], av_host,
+                                      self.MW_RV),
                 self._seds[si],
                 inplace=True)
 
-        return {'sample_wavelengths': self._sample_wavelengths,
-                'seds': self._seds}
+        return {
+            'sample_wavelengths': self._sample_wavelengths,
+            'seds': self._seds
+        }
 
     def preprocess(self, **kwargs):
         if not self._preprocessed:

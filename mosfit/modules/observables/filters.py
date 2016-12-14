@@ -20,7 +20,7 @@ class Filters(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Filters, self).__init__(**kwargs)
         self._preprocessed = False
         self._bands = []
 

@@ -9,7 +9,7 @@ class Parameter(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Parameter, self).__init__(**kwargs)
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
         if (self._min_value is not None and self._max_value is not None and

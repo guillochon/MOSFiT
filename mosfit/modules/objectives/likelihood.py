@@ -13,7 +13,7 @@ class Likelihood(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Likelihood, self).__init__(**kwargs)
         self._preprocessed = False
 
     def process(self, **kwargs):

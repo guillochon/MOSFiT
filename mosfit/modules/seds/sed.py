@@ -14,7 +14,7 @@ class SED(Module):
     N_PTS = 16 + 1
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(SED, self).__init__(**kwargs)
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):

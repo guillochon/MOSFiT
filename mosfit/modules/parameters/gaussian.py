@@ -14,7 +14,7 @@ class Gaussian(Parameter):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Gaussian, self).__init__(**kwargs)
         self._mu = kwargs.get('mu', None)
         self._sigma = kwargs.get('sigma', None)
         if self._log:

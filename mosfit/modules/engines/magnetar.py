@@ -11,9 +11,6 @@ class Magnetar(Engine):
     """Magnetar spin-down engine
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
