@@ -87,11 +87,15 @@ class Transient(Module):
                             skip_entry = True
                             break
                     if exclude_bands is not False and x == 'band':
-                        if entry.get(x, '') in exclude_bands:
+                        if (entry.get(x, '') in exclude_bands and
+                            (not exclude_instruments or entry.get(
+                                'instrument', '') in exclude_instruments)):
                             skip_entry = True
                             break
-                    if exclude_instruments is not False and x == 'band':
-                        if entry.get(x, '') in exclude_instruments:
+                    if exclude_instruments is not False and x == 'instrument':
+                        if (entry.get(x, '') in exclude_instruments and
+                            (not exclude_bands or
+                             entry.get('band', '') in exclude_bands)):
                             skip_entry = True
                             break
                 if skip_entry:

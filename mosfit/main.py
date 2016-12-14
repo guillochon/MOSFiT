@@ -64,6 +64,7 @@ def main():
 
     parser.add_argument(
         '--band-list',
+        '--extra-bands',
         dest='band_list',
         default=[],
         nargs='+',
@@ -72,6 +73,7 @@ def main():
 
     parser.add_argument(
         '--band-systems',
+        '--extra-systems',
         dest='band_systems',
         default=[],
         nargs='+',
@@ -80,6 +82,7 @@ def main():
 
     parser.add_argument(
         '--band-instruments',
+        '--extra-instruments',
         dest='band_instruments',
         default=[],
         nargs='+',
@@ -88,6 +91,7 @@ def main():
 
     parser.add_argument(
         '--band-bandsets',
+        '--extra-bandsets',
         dest='band_bandsets',
         default=[],
         nargs='+',

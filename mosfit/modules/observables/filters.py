@@ -199,7 +199,10 @@ class Filters(Module):
                       '' in self._band_bsets[bi] and
                       '' in self._band_systs[bi]):
                     return bi
-        raise ValueError('Cannot find band index!')
+        raise ValueError(
+            'Cannot find band index for `{}` band of bandset `{}` with '
+            'instrument `{}`!'.
+            format(band, bandset, instrument))
 
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
