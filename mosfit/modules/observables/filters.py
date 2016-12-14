@@ -2,7 +2,7 @@ import csv
 import json
 import os
 import shutil
-import urllib
+from urllib import request
 from collections import OrderedDict
 
 import numpy as np
@@ -100,7 +100,7 @@ class Filters(Module):
                             print('Downloading bandpass {} from SVO.'.format(
                                 svopath))
                             try:
-                                response = urllib.request.urlopen(
+                                response = request.urlopen(
                                     'http://svo2.cab.inta-csic.es'
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,

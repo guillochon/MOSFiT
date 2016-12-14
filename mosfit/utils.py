@@ -79,11 +79,13 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
     if kind == 'bool':
         choices = ' (y/[n])'
     elif kind == 'select':
-        choices = '\n' + '\n'.join(
-            [str(i + 1) + '. ' + options[i] for i in range(len(options))] + [
-                'N. None of the above, skip this event.\nEnter selection [1-' +
-                str(len(options)) + '/N]:'
-            ])
+        choices = '\n' + '\n'.join([
+            ' ' + str(i + 1) + '.  ' + options[i] for i in range(
+                len(options))
+        ] + [
+            '[n]. None of the above, skip this event.\n'
+            'Enter selection [1-' + str(len(options)) + '/N]:'
+        ])
     else:
         raise ValueError('Unknown prompt kind.')
 

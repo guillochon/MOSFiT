@@ -6,7 +6,6 @@ import shutil
 import subprocess
 import sys
 import time
-import urllib.request
 import warnings
 from collections import OrderedDict
 from difflib import get_close_matches
@@ -25,6 +24,11 @@ from mosfit.utils import (is_number, pretty_num, print_inline, print_wrapped,
                           prompt)
 
 from .model import Model
+
+try:
+    from urllib.request import urlopen
+except:
+    from urllib import urlretrieve as urlopen
 
 warnings.filterwarnings("ignore")
 
@@ -111,7 +115,7 @@ class Fitter():
                             'aliases...'.format(input_name),
                             wrap_length=self._wrap_length)
                         try:
-                            response = urllib.request.urlopen(
+                            response = urlopen(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/names.min.json',
                                 timeout=10)
@@ -190,7 +194,7 @@ class Fitter():
                             wrap_length=self._wrap_length)
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
-                            response = urllib.request.urlopen(
+                            response = urlopen(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/json/' + urlname,
                                 timeout=10)
