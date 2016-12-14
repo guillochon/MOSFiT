@@ -126,6 +126,19 @@
         }
     },
     {
+        "bandsets":[
+            "Cousins"
+        ],
+        "filters":{
+            "R":{
+                "SVO":"Generic/Cousins.R"
+            },
+            "I":{
+                "SVO":"Generic/Cousins.I"
+            }
+        }
+    },
+    {
         "systems":[
             "SDSS"
         ],
