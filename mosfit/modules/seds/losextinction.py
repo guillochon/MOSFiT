@@ -3,17 +3,17 @@ import numpy as np
 from extinction import odonnell94, apply as eapp
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Extinction'
+CLASS_NAME = 'LOSExtinction'
 
 
-class Extinction(SED):
+class LOSExtinction(SED):
     """Adds extinction to SED from both host galaxy and MW.
     """
 
     MW_RV = 3.1
 
     def __init__(self, **kwargs):
-        super(Extinction, self).__init__(**kwargs)
+        super(LOSExtinction, self).__init__(**kwargs)
         self._preprocessed = False
 
     def process(self, **kwargs):

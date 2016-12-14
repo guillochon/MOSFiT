@@ -97,7 +97,7 @@
             "band_wave_ranges": "filters"
         }
     },
-    "extinction":{
+    "losextinction":{
         "kind":"sed",
         "inputs":[
             "blackbody",
@@ -111,7 +111,7 @@
     "filters":{
         "kind":"observable",
         "inputs":[
-            "extinction",
+            "losextinction",
             "lumdist"
         ]
     }
