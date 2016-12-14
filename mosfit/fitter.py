@@ -434,7 +434,7 @@ class Fitter():
         p = list(p0)
 
         if fracking:
-            frack_iters = max(round(iterations / frack_step), 1)
+            frack_iters = max(int(round(iterations / frack_step)), 1)
             bmax = int(round(self._burn_in / float(frack_step)))
             loop_step = frack_step
         else:
@@ -507,8 +507,8 @@ class Fitter():
 
                     st = time.time()
                     seeds = [
-                        round(time.time() * 1000.0) % 4294900000 + x
-                        for x in range(len(bhwalkers))
+                        int(round(time.time() * 1000.0) % 4294900000 + x
+                        for x in range(len(bhwalkers)))
                     ]
                     frack_args = list(zip(bhwalkers, seeds))
                     bhs = pool.map(frack, frack_args)
@@ -757,5 +757,5 @@ class Fitter():
         """Return a string showing the estimated remaining time based upon
         elapsed times for emcee and fracking.
         """
-        td = str(datetime.timedelta(seconds=round(t)))
+        td = str(datetime.timedelta(seconds=int(round(t))))
         return ('Estimated time left: [ ' + td + ' ]')
