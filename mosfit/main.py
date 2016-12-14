@@ -1,10 +1,11 @@
 import argparse
 import os
 import shutil
+from unicodedata import normalize
 
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import is_master, prompt, print_wrapped
+from mosfit.utils import is_master, print_wrapped, prompt
 
 
 def main():
@@ -160,11 +161,11 @@ def main():
         default=False,
         nargs=2,
         help=(
-          "Only include observations with MJDs within the specified range, "
-          "e.g. `-L 54123 54234` will exclude observations outside this "
-          "range. If specified without an argument, any upper limit "
-          "observations before the last upper limit before the first "
-          "detection in a given band will not be included in the fitting."))
+            "Only include observations with MJDs within the specified range, "
+            "e.g. `-L 54123 54234` will exclude observations outside this "
+            "range. If specified without an argument, any upper limit "
+            "observations before the last upper limit before the first "
+            "detection in a given band will not be included in the fitting."))
 
     parser.add_argument(
         '--suffix',
@@ -281,15 +282,17 @@ def main():
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
                 logo = f.read()
-                width = len(logo.split('\n')[0])
-                aligns = '{:^' + str(width) + '}'
+                firstline = logo.split('\n')[0]
+                if isinstance(firstline, bytes):
+                    firstline = firstline.decode('utf-8')
+                width = len(
+                    normalize('NFC', firstline))
                 print(logo)
-            print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
-                __version__)))
-            print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
-            print(aligns.format('Released under the MIT license'))
-            print((aligns + '\n').format(
-                'https://github.com/guillochon/MOSFiT'))
+            print('### MOSFiT -- version {} ###'.format(__version__).center(
+                width))
+            print('Authored by James Guillochon & Matt Nicholl'.center(width))
+            print('Released under the MIT license'.center(width))
+            print('https://github.com/guillochon/MOSFiT\n'.center(width))
 
         if changed_iterations:
             print("No events specified, setting iterations to 0.")
@@ -298,7 +301,8 @@ def main():
         if args.copy:
             print_wrapped(
                 'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).', wrap_length=width)
+                '(disable with --no-copy-at-launch).',
+                wrap_length=width)
             fc = False
             if args.force_copy:
                 fc = prompt(
