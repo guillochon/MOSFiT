@@ -3,7 +3,6 @@ import json
 import os
 import re
 import shutil
-import subprocess
 import sys
 import time
 import warnings
@@ -18,8 +17,8 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
 from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
-from mosfit.utils import (get_url_file_handle, is_number, pretty_num,
-                          print_inline, print_wrapped, prompt)
+from mosfit.utils import (entabbed_json_dump, get_url_file_handle, is_number,
+                          pretty_num, print_inline, print_wrapped, prompt)
 from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
@@ -556,8 +555,7 @@ class Fitter():
             MODEL.SETUP: model_setup,
             MODEL.CODE: 'MOSFiT',
             MODEL.DATE: time.strftime("%Y/%m/%d"),
-            MODEL.VERSION: __version__ + ' [' +
-            subprocess.getoutput('git rev-parse --short HEAD').strip() + ']',
+            MODEL.VERSION: __version__,
             MODEL.SOURCE: source
         }
         modelnum = entry.add_model(**modeldict)
@@ -614,9 +612,9 @@ class Fitter():
                   'w') as flast, open(
                       os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
                           ('_' + suffix)
-                          if suffix else '') + '.json'), 'w') as f:
-            json.dump(oentry, flast, indent='\t', separators=(',', ':'))
-            json.dump(oentry, f, indent='\t', separators=(',', ':'))
+                          if suffix else '') + '.json'), 'w') as feven:
+            entabbed_json_dump(oentry, flast, separators=(',', ':'))
+            entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
         return (p, lnprob)
 

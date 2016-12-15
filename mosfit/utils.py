@@ -2,6 +2,8 @@
 """
 from __future__ import print_function
 
+import json
+import re
 import signal
 import sys
 from builtins import input
@@ -116,6 +118,18 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
 
 def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
+
+
+def entabbed_json_dump(string, f, **kwargs):
+    if sys.version_info[:2] >= (3, 3):
+        json.dump(string, f, indent='\t', separators=kwargs['separators'])
+        return
+    newstr = json.dumps(string, indent=4, separators=kwargs['separators'])
+    newstr = re.sub(
+        '\n +',
+        lambda match: '\n' + '\t' * (len(match.group().strip('\n')) / 4),
+        newstr)
+    f.write(newstr)
 
 
 def is_master():
