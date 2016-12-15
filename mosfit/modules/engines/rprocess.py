@@ -19,7 +19,7 @@ class RProcess(Engine):
     M_sun = 1.99e33
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(RProcess, self).__init__(**kwargs)
 
     def process(self, **kwargs):
         if 'dense_times' in kwargs:
