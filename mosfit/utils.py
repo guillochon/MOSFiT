@@ -95,7 +95,8 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
                 len(options))
         ] + [
             '[n]. None of the above, skip this event.\n'
-            'Enter selection [1-' + str(len(options)) + '/N]:'
+            'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
+                len(options)) + '/[n]):'
         ])
     else:
         raise ValueError('Unknown prompt kind.')
@@ -111,7 +112,7 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
         return user_choice in ["Y", "y", "Yes", "yes"]
     elif kind == 'select':
         if (is_integer(user_choice) and
-                int(user_choice) in list(range(1, len(options)))):
+                int(user_choice) in list(range(1, len(options) + 1))):
             return options[int(user_choice) - 1]
         return False
 

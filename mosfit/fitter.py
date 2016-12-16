@@ -150,7 +150,7 @@ class Fitter():
                                     'Could not find event, performing '
                                     'extended name search...',
                                     wrap_length=self._wrap_length)
-                                snprefixes = set()
+                                snprefixes = set(('SN19', 'SN20'))
                                 for name in names:
                                     ind = re.search("\d", name)
                                     if ind and ind.start() > 0:
