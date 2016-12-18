@@ -28,7 +28,7 @@
     },
     "kappa":{
         "kind":"parameter",
-        "value":200.0,
+        "value":10.0,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
