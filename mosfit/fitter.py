@@ -19,7 +19,6 @@ from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
 
 from mosfit.__init__ import __version__
-from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import (entabbed_json_dump, get_url_file_handle, is_number,
                           pretty_num, print_inline, print_wrapped, prompt)
 
@@ -448,15 +447,15 @@ class Fitter():
                     loop_step = iterations - self._burn_in
                 emi = 0
                 st = time.time()
-                for p, lnprob, lnlike in sampler.sample(
-                        p, iterations=min(loop_step, iterations)):
+                for ploop in range(min(loop_step, iterations)):
+                    p, lnprob, lnlike = next(sampler.sample(p, iterations=1))
                     messages = []
                     # Redraw bad walkers
                     medstd = [(np.median(x), np.std(x)) for x in lnprob]
                     redraw_count = 0
                     for ti, tprob in enumerate(lnprob):
                         for wi, wprob in enumerate(tprob):
-                            if (wprob <= medstd[ti][0] - 4.0 * medstd[ti][1] or
+                            if (wprob <= medstd[ti][0] - 3.0 * medstd[ti][1] or
                                     np.isnan(wprob)):
                                 redraw_count = redraw_count + 1
                                 p[ti][wi] = np.clip(

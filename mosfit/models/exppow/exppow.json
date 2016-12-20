@@ -1,0 +1,125 @@
+{
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1.0e18,
+        "class":"parameter",
+        "latex":"n_{\\rm H,host}"
+    },
+    "texplosion":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+    },
+    "alpha":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\alpha"
+    },
+    "beta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\beta"
+    },
+    "tpeak":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm peak}"
+    },
+    "lumscale":{
+        "kind":"parameter",
+        "value":1.0e44,
+        "class":"parameter",
+        "latex":"\\L_{\\rm scale}"
+    },
+    "kappa":{
+        "kind":"parameter",
+        "value":0.2,
+        "class":"parameter",
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "mejecta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
+    },
+    "vejecta":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "exppow":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",
+            "alpha",
+            "beta",
+            "tpeak",
+            "lumscale",
+            "texplosion"
+        ]
+    },
+    "diffusion":{
+        "kind":"transform",
+        "inputs":[
+            "exppow",
+            "kappa",
+            "kappagamma",
+            "mejecta",
+            "texplosion",
+            "vejecta"
+        ]
+    },
+    "densecore":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion"
+        ]
+    },
+    "blackbody":{
+        "kind":"sed",
+        "inputs":[
+            "texplosion",
+            "redshift",
+            "densecore",
+            "temperaturephot",
+            "radiusphot"
+        ],
+        "requests":{
+            "band_wave_ranges": "filters"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody",
+            "nhhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges": "filters"
+        }
+    },
+    "filters":{
+        "kind":"observable",
+        "inputs":[
+            "losextinction",
+            "lumdist"
+        ]
+    }
+}
