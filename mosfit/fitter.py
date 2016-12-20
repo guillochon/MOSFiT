@@ -15,11 +15,13 @@ from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
+from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+
 from mosfit.__init__ import __version__
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.utils import (entabbed_json_dump, get_url_file_handle, is_number,
                           pretty_num, print_inline, print_wrapped, prompt)
-from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -440,8 +442,6 @@ class Fitter():
             frack_iters = 1
             loop_step = iterations
 
-        acort = 1.0
-        acorc = 1.0
         try:
             for b in range(frack_iters):
                 if fracking and b >= bmax:
@@ -450,30 +450,54 @@ class Fitter():
                 st = time.time()
                 for p, lnprob, lnlike in sampler.sample(
                         p, iterations=min(loop_step, iterations)):
+                    messages = []
                     # Redraw bad walkers
+                    medstd = [(np.median(x), np.std(x)) for x in lnprob]
+                    redraw_count = 0
                     for ti, tprob in enumerate(lnprob):
                         for wi, wprob in enumerate(tprob):
-                            if wprob <= LIKELIHOOD_FLOOR or np.isnan(wprob):
-                                print('Warning: Bad walker position detected, '
-                                      'indicates variable mismatch.')
-                                p[ti][wi] = draw_walker()
+                            if (wprob <= medstd[ti][0] - 4.0 * medstd[ti][1] or
+                                    np.isnan(wprob)):
+                                redraw_count = redraw_count + 1
+                                p[ti][wi] = np.clip(
+                                    np.array(p[np.random.randint(ntemps)][
+                                        np.random.randint(nwalkers)]) +
+                                    np.random.normal(
+                                        scale=0.1, size=ndim),
+                                    0.0,
+                                    1.0)
+                    if redraw_count > 0:
+                        messages.append('Redraws %: {:.2%}'.format(
+                            redraw_count / (nwalkers * ntemps)))
                     emi = emi + 1
                     prog = b * frack_step + emi
-                    try:
-                        acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
-                        acort = max([
-                            max(x) for x in sampler.get_autocorr_time(c=acorc)
-                        ])
-                    except:
-                        pass
-                    acor = [acort, acorc]
+                    low = 10
+                    asize = 0.1 * 0.5 * emi
+                    acorc = max(1, min(10, int(np.floor(asize / low))))
+                    acorc = 10
+                    acort = -1.0
+                    aa = 1
+                    for a in range(acorc, 0, -1):
+                        try:
+                            acort = max([
+                                max(x)
+                                for x in sampler.get_autocorr_time(
+                                    low=low, c=a)
+                            ])
+                        except AutocorrError as e:
+                            continue
+                        else:
+                            aa = a
+                            break
+                    acor = [acort, aa]
                     self._emcee_est_t = float(time.time() - st) / emi * (
                         iterations - (b * frack_step + emi))
                     self.print_status(
                         desc='Running PTSampler',
                         scores=[max(x) for x in lnprob],
                         progress=[prog, iterations],
-                        acor=acor)
+                        acor=acor,
+                        messages=messages)
                 if fracking and b >= bmax:
                     break
                 if fracking and b < bmax:
@@ -686,7 +710,12 @@ class Fitter():
 
         return data
 
-    def print_status(self, desc='', scores='', progress='', acor=''):
+    def print_status(self,
+                     desc='',
+                     scores='',
+                     progress='',
+                     acor='',
+                     messages=[]):
         """Prints a status message showing the current state of the fitting process.
         """
 
@@ -719,21 +748,30 @@ class Fitter():
             timestring = self.get_timestring(tott)
             outarr.append(timestring)
         if isinstance(acor, list):
-            acortstr = pretty_num(acor[0], sig=3)
-            acorcstr = pretty_num(acor[1], sig=2)
-            if self._travis:
-                col = ''
-            elif acor[1] < 5.0:
-                col = bcolors.FAIL
-            elif acor[1] < 10.0:
-                col = bcolors.WARNING
+            acorcstr = pretty_num(acor[1], sig=3)
+            if acor[0] <= 0.0:
+                acorstring = (bcolors.FAIL +
+                              'Chain too short for acor ({})'.format(acorcstr)
+                              + bcolors.ENDC)
             else:
-                col = bcolors.OKGREEN
-            acorstring = col
-            acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
-                                                                  acorcstr)
-            acorstring = acorstring + bcolors.ENDC if col else ''
+                acortstr = pretty_num(acor[0], sig=3)
+                if self._travis:
+                    col = ''
+                elif acor[1] < 5.0:
+                    col = bcolors.FAIL
+                elif acor[1] < 10.0:
+                    col = bcolors.WARNING
+                else:
+                    col = bcolors.OKGREEN
+                acorstring = col
+                acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
+                                                                      acorcstr)
+                acorstring = acorstring + (bcolors.ENDC if col else '')
             outarr.append(acorstring)
+
+        if not isinstance(messages, list):
+            raise ValueError('`messages` must be list!')
+        outarr.extend(messages)
 
         line = ''
         lines = ''
