@@ -24,7 +24,7 @@ class LOSExtinction(SED):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._band_rest_wavelengths = np.array(
-            [[y / zp1 for y in x] for x in self._sample_wavelengths])
+            [np.array(x) / zp1 for x in self._sample_wavelengths])
         self._mw_extinct = []
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]

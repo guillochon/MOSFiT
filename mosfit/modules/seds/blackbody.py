@@ -34,8 +34,8 @@ class Blackbody(SED):
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
             bi = self._band_indices[li]
-            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
-            wav_arr = np.array(self._sample_wavelengths[bi])
+            rest_freqs = self._sample_frequencies[bi] * zp1
+            wav_arr = self._sample_wavelengths[bi]
             radius_phot = self._radius_phot[li]
             temperature_phot = self._temperature_phot[li]
 
