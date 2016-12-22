@@ -16,12 +16,15 @@ class Cutoff(SED):
             wav_arr = np.array(self._sample_wavelengths[bi])
 
             # Account for UV absorption
-            new_sed = np.array(sed)
-            new_sed[wav_arr < 3500] *= (
+            norm = np.sum(sed)
+            sed[wav_arr < 3500] *= (
                 0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
 
-            new_sed[new_sed < 0.0] = 0.0
+            sed[sed < 0.0] = 0.0
 
-            self._seds[si] = new_sed
+            # Normalize SED so no energy is lost
+            sed *= norm / np.sum(sed)
+
+            self._seds[si] = sed
 
         return {'seds': self._seds}
