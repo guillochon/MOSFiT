@@ -31,18 +31,22 @@ class Blackbody(SED):
         temperature_phot = self._temperature_phot
         zp1 = 1.0 + kwargs['redshift']
         seds = []
+        evaled = False
         for li, lum in enumerate(self._luminosities):
-            cur_band = self._bands[li]
             bi = self._band_indices[li]
+            if lum == 0.0:
+                seds.append(np.zeros_like(self._sample_frequencies[bi]))
+                continue
             rest_freqs = self._sample_frequencies[bi] * zp1
             wav_arr = self._sample_wavelengths[bi]
             radius_phot = self._radius_phot[li]
             temperature_phot = self._temperature_phot[li]
 
-            if li == 0:
+            if not evaled:
                 sed = ne.evaluate(
                     'fc * radius_phot**2 * rest_freqs**3 / '
                     '(exp(xc * rest_freqs / temperature_phot) - 1.0)')
+                evaled = True
             else:
                 sed = ne.re_evaluate()
 

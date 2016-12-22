@@ -13,7 +13,7 @@ class Cutoff(SED):
         self._band_indices = kwargs['all_band_indices']
         for si, sed in enumerate(self._seds):
             bi = self._band_indices[si]
-            wav_arr = np.array(self._sample_wavelengths[bi])
+            wav_arr = self._sample_wavelengths[bi]
 
             # Account for UV absorption
             norm = np.sum(sed)
