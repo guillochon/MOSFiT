@@ -22,6 +22,6 @@ class Cutoff(SED):
 
             new_sed[new_sed < 0.0] = 0.0
 
-            self._seds[si] = list(new_sed)
+            self._seds[si] = new_sed
 
         return {'seds': self._seds}

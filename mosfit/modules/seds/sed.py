@@ -25,7 +25,7 @@ class SED(Module):
                 return
             for rng in wave_ranges:
                 self._sample_wavelengths.append(
-                    list(np.linspace(rng[0], rng[1], self.N_PTS)))
+                    np.array(np.linspace(rng[0], rng[1], self.N_PTS)))
         self._sample_frequencies = [[self.C_CONST / x for x in y]
                                     for y in self._sample_wavelengths]
 

@@ -100,6 +100,9 @@
             },
             "r":{
                 "SVO":"CFHT/CFH12k.R"
+            },
+            "g":{
+                "SVO":"SLOAN/SDSS.g"
             }
         }
     },

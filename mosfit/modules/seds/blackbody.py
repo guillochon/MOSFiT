@@ -48,7 +48,7 @@ class Blackbody(SED):
 
             sed = np.nan_to_num(sed)
 
-            seds.append(list(sed))
+            seds.append(sed)
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
