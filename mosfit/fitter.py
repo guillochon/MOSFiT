@@ -447,8 +447,10 @@ class Fitter():
                     loop_step = iterations - self._burn_in
                 emi = 0
                 st = time.time()
-                for ploop in range(min(loop_step, iterations)):
-                    p, lnprob, lnlike = next(sampler.sample(p, iterations=1))
+                for p, lnprob, lnlike in sampler.sample(
+                        p, iterations=min(loop_step, iterations)):
+                    # for ploop in range(min(loop_step, iterations)):
+                    # p, lnprob, lnlike = next(sampler.sample(p, iterations=1))
                     messages = []
                     # Redraw bad walkers
                     medstd = [(np.median(x + y), np.std(x + y))
@@ -476,10 +478,9 @@ class Fitter():
                                 else:
                                     bad_redraws = bad_redraws + 1
                     if redraw_count > 0:
-                        messages.append(
-                            '{:.1%} redraw, {}/{} success'.format(
-                                redraw_count / (nwalkers * ntemps),
-                                redraw_count - bad_redraws, redraw_count))
+                        messages.append('{:.1%} redraw, {}/{} success'.format(
+                            redraw_count / (nwalkers * ntemps), redraw_count -
+                            bad_redraws, redraw_count))
                     emi = emi + 1
                     prog = b * frack_step + emi
                     low = 10
