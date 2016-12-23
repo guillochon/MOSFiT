@@ -435,6 +435,8 @@ class Fitter():
 
         try:
             st = time.time()
+            tft = 0.0  # Total fracking time
+
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
             for emi, (
@@ -491,8 +493,9 @@ class Fitter():
                         aa = a
                         break
                 acor = [acort, aa]
-                self._emcee_est_t = float(time.time() - st) / emi1 * (
-                    iterations - (self._burn_in + emi1))
+                self._emcee_est_t = float(time.time() - st - tft) / emi1 * (
+                    iterations - emi1) + tft / emi1 * max(0, self._burn_in -
+                                                          emi1)
 
                 # Perform fracking if we are still in the burn in phase and
                 # iteration count is a multiple of the frack step.
@@ -509,6 +512,8 @@ class Fitter():
                 if not frack_now:
                     continue
 
+                # Fracking starts here
+                sft = time.time()
                 ijperms = [[x, y] for x in range(ntemps)
                            for y in range(nwalkers)]
                 ijprobs = np.array([
@@ -531,7 +536,6 @@ class Fitter():
 
                 bhwalkers = [p[i][j] for i, j in selijs]
 
-                st = time.time()
                 seeds = [
                     int(round(time.time() * 1000.0)) % 4294900000 + x
                     for x in range(len(bhwalkers))
@@ -549,6 +553,7 @@ class Fitter():
                     desc='Fracking Results',
                     scores=scores,
                     progress=[emi1, iterations])
+                tft = tft + time.time() - sft
         except KeyboardInterrupt:
             pool.close()
             print(self._wrap_length)
