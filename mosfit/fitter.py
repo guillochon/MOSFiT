@@ -433,129 +433,122 @@ class Fitter():
         print('\n\n')
         p = list(p0)
 
-        if fracking:
-            frack_iters = max(int(round(iterations / frack_step)), 1)
-            bmax = int(round(self._burn_in / float(frack_step)))
-            loop_step = frack_step
-        else:
-            frack_iters = 1
-            loop_step = iterations
-
         try:
-            for b in range(frack_iters):
-                if fracking and b >= bmax:
-                    loop_step = iterations - self._burn_in
-                emi = 0
-                st = time.time()
-                for p, lnprob, lnlike in sampler.sample(
-                        p, iterations=min(loop_step, iterations)):
-                    # for ploop in range(min(loop_step, iterations)):
-                    # p, lnprob, lnlike = next(sampler.sample(p, iterations=1))
-                    messages = []
-                    # Redraw bad walkers
-                    medstd = [(np.median(x + y), np.std(x + y))
-                              for x, y in zip(lnprob, lnlike)]
-                    redraw_count = 0
-                    bad_redraws = 0
-                    for ti, tprob in enumerate(lnprob):
-                        for wi, wprob in enumerate(tprob):
-                            tot_score = wprob + lnlike[ti][wi]
-                            if (tot_score <=
-                                    medstd[ti][0] - 3.0 * medstd[ti][1] or
+            st = time.time()
+            # The argument of the for loop runs emcee, after each iteration of
+            # emcee the contents of the for loop are executed.
+            for emi, (
+                    p, lnprob, lnlike
+            ) in enumerate(sampler.sample(
+                    p, iterations=iterations)):
+                emi1 = emi + 1
+                messages = []
+
+                # First, redraw any walkers with scores significantly worse
+                # than their peers.
+                medstd = [(np.median(x + y), np.std(x + y))
+                          for x, y in zip(lnprob, lnlike)]
+                redraw_count = 0
+                bad_redraws = 0
+                for ti, tprob in enumerate(lnprob):
+                    for wi, wprob in enumerate(tprob):
+                        tot_score = wprob + lnlike[ti][wi]
+                        if (tot_score <= medstd[ti][0] - 3.0 * medstd[ti][1] or
+                                np.isnan(tot_score)):
+                            redraw_count = redraw_count + 1
+                            dxx = np.random.normal(scale=0.01, size=ndim)
+                            tar_x = np.array(p[np.random.randint(ntemps)][
+                                np.random.randint(nwalkers)])
+                            new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                            new_prob = likelihood(new_x)
+                            new_like = prior(new_x)
+                            if (new_prob + new_like > tot_score or
                                     np.isnan(tot_score)):
-                                redraw_count = redraw_count + 1
-                                dxx = np.random.normal(scale=0.01, size=ndim)
-                                tar_x = np.array(p[np.random.randint(ntemps)][
-                                    np.random.randint(nwalkers)])
-                                new_x = np.clip(tar_x + dxx, 0.0, 1.0)
-                                new_prob = likelihood(new_x)
-                                new_like = prior(new_x)
-                                if (new_prob + new_like > tot_score or
-                                        np.isnan(tot_score)):
-                                    p[ti][wi] = new_x
-                                    lnprob[ti][wi] = new_prob
-                                    lnlike[ti][wi] = new_like
-                                else:
-                                    bad_redraws = bad_redraws + 1
-                    if redraw_count > 0:
-                        messages.append('{:.1%} redraw, {}/{} success'.format(
-                            redraw_count / (nwalkers * ntemps), redraw_count -
-                            bad_redraws, redraw_count))
-                    emi = emi + 1
-                    prog = b * frack_step + emi
-                    low = 10
-                    asize = 0.1 * 0.5 * emi
-                    acorc = max(1, min(10, int(np.floor(asize / low))))
-                    acorc = 10
-                    acort = -1.0
-                    aa = 1
-                    for a in range(acorc, 0, -1):
-                        try:
-                            acort = max([
-                                max(x)
-                                for x in sampler.get_autocorr_time(
-                                    low=low, c=a)
-                            ])
-                        except AutocorrError as e:
-                            continue
-                        else:
-                            aa = a
-                            break
-                    acor = [acort, aa]
-                    self._emcee_est_t = float(time.time() - st) / emi * (
-                        iterations - (b * frack_step + emi))
-                    self.print_status(
-                        desc='Running PTSampler',
-                        scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
-                        progress=[prog, iterations],
-                        acor=acor,
-                        messages=messages)
-                if fracking and b >= bmax:
-                    break
-                if fracking and b < bmax:
-                    self.print_status(
-                        desc='Running Fracking',
-                        scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
-                        progress=[(b + 1) * frack_step, iterations],
-                        acor=acor)
-                    ijperms = [[x, y]
-                               for x in range(ntemps) for y in range(nwalkers)]
-                    ijprobs = np.array([
-                        1.0
-                        # lnprob[x][y]
-                        for x in range(ntemps) for y in range(nwalkers)
-                    ])
-                    ijprobs -= max(ijprobs)
-                    ijprobs = [np.exp(0.1 * x) for x in ijprobs]
-                    ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
-                    nonzeros = len([x for x in ijprobs if x > 0.0])
-                    selijs = [
-                        ijperms[x]
-                        for x in np.random.choice(
-                            range(len(ijperms)),
-                            pool_size,
-                            p=ijprobs,
-                            replace=(pool_size > nonzeros))
-                    ]
+                                p[ti][wi] = new_x
+                                lnprob[ti][wi] = new_prob
+                                lnlike[ti][wi] = new_like
+                            else:
+                                bad_redraws = bad_redraws + 1
+                if redraw_count > 0:
+                    messages.append('{:.1%} redraw, {}/{} success'.format(
+                        redraw_count / (nwalkers * ntemps), redraw_count -
+                        bad_redraws, redraw_count))
+                low = 10
+                asize = 0.1 * 0.5 * emi
+                acorc = max(1, min(10, int(np.floor(asize / low))))
+                acort = -1.0
+                aa = 1
+                for a in range(acorc, 0, -1):
+                    try:
+                        acort = max([
+                            max(x)
+                            for x in sampler.get_autocorr_time(
+                                low=low, c=a)
+                        ])
+                    except AutocorrError as e:
+                        continue
+                    else:
+                        aa = a
+                        break
+                acor = [acort, aa]
+                self._emcee_est_t = float(time.time() - st) / emi1 * (
+                    iterations - (self._burn_in + emi1))
 
-                    bhwalkers = [p[i][j] for i, j in selijs]
+                # Perform fracking if we are still in the burn in phase and
+                # iteration count is a multiple of the frack step.
+                frack_now = (fracking and emi1 <= self._burn_in and
+                             emi1 % frack_step == 0)
 
-                    st = time.time()
-                    seeds = [
-                        int(round(time.time() * 1000.0)) % 4294900000 + x
-                        for x in range(len(bhwalkers))
-                    ]
-                    frack_args = list(zip(bhwalkers, seeds))
-                    bhs = pool.map(frack, frack_args)
-                    for bhi, bh in enumerate(bhs):
-                        if -bh.fun > lnprob[selijs[bhi][0]][selijs[bhi][1]]:
-                            p[selijs[bhi][0]][selijs[bhi][1]] = bh.x
-                    self._bh_est_t = float(time.time() - st) * (bmax - b - 1)
-                    scores = [-x.fun for x in bhs]
-                    self.print_status(
-                        desc='Running Fracking',
-                        scores=scores,
-                        progress=[(b + 1) * frack_step, iterations])
+                self.print_status(
+                    desc='Fracking' if frack_now else 'Walking',
+                    scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
+                    progress=[emi1, iterations],
+                    acor=acor,
+                    messages=messages)
+
+                if not frack_now:
+                    continue
+
+                ijperms = [[x, y] for x in range(ntemps)
+                           for y in range(nwalkers)]
+                ijprobs = np.array([
+                    1.0
+                    # lnprob[x][y]
+                    for x in range(ntemps) for y in range(nwalkers)
+                ])
+                ijprobs -= max(ijprobs)
+                ijprobs = [np.exp(0.1 * x) for x in ijprobs]
+                ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
+                nonzeros = len([x for x in ijprobs if x > 0.0])
+                selijs = [
+                    ijperms[x]
+                    for x in np.random.choice(
+                        range(len(ijperms)),
+                        pool_size,
+                        p=ijprobs,
+                        replace=(pool_size > nonzeros))
+                ]
+
+                bhwalkers = [p[i][j] for i, j in selijs]
+
+                st = time.time()
+                seeds = [
+                    int(round(time.time() * 1000.0)) % 4294900000 + x
+                    for x in range(len(bhwalkers))
+                ]
+                frack_args = list(zip(bhwalkers, seeds))
+                bhs = list(pool.map(frack, frack_args))
+                for bhi, bh in enumerate(bhs):
+                    (wi, ti) = tuple(selijs[bhi])
+                    if -bh.fun > lnprob[wi][ti] + lnlike[wi][ti]:
+                        p[wi][ti] = bh.x
+                        lnprob[wi][ti] = likelihood(bh.x)
+                        lnlike[wi][ti] = prior(bh.x)
+                scores = [-x.fun for x in bhs]
+                self.print_status(
+                    desc='Fracking Results',
+                    scores=scores,
+                    progress=[emi1, iterations])
         except KeyboardInterrupt:
             pool.close()
             print(self._wrap_length)
