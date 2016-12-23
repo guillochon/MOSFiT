@@ -9,7 +9,7 @@ class Constant(Parameter):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Constant, self).__init__(**kwargs)
         if self._min_value is not None or self._max_value is not None:
             raise ValueError('`Constant` class cannot be assigned minimum and '
                              'maximum values!')

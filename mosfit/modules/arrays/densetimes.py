@@ -13,7 +13,7 @@ class DenseTimes(Module):
     L_T_MIN = -6  # in days
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(DenseTimes, self).__init__(**kwargs)
         self._n_times = kwargs[
             'n_times'] if 'n_times' in kwargs else self.N_TIMES
 

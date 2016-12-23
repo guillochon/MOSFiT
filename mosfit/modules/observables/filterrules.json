@@ -64,6 +64,45 @@
             },
             "ROTSE":{
                 "SVO":"Generic/Bessell.R"
+            },
+            "FUV":{
+                "SVO":"GALEX/GALEX.FUV"
+            },
+            "NUV":{
+                "SVO":"GALEX/GALEX.NUV"
+            },
+            "Z":{
+                "SVO":"CFHT/CFHT.Z"
+            }
+        }
+    },
+    {
+        "instruments":[
+            "GALEX"
+        ],
+        "filters":{
+            "FUV":{
+                "SVO":"GALEX/GALEX.FUV"
+            },
+            "NUV":{
+                "SVO":"GALEX/GALEX.NUV"
+            }
+        }
+    },
+    {
+        "instruments":[
+            "CFH12k",
+            "P48"
+        ],
+        "filters":{
+            "R":{
+                "SVO":"CFHT/CFH12k.R"
+            },
+            "r":{
+                "SVO":"CFHT/CFH12k.R"
+            },
+            "g":{
+                "SVO":"SLOAN/SDSS.g"
             }
         }
     },
@@ -86,6 +125,25 @@
             },
             "I":{
                 "SVO":"Generic/Bessell.I"
+            }
+        }
+    },
+    {
+        "bandsets":[
+            "Cousins"
+        ],
+        "filters":{
+            "R":{
+                "SVO":"Generic/Cousins.R"
+            },
+            "I":{
+                "SVO":"Generic/Cousins.I"
+            },
+            "Rc":{
+                "SVO":"Generic/Cousins.R"
+            },
+            "Ic":{
+                "SVO":"Generic/Cousins.I"
             }
         }
     },

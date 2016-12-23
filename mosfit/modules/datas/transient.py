@@ -11,7 +11,7 @@ class Transient(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Transient, self).__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
         self._data_determined_parameters = []
 
@@ -24,6 +24,9 @@ class Transient(Module):
                  subtract_minimum_keys=[],
                  smooth_times=-1,
                  extrapolate_time=0.0,
+                 limit_fitting_mjds=False,
+                 exclude_bands=[],
+                 exclude_instruments=[],
                  band_list=[],
                  band_systems=[],
                  band_instruments=[],
@@ -65,6 +68,7 @@ class Transient(Module):
                         for x in num_subkeys
                 ]):
                     continue
+
                 skip_key = False
                 for qkey in req_key_values:
                     if (qkey in entry and
@@ -73,6 +77,30 @@ class Transient(Module):
                         break
                 if skip_key:
                     continue
+
+                skip_entry = False
+                for x in subkeys:
+                    if limit_fitting_mjds is not False and x == 'time':
+                        val = float(entry.get(x, None))
+                        if (val < limit_fitting_mjds[0] or
+                                val > limit_fitting_mjds[1]):
+                            skip_entry = True
+                            break
+                    if exclude_bands is not False and x == 'band':
+                        if (entry.get(x, '') in exclude_bands and
+                            (not exclude_instruments or entry.get(
+                                'instrument', '') in exclude_instruments)):
+                            skip_entry = True
+                            break
+                    if exclude_instruments is not False and x == 'instrument':
+                        if (entry.get(x, '') in exclude_instruments and
+                            (not exclude_bands or
+                             entry.get('band', '') in exclude_bands)):
+                            skip_entry = True
+                            break
+                if skip_entry:
+                    continue
+
                 for x in subkeys:
                     falseval = False if x in boo_subkeys else ''
                     if x == 'value':

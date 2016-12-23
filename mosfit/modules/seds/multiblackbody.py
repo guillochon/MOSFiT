@@ -3,13 +3,14 @@ from math import pi
 import numexpr as ne
 import numpy as np
 from astropy import constants as c
+
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'blackbody_slsn'
+CLASS_NAME = 'MultiBlackbody'
 
 
-class blackbody_slsn(SED):
+class MultiBlackbody(SED):
     """Expanding/receding photosphere with a core+envelope
     morphology and a blackbody spectral energy
     distribution.
@@ -19,15 +20,12 @@ class blackbody_slsn(SED):
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._radius_phot = kwargs['radiusphot']
-        self._temperature_phot = kwargs['temperaturephot']
+        self._areas = kwargs['areas']
+        self._temperature_phots = kwargs['temperaturephots']
         xc = self.X_CONST
         fc = self.FLUX_CONST
         temperature_phot = self._temperature_phot
@@ -49,12 +47,6 @@ class blackbody_slsn(SED):
                 sed = ne.re_evaluate()
 
             sed = np.nan_to_num(sed)
-
-            # Account for UV absorption
-            sed[wav_arr < 3500] *= (
-                0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
-
-            sed[sed < 0.0] = 0.0
 
             seds.append(list(sed))
 

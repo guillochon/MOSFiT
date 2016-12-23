@@ -1,10 +1,11 @@
 import argparse
 import os
 import shutil
+from unicodedata import normalize
 
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import is_master, prompt, print_wrapped
+from mosfit.utils import is_master, print_wrapped, prompt
 
 
 def main():
@@ -64,6 +65,7 @@ def main():
 
     parser.add_argument(
         '--band-list',
+        '--extra-bands',
         dest='band_list',
         default=[],
         nargs='+',
@@ -72,6 +74,7 @@ def main():
 
     parser.add_argument(
         '--band-systems',
+        '--extra-systems',
         dest='band_systems',
         default=[],
         nargs='+',
@@ -80,6 +83,7 @@ def main():
 
     parser.add_argument(
         '--band-instruments',
+        '--extra-instruments',
         dest='band_instruments',
         default=[],
         nargs='+',
@@ -88,11 +92,27 @@ def main():
 
     parser.add_argument(
         '--band-bandsets',
+        '--extra-bandsets',
         dest='band_bandsets',
         default=[],
         nargs='+',
         help=("List of bandsets corresponding to the bands listed "
               "in `--band-list`."))
+
+    parser.add_argument(
+        '--exclude-bands',
+        dest='exclude_bands',
+        default=[],
+        nargs='+',
+        help=("List of bands to exclude in fitting."))
+
+    parser.add_argument(
+        '--exclude-instruments',
+        dest='exclude_instruments',
+        default=[],
+        nargs='+',
+        help=("List of instruments to exclude in fitting corresponding to "
+              "the bands listed in `--exclude-bands`."))
 
     parser.add_argument(
         '--iterations',
@@ -132,6 +152,20 @@ def main():
             "of time before the last observation to extrapolate. Value is set "
             "to `0.0` days if option not set, `100.0` days "
             "by default if no arguments are given."))
+
+    parser.add_argument(
+        '--limit-fitting-mjds',
+        '-L',
+        dest='limit_fitting_mjds',
+        type=float,
+        default=False,
+        nargs=2,
+        help=(
+            "Only include observations with MJDs within the specified range, "
+            "e.g. `-L 54123 54234` will exclude observations outside this "
+            "range. If specified without an argument, any upper limit "
+            "observations before the last upper limit before the first "
+            "detection in a given band will not be included in the fitting."))
 
     parser.add_argument(
         '--suffix',
@@ -248,15 +282,17 @@ def main():
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
                 logo = f.read()
-                width = len(logo.split('\n')[0])
-                aligns = '{:^' + str(width) + '}'
+                firstline = logo.split('\n')[0]
+                if isinstance(firstline, bytes):
+                    firstline = firstline.decode('utf-8')
+                width = len(
+                    normalize('NFC', firstline))
                 print(logo)
-            print((aligns + '\n').format('### MOSFiT -- version {} ###'.format(
-                __version__)))
-            print(aligns.format('Authored by James Guillochon & Matt Nicholl'))
-            print(aligns.format('Released under the MIT license'))
-            print((aligns + '\n').format(
-                'https://github.com/guillochon/MOSFiT'))
+            print('### MOSFiT -- version {} ###'.format(__version__).center(
+                width))
+            print('Authored by James Guillochon & Matt Nicholl'.center(width))
+            print('Released under the MIT license'.center(width))
+            print('https://github.com/guillochon/MOSFiT\n'.center(width))
 
         if changed_iterations:
             print("No events specified, setting iterations to 0.")
@@ -265,7 +301,8 @@ def main():
         if args.copy:
             print_wrapped(
                 'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).', wrap_length=width)
+                '(disable with --no-copy-at-launch).',
+                wrap_length=width)
             fc = False
             if args.force_copy:
                 fc = prompt(
@@ -331,6 +368,9 @@ def main():
         'post_burn': args.post_burn,
         'smooth_times': args.smooth_times,
         'extrapolate_time': args.extrapolate_time,
+        'limit_fitting_mjds': args.limit_fitting_mjds,
+        'exclude_bands': args.exclude_bands,
+        'exclude_instruments': args.exclude_instruments,
         'suffix': args.suffix
     }
     Fitter().fit_events(**fitargs)

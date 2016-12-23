@@ -8,12 +8,6 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
-    "fnickel":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"f_{\\rm Ni}"
-    },
     "nhhost":{
         "kind":"parameter",
         "value":1.0e18,
@@ -26,23 +20,35 @@
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
-    "temperature":{
+    "alpha":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":1.0,
         "class":"parameter",
-        "latex":"T_{\\min}\\,{\\rm (K)}"
+        "latex":"\\alpha"
+    },
+    "beta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\beta"
+    },
+    "tpeak":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm peak}"
+    },
+    "lumscale":{
+        "kind":"parameter",
+        "value":1.0e44,
+        "class":"parameter",
+        "latex":"\\L_{\\rm scale}"
     },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
-    },
-    "kappagamma":{
-        "kind":"parameter",
-        "value":10.0,
-        "class":"parameter",
-        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "mejecta":{
         "kind":"parameter",
@@ -56,19 +62,21 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
-    "nickelcobalt":{
+    "exppow":{
         "kind":"engine",
         "inputs":[
             "densetimes",
-            "mejecta",
-            "fnickel",
+            "alpha",
+            "beta",
+            "tpeak",
+            "lumscale",
             "texplosion"
         ]
     },
     "diffusion":{
         "kind":"transform",
         "inputs":[
-            "nickelcobalt",
+            "exppow",
             "kappa",
             "kappagamma",
             "mejecta",
@@ -76,12 +84,11 @@
             "vejecta"
         ]
     },
-    "temperature_floor":{
+    "densecore":{
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion",
-            "temperature"
+            "diffusion"
         ]
     },
     "blackbody":{
@@ -89,7 +96,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor",
+            "densecore",
             "temperaturephot",
             "radiusphot"
         ],

@@ -1,24 +1,20 @@
 from math import pi
 
-import numexpr as ne
 import numpy as np
 from astropy import constants as c
 from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
-from mosfit.modules.photospheres.photosphere import photosphere
+from mosfit.modules.photospheres.photosphere import Photosphere
 
-CLASS_NAME = 'densecore'
+CLASS_NAME = 'DenseCore'
 
 
-class densecore(photosphere):
+class DenseCore(Photosphere):
     """Expanding/receding photosphere with a dense core + low-mass power-law
     envelope
     """
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     PL_ENV = 10.0
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def process(self, **kwargs):
         self._rest_t_explosion = kwargs['resttexplosion']

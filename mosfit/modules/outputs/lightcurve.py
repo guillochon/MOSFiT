@@ -8,7 +8,7 @@ class LightCurve(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(LightCurve, self).__init__(**kwargs)
         self._n_times = kwargs.get('ntimes', 0)
 
     def process(self, **kwargs):

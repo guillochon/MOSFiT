@@ -9,7 +9,7 @@ class PowerLaw(Parameter):
     "Standard power law, alpha must be > 1"
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(PowerLaw, self).__init__(**kwargs)
         self._alpha = kwargs.get('alpha', None)
         if self._log:
             self._miv = np.exp(self._min_value)

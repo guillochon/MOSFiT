@@ -13,9 +13,6 @@ class DiffusionCSM(Transform):
     N_INT_TIMES = 200
     MIN_EXP_ARG = 50.0
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']

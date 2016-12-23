@@ -7,9 +7,6 @@ class Transform(Module):
     """Parent class for transforms.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         return {}
 

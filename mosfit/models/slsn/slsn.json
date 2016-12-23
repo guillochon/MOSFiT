@@ -105,7 +105,7 @@
             "temperature"
         ]
     },
-    "blackbody_slsn":{
+    "blackbody":{
         "kind":"sed",
         "inputs":[
             "texplosion",
@@ -117,10 +117,19 @@
             "band_wave_ranges": "filters"
         }
     },
-    "extinction":{
+    "cutoff":{
         "kind":"sed",
         "inputs":[
-            "blackbody_slsn",
+            "blackbody"
+        ],
+        "requests":{
+            "band_wave_ranges": "filters"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "cutoff",
             "nhhost",
             "ebv"
         ],
@@ -131,7 +140,7 @@
     "filters":{
         "kind":"observable",
         "inputs":[
-            "extinction",
+            "losextinction",
             "lumdist"
         ]
     }

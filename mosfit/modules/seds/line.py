@@ -7,9 +7,6 @@ class Line(SED):
     """Line spectral energy distribution, modifies existing SED.
     """
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         self._seds = kwargs['seds']
         self._bands = kwargs['all_bands']
@@ -20,7 +17,6 @@ class Line(SED):
 
         seds = []
         for li, lum in enumerate(self._luminosities):
-            cur_band = self._bands[li]
             bi = self._band_indices[li]
             rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
 

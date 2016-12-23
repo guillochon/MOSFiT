@@ -8,12 +8,6 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
-    "fnickel":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"f_{\\rm Ni}"
-    },
     "nhhost":{
         "kind":"parameter",
         "value":1.0e18,
@@ -28,47 +22,53 @@
     },
     "temperature":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":200.0,
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
     "kappa":{
         "kind":"parameter",
-        "value":0.2,
+        "value":200.0,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "kappagamma":{
         "kind":"parameter",
-        "value":10.0,
+        "value":1000.0,
         "class":"parameter",
         "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
+    "frad":{
+        "kind":"parameter",
+        "value":0.99,
+        "class":"parameter",
+        "latex":"f_{\\rm Ni}"
+    },
     "mejecta":{
         "kind":"parameter",
-        "value":1.0,
+        "value":1.0e-3,
         "class":"parameter",
         "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
     "vejecta":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":3.0e4,
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
-    "nickelcobalt":{
+    "rprocess":{
         "kind":"engine",
         "inputs":[
             "densetimes",
             "mejecta",
-            "fnickel",
+            "frad",
             "texplosion"
         ]
     },
     "diffusion":{
         "kind":"transform",
         "inputs":[
-            "nickelcobalt",
+            "rprocess",
             "kappa",
             "kappagamma",
             "mejecta",

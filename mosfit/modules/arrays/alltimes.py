@@ -9,7 +9,7 @@ class AllTimes(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(AllTimes, self).__init__(**kwargs)
         self._bands = []
         self._systems = []
         self._instruments = []

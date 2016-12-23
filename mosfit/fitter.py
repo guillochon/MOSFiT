@@ -1,25 +1,26 @@
 import datetime
 import json
 import os
+import re
 import shutil
-import subprocess
 import sys
 import time
-import urllib.request
 import warnings
 from collections import OrderedDict
-
-import numpy as np
+from difflib import get_close_matches
 
 import emcee
+import numpy as np
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
-from mosfit.__init__ import __version__
-from mosfit.constants import LIKELIHOOD_FLOOR
-from mosfit.utils import pretty_num, print_inline, print_wrapped, prompt
+from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
+
+from mosfit.__init__ import __version__
+from mosfit.utils import (entabbed_json_dump, get_url_file_handle, is_number,
+                          pretty_num, print_inline, print_wrapped, prompt)
 
 from .model import Model
 
@@ -73,13 +74,17 @@ class Fitter():
                    post_burn=500,
                    smooth_times=-1,
                    extrapolate_time=0.0,
+                   limit_fitting_mjds=False,
+                   exclude_bands=[],
+                   exclude_instruments=[],
                    suffix=''):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
 
+        self._event_name = 'Batch'
         for event in events:
-            self._event_name = 'Batch'
+            self._event_name = ''
             self._event_path = ''
             if event:
                 try:
@@ -104,7 +109,7 @@ class Fitter():
                             'aliases...'.format(input_name),
                             wrap_length=self._wrap_length)
                         try:
-                            response = urllib.request.urlopen(
+                            response = get_url_file_handle(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/names.min.json',
                                 timeout=10)
@@ -113,6 +118,7 @@ class Fitter():
                                 'Warning: Could not download SN names (are '
                                 'you online?), using cached list.',
                                 wrap_length=self._wrap_length)
+                            raise
                         else:
                             with open(names_path, 'wb') as f:
                                 shutil.copyfileobj(response, f)
@@ -133,8 +139,48 @@ class Fitter():
                                     self._event_name = name
                                     break
                         if not self._event_name:
-                            print('Error: Could not find event by that name!')
-                            raise RuntimeError
+                            namekeys = []
+                            for name in names:
+                                namekeys.extend(names[name])
+                            matches = set(
+                                get_close_matches(
+                                    event, namekeys, n=5, cutoff=0.8))
+                            # matches = []
+                            if len(matches) < 5 and is_number(event[0]):
+                                print_wrapped(
+                                    'Could not find event, performing '
+                                    'extended name search...',
+                                    wrap_length=self._wrap_length)
+                                snprefixes = set(('SN19', 'SN20'))
+                                for name in names:
+                                    ind = re.search("\d", name)
+                                    if ind and ind.start() > 0:
+                                        snprefixes.add(name[:ind.start()])
+                                snprefixes = list(snprefixes)
+                                for prefix in snprefixes:
+                                    testname = prefix + event
+                                    new_matches = get_close_matches(
+                                        testname, namekeys, cutoff=0.95, n=1)
+                                    if len(new_matches):
+                                        matches.add(new_matches[0])
+                                    if len(matches) == 5:
+                                        break
+                            if len(matches):
+                                response = prompt(
+                                    'No exact match to given event '
+                                    'found. Did you mean one of the '
+                                    'following events?',
+                                    kind='select',
+                                    options=list(matches))
+                                if response:
+                                    for name in names:
+                                        if response in names[name]:
+                                            self._event_name = name
+                                            break
+                        if not self._event_name:
+                            print_wrapped('Could not find event by that name, '
+                                          'skipping!', self._wrap_length)
+                            continue
                         urlname = self._event_name + '.json'
 
                         print_wrapped(
@@ -143,7 +189,7 @@ class Fitter():
                             wrap_length=self._wrap_length)
                         name_path = os.path.join(dir_path, 'cache', urlname)
                         try:
-                            response = urllib.request.urlopen(
+                            response = get_url_file_handle(
                                 'https://sne.space/astrocats/astrocats/'
                                 'supernovae/output/json/' + urlname,
                                 timeout=10)
@@ -219,6 +265,9 @@ class Fitter():
                         post_burn=post_burn,
                         smooth_times=smooth_times,
                         extrapolate_time=extrapolate_time,
+                        limit_fitting_mjds=limit_fitting_mjds,
+                        exclude_bands=exclude_bands,
+                        exclude_instruments=exclude_instruments,
                         band_list=band_list,
                         band_systems=band_systems,
                         band_instruments=band_instruments,
@@ -248,6 +297,9 @@ class Fitter():
                   post_burn=500,
                   smooth_times=-1,
                   extrapolate_time=0.0,
+                  limit_fitting_mjds=False,
+                  exclude_bands=[],
+                  exclude_instruments=[],
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
@@ -267,6 +319,9 @@ class Fitter():
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
+                    limit_fitting_mjds=limit_fitting_mjds,
+                    exclude_bands=exclude_bands,
+                    exclude_instruments=exclude_instruments,
                     band_list=band_list,
                     band_systems=band_systems,
                     band_instruments=band_instruments,
@@ -376,18 +431,16 @@ class Fitter():
 
         print_inline('Initial draws completed!')
         print('\n\n')
-        p = p0.copy()
+        p = list(p0)
 
         if fracking:
-            frack_iters = max(round(iterations / frack_step), 1)
+            frack_iters = max(int(round(iterations / frack_step)), 1)
             bmax = int(round(self._burn_in / float(frack_step)))
             loop_step = frack_step
         else:
             frack_iters = 1
             loop_step = iterations
 
-        acort = 1.0
-        acorc = 1.0
         try:
             for b in range(frack_iters):
                 if fracking and b >= bmax:
@@ -396,36 +449,73 @@ class Fitter():
                 st = time.time()
                 for p, lnprob, lnlike in sampler.sample(
                         p, iterations=min(loop_step, iterations)):
+                    # for ploop in range(min(loop_step, iterations)):
+                    # p, lnprob, lnlike = next(sampler.sample(p, iterations=1))
+                    messages = []
                     # Redraw bad walkers
+                    medstd = [(np.median(x + y), np.std(x + y))
+                              for x, y in zip(lnprob, lnlike)]
+                    redraw_count = 0
+                    bad_redraws = 0
                     for ti, tprob in enumerate(lnprob):
                         for wi, wprob in enumerate(tprob):
-                            if wprob <= LIKELIHOOD_FLOOR or np.isnan(wprob):
-                                print('Warning: Bad walker position detected, '
-                                      'indicates variable mismatch.')
-                                p[ti][wi] = draw_walker()
+                            tot_score = wprob + lnlike[ti][wi]
+                            if (tot_score <=
+                                    medstd[ti][0] - 3.0 * medstd[ti][1] or
+                                    np.isnan(tot_score)):
+                                redraw_count = redraw_count + 1
+                                dxx = np.random.normal(scale=0.01, size=ndim)
+                                tar_x = np.array(p[np.random.randint(ntemps)][
+                                    np.random.randint(nwalkers)])
+                                new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                new_prob = likelihood(new_x)
+                                new_like = prior(new_x)
+                                if (new_prob + new_like > tot_score or
+                                        np.isnan(tot_score)):
+                                    p[ti][wi] = new_x
+                                    lnprob[ti][wi] = new_prob
+                                    lnlike[ti][wi] = new_like
+                                else:
+                                    bad_redraws = bad_redraws + 1
+                    if redraw_count > 0:
+                        messages.append('{:.1%} redraw, {}/{} success'.format(
+                            redraw_count / (nwalkers * ntemps), redraw_count -
+                            bad_redraws, redraw_count))
                     emi = emi + 1
                     prog = b * frack_step + emi
-                    try:
-                        acorc = min(max(0.1 * float(prog) / acort, 1.0), 10.0)
-                        acort = max([
-                            max(x) for x in sampler.get_autocorr_time(c=acorc)
-                        ])
-                    except:
-                        pass
-                    acor = [acort, acorc]
+                    low = 10
+                    asize = 0.1 * 0.5 * emi
+                    acorc = max(1, min(10, int(np.floor(asize / low))))
+                    acorc = 10
+                    acort = -1.0
+                    aa = 1
+                    for a in range(acorc, 0, -1):
+                        try:
+                            acort = max([
+                                max(x)
+                                for x in sampler.get_autocorr_time(
+                                    low=low, c=a)
+                            ])
+                        except AutocorrError as e:
+                            continue
+                        else:
+                            aa = a
+                            break
+                    acor = [acort, aa]
                     self._emcee_est_t = float(time.time() - st) / emi * (
                         iterations - (b * frack_step + emi))
                     self.print_status(
                         desc='Running PTSampler',
-                        scores=[max(x) for x in lnprob],
+                        scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
                         progress=[prog, iterations],
-                        acor=acor)
+                        acor=acor,
+                        messages=messages)
                 if fracking and b >= bmax:
                     break
                 if fracking and b < bmax:
                     self.print_status(
                         desc='Running Fracking',
-                        scores=[max(x) for x in lnprob],
+                        scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
                         progress=[(b + 1) * frack_step, iterations],
                         acor=acor)
                     ijperms = [[x, y]
@@ -452,7 +542,7 @@ class Fitter():
 
                     st = time.time()
                     seeds = [
-                        round(time.time() * 1000.0) % 4294900000 + x
+                        int(round(time.time() * 1000.0)) % 4294900000 + x
                         for x in range(len(bhwalkers))
                     ]
                     frack_args = list(zip(bhwalkers, seeds))
@@ -468,6 +558,7 @@ class Fitter():
                         progress=[(b + 1) * frack_step, iterations])
         except KeyboardInterrupt:
             pool.close()
+            print(self._wrap_length)
             if (not prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '
@@ -500,8 +591,7 @@ class Fitter():
             MODEL.SETUP: model_setup,
             MODEL.CODE: 'MOSFiT',
             MODEL.DATE: time.strftime("%Y/%m/%d"),
-            MODEL.VERSION: __version__ + ' [' +
-            subprocess.getoutput('git rev-parse --short HEAD').strip() + ']',
+            MODEL.VERSION: __version__,
             MODEL.SOURCE: source
         }
         modelnum = entry.add_model(**modeldict)
@@ -558,9 +648,9 @@ class Fitter():
                   'w') as flast, open(
                       os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
                           ('_' + suffix)
-                          if suffix else '') + '.json'), 'w') as f:
-            json.dump(oentry, flast, indent='\t', separators=(',', ':'))
-            json.dump(oentry, f, indent='\t', separators=(',', ':'))
+                          if suffix else '') + '.json'), 'w') as feven:
+            entabbed_json_dump(oentry, flast, separators=(',', ':'))
+            entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
         return (p, lnprob)
 
@@ -588,7 +678,8 @@ class Fitter():
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val for x in range(len(band_list_all) - len(band_systems))
+                rep_val
+                for x in range(len(band_list_all) - len(band_systems))
             ]
         if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
@@ -626,12 +717,17 @@ class Fitter():
             if insts[ti]:
                 photodict['instrument'] = insts[ti]
             if bsets[ti]:
-                photodict['instrument'] = bsets[ti]
+                photodict['bandset'] = bsets[ti]
             data[name]['photometry'].append(photodict)
 
         return data
 
-    def print_status(self, desc='', scores='', progress='', acor=''):
+    def print_status(self,
+                     desc='',
+                     scores='',
+                     progress='',
+                     acor='',
+                     messages=[]):
         """Prints a status message showing the current state of the fitting process.
         """
 
@@ -649,9 +745,10 @@ class Fitter():
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join(
-                [pretty_num(x) if not np.isnan(x) else 'NaN'
-                 for x in scores]) + ' ]'
+            scorestring = 'Best scores: [ ' + ', '.join([
+                pretty_num(x) if not np.isnan(x) and np.isfinite(x) else 'NaN'
+                for x in scores
+            ]) + ' ]'
             outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
@@ -664,21 +761,30 @@ class Fitter():
             timestring = self.get_timestring(tott)
             outarr.append(timestring)
         if isinstance(acor, list):
-            acortstr = pretty_num(acor[0], sig=3)
-            acorcstr = pretty_num(acor[1], sig=2)
-            if self._travis:
-                col = ''
-            elif acor[1] < 5.0:
-                col = bcolors.FAIL
-            elif acor[1] < 10.0:
-                col = bcolors.WARNING
+            acorcstr = pretty_num(acor[1], sig=3)
+            if acor[0] <= 0.0:
+                acorstring = (bcolors.FAIL +
+                              'Chain too short for acor ({})'.format(acorcstr)
+                              + bcolors.ENDC)
             else:
-                col = bcolors.OKGREEN
-            acorstring = col
-            acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
-                                                                  acorcstr)
-            acorstring = acorstring + bcolors.ENDC if col else ''
+                acortstr = pretty_num(acor[0], sig=3)
+                if self._travis:
+                    col = ''
+                elif acor[1] < 5.0:
+                    col = bcolors.FAIL
+                elif acor[1] < 10.0:
+                    col = bcolors.WARNING
+                else:
+                    col = bcolors.OKGREEN
+                acorstring = col
+                acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
+                                                                      acorcstr)
+                acorstring = acorstring + (bcolors.ENDC if col else '')
             outarr.append(acorstring)
+
+        if not isinstance(messages, list):
+            raise ValueError('`messages` must be list!')
+        outarr.extend(messages)
 
         line = ''
         lines = ''
@@ -700,5 +806,5 @@ class Fitter():
         """Return a string showing the estimated remaining time based upon
         elapsed times for emcee and fracking.
         """
-        td = str(datetime.timedelta(seconds=round(t)))
+        td = str(datetime.timedelta(seconds=int(round(t))))
         return ('Estimated time left: [ ' + td + ' ]')

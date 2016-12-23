@@ -2,7 +2,6 @@ import csv
 import json
 import os
 import shutil
-import urllib
 from collections import OrderedDict
 
 import numpy as np
@@ -10,7 +9,7 @@ from astropy.io.votable import parse as voparse
 
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import listify, print_inline, syst_syns
+from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
 
 CLASS_NAME = 'Filters'
 
@@ -20,7 +19,7 @@ class Filters(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Filters, self).__init__(**kwargs)
         self._preprocessed = False
         self._bands = []
 
@@ -100,7 +99,7 @@ class Filters(Module):
                             print('Downloading bandpass {} from SVO.'.format(
                                 svopath))
                             try:
-                                response = urllib.request.urlopen(
+                                response = get_url_file_handle(
                                     'http://svo2.cab.inta-csic.es'
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
@@ -199,7 +198,9 @@ class Filters(Module):
                       '' in self._band_bsets[bi] and
                       '' in self._band_systs[bi]):
                     return bi
-        raise ValueError('Cannot find band index!')
+        raise ValueError(
+            'Cannot find band index for `{}` band of bandset `{}` with '
+            'instrument `{}`!'.format(band, bandset, instrument))
 
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
@@ -209,19 +210,17 @@ class Filters(Module):
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
-        eff_fluxes = []
-        offsets = []
+        eff_fluxes = np.zeros_like(self._luminosities)
+        offsets = np.zeros_like(self._luminosities)
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
+            offsets[li] = self._band_offsets[bi]
             wavs = kwargs['sample_wavelengths'][bi]
             dx = wavs[1] - wavs[0]
-            offsets.append(self._band_offsets[bi])
-            itrans = np.interp(wavs, self._band_wavelengths[bi],
-                               self._transmissions[bi])
-            yvals = [x * y for x, y in zip(itrans, kwargs['seds'][li])]
-            eff_fluxes.append(
-                np.trapz(
-                    yvals, dx=dx) / self._filter_integrals[bi])
+            yvals = np.interp(wavs, self._band_wavelengths[bi],
+                              self._transmissions[bi]) * kwargs['seds'][li]
+            eff_fluxes[li] = np.trapz(
+                yvals, dx=dx) / self._filter_integrals[bi]
         mags = self.abmag(eff_fluxes, offsets)
         return {'model_magnitudes': mags}
 
@@ -229,9 +228,11 @@ class Filters(Module):
         return self._band_names
 
     def abmag(self, eff_fluxes, offsets):
-        return [(np.inf if x == 0.0 else
-                 (AB_OFFSET - y - MAG_FAC * (np.log10(x) - self._dist_const)))
-                for x, y in zip(eff_fluxes, offsets)]
+        mags = np.full(len(eff_fluxes), np.inf)
+        mags[eff_fluxes !=
+             0.0] = AB_OFFSET - offsets[eff_fluxes != 0.0] - MAG_FAC * (
+                 np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._dist_const)
+        return mags
 
     def send_request(self, request):
         if request == 'filters':

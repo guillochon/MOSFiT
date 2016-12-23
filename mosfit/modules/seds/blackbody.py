@@ -7,10 +7,10 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'blackbody'
+CLASS_NAME = 'Blackbody'
 
 
-class blackbody(SED):
+class Blackbody(SED):
     """Expanding/receding photosphere with a core+envelope
     morphology and a blackbody spectral energy
     distribution.
@@ -19,9 +19,6 @@ class blackbody(SED):
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
 
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
@@ -34,24 +31,28 @@ class blackbody(SED):
         temperature_phot = self._temperature_phot
         zp1 = 1.0 + kwargs['redshift']
         seds = []
+        evaled = False
         for li, lum in enumerate(self._luminosities):
-            cur_band = self._bands[li]
             bi = self._band_indices[li]
-            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
-            wav_arr = np.array(self._sample_wavelengths[bi])
+            if lum == 0.0:
+                seds.append(np.zeros_like(self._sample_frequencies[bi]))
+                continue
+            rest_freqs = self._sample_frequencies[bi] * zp1
+            wav_arr = self._sample_wavelengths[bi]
             radius_phot = self._radius_phot[li]
             temperature_phot = self._temperature_phot[li]
 
-            if li == 0:
+            if not evaled:
                 sed = ne.evaluate(
                     'fc * radius_phot**2 * rest_freqs**3 / '
                     '(exp(xc * rest_freqs / temperature_phot) - 1.0)')
+                evaled = True
             else:
                 sed = ne.re_evaluate()
 
             sed = np.nan_to_num(sed)
 
-            seds.append(list(sed))
+            seds.append(sed)
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 

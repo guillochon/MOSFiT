@@ -1,0 +1,36 @@
+{
+    "nhhost":{
+        "min_value":1.0e16,
+        "max_value":1.0e23,
+        "log":true
+    },
+    "frad":{
+        "min_value":0.9,
+        "max_value":1.0,
+        "log":true
+    },
+    "texplosion":{
+        "min_value":-500.0,
+        "max_value":500.0
+    },
+    "temperature":{
+        "min_value":1.0e3,
+        "max_value":1.0e5,
+        "log":true
+    },
+    "mejecta":{
+        "min_value":1.0e-3,
+        "max_value":1.0e-1,
+        "log":true
+    },
+    "vejecta":{
+        "min_value":3.0e4,
+        "max_value":9.0e4,
+        "log":true
+    },
+    "variance":{
+        "min_value":1.0e-3,
+        "max_value":100.0,
+        "log":true
+    }
+}

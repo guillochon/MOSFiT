@@ -9,7 +9,7 @@ class Parameter(Module):
     """
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(Parameter, self).__init__(**kwargs)
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
         if (self._min_value is not None and self._max_value is not None and
@@ -24,6 +24,9 @@ class Parameter(Module):
         self._latex = kwargs.get('latex', self._name)
         if (self._log and self._min_value is not None and
                 self._max_value is not None):
+            if self._min_value <= 0.0 or self._max_value <= 0.0:
+                raise ValueError(
+                    'Parameter with log prior cannot have range values <= 0!')
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
 

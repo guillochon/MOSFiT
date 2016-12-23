@@ -15,9 +15,6 @@ class NickelCobalt(Engine):
     NI56_LIFE = 8.8
     CO56_LIFE = 111.3
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-
     def process(self, **kwargs):
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']

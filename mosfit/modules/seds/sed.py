@@ -14,7 +14,7 @@ class SED(Module):
     N_PTS = 16 + 1
 
     def __init__(self, **kwargs):
-        super().__init__(**kwargs)
+        super(SED, self).__init__(**kwargs)
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):
@@ -25,15 +25,14 @@ class SED(Module):
                 return
             for rng in wave_ranges:
                 self._sample_wavelengths.append(
-                    list(np.linspace(rng[0], rng[1], self.N_PTS)))
-        self._sample_frequencies = [[self.C_CONST / x for x in y]
-                                    for y in self._sample_wavelengths]
+                    np.linspace(rng[0], rng[1], self.N_PTS))
+            self._sample_wavelengths = np.array(self._sample_wavelengths)
+        self._sample_frequencies = self.C_CONST / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
         old_seds = kwargs.get('seds', None)
         if old_seds is not None:
-            new_seds = [(i + j for i, j in zip(x, y))
-                        for x, y in zip(old_seds, list(new_seds))]
+            new_seds += old_seds
         return new_seds
 
     def send_request(self, request):
