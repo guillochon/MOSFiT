@@ -451,23 +451,35 @@ class Fitter():
                     p, lnprob, lnlike = next(sampler.sample(p, iterations=1))
                     messages = []
                     # Redraw bad walkers
-                    medstd = [(np.median(x), np.std(x)) for x in lnprob]
+                    medstd = [(np.median(x + y), np.std(x + y))
+                              for x, y in zip(lnprob, lnlike)]
                     redraw_count = 0
+                    bad_redraws = 0
                     for ti, tprob in enumerate(lnprob):
                         for wi, wprob in enumerate(tprob):
-                            if (wprob <= medstd[ti][0] - 3.0 * medstd[ti][1] or
-                                    np.isnan(wprob)):
+                            tot_score = wprob + lnlike[ti][wi]
+                            if (tot_score <=
+                                    medstd[ti][0] - 3.0 * medstd[ti][1] or
+                                    np.isnan(tot_score)):
                                 redraw_count = redraw_count + 1
-                                p[ti][wi] = np.clip(
-                                    np.array(p[np.random.randint(ntemps)][
-                                        np.random.randint(nwalkers)]) +
-                                    np.random.normal(
-                                        scale=0.1, size=ndim),
-                                    0.0,
-                                    1.0)
+                                dxx = np.random.normal(scale=0.01, size=ndim)
+                                tar_x = np.array(p[np.random.randint(ntemps)][
+                                    np.random.randint(nwalkers)])
+                                new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                new_prob = likelihood(new_x)
+                                new_like = prior(new_x)
+                                if (new_prob + new_like > tot_score or
+                                        np.isnan(tot_score)):
+                                    p[ti][wi] = new_x
+                                    lnprob[ti][wi] = new_prob
+                                    lnlike[ti][wi] = new_like
+                                else:
+                                    bad_redraws = bad_redraws + 1
                     if redraw_count > 0:
-                        messages.append('Redraws %: {:.2%}'.format(
-                            redraw_count / (nwalkers * ntemps)))
+                        messages.append(
+                            '{:.1%} redraw, {}/{} success'.format(
+                                redraw_count / (nwalkers * ntemps),
+                                redraw_count - bad_redraws, redraw_count))
                     emi = emi + 1
                     prog = b * frack_step + emi
                     low = 10
@@ -493,7 +505,7 @@ class Fitter():
                         iterations - (b * frack_step + emi))
                     self.print_status(
                         desc='Running PTSampler',
-                        scores=[max(x) for x in lnprob],
+                        scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
                         progress=[prog, iterations],
                         acor=acor,
                         messages=messages)
@@ -502,7 +514,7 @@ class Fitter():
                 if fracking and b < bmax:
                     self.print_status(
                         desc='Running Fracking',
-                        scores=[max(x) for x in lnprob],
+                        scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
                         progress=[(b + 1) * frack_step, iterations],
                         acor=acor)
                     ijperms = [[x, y]
@@ -732,9 +744,10 @@ class Fitter():
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join(
-                [pretty_num(x) if not np.isnan(x) else 'NaN'
-                 for x in scores]) + ' ]'
+            scorestring = 'Best scores: [ ' + ', '.join([
+                pretty_num(x) if not np.isnan(x) and np.isfinite(x) else 'NaN'
+                for x in scores
+            ]) + ' ]'
             outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
