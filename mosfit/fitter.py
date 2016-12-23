@@ -594,47 +594,52 @@ class Fitter():
         }
         modelnum = entry.add_model(**modeldict)
 
-        for xi, x in enumerate(p[0]):
-            output = model.run_stack(x, root='output')
-            for i in range(len(output['times'])):
-                if not np.isfinite(output['model_magnitudes'][i]):
-                    continue
-                photodict = {
-                    PHOTOMETRY.BAND: output['bands'][i],
-                    PHOTOMETRY.TIME: output['times'][i] + output['min_times'],
-                    PHOTOMETRY.MAGNITUDE: output['model_magnitudes'][i],
-                    PHOTOMETRY.MODEL: modelnum,
-                    PHOTOMETRY.SOURCE: source,
-                    PHOTOMETRY.REALIZATION: str(xi + 1)
-                }
-                if output['systems'][i]:
-                    photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                if output['bandsets'][i]:
-                    photodict[PHOTOMETRY.BAND_SET] = output['bandsets'][i]
-                if output['instruments'][i]:
-                    photodict[PHOTOMETRY.INSTRUMENT] = output['instruments'][i]
-                entry.add_photometry(
-                    compare_against_existing=False, **photodict)
+        for xi, x in enumerate(p):
+            for yi, y in enumerate(p[xi]):
+                output = model.run_stack(y, root='output')
+                for i in range(len(output['times'])):
+                    if not np.isfinite(output['model_magnitudes'][i]):
+                        continue
+                    photodict = {
+                        PHOTOMETRY.BAND: output['bands'][i],
+                        PHOTOMETRY.TIME:
+                        output['times'][i] + output['min_times'],
+                        PHOTOMETRY.MAGNITUDE: output['model_magnitudes'][i],
+                        PHOTOMETRY.MODEL: modelnum,
+                        PHOTOMETRY.SOURCE: source,
+                        PHOTOMETRY.REALIZATION: str(xi * len(p[0]) + yi + 1)
+                    }
+                    if output['systems'][i]:
+                        photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                    if output['bandsets'][i]:
+                        photodict[PHOTOMETRY.BAND_SET] = output['bandsets'][i]
+                    if output['instruments'][i]:
+                        photodict[PHOTOMETRY.INSTRUMENT] = output[
+                            'instruments'][i]
+                    entry.add_photometry(
+                        compare_against_existing=False, **photodict)
 
-            parameters = OrderedDict()
-            pi = 0
-            for ti, task in enumerate(model._call_stack):
-                if task not in model._free_parameters:
-                    continue
-                output = model._modules[task].process(**{'fraction': x[pi]})
-                value = list(output.values())[0]
-                paramdict = {
-                    'value': value,
-                    'fraction': x[pi],
-                    'latex': model._modules[task].latex(),
-                    'log': model._modules[task].is_log()
-                }
-                parameters.update({model._modules[task].name(): paramdict})
-                pi = pi + 1
-            realdict = {REALIZATION.PARAMETERS: parameters}
-            if lnprob is not None:
-                realdict[REALIZATION.SCORE] = str(lnprob[0][xi])
-            entry[ENTRY.MODELS][0].add_realization(**realdict)
+                parameters = OrderedDict()
+                pi = 0
+                for ti, task in enumerate(model._call_stack):
+                    if task not in model._free_parameters:
+                        continue
+                    output = model._modules[task].process(
+                        **{'fraction': y[pi]})
+                    value = list(output.values())[0]
+                    paramdict = {
+                        'value': value,
+                        'fraction': y[pi],
+                        'latex': model._modules[task].latex(),
+                        'log': model._modules[task].is_log()
+                    }
+                    parameters.update({model._modules[task].name(): paramdict})
+                    pi = pi + 1
+                realdict = {REALIZATION.PARAMETERS: parameters}
+                if lnprob is not None and lnlike is not None:
+                    realdict[REALIZATION.SCORE] = str(lnprob[xi][yi] + lnprob[
+                        xi][yi])
+                entry[ENTRY.MODELS][0].add_realization(**realdict)
 
         entry.sanitize()
         oentry = entry._ordered(entry)
