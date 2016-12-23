@@ -27,8 +27,7 @@ class SED(Module):
                 self._sample_wavelengths.append(
                     np.linspace(rng[0], rng[1], self.N_PTS))
             self._sample_wavelengths = np.array(self._sample_wavelengths)
-        self._sample_frequencies = [self.C_CONST / y
-                                    for y in self._sample_wavelengths]
+        self._sample_frequencies = self.C_CONST / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
         old_seds = kwargs.get('seds', None)

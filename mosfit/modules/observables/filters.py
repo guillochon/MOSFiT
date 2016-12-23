@@ -212,18 +212,15 @@ class Filters(Module):
         self._bandsets = kwargs['bandsets']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
-        flux_cache = {}
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             offsets[li] = self._band_offsets[bi]
-            if bi not in flux_cache:
-                wavs = kwargs['sample_wavelengths'][bi]
-                dx = wavs[1] - wavs[0]
-                yvals = np.interp(wavs, self._band_wavelengths[bi],
-                                  self._transmissions[bi]) * kwargs['seds'][li]
-                flux_cache[bi] = np.trapz(
-                    yvals, dx=dx) / self._filter_integrals[bi]
-            eff_fluxes[li] = flux_cache[bi]
+            wavs = kwargs['sample_wavelengths'][bi]
+            dx = wavs[1] - wavs[0]
+            yvals = np.interp(wavs, self._band_wavelengths[bi],
+                              self._transmissions[bi]) * kwargs['seds'][li]
+            eff_fluxes[li] = np.trapz(
+                yvals, dx=dx) / self._filter_integrals[bi]
         mags = self.abmag(eff_fluxes, offsets)
         return {'model_magnitudes': mags}
 
