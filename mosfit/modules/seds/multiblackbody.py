@@ -11,9 +11,7 @@ CLASS_NAME = 'MultiBlackbody'
 
 
 class MultiBlackbody(SED):
-    """Expanding/receding photosphere with a core+envelope
-    morphology and a blackbody spectral energy
-    distribution.
+    """Blackbody spectral energy distribution for given temperature and radius
     """
 
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
