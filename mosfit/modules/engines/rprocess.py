@@ -11,7 +11,7 @@ class RProcess(Engine):
     """r-process decay engine
         input luminosity adapted from Metzger 2016: 2016arXiv161009381M
 
-        For 'red' kilonovae, use kappa ~ 200
+        For 'red' kilonovae, use kappa ~ 10
         For 'blue' kilonovae, use kappa ~1
 
     """
