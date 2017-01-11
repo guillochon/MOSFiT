@@ -205,24 +205,32 @@ class Filters(Module):
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._dist_const = np.log10(FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2)
+        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2
+        self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
+        observations = np.zeros_like(self._luminosities)
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
-            offsets[li] = self._band_offsets[bi]
-            wavs = kwargs['sample_wavelengths'][bi]
-            dx = wavs[1] - wavs[0]
-            yvals = np.interp(wavs, self._band_wavelengths[bi],
-                              self._transmissions[bi]) * kwargs['seds'][li]
-            eff_fluxes[li] = np.trapz(
-                yvals, dx=dx) / self._filter_integrals[bi]
-        mags = self.abmag(eff_fluxes, offsets)
-        return {'model_magnitudes': mags}
+            if bi >= 0:
+                offsets[li] = self._band_offsets[bi]
+                wavs = kwargs['sample_wavelengths'][bi]
+                dx = wavs[1] - wavs[0]
+                yvals = np.interp(wavs, self._band_wavelengths[bi],
+                                  self._transmissions[bi]) * kwargs['seds'][li]
+                eff_fluxes[li] = np.trapz(
+                    yvals, dx=dx) / self._filter_integrals[bi]
+            else:
+                eff_fluxes[li] = kwargs['seds'][li][0]
+        nbs = np.array(self._band_indices) < 0
+        ybs = np.array(self._band_indices) >= 0
+        observations[nbs] = eff_fluxes[nbs] / self._dist_const
+        observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
+        return {'model_observations': observations}
 
     def band_names(self):
         return self._band_names
@@ -231,7 +239,7 @@ class Filters(Module):
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
              0.0] = AB_OFFSET - offsets[eff_fluxes != 0.0] - MAG_FAC * (
-                 np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._dist_const)
+                 np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
         return mags
 
     def send_request(self, request):

@@ -13,3 +13,4 @@ acor>=1.1.1
 schwimmbad>=0.2.1
 astrocats>=0.3.3
 nbstripout>=0.2.9
+inflect>=0.2.5

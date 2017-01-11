@@ -4,11 +4,16 @@
         "keys":{
             "photometry":{
                 "time":["required", "numeric"],
-                "magnitude":["required", "numeric"],
+                "magnitude":["optional", "numeric"],
                 "e_magnitude":["optional", "numeric"],
                 "e_upper_magnitude":["optional", "numeric"],
                 "e_lower_magnitude":["optional", "numeric"],
-                "band":"required",
+                "band":"optional",
+                "frequency":["optional", "numeric"],
+                "fluxdensity":["optional", "numeric"],
+                "e_fluxdensity":["optional", "numeric"],
+                "e_upper_fluxdensity":["optional", "numeric"],
+                "e_lower_fluxdensity":["optional", "numeric"],
                 "instrument":"optional",
                 "bandset":"optional",
                 "system":"optional",

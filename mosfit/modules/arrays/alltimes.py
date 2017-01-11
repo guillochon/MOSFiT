@@ -14,33 +14,34 @@ class AllTimes(Module):
         self._systems = []
         self._instruments = []
         self._bandsets = []
+        self._frequencies = []
 
     def process(self, **kwargs):
         old_bands = (self._systems, self._instruments, self._bandsets,
-                     self._bands)
+                     self._bands, self._frequencies)
         if (kwargs.get('root', 'output') == 'output' and
                 'extra_times' in kwargs):
-            obslist = (
-                list(
-                    zip(*(kwargs['times'], kwargs['systems'], kwargs[
-                        'instruments'], kwargs['bandsets'], kwargs['bands'],
-                          [True for x in range(len(kwargs['times']))]))) +
-                list(
-                    zip(*(kwargs['extra_times'], kwargs[
-                        'extra_systems'], kwargs['extra_instruments'], kwargs[
-                            'extra_bandsets'], kwargs['extra_bands'],
-                          [False for x in range(len(kwargs['extra_times']))])))
-            )
+            obslist = (list(
+                zip(*(kwargs['times'], kwargs['systems'], kwargs[
+                    'instruments'], kwargs['bandsets'], kwargs[
+                        'bands'], kwargs['frequencies'],
+                      [True for x in range(len(kwargs['times']))]))
+            ) + list(
+                zip(*(kwargs['extra_times'], kwargs['extra_systems'], kwargs[
+                    'extra_instruments'], kwargs['extra_bandsets'], kwargs[
+                        'extra_bands'], kwargs['extra_frequencies'],
+                      [False for x in range(len(kwargs['extra_times']))]))))
             obslist.sort()
 
             (self._times, self._systems, self._instruments, self._bandsets,
-             self._bands, self._observed) = zip(*obslist)
+             self._bands, self._frequencies, self._observed) = zip(*obslist)
         else:
             self._times = kwargs['times']
             self._systems = kwargs['systems']
             self._instruments = kwargs['instruments']
             self._bandsets = kwargs['bandsets']
             self._bands = kwargs['bands']
+            self._frequencies = kwargs['frequencies']
             self._observed = [True for x in kwargs['times']]
 
         outputs = {}
@@ -49,13 +50,15 @@ class AllTimes(Module):
         outputs['all_instruments'] = self._instruments
         outputs['all_bandsets'] = self._bandsets
         outputs['all_bands'] = self._bands
+        outputs['all_frequencies'] = self._frequencies
         if old_bands != (self._systems, self._instruments, self._bandsets,
-                         self._bands):
+                         self._bands, self._frequencies):
             self._all_band_indices = [
-                self._filters.find_band_index(
-                    w, instrument=x, bandset=y, system=z)
-                for w, x, y, z in zip(self._bands, self._instruments,
-                                      self._bandsets, self._systems)
+                (self._filters.find_band_index(
+                    w, instrument=x, bandset=y, system=z) if a == '' else -1)
+                for w, x, y, z, a in
+                zip(self._bands, self._instruments, self._bandsets,
+                    self._systems, self._frequencies)
             ]
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observed'] = self._observed

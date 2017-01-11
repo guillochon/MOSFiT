@@ -344,7 +344,8 @@ class Fitter():
         if pool.is_master() and 'filters' in self._model._modules:
             print_wrapped('Bands being used for current transient:',
                           self._wrap_length)
-            bis = list(set(outputs['all_band_indices']))
+            bis = list(
+                filter(lambda a: a != -1, set(outputs['all_band_indices'])))
             ois = []
             for bi in bis:
                 ois.append(
