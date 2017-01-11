@@ -29,6 +29,7 @@ install:
       fi
     - conda install --yes python=$TPV matplotlib mpi4py scipy jupyter
     - pip install coveralls
+    - pip install --upgrade setuptools
     - pip install -r requirements.txt
     - coverage run -p setup.py install
 
