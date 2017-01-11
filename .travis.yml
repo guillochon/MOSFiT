@@ -39,6 +39,7 @@ script:
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le.json --travis -i 1 --no-fracking -m magnetar
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m csm
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m rprocess
+    - coverage run -p --source=mosfit -m mosfit -e SN2007bg --travis -i 1 --no-fracking -m ic
     - coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0
     - coverage run -p --source=mosfit -m mosfit -e 2010kd --travis -i 5 --no-fracking -m slsn --extra-bands u g --extra-instruments LSST -L 55540 55560 --exclude-bands B -s test --quiet
     - echo "travis_fold:end:FIT Fitting test data done"
