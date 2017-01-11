@@ -75,7 +75,7 @@
         "inputs":[
             "transient",
             "variance",
-            "filters",
+            "photometry",
             "default_upper_limit_error",
             "default_no_error_bar_error"
         ]
@@ -86,7 +86,7 @@
             "transient"
         ],
         "requests":{
-            "filters": "filters"
+            "photometry": "photometry"
         }
     },
     "resttimes":{
@@ -108,7 +108,7 @@
         "inputs":[
             "likelihood",
             "transient",
-            "filters"
+            "photometry"
         ],
         "class":"lightcurve"
     }

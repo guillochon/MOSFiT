@@ -65,4 +65,4 @@ class AllTimes(Module):
         return outputs
 
     def receive_requests(self, **requests):
-        self._filters = requests.get('filters', None)
+        self._filters = requests.get('photometry', None)

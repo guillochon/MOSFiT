@@ -341,7 +341,7 @@ class Fitter():
             root='output')
 
         # Collect observed band info
-        if pool.is_master() and 'filters' in self._model._modules:
+        if pool.is_master() and 'photometry' in self._model._modules:
             print_wrapped('Bands being used for current transient:',
                           self._wrap_length)
             bis = list(
@@ -355,10 +355,10 @@ class Fitter():
                             'observed']) if x == bi
                     ]))
             band_len = max([
-                len(self._model._modules['filters']._unique_bands[bi]['SVO'])
-                for bi in bis
+                len(self._model._modules['photometry']._unique_bands[bi][
+                    'SVO']) for bi in bis
             ])
-            filts = self._model._modules['filters']
+            filts = self._model._modules['photometry']
             ubs = filts._unique_bands
             filterrows = [
                 s[3]

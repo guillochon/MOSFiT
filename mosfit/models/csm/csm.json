@@ -135,7 +135,7 @@
             "radiusphot"
         ],
         "requests":{
-            "band_wave_ranges": "filters"
+            "band_wave_ranges": "photometry"
         }
     },
     "losextinction":{
@@ -146,10 +146,10 @@
             "ebv"
         ],
         "requests":{
-            "band_wave_ranges": "filters"
+            "band_wave_ranges": "photometry"
         }
     },
-    "filters":{
+    "photometry":{
         "kind":"observable",
         "inputs":[
             "losextinction",

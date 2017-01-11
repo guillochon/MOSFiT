@@ -11,15 +11,15 @@ from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
 
-CLASS_NAME = 'Filters'
+CLASS_NAME = 'Photometry'
 
 
-class Filters(Module):
+class Photometry(Module):
     """Band-pass filters.
     """
 
     def __init__(self, **kwargs):
-        super(Filters, self).__init__(**kwargs)
+        super(Photometry, self).__init__(**kwargs)
         self._preprocessed = False
         self._bands = []
 
@@ -243,7 +243,7 @@ class Filters(Module):
         return mags
 
     def send_request(self, request):
-        if request == 'filters':
+        if request == 'photometry':
             return self
         elif request == 'band_wave_ranges':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
