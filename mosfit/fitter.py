@@ -618,7 +618,7 @@ class Fitter():
                         photodict[PHOTOMETRY.FREQUENCY] = output[
                             'frequencies'][i] * frequency_unit('GHz')
                         photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                            'model_observations'][i] / flux_density_unit('µJy')
+                            'model_observations'][i] * flux_density_unit('µJy')
                         photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                         photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                     if output['systems'][i]:

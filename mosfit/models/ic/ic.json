@@ -61,9 +61,9 @@
         "value":1.0e13,
         "class":"parameter"
     },
-    "b0":{
+    "f0":{
         "kind":"parameter",
-        "value":1.0,
+        "value":1.0e-26,
         "class":"parameter"
     },
     "p":{
@@ -122,7 +122,7 @@
         "inputs":[
             "blackbody",
             "radiussource",
-            "b0",
+            "f0",
             "p",
             "numax"
         ],

@@ -26,7 +26,7 @@ class Synchrotron(SED):
         self._radius_source = kwargs['radiussource']
         self._nu_max = kwargs['numax']
         self._p = kwargs['p']
-        self._b0 = kwargs['b0']
+        self._f0 = kwargs['f0']
         zp1 = 1.0 + kwargs['redshift']
         seds = []
         for li, lum in enumerate(self._luminosities):
@@ -43,9 +43,9 @@ class Synchrotron(SED):
                 rest_freqs = [self._frequencies[li] * zp1]
 
             # Below is not scaled properly, just proof of concept
-            fmax = self._b0**-0.5 * self._radius_source**2 * self._nu_max**2.5
+            fmax = self._f0 * self._radius_source**2 * self._nu_max**2.5
             sed = [
-                self._b0**-0.5 * self._radius_source**2 * (x / self._nu_max)
+                self._f0 * self._radius_source**2 * (x / self._nu_max)
                 **2.5 if x < self._nu_max else fmax * (x / self._nu_max)
                 **(-(self._p - 1.0) / 2.0) for x in rest_freqs
             ]
