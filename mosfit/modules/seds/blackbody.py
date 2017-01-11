@@ -43,10 +43,8 @@ class Blackbody(SED):
                 continue
             if bi >= 0:
                 rest_freqs = self._sample_frequencies[bi] * zp1
-                wav_arr = self._sample_wavelengths[bi]
             else:
                 rest_freqs = [self._frequencies[li] * zp1]
-                wav_arr = [cc / self._frequencies[li]]
             radius_phot = self._radius_phot[li]
             temperature_phot = self._temperature_phot[li]
 

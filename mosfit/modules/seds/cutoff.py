@@ -1,4 +1,6 @@
 import numpy as np
+from astropy import constants as c
+
 from mosfit.modules.seds.sed import SED
 
 CLASS_NAME = 'Cutoff'
@@ -13,7 +15,10 @@ class Cutoff(SED):
         self._band_indices = kwargs['all_band_indices']
         for si, sed in enumerate(self._seds):
             bi = self._band_indices[si]
-            wav_arr = self._sample_wavelengths[bi]
+            if bi >= 0:
+                wav_arr = self._sample_wavelengths[bi]
+            else:
+                wav_arr = [c.c.cgs.value / self._frequencies[si]]
 
             # Account for UV absorption
             norm = np.sum(sed)
