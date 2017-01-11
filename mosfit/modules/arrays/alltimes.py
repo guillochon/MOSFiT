@@ -1,4 +1,5 @@
 from mosfit.modules.module import Module
+from mosfit.utils import frequency_unit
 
 CLASS_NAME = 'AllTimes'
 
@@ -41,7 +42,10 @@ class AllTimes(Module):
             self._instruments = kwargs['instruments']
             self._bandsets = kwargs['bandsets']
             self._bands = kwargs['bands']
-            self._frequencies = kwargs['frequencies']
+            self._frequencies = [
+                x / frequency_unit(y) if x != '' else ''
+                for x, y in zip(kwargs['frequencies'], kwargs['u_frequencies'])
+            ]
             self._observed = [True for x in kwargs['times']]
 
         outputs = {}
@@ -56,9 +60,9 @@ class AllTimes(Module):
             self._all_band_indices = [
                 (self._filters.find_band_index(
                     w, instrument=x, bandset=y, system=z) if a == '' else -1)
-                for w, x, y, z, a in
-                zip(self._bands, self._instruments, self._bandsets,
-                    self._systems, self._frequencies)
+                for w, x, y, z, a in zip(self._bands, self._instruments,
+                                         self._bandsets, self._systems,
+                                         self._frequencies)
             ]
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observed'] = self._observed

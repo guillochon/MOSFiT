@@ -4,6 +4,7 @@ import numpy as np
 
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
+from mosfit.utils import flux_density_unit
 
 CLASS_NAME = 'Likelihood'
 
@@ -87,8 +88,12 @@ class Likelihood(Module):
         self._e_u_fds = kwargs.get('e_upper_fluxdensities', [])
         self._e_l_fds = kwargs.get('e_lower_fluxdensities', [])
         self._e_fds = kwargs.get('e_fluxdensities', [])
+        self._u_fds = kwargs.get('u_fluxdensities', [])
+        self._u_freqs = kwargs.get('u_frequencies', [])
         self._upper_limits = kwargs.get('upperlimits', [])
         self._observed = kwargs['observed']
+
+        # Magnitudes first
         self._e_u_mags = [
             kwargs['default_upper_limit_error']
             if (e == '' and eu == '' and self._upper_limits[i]) else
@@ -102,6 +107,8 @@ class Likelihood(Module):
              if (e == '' and el == '') else (e if el == '' else el))
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
         ]
+
+        # Now flux densities
         self._e_u_fds = [
             v if (e == '' and eu == '' and self._upper_limits[i]) else
             (v if (e == '' and eu == '') else (e if eu == '' else eu))
@@ -113,5 +120,17 @@ class Likelihood(Module):
                                                (e if el == '' else el))
             for i, (e, el, v) in enumerate(
                 zip(self._e_fds, self._e_l_fds, self._fds))
+        ]
+        self._fds = [
+            x * flux_density_unit(y) if x != '' else ''
+            for x, y in zip(self._fds, self._u_fds)
+        ]
+        self._e_u_fds = [
+            x * flux_density_unit(y) if x != '' else ''
+            for x, y in zip(self._e_u_fds, self._u_fds)
+        ]
+        self._e_l_fds = [
+            x * flux_density_unit(y) if x != '' else ''
+            for x, y in zip(self._e_l_fds, self._u_fds)
         ]
         self._preprocessed = True

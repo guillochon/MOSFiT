@@ -19,7 +19,8 @@ from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
 
 from mosfit.__init__ import __version__
-from mosfit.utils import (entabbed_json_dump, get_url_file_handle, is_number,
+from mosfit.utils import (entabbed_json_dump, flux_density_unit,
+                          frequency_unit, get_url_file_handle, is_number,
                           pretty_num, print_inline, print_wrapped, prompt)
 
 from .model import Model
@@ -599,17 +600,26 @@ class Fitter():
             for yi, y in enumerate(p[xi]):
                 output = model.run_stack(y, root='output')
                 for i in range(len(output['times'])):
-                    if not np.isfinite(output['model_magnitudes'][i]):
+                    if not np.isfinite(output['model_observations'][i]):
                         continue
                     photodict = {
-                        PHOTOMETRY.BAND: output['bands'][i],
                         PHOTOMETRY.TIME:
                         output['times'][i] + output['min_times'],
-                        PHOTOMETRY.MAGNITUDE: output['model_magnitudes'][i],
                         PHOTOMETRY.MODEL: modelnum,
                         PHOTOMETRY.SOURCE: source,
                         PHOTOMETRY.REALIZATION: str(xi * len(p[0]) + yi + 1)
                     }
+                    if output['observation_types'][i] == 'magnitude':
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = output[
+                            'model_observations'][i]
+                    if output['observation_types'][i] == 'fluxdensity':
+                        photodict[PHOTOMETRY.FREQUENCY] = output[
+                            'frequencies'][i] * frequency_unit('GHz')
+                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                            'model_observations'][i] / flux_density_unit('µJy')
+                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                     if output['systems'][i]:
                         photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
                     if output['bandsets'][i]:
