@@ -11,6 +11,6 @@ corner>=2.0.1
 extinction>=0.2.2
 acor>=1.1.1
 schwimmbad>=0.2.1
-astrocats>=0.3.3
+-e git://github.com/astrocatalogs/astrocats.git#egg=astrocats
 nbstripout>=0.2.9
 inflect>=0.2.5

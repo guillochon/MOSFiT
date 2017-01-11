@@ -46,10 +46,12 @@ class LOSExtinction(SED):
             else:
                 wavelengths = np.array([c.c.cgs.value / self._frequencies[si]])
                 # Add host and MW contributions
+                print('before', self._seds[si])
                 eapp(
                     odonnell94(wavelengths, self._av_mw + av_host, self.MW_RV),
                     self._seds[si],
                     inplace=True)
+                print('after', self._seds[si])
 
         return {
             'sample_wavelengths': self._sample_wavelengths,
