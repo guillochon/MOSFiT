@@ -1,4 +1,4 @@
-# -*- coding: latin-1 -*-
+# -*- coding: UTF-8 -*-
 import datetime
 import json
 import os

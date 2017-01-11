@@ -1,4 +1,4 @@
-# -*- coding: latin-1 -*-
+# -*- coding: UTF-8 -*-
 """Miscellaneous utility functions.
 """
 from __future__ import print_function
