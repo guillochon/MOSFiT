@@ -13,6 +13,7 @@ class Cutoff(SED):
     def process(self, **kwargs):
         self._seds = kwargs['seds']
         self._band_indices = kwargs['all_band_indices']
+        self._frequencies = kwargs['all_frequencies']
         for si, sed in enumerate(self._seds):
             bi = self._band_indices[si]
             if bi >= 0:
@@ -26,6 +27,8 @@ class Cutoff(SED):
                 0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
 
             sed[sed < 0.0] = 0.0
+
+            sed = np.nan_to_num(sed)
 
             # Normalize SED so no energy is lost
             sed *= norm / np.sum(sed)
