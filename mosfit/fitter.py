@@ -504,7 +504,10 @@ class Fitter():
 
                 self.print_status(
                     desc='Fracking' if frack_now else 'Walking',
-                    scores=[max(x + y) for x, y in zip(lnprob, lnlike)],
+                    scores=[
+                        np.array(x) + np.array(y)
+                        for x, y in zip(lnprob, lnlike)
+                    ],
                     progress=[emi1, iterations],
                     acor=acor,
                     messages=messages)
@@ -548,7 +551,7 @@ class Fitter():
                         p[wi][ti] = bh.x
                         lnprob[wi][ti] = likelihood(bh.x)
                         lnlike[wi][ti] = prior(bh.x)
-                scores = [-x.fun for x in bhs]
+                scores = [[-x.fun for x in bhs]]
                 self.print_status(
                     desc='Fracking Results',
                     scores=scores,
@@ -749,9 +752,16 @@ class Fitter():
             outarr.append(desc)
         if isinstance(scores, list):
             scorestring = 'Best scores: [ ' + ', '.join([
-                pretty_num(x) if not np.isnan(x) and np.isfinite(x) else 'NaN'
+                pretty_num(max(x))
+                if not np.isnan(max(x)) and np.isfinite(max(x)) else 'NaN'
                 for x in scores
             ]) + ' ]'
+            outarr.append(scorestring)
+            # WAIC from Gelman
+            # http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
+            fscores = [x for y in scores for x in y]
+            scorestring = 'WAIC: ' + pretty_num(
+                np.mean(fscores) - np.var(fscores))
             outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
