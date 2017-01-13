@@ -1,5 +1,4 @@
 import numpy as np
-from astropy import constants as c
 
 from extinction import apply as eapp
 from extinction import odonnell94
@@ -44,12 +43,10 @@ class LOSExtinction(SED):
                     self._seds[si],
                     inplace=True)
             else:
-                wavelengths = np.array([c.c.cgs.value / self._frequencies[si]])
-                # Add host and MW contributions
-                eapp(
-                    odonnell94(wavelengths, self._av_mw + av_host, self.MW_RV),
-                    self._seds[si],
-                    inplace=True)
+                # wavelengths = np.array(
+                #   [c.c.cgs.value / self._frequencies[si]])
+                # Need extinction function for radio
+                pass
 
         return {
             'sample_wavelengths': self._sample_wavelengths,

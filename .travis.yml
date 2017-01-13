@@ -27,9 +27,11 @@ install:
       then export TPV="3.5.2"; else
       export TPV=$TRAVIS_PYTHON_VERSION;
       fi
+    - conda update setuptools
     - conda install --yes python=$TPV matplotlib mpi4py scipy jupyter
     - pip install coveralls
     - pip install -r requirements.txt
+    - pip install git+http://github.com/astrocatalogs/astrocats.git#egg=astrocats
     - coverage run -p setup.py install
 
 # Run test

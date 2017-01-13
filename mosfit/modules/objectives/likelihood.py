@@ -122,15 +122,15 @@ class Likelihood(Module):
                 zip(self._e_fds, self._e_l_fds, self._fds))
         ]
         self._fds = [
-            x * flux_density_unit(y) if x != '' else ''
+            x / flux_density_unit(y) if x != '' else ''
             for x, y in zip(self._fds, self._u_fds)
         ]
         self._e_u_fds = [
-            x * flux_density_unit(y) if x != '' else ''
+            x / flux_density_unit(y) if x != '' else ''
             for x, y in zip(self._e_u_fds, self._u_fds)
         ]
         self._e_l_fds = [
-            x * flux_density_unit(y) if x != '' else ''
+            x / flux_density_unit(y) if x != '' else ''
             for x, y in zip(self._e_l_fds, self._u_fds)
         ]
         self._preprocessed = True
