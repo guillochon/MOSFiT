@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 import datetime
+import io
 import json
 import os
 import re
@@ -662,8 +663,8 @@ class Fitter():
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
-        with open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                  'w') as flast, open(
+        with io.open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                  'w') as flast, io.open(
                       os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
                           ('_' + suffix)
                           if suffix else '') + '.json'), 'w') as feven:

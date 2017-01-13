@@ -132,7 +132,11 @@ def entabbed_json_dump(string, f, **kwargs):
             ensure_ascii=False)
         return
     newstr = json.dumps(
-        string, indent=4, separators=kwargs['separators'], ensure_ascii=False)
+        string,
+        indent=4,
+        separators=kwargs['separators'],
+        ensure_ascii=False,
+        encoding='utf8')
     newstr = re.sub(
         '\n +',
         lambda match: '\n' + '\t' * (len(match.group().strip('\n')) / 4),
@@ -142,13 +146,13 @@ def entabbed_json_dump(string, f, **kwargs):
 
 def flux_density_unit(unit):
     if unit == 'µJy':
-        return 1.0/(1.0e-6*1.0e-23)
+        return 1.0 / (1.0e-6 * 1.0e-23)
     return 1.0
 
 
 def frequency_unit(unit):
     if unit == 'GHz':
-        return 1.0/1.0e9
+        return 1.0 / 1.0e9
     return 1.0
 
 
