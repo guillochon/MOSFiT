@@ -17,9 +17,6 @@ class Fallback(Engine):
 	"""A tde engine.
     """
 
-# How do I know what the kwargs are?
-
-
 	def __init__(self,**kwargs):
 		# call super version of init
 
@@ -37,8 +34,12 @@ class Fallback(Engine):
 		# It is assumed that there are different files for each beta (such as dmde2.5.dat for beta = 2.5)
 		# The first row is energy, the second is dmde. This could be changed so that
 		# each beta has a different subdirectory
-		dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/dmdes_astrocrash/4-3/'
+
+		# for now just use astrocrash dmdes (converted from astrocrash dmdts)
+		#dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/dmdes_astrocrash/4-3/'
 	   
+		dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
+
 		#--------- GET SIMULATION BETAS -----------------
 
 		# Following block could be updated to get beta's from file names instead.
@@ -71,23 +72,31 @@ class Fallback(Engine):
 		self._beta_yinter = []
 		self._energy = []
 
-	   # need to pad with extra zero for dmde files from astrocrash
-		e_lo, dmde_lo = np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[0])+'.dat') # format requires 3 digits after decimal point
+	   # need to pad with extra zeros for dmde files from astrocrash 
+		#e_lo, dmde_lo = np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[0])+'.dat') # format requires 3 digits after decimal point
+		
+	
+		e_lo, dmde_lo = np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[0])+'.dat')
 		for i in range(1,len(self._sim_beta)): # bc calculating slope and yintercepts BETWEEN each simulation beta
 			self._energy.append(e_lo) # save to access later in process function
 	 		# dmde.append(dmde_lo) # save to access later in process function --> don't need, can just use interpolations but might not be exact for betas = simulation betas
-			e_hi, dmde_hi= np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat')
-
+			
+			#e_hi, dmde_hi= np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
+			
+			# smoothed flash file format
+			e_hi, dmde_hi= np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[i])+'.dat')
+		 	
 		 	# Interpolate  e array so that we can create same energy steps for lo and hi arrays.
 	 		# since using e_lo array, only need to interpolate hi arrays.
 		 	# (using e_lo array bc it is w/in the energy range of e_hi array)
-			#print (i)
-			#print (e_hi)
-			#funchi = CubicSpline(np.flipud(e_hi), np.flipud(dmde_hi)) # must flip arrays bc x array for CubicSpline needs to be monotonically increasing
-			funchi = CubicSpline(e_hi, dmde_hi)
+
+			# note that x array for CubicSpline needs to be monotonically increasing
+			#funchi = CubicSpline(e_hi, dmde_hi)
+			funchi = CubicSpline(np.flipud(e_hi), np.flipud(dmde_hi))
+		 	
 		 	# get dmde_hi at values of e_lo so I can interpolate in beta
-			#dmde_hi_new = np.flipud(funchi(np.flipud(e_lo)))
-			dmde_hi_new = funchi(e_lo)
+			#dmde_hi_new = funchi(e_lo)
+			dmde_hi_new = np.flipud(funchi(np.flipud(e_lo)))
 
 			# get slope for linear interpolation (in beta)
 			self._beta_slope.append((dmde_hi_new - dmde_lo)/(self._sim_beta[i]-self._sim_beta[i-1]))
@@ -105,18 +114,13 @@ class Fallback(Engine):
 
 	def process(self, **kwargs):
 	   
-    	# define some variables (not sure why i need to do this)
-	   #self._times = kwargs['dense_times']
-	   #self._t_peak = kwargs['tpeak']
-	   #self._lum_scale = kwargs['lumscale']
-
 		beta_interp=True
 		beta_outside_range=False
 
 	   # change this so I get variables from mosfit
 		G = c.G.cgs.value # 6.67259e-8 cm3 g-1 s-2
 		Msolar = c.M_sun.cgs.value #1.989e33 grams
-		Mhbase = 1.0e6*Msolar # this is the generic size, should at some point scale for diff BH size
+		Mhbase = 1.0e6*Msolar # this is the generic size of bh used in astrocrash sim
 		
 
 		self._beta = kwargs['beta']
@@ -155,9 +159,9 @@ class Fallback(Engine):
 
 
 	   
-	   #----------- LINEAR BETA INTERPOLATION --------------
+		#----------- LINEAR BETA INTERPOLATION --------------
 
-	   # get new dmde
+		# get new dmde
 		dmde = self._beta_yinter[interp_index_low] + self._beta_slope[interp_index_low]*self._beta
 
 
@@ -165,53 +169,52 @@ class Fallback(Engine):
 
 		if beta_outside_range == False:
 
-	   	#if beta_interp == True:
+	   		#if beta_interp == True:
 
-		  # should check that at simulation betas this interpolation gives the simulation dmdes back
-		  #if beta_interp == False: # files haven't been loaded yet
-		   #   e_lo, dmdenew = np.loadtxt(dmdedir+'dmde'+sim_beta_str[interp_index_low]+'.dat')
+			# should check that at simulation betas this interpolation gives the simulation dmdes back
+			#if beta_interp == False: # files haven't been loaded yet
+			#   e_lo, dmdenew = np.loadtxt(dmdedir+'dmde'+sim_beta_str[interp_index_low]+'.dat')
 
-		  # only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
+			# only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
 			ebound = np.array(self._energy[interp_index_low][self._energy[interp_index_low]<0]) # cuts off the first part of array (with positive e)
 
-		  # need this to cut dmde and mass arrays
+			# need this to cut dmde and mass arrays
 			zeropt = len(self._energy[interp_index_low])- len(ebound)
 
-		  # this code assumes e is in decreasing order with positive e first 
+			# this code assumes e is in decreasing order with positive e first 
 			dmdebound = np.array(dmde[zeropt:]) # cuts of corresponding part of dmde array
 
-		  # calculate de/dt, time and dm/dt arrays
+			# calculate de/dt, time and dm/dt arrays
 			dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in erg/s
 		  
 			time = (2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0)   # in seconds
 
 			dmdt = dmdebound*dedt 
 
-			#print (dmdt)
-			#print (time)
-   			 #----------- SCALE dm/dt TO BH SIZE --------------
+   			#----------- SCALE dm/dt TO BH SIZE --------------
 
     		# bh size for dmdt's in astrocrash is 1e6 solar masses 
     		# dmdt ~ Mh^(-1/2)
 			self._bhmass = kwargs['bhmass']*Msolar # right now kwargs bhmass is in solar masses, want in cgs
+
+			
 			dmdt = dmdt*np.sqrt(Mhbase/self._bhmass)
 			time = time*np.sqrt(self._bhmass/Mhbase)
 
-			#print ('before')
-			#print (self._bhmass)
-			#print (self._beta)
-			#if self._bhmass == 1.0e6 and self._beta == 1.000:
-			#print ('entered')
-			if np.abs(1.e6-kwargs['bhmass'])<2.e5 and np.abs(1.00 - self._beta)<0.1:
-				np.savetxt('dmdt_mh'+str(kwargs['bhmass'])+'_b'+str(self._beta)+'.txt',dmdt)
-				np.savetxt('time_mh'+str(kwargs['bhmass'])+'_b'+str(self._beta)+'.txt',time)
-    		#print ('length time = '+str(len(time)))
+			#print (dmdt)
+			#print (time)
+
+			#if np.abs(1.e6-kwargs['bhmass'])<2.e5 and np.abs(1.00 - self._beta)<0.1:
+				#np.savetxt('dmdt_mh'+str(kwargs['bhmass'])+'_b'+str(self._beta)+'.txt',dmdt)
+				#np.savetxt('time_mh'+str(kwargs['bhmass'])+'_b'+str(self._beta)+'.txt',time)
+    		
     
     		# interpolate dmdt so that it has values at times = self._time
-			func = CubicSpline(time, dmdt)
-			
-			dmdtnew = func(self._times)
-    
+			#timeinterp = CubicSpline(time, dmdt)
+			timeinterp = CubicSpline(np.flipud(time), np.flipud(dmdt))
+
+			#dmdtnew = timeinterp(self._times)
+			dmdtnew = np.flipud(timeinterp(self._times))
 
 			luminosities = 0.1*dmdtnew*c.c.cgs.value
 
