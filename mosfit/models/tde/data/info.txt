@@ -1,0 +1,4 @@
+these are dmdes for gamma = 4/3, converted from the dmdts on James Guillochon's blog (http://astrocrash.net/wp-content/uploads/2013/12/dmdts.zip). 
+
+file formatting : first row is energy, second row is dmde 
+units = cgs
