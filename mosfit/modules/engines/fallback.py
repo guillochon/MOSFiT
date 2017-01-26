@@ -36,7 +36,8 @@ class Fallback(Engine):
 		# each beta has a different subdirectory
 
 		# for now just use astrocrash dmdes (converted from astrocrash dmdts)
-		dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/dmdes_astrocrash/4-3/'
+		print (os.path.dirname(__file__)[:-15])
+		dmdedir = os.path.dirname(__file__)[:-15]+'models/tde/data/' #'../../models/tde/data/'
 	   
 		#dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
 
@@ -109,6 +110,8 @@ class Fallback(Engine):
 
 			e_lo, dmde_lo = e_hi, dmde_hi
 
+			#self._mintime1 = 0
+			#self._maxtime1 = 15
 
 		    # Should I deallocate or delete unused variables at the end of __init__ ?
 
@@ -165,8 +168,9 @@ class Fallback(Engine):
 		dmde = self._beta_yinter[interp_index_low] + self._beta_slope[interp_index_low]*self._beta
 
 
-	   #----------- CONVERT dm/de --> dm/dt --------------
+		#----------- CONVERT dm/de --> dm/dt --------------
 
+		
 		if beta_outside_range == False:
 
 	   		#if beta_interp == True:
@@ -178,24 +182,41 @@ class Fallback(Engine):
 			# only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
 			ebound = np.array(self._energy[interp_index_low][self._energy[interp_index_low]<0]) # cuts off part of array with positive e (unbound)
 			dmdebound = np.array(dmde[self._energy[interp_index_low]<0])
+			#print ('beta = '+str(self._beta)+'; bhmass = '+str(kwargs['bhmass']))
+			#print (min(ebound),max(ebound))
+			#print (min(dmdebound),max(dmdebound))
 
 			# calculate de/dt, time and dm/dt arrays
 			dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in erg/s
-		  
+
+			
+			#print (min(dedt),max(dedt))
+
 			time = (2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0)   # in seconds
 
 			dmdt = dmdebound*dedt 
 
-   			#----------- SCALE dm/dt TO BH SIZE --------------
+			#----------- SCALE dm/dt TO BH SIZE --------------
 
-    		# bh size for dmdt's in astrocrash is 1e6 solar masses 
-    		# dmdt ~ Mh^(-1/2)
+			# bh size for dmdt's in astrocrash is 1e6 solar masses 
+			# dmdt ~ Mh^(-1/2)
 			self._bhmass = kwargs['bhmass']*Msolar # right now kwargs bhmass is in solar masses, want in cgs
 
 			
 			dmdt = dmdt*np.sqrt(Mhbase/self._bhmass)
 			time = time*np.sqrt(self._bhmass/Mhbase)
-
+			
+			# print statemetns for testing
+			#print (min(dmdt),max(dmdt))
+			#print (min(time),max(time))
+			#print (max(time),1.*10**(self._maxtime1))
+			#if max(time)<10.**(self._maxtime1): 
+			#	self._maxtime1 = np.log(max(time))
+			#	print ('log of min of maxtimes is: '+str(self._maxtime1))	
+			
+			#if min(time)>self._mintime1: 	
+			#	self._mintime1 = min(time)
+			#	print ('max of mintimes is: '+str(self._mintime1))		
     		# interpolate dmdt so that it has values at times = self._time
 			
 			# this assumes t is increasing
@@ -207,6 +228,8 @@ class Fallback(Engine):
 			# this assumes t is increasing
 			dmdtnew = timeinterp(self._times)
 
+			#{:.3f}'.format(self._sim_beta[0])
+			np.savetxt('test/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(self._times,dmdtnew),fmt='%1.18e')
 			# this assumes t is decreasing 
 			#dmdtnew = np.flipud(timeinterp(self._times))
 
