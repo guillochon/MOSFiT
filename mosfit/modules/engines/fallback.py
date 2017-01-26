@@ -66,6 +66,7 @@ class Fallback(Engine):
 		# hardcode in the simulation betas for gamma = 4-3 for now
 		self._sim_beta = [0.600,0.650,0.700,0.750,0.800,0.850,0.900,1.000,1.100,1.200,1.300,1.400,1.500,1.600,1.700,1.800,1.850,1.900,2.000,2.500,3.000,3.500,4.000]
 
+		#self._str_sim_beta = ['0.600','0.650','0.700','0.750','0.800','0.850','0.900','1.000','1.100','1.200','1.300','1.400','1.500','1.600','1.700','1.800','1.850','1.900','2.000','2.500','3.000','3.500','4.000']
 		#-- CREATE INTERPOLATION FUNCTIONS; FIND SLOPES & YINTERs -------
 
 		# these three lists, in addition to 'sim_beta', are the lists that will hold dmde info to be accessed after init is run
@@ -75,14 +76,15 @@ class Fallback(Engine):
 
 	   # need to pad with extra zeros for dmde files from astrocrash 
 		e_lo, dmde_lo = np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[0])+'.dat') # format requires 3 digits after decimal point
-	
+		#e_lo, dmde_lo = np.loadtxt(dmdedir+str(self._str_sim_beta[0])+'.dat')
 		#e_lo, dmde_lo = np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[0])+'.dat')
 		for i in range(1,len(self._sim_beta)): # bc calculating slope and yintercepts BETWEEN each simulation beta
 			self._energy.append(e_lo) # save to access later in process function
 	 		# dmde.append(dmde_lo) # save to access later in process function --> don't need, can just use interpolations but might not be exact for betas = simulation betas
 			
 			e_hi, dmde_hi= np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
-			
+			#e_hi, dmde_hi = np.loadtxt(dmdedir+str(self._str_sim_beta[i])+'.dat')
+
 			# smoothed flash file format
 			#e_hi, dmde_hi= np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[i])+'.dat')
 		 	
@@ -193,7 +195,8 @@ class Fallback(Engine):
 			#print (min(dedt),max(dedt))
 
 			time = (2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0)   # in seconds
-
+			time = time/(24*3600) # time in days
+			
 			dmdt = dmdebound*dedt 
 
 			#----------- SCALE dm/dt TO BH SIZE --------------
@@ -229,7 +232,7 @@ class Fallback(Engine):
 			dmdtnew = timeinterp(self._times)
 
 			#{:.3f}'.format(self._sim_beta[0])
-			np.savetxt('test/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(self._times,dmdtnew),fmt='%1.18e')
+			np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(self._times,dmdtnew),fmt='%1.18e')
 			# this assumes t is decreasing 
 			#dmdtnew = np.flipud(timeinterp(self._times))
 
