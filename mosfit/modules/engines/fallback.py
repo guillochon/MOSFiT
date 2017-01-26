@@ -36,7 +36,7 @@ class Fallback(Engine):
 		# each beta has a different subdirectory
 
 		# for now just use astrocrash dmdes (converted from astrocrash dmdts)
-		print (os.path.dirname(__file__)[:-15])
+		#print (os.path.dirname(__file__)[:-15])
 		dmdedir = os.path.dirname(__file__)[:-15]+'models/tde/data/' #'../../models/tde/data/'
 	   
 		#dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
