@@ -183,8 +183,8 @@ class Fallback(Engine):
 			#dmdtnew = np.flipud(timeinterp(self._times))
 
 			# Can uncomment following line to save files for testing
-			#np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(self._times,dmdtnew),fmt='%1.18e')
+			np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
 			
-			luminosities = 0.1*dmdtnew*c.c.cgs.value
+			luminosities = 0.1*dmdtnew*c.c.cgs.value*c.c.cgs.value
 
 			return {'kappagamma': kwargs['kappa'], 'luminosities': luminosities}
