@@ -122,8 +122,11 @@ class Fallback(Engine):
 		for i in range(len(self._sim_beta)):
 			if self._beta==self._sim_beta[i]: # don't need to interpolate, already have dmde and t for this beta
 				beta_interp=False
-				interp_index_low = i # so that conversion from dmde --> dmdt works (uses e_lo for conversion)
-				print ('exists simulation beta equal to user beta, no beta interpolation necessary, calculating dmdt...')
+				if i == len(self._beta_slope): # chosen beta value == highest sim beta value
+					interp_index_low = i-1		# interpolations only calculated between values, therefore need to use lower interpolation for this to work
+				else: interp_index_low = i  # so that conversion from dmde --> dmdt works (uses e_lo for conversion)
+
+				#print ('exists simulation beta equal to user beta, no beta interpolation necessary, calculating dmdt...')
 				break
 			if self._beta<self._sim_beta[i]: 
 				interp_index_high=i
@@ -131,17 +134,20 @@ class Fallback(Engine):
 				break
 
 
-	   
-		#----------- LINEAR BETA INTERPOLATION --------------
+	   if beta_outside_range == False:
+			#----------- LINEAR BETA INTERPOLATION --------------
 
-		# get new dmde
-		dmde = self._beta_yinter[interp_index_low] + self._beta_slope[interp_index_low]*self._beta
+			# get new dmde
+			#print (len(self._beta_yinter),len(self._beta_slope))
+			#print (interp_index_low, self._sim_beta[interp_index_low])
+			#print (self._beta)
+			dmde = self._beta_yinter[interp_index_low] + self._beta_slope[interp_index_low]*self._beta
 
 
-		#----------- CONVERT dm/de --> dm/dt --------------
+			#----------- CONVERT dm/de --> dm/dt --------------
 
 		
-		if beta_outside_range == False:
+		
 
 	   		#if beta_interp == True:
 
