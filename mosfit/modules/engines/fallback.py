@@ -39,7 +39,7 @@ class Fallback(Engine):
 		#--------- GET SIMULATION BETAS -----------------
 
 		# hardcode in the simulation betas for gamma = 4-3 for now
-		self._sim_beta = [0.600,0.650,0.700,0.750,0.800,0.850,0.900,1.000,1.100,1.200,1.300,1.400,1.500,1.600,1.700,1.800,1.850,1.900,2.000,2.500,3.000,3.500,4.000]
+		self._sim_beta = [0.600, 0.650, 0.700, 0.750, 0.800, 0.850, 0.900, 1.000, 1.100,  1.200, 1.300, 1.400, 1.500, 1.600, 1.700, 1.800, 1.850, 1.900, 2.000, 2.500, 3.000, 3.500, 4.000]
 
 		
 		#-- CREATE INTERPOLATION FUNCTIONS; FIND SLOPES & YINTERs -------
@@ -167,7 +167,7 @@ class Fallback(Engine):
 			
 			dmdt = dmdebound*dedt 
 
-			#----------- SCALE dm/dt TO BH SIZE --------------
+			# ----------- SCALE dm/dt TO BH SIZE --------------
 
 			# bh size for dmdt's in astrocrash is 1e6 solar masses 
 			# dmdt ~ Mh^(-1/2)
@@ -189,7 +189,7 @@ class Fallback(Engine):
 			#dmdtnew = np.flipud(timeinterp(self._times))
 
 			# Can uncomment following line to save files for testing
-			np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
+			#np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
 			
 			luminosities = 0.1*dmdtnew*c.c.cgs.value*c.c.cgs.value
 
