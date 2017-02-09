@@ -59,7 +59,6 @@ class Fallback(Engine):
 			e_hi, dmde_hi= np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
 
 			# smoothed flash file format
-			#e_hi, dmde_hi= np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[i])+'.dat')
 		 	
 		 	# Interpolate  e array so that we can create same energy steps for lo and hi arrays.
 	 		# since using e_lo array, only need to interpolate hi arrays.
@@ -94,7 +93,7 @@ class Fallback(Engine):
 		G = c.G.cgs.value # 6.67259e-8 cm3 g-1 s-2
 		Msolar = c.M_sun.cgs.value #1.989e33 grams
 		Mhbase = 1.0e6*Msolar # this is the generic size of bh used in astrocrash sim
-		
+		Mstarbase = Msolar
 
 		self._beta = kwargs['beta']
 	   
@@ -167,15 +166,72 @@ class Fallback(Engine):
 			
 			dmdt = dmdebound*dedt 
 
-			# ----------- SCALE dm/dt TO BH SIZE --------------
+			# ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
+			# new dmdt(t[0]) should == min(old dmdt)
+			# use power law to fit : dmdt = b*t^xi
 
-			# bh size for dmdt's in astrocrash is 1e6 solar masses 
+			# calculate floor dmdt and t to extrapolate down to
+			dfloor = np.min(dmdt)
+
+			if dmdt[0] >= dfloor*1.01: # not within 1% of floor, extrapolate
+
+				ipeak = np.argmax(dmdt) # index of peak
+
+				p = 0.1 # fraction of pre-peak dmdt to use for extrapolation to early times
+				start = 5 # will cut off some part of original dmdt array, this # might change
+
+				index1 = int(ipeak*p)
+
+				while (index1 < 8):  # p should not be larger than 0.3
+					p += 0.1
+					index1 = int(ipeak*p)
+					if p == 0.3: break
+
+
+				while (index1-start < 5): # ensure extrapolation will include at least 5 pts 
+					start -=1
+					if start == 0: break
+
+				if p*2 < 0.5 : index2 = int(ipeak*(p*2)) # ensure extrap. won't extend more than halfway to peak
+				else: index2 = int(ipeak*0.5)
+
+				t1 = time[start:index1]
+				d1 = dmdt[start:index1]
+
+				t2 = time[index2 - (index1 - start):index2]
+				d2 = dmdt[index2 - (index1 - start):index2]
+
+				# exponent for power law fit
+				print (start, index1, index2)
+				xi = np.log(d1/d2)/np.log(t1/t2)
+				xiavg = np.mean(xi)
+
+				# multiplicative factor for power law fit
+				b1 = d1/(t1**xi)
+				if t1[-1] < t2[0]: # if arrays don't overlap take mean of all values
+					b2 = d2/(t2**xi)
+					bavg = np.mean(np.array([b1,b2])) 
+				else: bavg = np.mean(b1)
+
+				logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
+
+				textp = np.logspace(logtfloor, np.log10(time[start+index1/2]), num = 75) # ending extrapolation here will help make it a smoother transition
+				dextp = bavg*textp**xiavg
+
+				time = np.concatenate((textp,time[start+index1/2 + 1:]))
+				dmdt = np.concatenate((dextp,dmdt[start+index1/2 + 1:]))
+
+
+			# ----------- SCALE dm/dt TO BH & STAR SIZE --------------
+
+			# bh mass for dmdt's in astrocrash is 1e6 solar masses 
 			# dmdt ~ Mh^(-1/2)
 			self._bhmass = kwargs['bhmass']*Msolar # right now kwargs bhmass is in solar masses, want in cgs
-
+			# star mass for dmdts in astrocrash is 1 solar mass
+			self._starmass = kwargs['starmass']*Msolar
 			
-			dmdt = dmdt*np.sqrt(Mhbase/self._bhmass)
-			time = time*np.sqrt(self._bhmass/Mhbase)
+			dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0
+			time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass)
 			
 			# this assumes t is increasing
 			timeinterp = CubicSpline(time, dmdt)
@@ -191,6 +247,7 @@ class Fallback(Engine):
 			# Can uncomment following line to save files for testing
 			#np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
 			
+			# self._epsilon = kwargs['epsilon']
 			luminosities = 0.1*dmdtnew*c.c.cgs.value*c.c.cgs.value
 
 			return {'kappagamma': kwargs['kappa'], 'luminosities': luminosities}
