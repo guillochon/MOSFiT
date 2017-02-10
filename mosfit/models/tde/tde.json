@@ -66,13 +66,20 @@
         "kind":"parameter",
         "value":1.0e6,
         "class":"parameter",
-        "latex":"M_{h}"
+        "latex":"M_{h} (M_{odot})"
+    },
+    "starmass":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{star} (M_{odot})"
     },
     "fallback":{
         "kind":"engine",
         "inputs":[
             "densetimes",
             "bhmass",
+            "starmass",
             "beta",
             "tpeak",
             "lumscale",
