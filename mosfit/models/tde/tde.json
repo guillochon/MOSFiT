@@ -26,11 +26,17 @@
         "class":"parameter",
         "latex":"\\alpha"
     },
-    "beta":{
+    "b":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"\\beta"
+        "latex":"b\\ (scaled\\ \\beta)"
+    },
+    "efficiency":{
+        "kind":"parameter",
+        "value":0.05,
+        "class":"parameter",
+        "latex":"\\epsilon\\ (efficiency)"
     },
     "tpeak":{
         "kind":"parameter",
@@ -80,7 +86,8 @@
             "densetimes",
             "bhmass",
             "starmass",
-            "beta",
+            "b",
+            "efficiency",
             "tpeak",
             "lumscale",
             "texplosion"
