@@ -77,7 +77,8 @@ class Fitter():
                    limit_fitting_mjds=False,
                    exclude_bands=[],
                    exclude_instruments=[],
-                   suffix=''):
+                   suffix='',
+                   **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
