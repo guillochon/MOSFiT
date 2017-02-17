@@ -113,36 +113,49 @@ class Filters(Module):
                                     shutil.copyfileobj(response, f)
 
                         if os.path.exists(xml_path):
-                            if svopath not in vo_tabs:
+                            already_written = svopath in vo_tabs
+                            if not already_written:
                                 vo_tabs[svopath] = voparse(xml_path)
-                            else:
-                                continue
                             vo_tab = vo_tabs[svopath]
                             # need to account for zeropoint type
+
                             for resource in vo_tab.resources:
-                                for param in resource.params:
-                                    if param.name == 'ZeroPoint':
-                                        zpfluxes.append(param.value)
-                                        if sys != 'AB':
-                                            # 0th element is AB flux
-                                            zps.append(2.5 * np.log10(
-                                                zpfluxes[0] / zpfluxes[-1]))
-                                    else:
-                                        continue
-                            vo_dat = vo_tab.get_first_table().array
-                            bi = max(
-                                next((i for i, x in enumerate(vo_dat)
-                                      if x[1]), 0) - 1, 0)
-                            ei = -max(
-                                next((i
-                                      for i, x in enumerate(reversed(vo_dat))
-                                      if x[1]), 0) - 1, 0)
-                            vo_dat = vo_dat[bi:ei if ei else len(vo_dat)]
-                            vo_string = '\n'.join([
-                                ' '.join([str(y) for y in x]) for x in vo_dat
-                            ])
-                            with open(path, 'w') as f:
-                                f.write(vo_string)
+                                if len(resource.params) == 0:
+                                    params = vo_tab.get_first_table().params
+                                else:
+                                    params = resource.params
+
+                            oldzplen = len(zps)
+                            for param in params:
+                                if param.name == 'ZeroPoint':
+                                    zpfluxes.append(param.value)
+                                    if sys != 'AB':
+                                        # 0th element is AB flux
+                                        zps.append(2.5 * np.log10(
+                                            zpfluxes[0] / zpfluxes[-1]))
+                                else:
+                                    continue
+                            if sys != 'AB' and len(zps) == oldzplen:
+                                raise RuntimeError(
+                                    'ZeroPoint not found in XML.')
+
+                            if not already_written:
+                                vo_dat = vo_tab.get_first_table().array
+                                bi = max(
+                                    next((i for i, x in enumerate(vo_dat)
+                                          if x[1]), 0) - 1, 0)
+                                ei = -max(
+                                    next((i
+                                          for i, x in enumerate(
+                                              reversed(vo_dat))
+                                          if x[1]), 0) - 1, 0)
+                                vo_dat = vo_dat[bi:ei if ei else len(vo_dat)]
+                                vo_string = '\n'.join([
+                                    ' '.join([str(y) for y in x])
+                                    for x in vo_dat
+                                ])
+                                with open(path, 'w') as f:
+                                    f.write(vo_string)
                         else:
                             print('Error: Could not read SVO filter!')
                             raise RuntimeError

@@ -368,18 +368,18 @@ class Fitter():
             ])
             filts = self._model._modules['filters']
             ubs = filts._unique_bands
-            filterrows = [
-                s[3]
-                for s in list(
-                    sorted([(ubs[bis[i]]['systems'], ubs[bis[i]][
-                        'bandsets'], filts._average_wavelengths[bis[i]], (
-                            ' ' + (' ' if ois[i] else '*') + ubs[bis[i]]['SVO']
-                            .ljust(band_len) + ' [' + ','.join(
-                                set(
-                                    filter(None, (ubs[bis[i]]['bandsets'], ubs[
-                                        bis[i]]['systems'])))) + ']'
-                        ).replace(' []', '')) for i in range(len(bis))]))
-            ]
+            filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
+                          filts._average_wavelengths[bis[i]],
+                          filts._band_offsets[bis[i]], ois[i], bis[i])
+                         for i in range(len(bis))]
+            filterrows = [(
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
+                .ljust(band_len) + ' [' + ', '.join(
+                    list(
+                        filter(None, ('Bandset: ' + s[1] if s[
+                            1] else '', 'System: ' + s[0] if s[2] else '',
+                                      'AB offset: ' + pretty_num(s[3]))))) +
+                ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
             print('\n'.join(filterrows))
