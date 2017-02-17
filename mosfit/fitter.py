@@ -131,6 +131,8 @@ class Fitter():
                                     f, object_pairs_hook=OrderedDict)
                         else:
                             print('Error: Could not read list of SN names!')
+                            if offline:
+                                print('Try omitting the `--offline` flag.')
                             raise RuntimeError
 
                         if event in names:
@@ -219,6 +221,8 @@ class Fitter():
                             'Error: Could not find data for `{}` locally or '
                             'on the OSC.'.format(self._event_name),
                             self._wrap_length)
+                        if offline:
+                            print('Try omitting the `--offline` flag.')
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
