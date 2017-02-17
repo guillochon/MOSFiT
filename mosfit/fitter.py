@@ -78,6 +78,7 @@ class Fitter():
                    exclude_bands=[],
                    exclude_instruments=[],
                    suffix='',
+                   offline=False,
                    **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -109,20 +110,21 @@ class Fitter():
                             'name, downloading list of supernova '
                             'aliases...'.format(input_name),
                             wrap_length=self._wrap_length)
-                        try:
-                            response = get_url_file_handle(
-                                'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/names.min.json',
-                                timeout=10)
-                        except:
-                            print_wrapped(
-                                'Warning: Could not download SN names (are '
-                                'you online?), using cached list.',
-                                wrap_length=self._wrap_length)
-                            raise
-                        else:
-                            with open(names_path, 'wb') as f:
-                                shutil.copyfileobj(response, f)
+                        if not offline:
+                            try:
+                                response = get_url_file_handle(
+                                    'https://sne.space/astrocats/astrocats/'
+                                    'supernovae/output/names.min.json',
+                                    timeout=10)
+                            except:
+                                print_wrapped(
+                                    'Warning: Could not download SN names ('
+                                    'are you online?), using cached list.',
+                                    wrap_length=self._wrap_length)
+                                raise
+                            else:
+                                with open(names_path, 'wb') as f:
+                                    shutil.copyfileobj(response, f)
                         if os.path.exists(names_path):
                             with open(names_path, 'r') as f:
                                 names = json.load(
@@ -183,26 +185,28 @@ class Fitter():
                                           'skipping!', self._wrap_length)
                             continue
                         urlname = self._event_name + '.json'
-
-                        print_wrapped(
-                            'Found event by primary name `{}` in the OSC, '
-                            'downloading data...'.format(self._event_name),
-                            wrap_length=self._wrap_length)
                         name_path = os.path.join(dir_path, 'cache', urlname)
-                        try:
-                            response = get_url_file_handle(
-                                'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/json/' + urlname,
-                                timeout=10)
-                        except:
+
+                        if not offline:
                             print_wrapped(
-                                'Warning: Could not download data for `{}`, '
-                                'will attempt to use cached data.'.format(
-                                    self._event_name),
+                                'Found event by primary name `{}` in the OSC, '
+                                'downloading data...'.format(self._event_name),
                                 wrap_length=self._wrap_length)
-                        else:
-                            with open(name_path, 'wb') as f:
-                                shutil.copyfileobj(response, f)
+                            try:
+                                response = get_url_file_handle(
+                                    'https://sne.space/astrocats/astrocats/'
+                                    'supernovae/output/json/' + urlname,
+                                    timeout=10)
+                            except:
+                                print_wrapped(
+                                    'Warning: Could not download data for '
+                                    ' `{}`, '
+                                    'will attempt to use cached data.'.format(
+                                        self._event_name),
+                                    wrap_length=self._wrap_length)
+                            else:
+                                with open(name_path, 'wb') as f:
+                                    shutil.copyfileobj(response, f)
                         path = name_path
 
                     if os.path.exists(path):

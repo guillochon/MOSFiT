@@ -229,6 +229,14 @@ def main():
               "with this flag."))
 
     parser.add_argument(
+        '--offline',
+        dest='offline',
+        default=False,
+        action='store_true',
+        help=("MOSFiT will only use cached data and will not attempt to use "
+              "any online resources."))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',
