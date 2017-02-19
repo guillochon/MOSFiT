@@ -33,43 +33,55 @@
                 "SVO":"2MASS/2MASS.Ks"
             },
             "u":{
-                "SVO":"SLOAN/SDSS.u"
+                "SVO":"SLOAN/SDSS.u",
+                "offset":0.0
             },
             "g":{
-                "SVO":"SLOAN/SDSS.g"
-            },
+                "SVO":"SLOAN/SDSS.g",
+                "offset":0.0
+           },
             "r":{
-                "SVO":"SLOAN/SDSS.r"
-            },
+                "SVO":"SLOAN/SDSS.r",
+                "offset":0.0
+           },
             "i":{
-                "SVO":"SLOAN/SDSS.i"
+                "SVO":"SLOAN/SDSS.i",
+                "offset":0.0
             },
             "z":{
-                "SVO":"SLOAN/SDSS.z"
+                "SVO":"SLOAN/SDSS.z",
+                "offset":0.0
             },
             "u'":{
-                "SVO":"SLOAN/SDSS.u"
-            },
+                "SVO":"SLOAN/SDSS.u",
+                "offset":0.0
+           },
             "g'":{
-                "SVO":"SLOAN/SDSS.g"
-            },
+                "SVO":"SLOAN/SDSS.g",
+                "offset":0.0
+           },
             "r'":{
-                "SVO":"SLOAN/SDSS.r"
-            },
+                "SVO":"SLOAN/SDSS.r",
+                "offset":0.0
+           },
             "i'":{
-                "SVO":"SLOAN/SDSS.i"
-            },
+                "SVO":"SLOAN/SDSS.i",
+                "offset":0.0
+           },
             "z'":{
-                "SVO":"SLOAN/SDSS.z"
-            },
+                "SVO":"SLOAN/SDSS.z",
+                "offset":0.0
+           },
             "ROTSE":{
                 "SVO":"Generic/Bessell.R"
             },
             "FUV":{
-                "SVO":"GALEX/GALEX.FUV"
+                "SVO":"GALEX/GALEX.FUV",
+                "offset":0.0
             },
             "NUV":{
-                "SVO":"GALEX/GALEX.NUV"
+                "SVO":"GALEX/GALEX.NUV",
+                "offset":0.0
             },
             "Z":{
                 "SVO":"CFHT/CFHT.Z"
@@ -82,10 +94,12 @@
         ],
         "filters":{
             "FUV":{
-                "SVO":"GALEX/GALEX.FUV"
+                "SVO":"GALEX/GALEX.FUV",
+                "offset":0.0
             },
             "NUV":{
-                "SVO":"GALEX/GALEX.NUV"
+                "SVO":"GALEX/GALEX.NUV",
+                "offset":0.0
             }
         }
     },
@@ -160,34 +174,44 @@
         ],
         "filters":{
             "u":{
-                "SVO":"SLOAN/SDSS.u"
+                "SVO":"SLOAN/SDSS.u",
+                "offset":0.0
             },
             "g":{
-                "SVO":"SLOAN/SDSS.g"
+                "SVO":"SLOAN/SDSS.g",
+                "offset":0.0
             },
             "r":{
-                "SVO":"SLOAN/SDSS.r"
+                "SVO":"SLOAN/SDSS.r",
+                "offset":0.0
             },
             "i":{
-                "SVO":"SLOAN/SDSS.i"
+                "SVO":"SLOAN/SDSS.i",
+                "offset":0.0
             },
             "z":{
-                "SVO":"SLOAN/SDSS.z"
+                "SVO":"SLOAN/SDSS.z",
+                "offset":0.0
             },
             "u'":{
-                "SVO":"SLOAN/SDSS.u"
+                "SVO":"SLOAN/SDSS.u",
+                "offset":0.0
             },
             "g'":{
-                "SVO":"SLOAN/SDSS.g"
+                "SVO":"SLOAN/SDSS.g",
+                "offset":0.0
             },
             "r'":{
-                "SVO":"SLOAN/SDSS.r"
+                "SVO":"SLOAN/SDSS.r",
+                "offset":0.0
             },
             "i'":{
-                "SVO":"SLOAN/SDSS.i"
+                "SVO":"SLOAN/SDSS.i",
+                "offset":0.0
             },
             "z'":{
-                "SVO":"SLOAN/SDSS.z"
+                "SVO":"SLOAN/SDSS.z",
+                "offset":0.0
             }
         }
     },
@@ -270,61 +294,80 @@
         ],
         "filters":{
             "g":{
-                "SVO":"PAN-STARRS/PS1.g"
+                "SVO":"PAN-STARRS/PS1.g",
+                "offset":0.0
             },
             "r":{
-                "SVO":"PAN-STARRS/PS1.r"
+                "SVO":"PAN-STARRS/PS1.r",
+                "offset":0.0
             },
             "i":{
-                "SVO":"PAN-STARRS/PS1.i"
+                "SVO":"PAN-STARRS/PS1.i",
+                "offset":0.0
             },
             "z":{
-                "SVO":"PAN-STARRS/PS1.z"
+                "SVO":"PAN-STARRS/PS1.z",
+                "offset":0.0
             },
             "y":{
-                "SVO":"PAN-STARRS/PS1.y"
+                "SVO":"PAN-STARRS/PS1.y",
+                "offset":0.0
             },
             "w":{
-                "SVO":"PAN-STARRS/PS1.w"
+                "SVO":"PAN-STARRS/PS1.w",
+                "offset":0.0
             },
             "gp1":{
-                "SVO":"PAN-STARRS/PS1.g"
+                "SVO":"PAN-STARRS/PS1.g",
+                "offset":0.0
             },
             "rp1":{
-                "SVO":"PAN-STARRS/PS1.r"
+                "SVO":"PAN-STARRS/PS1.r",
+                "offset":0.0
             },
             "ip1":{
-                "SVO":"PAN-STARRS/PS1.i"
+                "SVO":"PAN-STARRS/PS1.i",
+                "offset":0.0
             },
             "zp1":{
-                "SVO":"PAN-STARRS/PS1.z"
+                "SVO":"PAN-STARRS/PS1.z",
+                "offset":0.0
             },
             "yp1":{
-                "SVO":"PAN-STARRS/PS1.y"
+                "SVO":"PAN-STARRS/PS1.y",
+                "offset":0.0
             },
             "wp1":{
-                "SVO":"PAN-STARRS/PS1.w"
+                "SVO":"PAN-STARRS/PS1.w",
+                "offset":0.0
             },
             "gP1":{
-                "SVO":"PAN-STARRS/PS1.g"
+                "SVO":"PAN-STARRS/PS1.g",
+                "offset":0.0
             },
             "rP1":{
-                "SVO":"PAN-STARRS/PS1.r"
+                "SVO":"PAN-STARRS/PS1.r",
+                "offset":0.0
             },
             "iP1":{
-                "SVO":"PAN-STARRS/PS1.i"
+                "SVO":"PAN-STARRS/PS1.i",
+                "offset":0.0
             },
             "zP1":{
-                "SVO":"PAN-STARRS/PS1.z"
+                "SVO":"PAN-STARRS/PS1.z",
+                "offset":0.0
             },
             "yP1":{
-                "SVO":"PAN-STARRS/PS1.y"
+                "SVO":"PAN-STARRS/PS1.y",
+                "offset":0.0
             },
             "wP1":{
-                "SVO":"PAN-STARRS/PS1.w"
+                "SVO":"PAN-STARRS/PS1.w",
+                "offset":0.0
             },
             "open":{
-                "SVO":"PAN-STARRS/PS1.open"
+                "SVO":"PAN-STARRS/PS1.open",
+                "offset":0.0
             }
         }
     },
@@ -338,22 +381,28 @@
         ],
         "filters":{
             "u":{
-                "SVO":"LSST/LSST.u"
+                "SVO":"LSST/LSST.u",
+                "offset":0.0
             },
             "g":{
-                "SVO":"LSST/LSST.g"
+                "SVO":"LSST/LSST.g",
+                "offset":0.0
             },
             "r":{
-                "SVO":"LSST/LSST.r"
+                "SVO":"LSST/LSST.r",
+                "offset":0.0
             },
             "i":{
-                "SVO":"LSST/LSST.i"
+                "SVO":"LSST/LSST.i",
+                "offset":0.0
             },
             "z":{
-                "SVO":"LSST/LSST.z"
+                "SVO":"LSST/LSST.z",
+                "offset":0.0
             },
             "y":{
-                "SVO":"LSST/LSST.y"
+                "SVO":"LSST/LSST.y",
+                "offset":0.0
             }
         }
     }
