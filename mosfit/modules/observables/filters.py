@@ -223,6 +223,7 @@ class Filters(Module):
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
+        zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
         for li, lum in enumerate(self._luminosities):
@@ -231,7 +232,8 @@ class Filters(Module):
             wavs = kwargs['sample_wavelengths'][bi]
             dx = wavs[1] - wavs[0]
             yvals = np.interp(wavs, self._band_wavelengths[bi],
-                              self._transmissions[bi]) * kwargs['seds'][li]
+                              self._transmissions[bi]) * (kwargs['seds'][li]
+                              / zp1)
             eff_fluxes[li] = np.trapz(
                 yvals, dx=dx) / self._filter_integrals[bi]
         mags = self.abmag(eff_fluxes, offsets)
