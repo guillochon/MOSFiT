@@ -44,6 +44,12 @@
         "class":"parameter",
         "latex":"t_{\\rm peak}"
     },
+    "Tviscous":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
+    },
     "lumscale":{
         "kind":"parameter",
         "value":1.0e44,
@@ -93,7 +99,7 @@
             "texplosion"
         ]
     },
-    "diffusion":{
+    "viscous":{
         "kind":"transform",
         "inputs":[
             "fallback",
@@ -101,14 +107,15 @@
             "kappagamma",
             "mejecta",
             "texplosion",
-            "vejecta"
+            "vejecta",
+            "Tviscous"
         ]
     },
     "densecore":{
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion"
+            "viscous"
         ]
     },
     "blackbody":{
