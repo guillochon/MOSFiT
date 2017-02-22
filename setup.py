@@ -1,5 +1,6 @@
 import fnmatch
 import os
+import re
 
 from setuptools import find_packages, setup
 
@@ -21,7 +22,10 @@ def read(fname):
 
 try:
     import pypandoc
-    long_description = pypandoc.convert('README.md', 'rst')
+    with open('README.md', 'r') as f:
+        txt = f.read()
+    txt = re.sub('<[^<]+>', '', txt)
+    long_description = pypandoc.convert(txt, 'rst', 'md')
 except ImportError:
     long_description = open('README.md').read()
 
