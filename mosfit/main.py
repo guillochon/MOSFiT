@@ -257,6 +257,16 @@ def main():
               "p is the value of this parameter."))
 
     parser.add_argument(
+        '--upload',
+        '-u',
+        dest='upload',
+        default=[''],
+        nargs='+',
+        help=("Upload results of MOSFiT to appropriate Open Catalog. If "
+              "MOSFiT is only supplied with `-u` and no other arguments, it "
+              "will upload the results of the latest run."))
+
+    parser.add_argument(
         '--travis',
         dest='travis',
         default=False,
