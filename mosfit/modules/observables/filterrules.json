@@ -1,6 +1,6 @@
 [
   {
-      "system":[
+      "systems":[
           "AB"
       ],
       "filters":{
@@ -99,7 +99,7 @@
       }
   },
   {
-      "system":[
+      "systems":[
           "Vega"
       ],
       "filters":{
@@ -175,6 +175,9 @@
       }
   },
   {
+        "systems":[
+          ""
+        ],
         "bandsets":[
             "Standard",
             ""
@@ -391,6 +394,10 @@
         }
     },
     {
+        "systems":[
+            "",
+            "Vega"
+        ],
         "instruments":[
             "UVOT"
         ],
@@ -426,6 +433,57 @@
             },
             "M2":{
                 "SVO":"Swift/UVOT.UVM2"
+            }
+        }
+    },
+    {
+        "systems":[
+            "AB"
+        ],
+        "instruments":[
+            "UVOT"
+        ],
+        "bandsets":[
+            "",
+            "Swift",
+            "UVOT"
+        ],
+        "filters":{
+            "U":{
+                "SVO":"Swift/UVOT.U",
+                "offset":0.0
+            },
+            "B":{
+                "SVO":"Swift/UVOT.B",
+                "offset":0.0
+            },
+            "V":{
+                "SVO":"Swift/UVOT.V",
+                "offset":0.0
+            },
+            "UVW1":{
+                "SVO":"Swift/UVOT.UVW1",
+                "offset":0.0
+            },
+            "UVW2":{
+                "SVO":"Swift/UVOT.UVW2",
+                "offset":0.0
+            },
+            "UVM2":{
+                "SVO":"Swift/UVOT.UVM2",
+                "offset":0.0
+            },
+            "W1":{
+                "SVO":"Swift/UVOT.UVW1",
+                "offset":0.0
+            },
+            "W2":{
+                "SVO":"Swift/UVOT.UVW2",
+                "offset":0.0
+            },
+            "M2":{
+                "SVO":"Swift/UVOT.UVM2",
+                "offset":0.0
             }
         }
     },

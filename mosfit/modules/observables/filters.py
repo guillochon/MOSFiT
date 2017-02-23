@@ -45,9 +45,7 @@ class Filters(Module):
                         'instruments': yy,
                         'bandsets': zz
                     }
-                    for xx in list(
-                        sorted(
-                            set(rule.get('systems', []) + ['AB', 'Vega', ''])))
+                    for xx in rule.get('systems', [''])
                     for yy in rule.get('instruments', [''])
                     for zz in rule.get('bandsets', [''])
                 ]
@@ -198,28 +196,22 @@ class Filters(Module):
                         instrument == self._band_insts[bi] and
                         bandset == self._band_bsets[bi] and
                         system == self._band_systs[bi]):
-                    print(instrument,self._band_insts[bi])
-                    print(bandset,self._band_bsets[bi])
-                    print(system,self._band_systs[bi])
                     return bi
                 elif (i == 1 and band == bnd['name'] and
                       instrument == self._band_insts[bi] and
                       system == self._band_systs[bi]):
-                    print('1',bi)
                     return bi
                 elif (i == 2 and band == bnd['name'] and
                       system == self._band_systs[bi]):
-                    print('2',bi)
                     return bi
                 elif (i == 3 and band == bnd['name'] and
                       '' == self._band_insts[bi] and
                       '' == self._band_bsets[bi] and
                       '' == self._band_systs[bi]):
-                    print('3',bi)
                     return bi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` with '
-            'instrument `{}`!'.format(band, bandset, instrument))
+            'instrument `{}` in the `{}` system!'.format(band, bandset, instrument, system))
 
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
