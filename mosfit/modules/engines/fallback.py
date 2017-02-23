@@ -68,7 +68,7 @@ class Fallback(Engine):
 
            # need to pad with extra zeros for dmde files from astrocrash 
             #e_lo, dmde_lo = np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[0])+'.dat') # format requires 3 digits after decimal point
-            e_lo, dmde_lo = np.loadtxt(dmdedir+sim_beta_files[0])
+            e_lo, dmde_lo = np.loadtxt(dmdedir+sim_beta_files[0]) # energy and dmde in cgs units
             #e_lo, dmde_lo = np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[0])+'.dat')
             for i in range(1,len(self._sim_beta[g])): # bc calculating slope and yintercepts BETWEEN each simulation beta
         
@@ -170,11 +170,6 @@ class Fallback(Engine):
             # gfrac should == 0 for 4/3; == 1 for 5/3
             gfrac =  (kwargs['starmass'] - 15.)/(22. - 15.)
 
-        if 'dense_times' in kwargs:
-            self._times = kwargs['dense_times']
-        else:
-            self._times = kwargs['rest_times']
-
 
         timedict = {} # will hold time arrays for each g in gammas 
         dmdtdict = {} # will hold dmdt arrays for each g in gammas
@@ -232,10 +227,10 @@ class Fallback(Engine):
                 dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in erg/s
 
                 time = (2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0)   # in seconds
-                time = time/(24*3600) # time in days
+                #time = time/(24*3600) # time in days
 
-                dmdt = dmdebound*dedt 
-                #if len(dmdt[dmdt<0])>0: print ('dmdt',dmdt)
+                dmdt = dmdebound*dedt # in cgs
+                
 
                 # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
                 # new dmdt(t[0]) should == min(old dmdt)
@@ -366,6 +361,11 @@ class Fallback(Engine):
 
         # ----------- SCALE dm/dt TO BH & STAR SIZE --------------
 
+        if 'dense_times' in kwargs:
+            self._times = kwargs['dense_times'] # time in days
+        else:
+            self._times = kwargs['rest_times']
+
         # bh mass for dmdt's in astrocrash is 1e6 solar masses 
         # dmdt ~ Mh^(-1/2)
         self._bhmass = kwargs['bhmass']*Msolar # right now kwargs bhmass is in solar masses, want in cgs
@@ -373,16 +373,43 @@ class Fallback(Engine):
         self._starmass = kwargs['starmass']*Msolar
         
         dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0
+        # tpeak ~ Mh^(1/2) * Mstar^(-1)
         time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass)
-        
+        tnew = time/(3600 * 24) # time is now in days to match self._times
+                
+
+
+        # try aligning time of simulation peak with parameter tpeak
+        #self._tpeak = kwargs['tpeak'] # tpeak in days  
+        #tpeaksim = tnew[np.argmax(dmdt)]
+        #tnew = tnew - (tpeaksim - self._tpeak)
+        #print ('self._tpeak =', self._tpeak, '; tpeaksim =', tpeaksim)
+        #print ('self._times: ', self._times)
+        #print ('tnew (sim times): ', tnew)
+
+        # try aligning time = 0 of self._times with  tnew[0] --> first time in 
+        # sim data (after doing early time extrapolation)
+
+        #index0 = len(np.array(self._times)[np.array(self._times) < 0])
+        #tnew = tnew - (tnew[0] - self._times[index0])
+
+        # try aligning first fallback time of simulation 
+        # (whatever first time is after early t extrapolation) with parameter texplosion
+        self._texplosion = kwargs['texplosion'] # texplosion in days  
+        tnew = tnew - (tnew[0] - self._texplosion)
+
+
         # this assumes t is increasing
-        timeinterpfunc = CubicSpline(time, dmdt)
-        
+        timeinterpfunc = CubicSpline(tnew, dmdt)
+
+
         # this assumes t is decreasing 
         #timeinterp = CubicSpline(np.flipud(time), np.flipud(dmdt)) 
 
         # this assumes t is increasing
         dmdtnew = timeinterpfunc(self._times)
+        dmdtnew[dmdtnew < dfloor] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
+
         #if min(self._times) < min(time):
            # dmdtnew = dmdtnew[self._]
 
@@ -393,6 +420,6 @@ class Fallback(Engine):
         #np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
         
         self._efficiency = kwargs['efficiency']
-        luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value
+        luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value # expected in cgs so ergs/s
 
         return {'kappagamma': kwargs['kappa'], 'luminosities': luminosities}

@@ -31,6 +31,11 @@
         "max_value":100.0,
         "log":true
     },
+    "Tviscous":{
+        "min_value":1e-3,
+        "max_value":1e3,
+        "log":true
+    },
     "lumscale":{
         "min_value":1.0e38,
         "max_value":1.0e48,
