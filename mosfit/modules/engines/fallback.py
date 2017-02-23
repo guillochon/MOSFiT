@@ -408,7 +408,9 @@ class Fallback(Engine):
 
         # this assumes t is increasing
         dmdtnew = timeinterpfunc(self._times)
+
         dmdtnew[dmdtnew < dfloor] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
+
 
         #if min(self._times) < min(time):
            # dmdtnew = dmdtnew[self._]
