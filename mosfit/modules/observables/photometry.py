@@ -45,9 +45,7 @@ class Photometry(Module):
                         'instruments': yy,
                         'bandsets': zz
                     }
-                    for xx in list(
-                        sorted(
-                            set(rule.get('systems', []) + ['AB', 'Vega', ''])))
+                    for xx in rule.get('systems', [''])
                     for yy in rule.get('instruments', [''])
                     for zz in rule.get('bandsets', [''])
                 ]
@@ -113,36 +111,49 @@ class Photometry(Module):
                                     shutil.copyfileobj(response, f)
 
                         if os.path.exists(xml_path):
-                            if svopath not in vo_tabs:
+                            already_written = svopath in vo_tabs
+                            if not already_written:
                                 vo_tabs[svopath] = voparse(xml_path)
-                            else:
-                                continue
                             vo_tab = vo_tabs[svopath]
                             # need to account for zeropoint type
+
                             for resource in vo_tab.resources:
-                                for param in resource.params:
-                                    if param.name == 'ZeroPoint':
-                                        zpfluxes.append(param.value)
-                                        if sys != 'AB':
-                                            # 0th element is AB flux
-                                            zps.append(2.5 * np.log10(
-                                                zpfluxes[0] / zpfluxes[-1]))
-                                    else:
-                                        continue
-                            vo_dat = vo_tab.get_first_table().array
-                            bi = max(
-                                next((i for i, x in enumerate(vo_dat)
-                                      if x[1]), 0) - 1, 0)
-                            ei = -max(
-                                next((i
-                                      for i, x in enumerate(reversed(vo_dat))
-                                      if x[1]), 0) - 1, 0)
-                            vo_dat = vo_dat[bi:ei if ei else len(vo_dat)]
-                            vo_string = '\n'.join([
-                                ' '.join([str(y) for y in x]) for x in vo_dat
-                            ])
-                            with open(path, 'w') as f:
-                                f.write(vo_string)
+                                if len(resource.params) == 0:
+                                    params = vo_tab.get_first_table().params
+                                else:
+                                    params = resource.params
+
+                            oldzplen = len(zps)
+                            for param in params:
+                                if param.name == 'ZeroPoint':
+                                    zpfluxes.append(param.value)
+                                    if sys != 'AB':
+                                        # 0th element is AB flux
+                                        zps.append(2.5 * np.log10(
+                                            zpfluxes[0] / zpfluxes[-1]))
+                                else:
+                                    continue
+                            if sys != 'AB' and len(zps) == oldzplen:
+                                raise RuntimeError(
+                                    'ZeroPoint not found in XML.')
+
+                            if not already_written:
+                                vo_dat = vo_tab.get_first_table().array
+                                bi = max(
+                                    next((i for i, x in enumerate(vo_dat)
+                                          if x[1]), 0) - 1, 0)
+                                ei = -max(
+                                    next((i
+                                          for i, x in enumerate(
+                                              reversed(vo_dat))
+                                          if x[1]), 0) - 1, 0)
+                                vo_dat = vo_dat[bi:ei if ei else len(vo_dat)]
+                                vo_string = '\n'.join([
+                                    ' '.join([str(y) for y in x])
+                                    for x in vo_dat
+                                ])
+                                with open(path, 'w') as f:
+                                    f.write(vo_string)
                         else:
                             print('Error: Could not read SVO filter!')
                             raise RuntimeError
@@ -182,25 +193,25 @@ class Photometry(Module):
         for i in range(4):
             for bi, bnd in enumerate(self._unique_bands):
                 if (i == 0 and band == bnd['name'] and
-                        instrument in self._band_insts[bi] and
-                        bandset in self._band_bsets[bi] and
-                        system in self._band_systs[bi]):
+                        instrument == self._band_insts[bi] and
+                        bandset == self._band_bsets[bi] and
+                        system == self._band_systs[bi]):
                     return bi
                 elif (i == 1 and band == bnd['name'] and
-                      instrument in self._band_insts[bi] and
-                      system in self._band_systs[bi]):
+                      instrument == self._band_insts[bi] and
+                      system == self._band_systs[bi]):
                     return bi
                 elif (i == 2 and band == bnd['name'] and
-                      system in self._band_systs[bi]):
+                      system == self._band_systs[bi]):
                     return bi
                 elif (i == 3 and band == bnd['name'] and
-                      '' in self._band_insts[bi] and
-                      '' in self._band_bsets[bi] and
-                      '' in self._band_systs[bi]):
+                      '' == self._band_insts[bi] and
+                      '' == self._band_bsets[bi] and
+                      '' == self._band_systs[bi]):
                     return bi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` with '
-            'instrument `{}`!'.format(band, bandset, instrument))
+            'instrument `{}` in the `{}` system!'.format(band, bandset, instrument, system))
 
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
@@ -211,6 +222,7 @@ class Photometry(Module):
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
+        zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
         observations = np.zeros_like(self._luminosities)
