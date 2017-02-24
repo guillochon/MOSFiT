@@ -211,7 +211,8 @@ class Photometry(Module):
                     return bi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` with '
-            'instrument `{}` in the `{}` system!'.format(band, bandset, instrument, system))
+            'instrument `{}` in the `{}` system!'.format(band, bandset,
+                                                         instrument, system))
 
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
@@ -232,8 +233,9 @@ class Photometry(Module):
                 offsets[li] = self._band_offsets[bi]
                 wavs = kwargs['sample_wavelengths'][bi]
                 dx = wavs[1] - wavs[0]
-                yvals = np.interp(wavs, self._band_wavelengths[bi],
-                                  self._transmissions[bi]) * kwargs['seds'][li]
+                yvals = np.interp(
+                    wavs, self._band_wavelengths[bi],
+                    self._transmissions[bi]) * kwargs['seds'][li] / zp1
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
@@ -242,6 +244,8 @@ class Photometry(Module):
         ybs = np.array(self._band_indices) >= 0
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
+        print(ybs)
+        print(observations)
         return {'model_observations': observations}
 
     def band_names(self):
