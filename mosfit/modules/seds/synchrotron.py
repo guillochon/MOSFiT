@@ -1,17 +1,16 @@
 from math import pi
 
-import numexpr as ne
 import numpy as np
 from astropy import constants as c
 
-from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Blackbody'
+CLASS_NAME = 'Synchrotron'
 
 
-class Blackbody(SED):
-    """Blackbody spectral energy distribution for given temperature and radius
+class Synchrotron(SED):
+    """Synchrotron spectral energy distribution
     """
 
     C_CONST = c.c.cgs.value
@@ -24,15 +23,12 @@ class Blackbody(SED):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
-        self._radius_phot = kwargs['radiusphot']
-        self._temperature_phot = kwargs['temperaturephot']
-        xc = self.X_CONST
-        fc = self.FLUX_CONST
-        cc = self.C_CONST
-        temperature_phot = self._temperature_phot
+        self._radius_source = kwargs['radiussource']
+        self._nu_max = kwargs['numax']
+        self._p = kwargs['p']
+        self._f0 = kwargs['f0']
         zp1 = 1.0 + kwargs['redshift']
         seds = []
-        evaled = False
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if lum == 0.0:
@@ -45,16 +41,14 @@ class Blackbody(SED):
                 rest_freqs = self._sample_frequencies[bi] * zp1
             else:
                 rest_freqs = [self._frequencies[li] * zp1]
-            radius_phot = self._radius_phot[li]
-            temperature_phot = self._temperature_phot[li]
 
-            if not evaled:
-                sed = ne.evaluate(
-                    'fc * radius_phot**2 * rest_freqs**3 / '
-                    '(exp(xc * rest_freqs / temperature_phot) - 1.0)')
-                evaled = True
-            else:
-                sed = ne.re_evaluate()
+            # Below is not scaled properly, just proof of concept
+            fmax = self._f0 * self._radius_source**2 * self._nu_max**2.5
+            sed = [
+                self._f0 * self._radius_source**2 * (x / self._nu_max)
+                **2.5 if x < self._nu_max else fmax * (x / self._nu_max)
+                **(-(self._p - 1.0) / 2.0) for x in rest_freqs
+            ]
 
             sed = np.nan_to_num(sed)
 

@@ -1,4 +1,6 @@
+# -*- coding: UTF-8 -*-
 import datetime
+import io
 import json
 import os
 import re
@@ -19,7 +21,8 @@ from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
 
 from mosfit.__init__ import __version__
-from mosfit.utils import (entabbed_json_dump, get_url_file_handle, is_number,
+from mosfit.utils import (entabbed_json_dump, flux_density_unit,
+                          frequency_unit, get_url_file_handle, is_number,
                           pretty_num, print_inline, print_wrapped, prompt)
 
 from .model import Model
@@ -350,10 +353,11 @@ class Fitter():
             root='output')
 
         # Collect observed band info
-        if pool.is_master() and 'filters' in self._model._modules:
+        if pool.is_master() and 'photometry' in self._model._modules:
             print_wrapped('Bands being used for current transient:',
                           self._wrap_length)
-            bis = list(set(outputs['all_band_indices']))
+            bis = list(
+                filter(lambda a: a != -1, set(outputs['all_band_indices'])))
             ois = []
             for bi in bis:
                 ois.append(
@@ -363,10 +367,10 @@ class Fitter():
                             'observed']) if x == bi
                     ]))
             band_len = max([
-                len(self._model._modules['filters']._unique_bands[bi]['SVO'])
-                for bi in bis
+                len(self._model._modules['photometry']._unique_bands[bi][
+                    'SVO']) for bi in bis
             ])
-            filts = self._model._modules['filters']
+            filts = self._model._modules['photometry']
             ubs = filts._unique_bands
             filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
                           filts._average_wavelengths[bis[i]],
@@ -610,17 +614,26 @@ class Fitter():
             for yi, y in enumerate(p[xi]):
                 output = model.run_stack(y, root='output')
                 for i in range(len(output['times'])):
-                    if not np.isfinite(output['model_magnitudes'][i]):
+                    if not np.isfinite(output['model_observations'][i]):
                         continue
                     photodict = {
-                        PHOTOMETRY.BAND: output['bands'][i],
                         PHOTOMETRY.TIME:
                         output['times'][i] + output['min_times'],
-                        PHOTOMETRY.MAGNITUDE: output['model_magnitudes'][i],
                         PHOTOMETRY.MODEL: modelnum,
                         PHOTOMETRY.SOURCE: source,
                         PHOTOMETRY.REALIZATION: str(xi * len(p[0]) + yi + 1)
                     }
+                    if output['observation_types'][i] == 'magnitude':
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = output[
+                            'model_observations'][i]
+                    if output['observation_types'][i] == 'fluxdensity':
+                        photodict[PHOTOMETRY.FREQUENCY] = output[
+                            'frequencies'][i] * frequency_unit('GHz')
+                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                            'model_observations'][i] * flux_density_unit('µJy')
+                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                     if output['systems'][i]:
                         photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
                     if output['bandsets'][i]:
@@ -659,8 +672,8 @@ class Fitter():
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
-        with open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                  'w') as flast, open(
+        with io.open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                  'w') as flast, io.open(
                       os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
                           ('_' + suffix)
                           if suffix else '') + '.json'), 'w') as feven:
