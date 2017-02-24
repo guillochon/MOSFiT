@@ -229,6 +229,14 @@ def main():
               "with this flag."))
 
     parser.add_argument(
+        '--offline',
+        dest='offline',
+        default=False,
+        action='store_true',
+        help=("MOSFiT will only use cached data and will not attempt to use "
+              "any online resources."))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',
@@ -348,31 +356,7 @@ def main():
                         os.path.join(fil_path))
 
     # Then, fit the listed events with the listed models.
-    fitargs = {
-        'events': args.events,
-        'models': args.models,
-        'plot_points': args.plot_points,
-        'max_time': args.max_time,
-        'band_list': args.band_list,
-        'band_systems': args.band_systems,
-        'band_instruments': args.band_instruments,
-        'band_bandsets': args.band_bandsets,
-        'iterations': args.iterations,
-        'num_walkers': args.num_walkers,
-        'num_temps': args.num_temps,
-        'parameter_paths': args.parameter_paths,
-        'fracking': args.fracking,
-        'frack_step': args.frack_step,
-        'wrap_length': width,
-        'travis': args.travis,
-        'post_burn': args.post_burn,
-        'smooth_times': args.smooth_times,
-        'extrapolate_time': args.extrapolate_time,
-        'limit_fitting_mjds': args.limit_fitting_mjds,
-        'exclude_bands': args.exclude_bands,
-        'exclude_instruments': args.exclude_instruments,
-        'suffix': args.suffix
-    }
+    fitargs = vars(args)
     Fitter().fit_events(**fitargs)
 
 

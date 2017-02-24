@@ -77,7 +77,9 @@ class Fitter():
                    limit_fitting_mjds=False,
                    exclude_bands=[],
                    exclude_instruments=[],
-                   suffix=''):
+                   suffix='',
+                   offline=False,
+                   **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
@@ -108,26 +110,29 @@ class Fitter():
                             'name, downloading list of supernova '
                             'aliases...'.format(input_name),
                             wrap_length=self._wrap_length)
-                        try:
-                            response = get_url_file_handle(
-                                'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/names.min.json',
-                                timeout=10)
-                        except:
-                            print_wrapped(
-                                'Warning: Could not download SN names (are '
-                                'you online?), using cached list.',
-                                wrap_length=self._wrap_length)
-                            raise
-                        else:
-                            with open(names_path, 'wb') as f:
-                                shutil.copyfileobj(response, f)
+                        if not offline:
+                            try:
+                                response = get_url_file_handle(
+                                    'https://sne.space/astrocats/astrocats/'
+                                    'supernovae/output/names.min.json',
+                                    timeout=10)
+                            except:
+                                print_wrapped(
+                                    'Warning: Could not download SN names ('
+                                    'are you online?), using cached list.',
+                                    wrap_length=self._wrap_length)
+                                raise
+                            else:
+                                with open(names_path, 'wb') as f:
+                                    shutil.copyfileobj(response, f)
                         if os.path.exists(names_path):
                             with open(names_path, 'r') as f:
                                 names = json.load(
                                     f, object_pairs_hook=OrderedDict)
                         else:
                             print('Error: Could not read list of SN names!')
+                            if offline:
+                                print('Try omitting the `--offline` flag.')
                             raise RuntimeError
 
                         if event in names:
@@ -182,26 +187,28 @@ class Fitter():
                                           'skipping!', self._wrap_length)
                             continue
                         urlname = self._event_name + '.json'
-
-                        print_wrapped(
-                            'Found event by primary name `{}` in the OSC, '
-                            'downloading data...'.format(self._event_name),
-                            wrap_length=self._wrap_length)
                         name_path = os.path.join(dir_path, 'cache', urlname)
-                        try:
-                            response = get_url_file_handle(
-                                'https://sne.space/astrocats/astrocats/'
-                                'supernovae/output/json/' + urlname,
-                                timeout=10)
-                        except:
+
+                        if not offline:
                             print_wrapped(
-                                'Warning: Could not download data for `{}`, '
-                                'will attempt to use cached data.'.format(
-                                    self._event_name),
+                                'Found event by primary name `{}` in the OSC, '
+                                'downloading data...'.format(self._event_name),
                                 wrap_length=self._wrap_length)
-                        else:
-                            with open(name_path, 'wb') as f:
-                                shutil.copyfileobj(response, f)
+                            try:
+                                response = get_url_file_handle(
+                                    'https://sne.space/astrocats/astrocats/'
+                                    'supernovae/output/json/' + urlname,
+                                    timeout=10)
+                            except:
+                                print_wrapped(
+                                    'Warning: Could not download data for '
+                                    ' `{}`, '
+                                    'will attempt to use cached data.'.format(
+                                        self._event_name),
+                                    wrap_length=self._wrap_length)
+                            else:
+                                with open(name_path, 'wb') as f:
+                                    shutil.copyfileobj(response, f)
                         path = name_path
 
                     if os.path.exists(path):
@@ -214,6 +221,8 @@ class Fitter():
                             'Error: Could not find data for `{}` locally or '
                             'on the OSC.'.format(self._event_name),
                             self._wrap_length)
+                        if offline:
+                            print('Try omitting the `--offline` flag.')
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
@@ -359,18 +368,18 @@ class Fitter():
             ])
             filts = self._model._modules['filters']
             ubs = filts._unique_bands
-            filterrows = [
-                s[3]
-                for s in list(
-                    sorted([(ubs[bis[i]]['systems'], ubs[bis[i]][
-                        'bandsets'], filts._average_wavelengths[bis[i]], (
-                            ' ' + (' ' if ois[i] else '*') + ubs[bis[i]]['SVO']
-                            .ljust(band_len) + ' [' + ','.join(
-                                set(
-                                    filter(None, (ubs[bis[i]]['bandsets'], ubs[
-                                        bis[i]]['systems'])))) + ']'
-                        ).replace(' []', '')) for i in range(len(bis))]))
-            ]
+            filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
+                          filts._average_wavelengths[bis[i]],
+                          filts._band_offsets[bis[i]], ois[i], bis[i])
+                         for i in range(len(bis))]
+            filterrows = [(
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
+                .ljust(band_len) + ' [' + ', '.join(
+                    list(
+                        filter(None, ('Bandset: ' + s[1] if s[
+                            1] else '', 'System: ' + s[0] if s[2] else '',
+                                      'AB offset: ' + pretty_num(s[3]))))) +
+                ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
             print('\n'.join(filterrows))

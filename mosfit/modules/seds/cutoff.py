@@ -17,8 +17,8 @@ class Cutoff(SED):
 
             # Account for UV absorption
             norm = np.sum(sed)
-            sed[wav_arr < 3500] *= (
-                0.00038 * wav_arr[wav_arr < 3500] - 0.32636)
+            sed[wav_arr < 3000] *= (
+                0.0003 * wav_arr[wav_arr < 3000] - 0.0445)
 
             sed[sed < 0.0] = 0.0
 
