@@ -244,8 +244,6 @@ class Photometry(Module):
         ybs = np.array(self._band_indices) >= 0
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
-        print(ybs)
-        print(observations)
         return {'model_observations': observations}
 
     def band_names(self):
