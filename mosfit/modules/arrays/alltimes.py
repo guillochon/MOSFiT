@@ -58,7 +58,7 @@ class AllTimes(Module):
         if old_bands != (self._systems, self._instruments, self._bandsets,
                          self._bands, self._frequencies):
             self._all_band_indices = [
-                (self._filters.find_band_index(
+                (self._photometry.find_band_index(
                     w, instrument=x, bandset=y, system=z) if a == '' else -1)
                 for w, x, y, z, a in zip(self._bands, self._instruments,
                                          self._bandsets, self._systems,
@@ -69,4 +69,4 @@ class AllTimes(Module):
         return outputs
 
     def receive_requests(self, **requests):
-        self._filters = requests.get('photometry', None)
+        self._photometry = requests.get('photometry', None)
