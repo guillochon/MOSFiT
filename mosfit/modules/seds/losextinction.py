@@ -24,6 +24,7 @@ class LOSExtinction(SED):
         self._nh_host = kwargs['nhhost']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
+        self._frequencies = kwargs['all_frequencies']
         self._band_rest_wavelengths = self._sample_wavelengths / zp1
 
         av_host = self._nh_host / 1.8e21
@@ -32,14 +33,20 @@ class LOSExtinction(SED):
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]
             # Extinct out host gal (using rest wavelengths)
-            if bi not in extinct_cache:
-                extinct_cache[bi] = odonnell94(self._band_rest_wavelengths[bi],
-                                               av_host, self.MW_RV)
-            # Add host and MW contributions
-            eapp(
-                self._mw_extinct[bi] + extinct_cache[bi],
-                self._seds[si],
-                inplace=True)
+            if bi >= 0:
+                if bi not in extinct_cache:
+                    extinct_cache[bi] = odonnell94(
+                        self._band_rest_wavelengths[bi], av_host, self.MW_RV)
+                # Add host and MW contributions
+                eapp(
+                    self._mw_extinct[bi] + extinct_cache[bi],
+                    self._seds[si],
+                    inplace=True)
+            else:
+                # wavelengths = np.array(
+                #   [c.c.cgs.value / self._frequencies[si]])
+                # Need extinction function for radio
+                pass
 
         return {
             'sample_wavelengths': self._sample_wavelengths,

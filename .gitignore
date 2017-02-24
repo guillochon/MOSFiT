@@ -2,6 +2,7 @@ build/
 cache/
 products/
 dist/
+src/
 mosfit/modules/observables/filters/*.dat
 mosfit/modules/observables/filters/*.xml
 /models/

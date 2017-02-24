@@ -159,7 +159,7 @@ class Model:
                 package='mosfit')
             mod_class = getattr(mod, mod.CLASS_NAME)
             self._modules[task] = mod_class(name=task, pool=pool, **cur_task)
-            if class_name == 'filters':
+            if class_name == 'photometry':
                 self._bands = self._modules[task].band_names()
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
@@ -179,7 +179,7 @@ class Model:
             #         self._parameter_json):
             #     cur_task.update(self._parameter_json[task])
             # self._modules[task] = mod_class(name=task, **cur_task)
-            # if class_name == 'filters':
+            # if class_name == 'photometry':
             #     self._bands = self._modules[task].band_names()
 
     def determine_free_parameters(self, extra_fixed_parameters):

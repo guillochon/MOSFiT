@@ -8,6 +8,12 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
+    "fnickel":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"f_{\\rm Ni}"
+    },
     "nhhost":{
         "kind":"parameter",
         "value":1.0e18,
@@ -22,53 +28,67 @@
     },
     "temperature":{
         "kind":"parameter",
-        "value":200.0,
+        "value":1.0e4,
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
     "kappa":{
         "kind":"parameter",
-        "value":10.0,
+        "value":0.2,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "kappagamma":{
         "kind":"parameter",
-        "value":1000.0,
+        "value":10.0,
         "class":"parameter",
         "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-    "frad":{
-        "kind":"parameter",
-        "value":0.99,
-        "class":"parameter",
-        "latex":"f_{\\rm Ni}"
-    },
     "mejecta":{
         "kind":"parameter",
-        "value":1.0e-3,
+        "value":1.0,
         "class":"parameter",
         "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
     "vejecta":{
         "kind":"parameter",
-        "value":3.0e4,
+        "value":1.0e4,
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
-    "rprocess":{
+    "radiussource":{
+        "kind":"parameter",
+        "value":1.0e13,
+        "class":"parameter"
+    },
+    "f0":{
+        "kind":"parameter",
+        "value":1.0e-26,
+        "class":"parameter"
+    },
+    "p":{
+        "kind":"parameter",
+        "value":2.5,
+        "class":"parameter"
+    },
+    "numax":{
+        "kind":"parameter",
+        "value":1.0e9,
+        "class":"parameter"
+    },
+    "nickelcobalt":{
         "kind":"engine",
         "inputs":[
             "densetimes",
             "mejecta",
-            "frad",
+            "fnickel",
             "texplosion"
         ]
     },
     "diffusion":{
         "kind":"transform",
         "inputs":[
-            "rprocess",
+            "nickelcobalt",
             "kappa",
             "kappagamma",
             "mejecta",
@@ -97,10 +117,23 @@
             "band_wave_ranges": "photometry"
         }
     },
-    "losextinction":{
+    "synchrotron":{
         "kind":"sed",
         "inputs":[
             "blackbody",
+            "radiussource",
+            "f0",
+            "p",
+            "numax"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "synchrotron",
             "nhhost",
             "ebv"
         ],

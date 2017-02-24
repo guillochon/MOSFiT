@@ -1,408 +1,641 @@
 [
     {
-        "bandsets":[
+        "systems": [
+            "AB"
+        ],
+        "filters": {
+            "U": {
+                "SVO": "Generic/Bessell.U",
+                "offset": 0.0
+            },
+            "B": {
+                "SVO": "Generic/Bessell.B",
+                "offset": 0.0
+            },
+            "V": {
+                "SVO": "Generic/Bessell.V",
+                "offset": 0.0
+            },
+            "R": {
+                "SVO": "Generic/Bessell.R",
+                "offset": 0.0
+            },
+            "I": {
+                "SVO": "Generic/Bessell.I",
+                "offset": 0.0
+            },
+            "J": {
+                "SVO": "2MASS/2MASS.J",
+                "offset": 0.0
+            },
+            "H": {
+                "SVO": "2MASS/2MASS.H",
+                "offset": 0.0
+            },
+            "K": {
+                "SVO": "2MASS/2MASS.Ks",
+                "offset": 0.0
+            },
+            "Ks": {
+                "SVO": "2MASS/2MASS.Ks",
+                "offset": 0.0
+            },
+            "u": {
+                "SVO": "SLOAN/SDSS.u",
+                "offset": 0.0
+            },
+            "g": {
+                "SVO": "SLOAN/SDSS.g",
+                "offset": 0.0
+            },
+            "r": {
+                "SVO": "SLOAN/SDSS.r",
+                "offset": 0.0
+            },
+            "i": {
+                "SVO": "SLOAN/SDSS.i",
+                "offset": 0.0
+            },
+            "z": {
+                "SVO": "SLOAN/SDSS.z",
+                "offset": 0.0
+            },
+            "u'": {
+                "SVO": "SLOAN/SDSS.u",
+                "offset": 0.0
+            },
+            "g'": {
+                "SVO": "SLOAN/SDSS.g",
+                "offset": 0.0
+            },
+            "r'": {
+                "SVO": "SLOAN/SDSS.r",
+                "offset": 0.0
+            },
+            "i'": {
+                "SVO": "SLOAN/SDSS.i",
+                "offset": 0.0
+            },
+            "z'": {
+                "SVO": "SLOAN/SDSS.z",
+                "offset": 0.0
+            },
+            "ROTSE": {
+                "SVO": "Generic/Bessell.R",
+                "offset": 0.0
+            },
+            "FUV": {
+                "SVO": "GALEX/GALEX.FUV",
+                "offset": 0.0
+            },
+            "NUV": {
+                "SVO": "GALEX/GALEX.NUV",
+                "offset": 0.0
+            },
+            "Z": {
+                "SVO": "CFHT/CFHT.Z",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "systems": [
+            "Vega"
+        ],
+        "filters": {
+            "U": {
+                "SVO": "Generic/Bessell.U"
+            },
+            "B": {
+                "SVO": "Generic/Bessell.B"
+            },
+            "V": {
+                "SVO": "Generic/Bessell.V"
+            },
+            "R": {
+                "SVO": "Generic/Bessell.R"
+            },
+            "I": {
+                "SVO": "Generic/Bessell.I"
+            },
+            "J": {
+                "SVO": "2MASS/2MASS.J"
+            },
+            "H": {
+                "SVO": "2MASS/2MASS.H"
+            },
+            "K": {
+                "SVO": "2MASS/2MASS.Ks"
+            },
+            "Ks": {
+                "SVO": "2MASS/2MASS.Ks"
+            },
+            "u": {
+                "SVO": "SLOAN/SDSS.u"
+            },
+            "g": {
+                "SVO": "SLOAN/SDSS.g"
+            },
+            "r": {
+                "SVO": "SLOAN/SDSS.r"
+            },
+            "i": {
+                "SVO": "SLOAN/SDSS.i"
+            },
+            "z": {
+                "SVO": "SLOAN/SDSS.z"
+            },
+            "u'": {
+                "SVO": "SLOAN/SDSS.u"
+            },
+            "g'": {
+                "SVO": "SLOAN/SDSS.g"
+            },
+            "r'": {
+                "SVO": "SLOAN/SDSS.r"
+            },
+            "i'": {
+                "SVO": "SLOAN/SDSS.i"
+            },
+            "z'": {
+                "SVO": "SLOAN/SDSS.z"
+            },
+            "ROTSE": {
+                "SVO": "Generic/Bessell.R"
+            },
+            "FUV": {
+                "SVO": "GALEX/GALEX.FUV"
+            },
+            "NUV": {
+                "SVO": "GALEX/GALEX.NUV"
+            },
+            "Z": {
+                "SVO": "CFHT/CFHT.Z"
+            }
+        }
+    },
+    {
+        "systems": [
+            ""
+        ],
+        "bandsets": [
             "Standard",
             ""
         ],
-        "filters":{
-            "U":{
-                "SVO":"Generic/Bessell.U"
+        "filters": {
+            "U": {
+                "SVO": "Generic/Bessell.U"
             },
-            "B":{
-                "SVO":"Generic/Bessell.B"
+            "B": {
+                "SVO": "Generic/Bessell.B"
             },
-            "V":{
-                "SVO":"Generic/Bessell.V"
+            "V": {
+                "SVO": "Generic/Bessell.V"
             },
-            "R":{
-                "SVO":"Generic/Bessell.R"
+            "R": {
+                "SVO": "Generic/Bessell.R"
             },
-            "I":{
-                "SVO":"Generic/Bessell.I"
+            "I": {
+                "SVO": "Generic/Bessell.I"
             },
-            "J":{
-                "SVO":"2MASS/2MASS.J"
+            "J": {
+                "SVO": "2MASS/2MASS.J"
             },
-            "H":{
-                "SVO":"2MASS/2MASS.H"
+            "H": {
+                "SVO": "2MASS/2MASS.H"
             },
-            "K":{
-                "SVO":"2MASS/2MASS.Ks"
+            "K": {
+                "SVO": "2MASS/2MASS.Ks"
             },
-            "Ks":{
-                "SVO":"2MASS/2MASS.Ks"
+            "Ks": {
+                "SVO": "2MASS/2MASS.Ks"
             },
-            "u":{
-                "SVO":"SLOAN/SDSS.u",
-                "offset":0.0
+            "u": {
+                "SVO": "SLOAN/SDSS.u",
+                "offset": 0.0
             },
-            "g":{
-                "SVO":"SLOAN/SDSS.g",
-                "offset":0.0
-           },
-            "r":{
-                "SVO":"SLOAN/SDSS.r",
-                "offset":0.0
-           },
-            "i":{
-                "SVO":"SLOAN/SDSS.i",
-                "offset":0.0
+            "g": {
+                "SVO": "SLOAN/SDSS.g",
+                "offset": 0.0
             },
-            "z":{
-                "SVO":"SLOAN/SDSS.z",
-                "offset":0.0
+            "r": {
+                "SVO": "SLOAN/SDSS.r",
+                "offset": 0.0
             },
-            "u'":{
-                "SVO":"SLOAN/SDSS.u",
-                "offset":0.0
-           },
-            "g'":{
-                "SVO":"SLOAN/SDSS.g",
-                "offset":0.0
-           },
-            "r'":{
-                "SVO":"SLOAN/SDSS.r",
-                "offset":0.0
-           },
-            "i'":{
-                "SVO":"SLOAN/SDSS.i",
-                "offset":0.0
-           },
-            "z'":{
-                "SVO":"SLOAN/SDSS.z",
-                "offset":0.0
-           },
-            "ROTSE":{
-                "SVO":"Generic/Bessell.R"
+            "i": {
+                "SVO": "SLOAN/SDSS.i",
+                "offset": 0.0
             },
-            "FUV":{
-                "SVO":"GALEX/GALEX.FUV",
-                "offset":0.0
+            "z": {
+                "SVO": "SLOAN/SDSS.z",
+                "offset": 0.0
             },
-            "NUV":{
-                "SVO":"GALEX/GALEX.NUV",
-                "offset":0.0
+            "u'": {
+                "SVO": "SLOAN/SDSS.u",
+                "offset": 0.0
             },
-            "Z":{
-                "SVO":"CFHT/CFHT.Z"
+            "g'": {
+                "SVO": "SLOAN/SDSS.g",
+                "offset": 0.0
+            },
+            "r'": {
+                "SVO": "SLOAN/SDSS.r",
+                "offset": 0.0
+            },
+            "i'": {
+                "SVO": "SLOAN/SDSS.i",
+                "offset": 0.0
+            },
+            "z'": {
+                "SVO": "SLOAN/SDSS.z",
+                "offset": 0.0
+            },
+            "ROTSE": {
+                "SVO": "Generic/Bessell.R"
+            },
+            "FUV": {
+                "SVO": "GALEX/GALEX.FUV",
+                "offset": 0.0
+            },
+            "NUV": {
+                "SVO": "GALEX/GALEX.NUV",
+                "offset": 0.0
+            },
+            "Z": {
+                "SVO": "CFHT/CFHT.Z"
             }
         }
     },
     {
-        "instruments":[
+        "instruments": [
             "GALEX"
         ],
-        "filters":{
-            "FUV":{
-                "SVO":"GALEX/GALEX.FUV",
-                "offset":0.0
+        "filters": {
+            "FUV": {
+                "SVO": "GALEX/GALEX.FUV",
+                "offset": 0.0
             },
-            "NUV":{
-                "SVO":"GALEX/GALEX.NUV",
-                "offset":0.0
+            "NUV": {
+                "SVO": "GALEX/GALEX.NUV",
+                "offset": 0.0
             }
         }
     },
     {
-        "instruments":[
+        "instruments": [
             "CFH12k",
             "P48"
         ],
-        "filters":{
-            "R":{
-                "SVO":"CFHT/CFH12k.R"
+        "filters": {
+            "R": {
+                "SVO": "CFHT/CFH12k.R"
             },
-            "r":{
-                "SVO":"CFHT/CFH12k.R"
+            "r": {
+                "SVO": "CFHT/CFH12k.R"
             },
-            "g":{
-                "SVO":"SLOAN/SDSS.g"
+            "g": {
+                "SVO": "SLOAN/SDSS.g"
             }
         }
     },
     {
-        "bandsets":[
+        "bandsets": [
             "Bessell"
         ],
-        "filters":{
-            "U":{
-                "SVO":"Generic/Bessell.U"
+        "filters": {
+            "U": {
+                "SVO": "Generic/Bessell.U"
             },
-            "B":{
-                "SVO":"Generic/Bessell.B"
+            "B": {
+                "SVO": "Generic/Bessell.B"
             },
-            "V":{
-                "SVO":"Generic/Bessell.V"
+            "V": {
+                "SVO": "Generic/Bessell.V"
             },
-            "R":{
-                "SVO":"Generic/Bessell.R"
+            "R": {
+                "SVO": "Generic/Bessell.R"
             },
-            "I":{
-                "SVO":"Generic/Bessell.I"
+            "I": {
+                "SVO": "Generic/Bessell.I"
             }
         }
     },
     {
-        "bandsets":[
+        "bandsets": [
             "Cousins"
         ],
-        "filters":{
-            "R":{
-                "SVO":"Generic/Cousins.R"
+        "filters": {
+            "R": {
+                "SVO": "Generic/Cousins.R"
             },
-            "I":{
-                "SVO":"Generic/Cousins.I"
+            "I": {
+                "SVO": "Generic/Cousins.I"
             },
-            "Rc":{
-                "SVO":"Generic/Cousins.R"
+            "Rc": {
+                "SVO": "Generic/Cousins.R"
             },
-            "Ic":{
-                "SVO":"Generic/Cousins.I"
+            "Ic": {
+                "SVO": "Generic/Cousins.I"
             }
         }
     },
     {
-        "systems":[
+        "systems": [
             "SDSS"
         ],
-        "instruments":[
+        "instruments": [
             "SDSS"
         ],
-        "bandsets":[
+        "bandsets": [
             "",
             "SDSS"
         ],
-        "filters":{
-            "u":{
-                "SVO":"SLOAN/SDSS.u",
-                "offset":0.0
+        "filters": {
+            "u": {
+                "SVO": "SLOAN/SDSS.u",
+                "offset": 0.0
             },
-            "g":{
-                "SVO":"SLOAN/SDSS.g",
-                "offset":0.0
+            "g": {
+                "SVO": "SLOAN/SDSS.g",
+                "offset": 0.0
             },
-            "r":{
-                "SVO":"SLOAN/SDSS.r",
-                "offset":0.0
+            "r": {
+                "SVO": "SLOAN/SDSS.r",
+                "offset": 0.0
             },
-            "i":{
-                "SVO":"SLOAN/SDSS.i",
-                "offset":0.0
+            "i": {
+                "SVO": "SLOAN/SDSS.i",
+                "offset": 0.0
             },
-            "z":{
-                "SVO":"SLOAN/SDSS.z",
-                "offset":0.0
+            "z": {
+                "SVO": "SLOAN/SDSS.z",
+                "offset": 0.0
             },
-            "u'":{
-                "SVO":"SLOAN/SDSS.u",
-                "offset":0.0
+            "u'": {
+                "SVO": "SLOAN/SDSS.u",
+                "offset": 0.0
             },
-            "g'":{
-                "SVO":"SLOAN/SDSS.g",
-                "offset":0.0
+            "g'": {
+                "SVO": "SLOAN/SDSS.g",
+                "offset": 0.0
             },
-            "r'":{
-                "SVO":"SLOAN/SDSS.r",
-                "offset":0.0
+            "r'": {
+                "SVO": "SLOAN/SDSS.r",
+                "offset": 0.0
             },
-            "i'":{
-                "SVO":"SLOAN/SDSS.i",
-                "offset":0.0
+            "i'": {
+                "SVO": "SLOAN/SDSS.i",
+                "offset": 0.0
             },
-            "z'":{
-                "SVO":"SLOAN/SDSS.z",
-                "offset":0.0
+            "z'": {
+                "SVO": "SLOAN/SDSS.z",
+                "offset": 0.0
             }
         }
     },
     {
-        "instruments":[
+        "systems": [
+            "",
+            "Vega"
+        ],
+        "instruments": [
             "UVOT"
         ],
-        "bandsets":[
+        "bandsets": [
             "",
             "Swift",
             "UVOT"
         ],
-        "filters":{
-            "U":{
-                "SVO":"Swift/UVOT.U"
+        "filters": {
+            "U": {
+                "SVO": "Swift/UVOT.U"
             },
-            "B":{
-                "SVO":"Swift/UVOT.B"
+            "B": {
+                "SVO": "Swift/UVOT.B"
             },
-            "V":{
-                "SVO":"Swift/UVOT.V"
+            "V": {
+                "SVO": "Swift/UVOT.V"
             },
-            "UVW1":{
-                "SVO":"Swift/UVOT.UVW1"
+            "UVW1": {
+                "SVO": "Swift/UVOT.UVW1"
             },
-            "UVW2":{
-                "SVO":"Swift/UVOT.UVW2"
+            "UVW2": {
+                "SVO": "Swift/UVOT.UVW2"
             },
-            "UVM2":{
-                "SVO":"Swift/UVOT.UVM2"
+            "UVM2": {
+                "SVO": "Swift/UVOT.UVM2"
             },
-            "W1":{
-                "SVO":"Swift/UVOT.UVW1"
+            "W1": {
+                "SVO": "Swift/UVOT.UVW1"
             },
-            "W2":{
-                "SVO":"Swift/UVOT.UVW2"
+            "W2": {
+                "SVO": "Swift/UVOT.UVW2"
             },
-            "M2":{
-                "SVO":"Swift/UVOT.UVM2"
+            "M2": {
+                "SVO": "Swift/UVOT.UVM2"
             }
         }
     },
     {
-        "bandsets":[
+        "systems": [
+            "AB"
+        ],
+        "instruments": [
+            "UVOT"
+        ],
+        "bandsets": [
+            "",
+            "Swift",
+            "UVOT"
+        ],
+        "filters": {
+            "U": {
+                "SVO": "Swift/UVOT.U",
+                "offset": 0.0
+            },
+            "B": {
+                "SVO": "Swift/UVOT.B",
+                "offset": 0.0
+            },
+            "V": {
+                "SVO": "Swift/UVOT.V",
+                "offset": 0.0
+            },
+            "UVW1": {
+                "SVO": "Swift/UVOT.UVW1",
+                "offset": 0.0
+            },
+            "UVW2": {
+                "SVO": "Swift/UVOT.UVW2",
+                "offset": 0.0
+            },
+            "UVM2": {
+                "SVO": "Swift/UVOT.UVM2",
+                "offset": 0.0
+            },
+            "W1": {
+                "SVO": "Swift/UVOT.UVW1",
+                "offset": 0.0
+            },
+            "W2": {
+                "SVO": "Swift/UVOT.UVW2",
+                "offset": 0.0
+            },
+            "M2": {
+                "SVO": "Swift/UVOT.UVM2",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "bandsets": [
             "Johnson"
         ],
-        "filters":{
-            "U":{
-                "SVO":"Generic/Johnson.U"
+        "filters": {
+            "U": {
+                "SVO": "Generic/Johnson.U"
             },
-            "B":{
-                "SVO":"Generic/Johnson.B"
+            "B": {
+                "SVO": "Generic/Johnson.B"
             },
-            "V":{
-                "SVO":"Generic/Johnson.V"
+            "V": {
+                "SVO": "Generic/Johnson.V"
             },
-            "R":{
-                "SVO":"Generic/Johnson.R"
+            "R": {
+                "SVO": "Generic/Johnson.R"
             },
-            "I":{
-                "SVO":"Generic/Johnson.I"
+            "I": {
+                "SVO": "Generic/Johnson.I"
             },
-            "J":{
-                "SVO":"Generic/Johnson.J"
+            "J": {
+                "SVO": "Generic/Johnson.J"
             },
-            "M":{
-                "SVO":"Generic/Johnson.M"
+            "M": {
+                "SVO": "Generic/Johnson.M"
             }
         }
     },
     {
-        "instruments":[
+        "instruments": [
             "PS1",
             "GPC"
         ],
-        "bandsets":[
+        "bandsets": [
             "",
             "PS1",
             "GPC"
         ],
-        "filters":{
-            "g":{
-                "SVO":"PAN-STARRS/PS1.g",
-                "offset":0.0
+        "filters": {
+            "g": {
+                "SVO": "PAN-STARRS/PS1.g",
+                "offset": 0.0
             },
-            "r":{
-                "SVO":"PAN-STARRS/PS1.r",
-                "offset":0.0
+            "r": {
+                "SVO": "PAN-STARRS/PS1.r",
+                "offset": 0.0
             },
-            "i":{
-                "SVO":"PAN-STARRS/PS1.i",
-                "offset":0.0
+            "i": {
+                "SVO": "PAN-STARRS/PS1.i",
+                "offset": 0.0
             },
-            "z":{
-                "SVO":"PAN-STARRS/PS1.z",
-                "offset":0.0
+            "z": {
+                "SVO": "PAN-STARRS/PS1.z",
+                "offset": 0.0
             },
-            "y":{
-                "SVO":"PAN-STARRS/PS1.y",
-                "offset":0.0
+            "y": {
+                "SVO": "PAN-STARRS/PS1.y",
+                "offset": 0.0
             },
-            "w":{
-                "SVO":"PAN-STARRS/PS1.w",
-                "offset":0.0
+            "w": {
+                "SVO": "PAN-STARRS/PS1.w",
+                "offset": 0.0
             },
-            "gp1":{
-                "SVO":"PAN-STARRS/PS1.g",
-                "offset":0.0
+            "gp1": {
+                "SVO": "PAN-STARRS/PS1.g",
+                "offset": 0.0
             },
-            "rp1":{
-                "SVO":"PAN-STARRS/PS1.r",
-                "offset":0.0
+            "rp1": {
+                "SVO": "PAN-STARRS/PS1.r",
+                "offset": 0.0
             },
-            "ip1":{
-                "SVO":"PAN-STARRS/PS1.i",
-                "offset":0.0
+            "ip1": {
+                "SVO": "PAN-STARRS/PS1.i",
+                "offset": 0.0
             },
-            "zp1":{
-                "SVO":"PAN-STARRS/PS1.z",
-                "offset":0.0
+            "zp1": {
+                "SVO": "PAN-STARRS/PS1.z",
+                "offset": 0.0
             },
-            "yp1":{
-                "SVO":"PAN-STARRS/PS1.y",
-                "offset":0.0
+            "yp1": {
+                "SVO": "PAN-STARRS/PS1.y",
+                "offset": 0.0
             },
-            "wp1":{
-                "SVO":"PAN-STARRS/PS1.w",
-                "offset":0.0
+            "wp1": {
+                "SVO": "PAN-STARRS/PS1.w",
+                "offset": 0.0
             },
-            "gP1":{
-                "SVO":"PAN-STARRS/PS1.g",
-                "offset":0.0
+            "gP1": {
+                "SVO": "PAN-STARRS/PS1.g",
+                "offset": 0.0
             },
-            "rP1":{
-                "SVO":"PAN-STARRS/PS1.r",
-                "offset":0.0
+            "rP1": {
+                "SVO": "PAN-STARRS/PS1.r",
+                "offset": 0.0
             },
-            "iP1":{
-                "SVO":"PAN-STARRS/PS1.i",
-                "offset":0.0
+            "iP1": {
+                "SVO": "PAN-STARRS/PS1.i",
+                "offset": 0.0
             },
-            "zP1":{
-                "SVO":"PAN-STARRS/PS1.z",
-                "offset":0.0
+            "zP1": {
+                "SVO": "PAN-STARRS/PS1.z",
+                "offset": 0.0
             },
-            "yP1":{
-                "SVO":"PAN-STARRS/PS1.y",
-                "offset":0.0
+            "yP1": {
+                "SVO": "PAN-STARRS/PS1.y",
+                "offset": 0.0
             },
-            "wP1":{
-                "SVO":"PAN-STARRS/PS1.w",
-                "offset":0.0
+            "wP1": {
+                "SVO": "PAN-STARRS/PS1.w",
+                "offset": 0.0
             },
-            "open":{
-                "SVO":"PAN-STARRS/PS1.open",
-                "offset":0.0
+            "open": {
+                "SVO": "PAN-STARRS/PS1.open",
+                "offset": 0.0
             }
         }
     },
     {
-        "instruments":[
+        "instruments": [
             "LSST"
         ],
-        "bandsets":[
+        "bandsets": [
             "",
             "LSST"
         ],
-        "filters":{
-            "u":{
-                "SVO":"LSST/LSST.u",
-                "offset":0.0
+        "filters": {
+            "u": {
+                "SVO": "LSST/LSST.u",
+                "offset": 0.0
             },
-            "g":{
-                "SVO":"LSST/LSST.g",
-                "offset":0.0
+            "g": {
+                "SVO": "LSST/LSST.g",
+                "offset": 0.0
             },
-            "r":{
-                "SVO":"LSST/LSST.r",
-                "offset":0.0
+            "r": {
+                "SVO": "LSST/LSST.r",
+                "offset": 0.0
             },
-            "i":{
-                "SVO":"LSST/LSST.i",
-                "offset":0.0
+            "i": {
+                "SVO": "LSST/LSST.i",
+                "offset": 0.0
             },
-            "z":{
-                "SVO":"LSST/LSST.z",
-                "offset":0.0
+            "z": {
+                "SVO": "LSST/LSST.z",
+                "offset": 0.0
             },
-            "y":{
-                "SVO":"LSST/LSST.y",
-                "offset":0.0
+            "y": {
+                "SVO": "LSST/LSST.y",
+                "offset": 0.0
             }
         }
     }
