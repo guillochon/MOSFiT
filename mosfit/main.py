@@ -277,6 +277,13 @@ def main():
               "the user to provide a token."))
 
     parser.add_argument(
+        '--check-upload-quality',
+        dest='check_upload_quality',
+        default=True,
+        action='store_false',
+        help=("Perform some quality checks before uploading fits."))
+
+    parser.add_argument(
         '--travis',
         dest='travis',
         default=False,

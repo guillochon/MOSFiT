@@ -23,10 +23,11 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
 from mosfit.__init__ import __version__
-from mosfit.utils import (entabbed_json_dump, entabbed_json_dumps,
-                          flux_density_unit, frequency_unit, get_model_hash,
-                          get_url_file_handle, is_number, pretty_num,
-                          print_inline, print_wrapped, prompt)
+from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
+                          entabbed_json_dumps, flux_density_unit,
+                          frequency_unit, get_model_hash, get_url_file_handle,
+                          is_number, pretty_num, print_inline, print_wrapped,
+                          prompt)
 
 from .model import Model
 
@@ -87,6 +88,7 @@ class Fitter():
                    offline=False,
                    upload=False,
                    upload_token='',
+                   check_upload_quality=False,
                    **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -303,7 +305,8 @@ class Fitter():
                             pool=pool,
                             suffix=suffix,
                             upload=upload,
-                            upload_token=upload_token)
+                            upload_token=upload_token,
+                            check_upload_quality=check_upload_quality)
 
                     if pool.is_master():
                         pool.close()
@@ -414,13 +417,16 @@ class Fitter():
                  pool='',
                  suffix='',
                  upload=False,
-                 upload_token=''):
+                 upload_token='',
+                 check_upload_quality=True):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
 
         global model
         model = self._model
+
+        upload_this = upload
 
         if not pool.is_master():
             try:
@@ -524,12 +530,12 @@ class Fitter():
                 frack_now = (fracking and emi1 <= self._burn_in and
                              emi1 % frack_step == 0)
 
+                scores = [
+                    np.array(x) + np.array(y) for x, y in zip(lnprob, lnlike)
+                ]
                 self.print_status(
                     desc='Fracking' if frack_now else 'Walking',
-                    scores=[
-                        np.array(x) + np.array(y)
-                        for x, y in zip(lnprob, lnlike)
-                    ],
+                    scores=scores,
                     progress=[emi1, iterations],
                     acor=acor,
                     messages=messages)
@@ -630,6 +636,14 @@ class Fitter():
             modelhash = get_model_hash(
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
             umodelnum = uentry.add_model(**umodeldict)
+            if check_upload_quality:
+                WAIC = calculate_WAIC(scores)
+                if WAIC < 0.0:
+                    print_wrapped(
+                        'WAIC score `{}` below 0.0, not uploading this fit.'.
+                        format(pretty_num(WAIC)),
+                        wrap_length=self._wrap_length)
+                    upload_this = False
 
         modelnum = entry.add_model(**modeldict)
 
@@ -668,7 +682,7 @@ class Fitter():
                     entry.add_photometry(
                         compare_against_existing=False, **photodict)
 
-                    if upload:
+                    if upload_this:
                         uphotodict = deepcopy(photodict)
                         uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                         uentry.add_photometry(
@@ -705,7 +719,7 @@ class Fitter():
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
-                if upload:
+                if upload_this:
                     uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
 
@@ -724,7 +738,7 @@ class Fitter():
             entabbed_json_dump(oentry, flast, separators=(',', ':'))
             entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
-        if upload:
+        if upload_this:
             uentry.sanitize()
             print_wrapped('Uploading fit...', wrap_length=self._wrap_length)
             print_wrapped(
@@ -841,9 +855,7 @@ class Fitter():
             outarr.append(scorestring)
             # WAIC from Gelman
             # http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
-            fscores = [x for y in scores for x in y]
-            scorestring = 'WAIC: ' + pretty_num(
-                np.mean(fscores) - np.var(fscores))
+            scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
             outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)

@@ -13,6 +13,8 @@ from collections import OrderedDict
 from math import floor, log10
 from textwrap import fill
 
+import numpy as np
+
 if sys.version_info[:2] < (3, 3):
     old_print = print
 
@@ -151,6 +153,11 @@ def entabbed_json_dumps(string, **kwargs):
 
 def entabbed_json_dump(string, f, **kwargs):
     f.write(entabbed_json_dumps(string, **kwargs))
+
+
+def calculate_WAIC(scores):
+    fscores = [x for y in scores for x in y]
+    return np.mean(fscores) - np.var(fscores)
 
 
 def flux_density_unit(unit):
