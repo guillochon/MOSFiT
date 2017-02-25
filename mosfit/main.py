@@ -260,11 +260,21 @@ def main():
         '--upload',
         '-u',
         dest='upload',
-        default=[''],
-        nargs='+',
+        default=False,
+        action='store_true',
         help=("Upload results of MOSFiT to appropriate Open Catalog. If "
               "MOSFiT is only supplied with `-u` and no other arguments, it "
               "will upload the results of the latest run."))
+
+    parser.add_argument(
+        '--set-upload-token',
+        dest='set_upload_token',
+        const=True,
+        default=False,
+        nargs='?',
+        help=("Set the upload token. If given an argument, expects a 64-"
+              "character token. If given no argument, MOSFiT will prompt "
+              "the user to provide a token."))
 
     parser.add_argument(
         '--travis',
@@ -303,14 +313,54 @@ def main():
                 firstline = logo.split('\n')[0]
                 if isinstance(firstline, bytes):
                     firstline = firstline.decode('utf-8')
-                width = len(
-                    normalize('NFC', firstline))
+                width = len(normalize('NFC', firstline))
                 print(logo)
             print('### MOSFiT -- version {} ###'.format(__version__).center(
                 width))
             print('Authored by James Guillochon & Matt Nicholl'.center(width))
             print('Released under the MIT license'.center(width))
             print('https://github.com/guillochon/MOSFiT\n'.center(width))
+
+        # Get/set upload token
+        token = ''
+        get_token_from_user = False
+        if args.set_upload_token:
+            if args.set_upload_token is not True:
+                token = args.set_upload_token
+            get_token_from_user = True
+
+        upload_token_path = os.path.join(dir_path, 'cache',
+                                         'dropbox.token')
+
+        if args.upload:
+            if not os.path.isfile(upload_token_path):
+                get_token_from_user = True
+            else:
+                with open(upload_token_path, 'r') as f:
+                    token = f.read().splitlines()
+                    if len(token) != 1:
+                        get_token_from_user = True
+                    elif len(token[0]) != 64:
+                        get_token_from_user = True
+                    else:
+                        token = token[0]
+
+        if get_token_from_user:
+            while len(token) != 64:
+                token = prompt(
+                    "Please paste your Dropbox token, then hit enter:",
+                    kind='string')
+                if len(token) != 64:
+                    print('Error: Token must be exactly 64 characters '
+                          'in length.')
+                    continue
+                break
+            with open(upload_token_path, 'w') as f:
+                f.write(token)
+
+        if args.upload:
+            print("Upload flag set, will upload results after completion.")
+            print("Dropbox token: " + token)
 
         if changed_iterations:
             print("No events specified, setting iterations to 0.")

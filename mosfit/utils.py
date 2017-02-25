@@ -99,6 +99,8 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
             'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
                 len(options)) + '/[n]):'
         ])
+    elif kind == 'string':
+        choices = ''
     else:
         raise ValueError('Unknown prompt kind.')
 
@@ -106,16 +108,18 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
     for txt in prompt_txt[:-1]:
         ptxt = fill(txt, wrap_length, replace_whitespace=False)
         print(ptxt)
-    user_choice = input(
+    user_input = input(
         fill(
             prompt_txt[-1], wrap_length, replace_whitespace=False) + " ")
     if kind == 'bool':
-        return user_choice in ["Y", "y", "Yes", "yes"]
+        return user_input in ["Y", "y", "Yes", "yes"]
     elif kind == 'select':
-        if (is_integer(user_choice) and
-                int(user_choice) in list(range(1, len(options) + 1))):
-            return options[int(user_choice) - 1]
+        if (is_integer(user_input) and
+                int(user_input) in list(range(1, len(options) + 1))):
+            return options[int(user_input) - 1]
         return False
+    elif kind == 'string':
+        return user_input
 
 
 def init_worker():
