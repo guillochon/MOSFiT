@@ -3,6 +3,7 @@
 """
 from __future__ import print_function
 
+import hashlib
 import json
 import re
 import signal
@@ -158,6 +159,13 @@ def frequency_unit(unit):
     if unit == 'GHz':
         return 1.0 / 1.0e9
     return 1.0
+
+
+def get_model_hash(modeldict):
+    """Return a unique hash for the given model
+    """
+    string_rep = json.dumps(modeldict, sort_keys=True)
+    return hashlib.sha512(string_rep.encode()).hexdigest()[:16]
 
 
 def is_master():

@@ -9,6 +9,7 @@ import sys
 import time
 import warnings
 from collections import OrderedDict
+from copy import deepcopy
 from difflib import get_close_matches
 
 import emcee
@@ -22,8 +23,9 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
 from mosfit.__init__ import __version__
 from mosfit.utils import (entabbed_json_dump, flux_density_unit,
-                          frequency_unit, get_url_file_handle, is_number,
-                          pretty_num, print_inline, print_wrapped, prompt)
+                          frequency_unit, get_model_hash, get_url_file_handle,
+                          is_number, pretty_num, print_inline, print_wrapped,
+                          prompt)
 
 from .model import Model
 
@@ -595,22 +597,30 @@ class Fitter():
         else:
             entry = Entry(name=self._event_name)
 
+        if upload:
+            data_keys = set()
+            for task in model._call_stack:
+                if model._call_stack[task]['kind'] == 'data':
+                    data_keys.update(
+                        list(model._call_stack[task].get('keys', {}).keys()))
+            entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
+
         source = entry.add_source(name='MOSFiT paper')
-        model_setup = {}
+        model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
             task_copy = model._call_stack[task].copy()
             if (task_copy['kind'] == 'parameter' and
                     task in model._parameter_json):
                 task_copy.update(model._parameter_json[task])
             model_setup[task] = task_copy
-        modeldict = {
-            MODEL.NAME: self._model._model_name,
-            MODEL.SETUP: model_setup,
-            MODEL.CODE: 'MOSFiT',
-            MODEL.DATE: time.strftime("%Y/%m/%d"),
-            MODEL.VERSION: __version__,
-            MODEL.SOURCE: source
-        }
+        modeldict = OrderedDict(
+            [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
+             (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
+             (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
+
+        if upload:
+            modelhash = get_model_hash(modeldict)
+
         modelnum = entry.add_model(**modeldict)
 
         for xi, x in enumerate(p):
@@ -693,8 +703,7 @@ class Fitter():
             entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
         if upload:
-            hentry = entry.get_hash(keys=['redshift', 'lumdist', 'photometry'])
-            print('Data hash: ' + hentry)
+            print('Data hash: ' + entryhash + ', model hash: ' + modelhash)
 
         return (p, lnprob)
 
