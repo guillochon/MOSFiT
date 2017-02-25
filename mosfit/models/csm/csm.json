@@ -12,7 +12,8 @@
         "kind":"parameter",
         "value":0.0,
         "class":"parameter",
-        "latex":"n_{\\rm H,host}"
+        "latex":"n_{\\rm H,host}",
+        "derived_keys":"avhost"
     },
     "texplosion":{
         "kind":"parameter",

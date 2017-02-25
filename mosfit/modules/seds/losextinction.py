@@ -50,7 +50,8 @@ class LOSExtinction(SED):
 
         return {
             'sample_wavelengths': self._sample_wavelengths,
-            'seds': self._seds
+            'seds': self._seds,
+            'avhost': av_host
         }
 
     def preprocess(self, **kwargs):

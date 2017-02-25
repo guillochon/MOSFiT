@@ -22,7 +22,7 @@ if sys.version_info[:2] < (3, 3):
             file.flush()
 
 
-syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega'}
+syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega', 'Landolt': 'Vega'}
 
 
 def get_url_file_handle(url, timeout=10):
