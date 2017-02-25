@@ -629,7 +629,7 @@ class Fitter():
             umodeldict[MODEL.SOURCE] = usource
             modelhash = get_model_hash(
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
-            umodelnum = uentry.add_model(**modeldict)
+            umodelnum = uentry.add_model(**umodeldict)
 
         modelnum = entry.add_model(**modeldict)
 
