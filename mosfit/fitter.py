@@ -12,6 +12,7 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
+import dropbox
 import emcee
 import numpy as np
 from emcee.autocorr import AutocorrError
@@ -22,10 +23,10 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
 from mosfit.__init__ import __version__
-from mosfit.utils import (entabbed_json_dump, flux_density_unit,
-                          frequency_unit, get_model_hash, get_url_file_handle,
-                          is_number, pretty_num, print_inline, print_wrapped,
-                          prompt)
+from mosfit.utils import (entabbed_json_dump, entabbed_json_dumps,
+                          flux_density_unit, frequency_unit, get_model_hash,
+                          get_url_file_handle, is_number, pretty_num,
+                          print_inline, print_wrapped, prompt)
 
 from .model import Model
 
@@ -85,6 +86,7 @@ class Fitter():
                    suffix='',
                    offline=False,
                    upload=False,
+                   upload_token='',
                    **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -300,7 +302,8 @@ class Fitter():
                             post_burn=post_burn,
                             pool=pool,
                             suffix=suffix,
-                            upload=upload)
+                            upload=upload,
+                            upload_token=upload_token)
 
                     if pool.is_master():
                         pool.close()
@@ -410,7 +413,8 @@ class Fitter():
                  post_burn=500,
                  pool='',
                  suffix='',
-                 upload=False):
+                 upload=False,
+                 upload_token=''):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -598,6 +602,8 @@ class Fitter():
             entry = Entry(name=self._event_name)
 
         if upload:
+            uentry = Entry(name=self._event_name)
+            usource = uentry.add_source(name='MOSFiT paper')
             data_keys = set()
             for task in model._call_stack:
                 if model._call_stack[task]['kind'] == 'data':
@@ -619,10 +625,15 @@ class Fitter():
              (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
 
         if upload:
-            modelhash = get_model_hash(modeldict)
+            umodeldict = deepcopy(modeldict)
+            umodeldict[MODEL.SOURCE] = usource
+            modelhash = get_model_hash(
+                umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
+            umodelnum = uentry.add_model(**modeldict)
 
         modelnum = entry.add_model(**modeldict)
 
+        ri = 1
         for xi, x in enumerate(p):
             for yi, y in enumerate(p[xi]):
                 output = model.run_stack(y, root='output')
@@ -657,6 +668,12 @@ class Fitter():
                     entry.add_photometry(
                         compare_against_existing=False, **photodict)
 
+                    if upload:
+                        uphotodict = deepcopy(photodict)
+                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                        uentry.add_photometry(
+                            compare_against_existing=False, **uphotodict)
+
                 parameters = OrderedDict()
                 derived_keys = set()
                 pi = 0
@@ -685,7 +702,12 @@ class Fitter():
                 if lnprob is not None and lnlike is not None:
                     realdict[REALIZATION.SCORE] = str(lnprob[xi][yi] + lnprob[
                         xi][yi])
+                realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
+                urealdict = deepcopy(realdict)
+                if upload:
+                    uentry[ENTRY.MODELS][0].add_realization(**urealdict)
+                ri = ri + 1
 
         entry.sanitize()
         oentry = entry._ordered(entry)
@@ -703,7 +725,20 @@ class Fitter():
             entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
         if upload:
-            print('Data hash: ' + entryhash + ', model hash: ' + modelhash)
+            uentry.sanitize()
+            print_wrapped('Uploading fit...', wrap_length=self._wrap_length)
+            print_wrapped(
+                'Data hash: ' + entryhash + ', model hash: ' + modelhash,
+                wrap_length=self._wrap_length)
+            upath = '/' + '_'.join(
+                [self._event_name, entryhash, modelhash]) + '.json'
+            upayload = entabbed_json_dumps(uentry, separators=(',', ':'))
+            dbx = dropbox.Dropbox(upload_token)
+            dbx.files_upload(
+                upayload.encode(),
+                upath,
+                mode=dropbox.files.WriteMode.overwrite)
+            print_wrapped('Uploading complete!', wrap_length=self._wrap_length)
 
         return (p, lnprob)
 

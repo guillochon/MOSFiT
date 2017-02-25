@@ -9,6 +9,7 @@ import re
 import signal
 import sys
 from builtins import input
+from collections import OrderedDict
 from math import floor, log10
 from textwrap import fill
 
@@ -127,11 +128,10 @@ def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-def entabbed_json_dump(string, f, **kwargs):
+def entabbed_json_dumps(string, **kwargs):
     if sys.version_info[:2] >= (3, 3):
-        json.dump(
+        return json.dumps(
             string,
-            f,
             indent='\t',
             separators=kwargs['separators'],
             ensure_ascii=False)
@@ -146,7 +146,11 @@ def entabbed_json_dump(string, f, **kwargs):
         '\n +',
         lambda match: '\n' + '\t' * (len(match.group().strip('\n')) / 4),
         newstr)
-    f.write(newstr)
+    return newstr
+
+
+def entabbed_json_dump(string, f, **kwargs):
+    f.write(entabbed_json_dumps(string, **kwargs))
 
 
 def flux_density_unit(unit):
@@ -161,10 +165,14 @@ def frequency_unit(unit):
     return 1.0
 
 
-def get_model_hash(modeldict):
+def get_model_hash(modeldict, ignore_keys=[]):
     """Return a unique hash for the given model
     """
-    string_rep = json.dumps(modeldict, sort_keys=True)
+    newdict = OrderedDict()
+    for key in modeldict:
+        if key not in ignore_keys:
+            newdict[key] = modeldict[key]
+    string_rep = json.dumps(newdict, sort_keys=True)
     return hashlib.sha512(string_rep.encode()).hexdigest()[:16]
 
 

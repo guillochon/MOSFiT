@@ -322,11 +322,11 @@ def main():
             print('https://github.com/guillochon/MOSFiT\n'.center(width))
 
         # Get/set upload token
-        token = ''
+        upload_token = ''
         get_token_from_user = False
         if args.set_upload_token:
             if args.set_upload_token is not True:
-                token = args.set_upload_token
+                upload_token = args.set_upload_token
             get_token_from_user = True
 
         upload_token_path = os.path.join(dir_path, 'cache',
@@ -337,30 +337,32 @@ def main():
                 get_token_from_user = True
             else:
                 with open(upload_token_path, 'r') as f:
-                    token = f.read().splitlines()
-                    if len(token) != 1:
+                    upload_token = f.read().splitlines()
+                    if len(upload_token) != 1:
                         get_token_from_user = True
-                    elif len(token[0]) != 64:
+                    elif len(upload_token[0]) != 64:
                         get_token_from_user = True
                     else:
-                        token = token[0]
+                        upload_token = upload_token[0]
 
         if get_token_from_user:
-            while len(token) != 64:
-                token = prompt(
+            while len(upload_token) != 64:
+                upload_token = prompt(
                     "Please paste your Dropbox token, then hit enter:",
                     kind='string')
-                if len(token) != 64:
+                if len(upload_token) != 64:
                     print('Error: Token must be exactly 64 characters '
                           'in length.')
                     continue
                 break
             with open(upload_token_path, 'w') as f:
-                f.write(token)
+                f.write(upload_token)
 
         if args.upload:
             print("Upload flag set, will upload results after completion.")
-            print("Dropbox token: " + token)
+            print("Dropbox token: " + upload_token)
+
+        args.upload_token = upload_token
 
         if changed_iterations:
             print("No events specified, setting iterations to 0.")
