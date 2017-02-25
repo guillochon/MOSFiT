@@ -13,13 +13,13 @@ from difflib import get_close_matches
 
 import emcee
 import numpy as np
+from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
-from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-
 from mosfit.__init__ import __version__
 from mosfit.utils import (entabbed_json_dump, flux_density_unit,
                           frequency_unit, get_url_file_handle, is_number,
@@ -381,7 +381,7 @@ class Fitter():
                 .ljust(band_len) + ' [' + ', '.join(
                     list(
                         filter(None, ('Bandset: ' + s[1] if s[
-                            1] else '', 'System: ' + s[0] if s[2] else '',
+                            1] else '', 'System: ' + s[0] if s[0] else '',
                                       'AB offset: ' + pretty_num(s[3]))))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
@@ -645,13 +645,14 @@ class Fitter():
                         compare_against_existing=False, **photodict)
 
                 parameters = OrderedDict()
+                derived_keys = set()
                 pi = 0
                 for ti, task in enumerate(model._call_stack):
                     if task not in model._free_parameters:
                         continue
-                    output = model._modules[task].process(
+                    poutput = model._modules[task].process(
                         **{'fraction': y[pi]})
-                    value = list(output.values())[0]
+                    value = list(poutput.values())[0]
                     paramdict = {
                         'value': value,
                         'fraction': y[pi],
@@ -659,7 +660,14 @@ class Fitter():
                         'log': model._modules[task].is_log()
                     }
                     parameters.update({model._modules[task].name(): paramdict})
+                    # Dump out any derived parameter keys
+                    derived_keys.update(model._modules[task].get_derived_keys(
+                    ))
                     pi = pi + 1
+
+                for key in list(sorted(list(derived_keys))):
+                    parameters.update({key: {'value': output[key]}})
+
                 realdict = {REALIZATION.PARAMETERS: parameters}
                 if lnprob is not None and lnlike is not None:
                     realdict[REALIZATION.SCORE] = str(lnprob[xi][yi] + lnprob[
@@ -672,11 +680,12 @@ class Fitter():
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
-        with io.open(os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                  'w') as flast, io.open(
-                      os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
-                          ('_' + suffix)
-                          if suffix else '') + '.json'), 'w') as feven:
+        with io.open(
+                os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                'w') as flast, io.open(
+                    os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
+                        ('_' + suffix)
+                        if suffix else '') + '.json'), 'w') as feven:
             entabbed_json_dump(oentry, flast, separators=(',', ':'))
             entabbed_json_dump(oentry, feven, separators=(',', ':'))
 

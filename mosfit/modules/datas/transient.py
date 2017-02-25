@@ -65,8 +65,11 @@ class Transient(Module):
                 if any([x in entry for x in exc_subkeys]):
                     continue
                 if any([
-                        x in entry and
-                    (not is_number(entry[x]) or np.isnan(float(entry[x])))
+                        x in entry and ((isinstance(entry[x], list) and all([
+                            is_number(y) and not np.isnan(float(y))
+                            for y in entry[x]
+                        ])) or not is_number(entry[x]) or
+                                        np.isnan(float(entry[x])))
                         for x in num_subkeys
                 ]):
                     continue

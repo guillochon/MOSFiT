@@ -321,6 +321,11 @@
         }
     },
     {
+        "systems": [
+            "",
+            "Vega",
+            "Landolt"
+        ],
         "bandsets": [
             "Cousins"
         ],
