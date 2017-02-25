@@ -82,6 +82,7 @@ class Fitter():
                    exclude_instruments=[],
                    suffix='',
                    offline=False,
+                   upload=False,
                    **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -296,7 +297,8 @@ class Fitter():
                             frack_step=frack_step,
                             post_burn=post_burn,
                             pool=pool,
-                            suffix=suffix)
+                            suffix=suffix,
+                            upload=upload)
 
                     if pool.is_master():
                         pool.close()
@@ -405,7 +407,8 @@ class Fitter():
                  fracking=True,
                  post_burn=500,
                  pool='',
-                 suffix=''):
+                 suffix='',
+                 upload=False):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
@@ -679,6 +682,10 @@ class Fitter():
                           if suffix else '') + '.json'), 'w') as feven:
             entabbed_json_dump(oentry, flast, separators=(',', ':'))
             entabbed_json_dump(oentry, feven, separators=(',', ':'))
+
+        if upload:
+            hentry = entry.get_hash(keys=['redshift', 'lumdist', 'photometry'])
+            print('Data hash: ' + hentry)
 
         return (p, lnprob)
 
