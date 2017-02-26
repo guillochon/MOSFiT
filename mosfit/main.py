@@ -376,6 +376,9 @@ def main():
                         upload_token = upload_token[0]
 
         if get_token_from_user:
+            if args.travis:
+                upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
+                                '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
                 upload_token = prompt(
                     "Please paste your Dropbox token, then hit enter:",

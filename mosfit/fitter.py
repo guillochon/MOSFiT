@@ -18,6 +18,7 @@ import emcee
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
 from mosfit.__init__ import __version__
@@ -625,10 +626,15 @@ class Fitter():
                     task in model._parameter_json):
                 task_copy.update(model._parameter_json[task])
             model_setup[task] = task_copy
+        WAIC = calculate_WAIC(scores)
         modeldict = OrderedDict(
             [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
-             (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
+             (MODEL.VERSION, __version__), (MODEL.SOURCE, source), (
+                 MODEL.SCORE, {
+                     QUANTITY.VALUE: str(WAIC),
+                     QUANTITY.KIND: 'WAIC'
+                 })])
 
         if upload:
             umodeldict = deepcopy(modeldict)
@@ -637,7 +643,6 @@ class Fitter():
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
-                WAIC = calculate_WAIC(scores)
                 if WAIC < 0.0:
                     print_wrapped(
                         'WAIC score `{}` below 0.0, not uploading this fit.'.
@@ -748,12 +753,19 @@ class Fitter():
                 [self._event_name, entryhash, modelhash]) + '.json'
             ouentry = {self._event_name: uentry._ordered(uentry)}
             upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
-            dbx = dropbox.Dropbox(upload_token)
-            dbx.files_upload(
-                upayload.encode(),
-                upath,
-                mode=dropbox.files.WriteMode.overwrite)
-            print_wrapped('Uploading complete!', wrap_length=self._wrap_length)
+            try:
+                dbx = dropbox.Dropbox(upload_token)
+                dbx.files_upload(
+                    upayload.encode(),
+                    upath,
+                    mode=dropbox.files.WriteMode.overwrite)
+                print_wrapped(
+                    'Uploading complete!', wrap_length=self._wrap_length)
+            except:
+                if travis:
+                    pass
+                else:
+                    raise
 
         return (p, lnprob)
 
