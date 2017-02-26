@@ -680,13 +680,13 @@ class Fitter():
                         photodict[PHOTOMETRY.INSTRUMENT] = output[
                             'instruments'][i]
                     entry.add_photometry(
-                        compare_against_existing=False, **photodict)
+                        compare_to_existing=False, **photodict)
 
                     if upload_this:
                         uphotodict = deepcopy(photodict)
                         uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                         uentry.add_photometry(
-                            compare_against_existing=False, **uphotodict)
+                            compare_to_existing=False, **uphotodict)
 
                 parameters = OrderedDict()
                 derived_keys = set()
@@ -831,7 +831,8 @@ class Fitter():
                      progress='',
                      acor='',
                      messages=[]):
-        """Prints a status message showing the current state of the fitting process.
+        """Prints a status message showing the current state of the fitting
+        process.
         """
 
         class bcolors:
