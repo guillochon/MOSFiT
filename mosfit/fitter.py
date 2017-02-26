@@ -476,9 +476,6 @@ class Fitter():
                 # than their peers.
                 maxmedstd = [(np.max(x + y), np.mean(x + y), np.median(x + y),
                               np.var(x + y)) for x, y in zip(lnprob, lnlike)]
-                # print('\n\n\n')
-                # print(maxmedstd)
-                # print('\n\n\n')
                 redraw_count = 0
                 bad_redraws = 0
                 for ti, tprob in enumerate(lnprob):
@@ -490,7 +487,7 @@ class Fitter():
                              (maxmedstd[ti][0] - maxmedstd[ti][2])) or
                                 np.isnan(tot_score)):
                             redraw_count = redraw_count + 1
-                            dxx = np.random.normal(scale=0.01, size=ndim)
+                            dxx = np.random.normal(scale=0.001, size=ndim)
                             tar_x = np.array(p[np.random.randint(ntemps)][
                                 np.random.randint(nwalkers)])
                             new_x = np.clip(tar_x + dxx, 0.0, 1.0)
