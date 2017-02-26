@@ -156,8 +156,11 @@ def entabbed_json_dump(string, f, **kwargs):
 
 
 def calculate_WAIC(scores):
+    """WAIC from Gelman
+    http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
+    """
     fscores = [x for y in scores for x in y]
-    return np.mean(fscores) - np.var(fscores)
+    return 2.0 * (np.mean(fscores) - np.var(fscores))
 
 
 def flux_density_unit(unit):

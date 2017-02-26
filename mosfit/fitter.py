@@ -474,17 +474,20 @@ class Fitter():
 
                 # First, redraw any walkers with scores significantly worse
                 # than their peers.
-                maxmedstd = [(np.max(x + y), np.median(x + y), np.std(x + y))
-                             for x, y in zip(lnprob, lnlike)]
+                maxmedstd = [(np.max(x + y), np.mean(x + y), np.median(x + y),
+                              np.var(x + y)) for x, y in zip(lnprob, lnlike)]
+                # print('\n\n\n')
+                # print(maxmedstd)
+                # print('\n\n\n')
                 redraw_count = 0
                 bad_redraws = 0
                 for ti, tprob in enumerate(lnprob):
                     for wi, wprob in enumerate(tprob):
                         tot_score = wprob + lnlike[ti][wi]
-                        if (tot_score <= maxmedstd[ti][1] - 3.0 *
-                                maxmedstd[ti][2] or tot_score <=
-                            (maxmedstd[ti][0] - 10.0 *
-                             (maxmedstd[ti][0] - maxmedstd[ti][1])) or
+                        if (tot_score <= maxmedstd[ti][1] - 2.0 *
+                                maxmedstd[ti][3] or tot_score <=
+                            (maxmedstd[ti][0] - 2.0 *
+                             (maxmedstd[ti][0] - maxmedstd[ti][2])) or
                                 np.isnan(tot_score)):
                             redraw_count = redraw_count + 1
                             dxx = np.random.normal(scale=0.01, size=ndim)
@@ -871,8 +874,6 @@ class Fitter():
                 for x in scores
             ]) + ' ]'
             outarr.append(scorestring)
-            # WAIC from Gelman
-            # http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
             scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
             outarr.append(scorestring)
         if isinstance(progress, list):
