@@ -23,7 +23,7 @@ from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
 from mosfit.__init__ import __version__
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
-                          flux_density_unit, frequency_unit,
+                          flux_density_unit, frequency_unit, get_model_hash,
                           get_url_file_handle, is_number, pretty_num,
                           print_inline, print_wrapped, prompt)
 from schwimmbad import MPIPool, SerialPool
@@ -634,6 +634,11 @@ class Fitter():
                  MODEL.SCORE, {
                      QUANTITY.VALUE: str(WAIC),
                      QUANTITY.KIND: 'WAIC'
+                 }), (MODEL.CONVERGENCE, {
+                     QUANTITY.VALUE: str(aa),
+                     QUANTITY.KIND: 'autocorrelationtimes'
+                 }), (MODEL.STEPS, {
+                     QUANTITY.VALUE: str(emi1)
                  })])
 
         if upload:
