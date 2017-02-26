@@ -1,6 +1,7 @@
 import argparse
 import os
 import shutil
+import sys
 from unicodedata import normalize
 
 from mosfit import __version__
@@ -277,7 +278,7 @@ def main():
               "the user to provide a token."))
 
     parser.add_argument(
-        '--check-upload-quality',
+        '--ignore-upload-quality',
         dest='check_upload_quality',
         default=True,
         action='store_false',
@@ -338,6 +339,28 @@ def main():
 
         upload_token_path = os.path.join(dir_path, 'cache',
                                          'dropbox.token')
+
+        # Perform a few checks on upload before running (to keep size
+        # manageable)
+        if args.upload and args.smooth_times > 100:
+            response = prompt(
+                'You have set the `--smooth-times` flag to a value '
+                'greater than 100, which will disable uploading. Continue '
+                'with uploading disabled?')
+            if response:
+                args.upload = False
+            else:
+                sys.exit()
+
+        if args.upload and args.num_walkers * args.num_temps > 200:
+            response = prompt(
+                'The product of `--num-walkers` and `--num-temps` exceeds '
+                '200, which will disable uploading. Continue '
+                'with uploading disabled?')
+            if response:
+                args.upload = False
+            else:
+                sys.exit()
 
         if args.upload:
             if not os.path.isfile(upload_token_path):

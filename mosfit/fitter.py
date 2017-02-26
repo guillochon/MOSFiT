@@ -659,7 +659,7 @@ class Fitter():
                         output['times'][i] + output['min_times'],
                         PHOTOMETRY.MODEL: modelnum,
                         PHOTOMETRY.SOURCE: source,
-                        PHOTOMETRY.REALIZATION: str(xi * len(p[0]) + yi + 1)
+                        PHOTOMETRY.REALIZATION: str(ri)
                     }
                     if output['observation_types'][i] == 'magnitude':
                         photodict[PHOTOMETRY.BAND] = output['bands'][i]
@@ -746,7 +746,8 @@ class Fitter():
                 wrap_length=self._wrap_length)
             upath = '/' + '_'.join(
                 [self._event_name, entryhash, modelhash]) + '.json'
-            upayload = entabbed_json_dumps(uentry, separators=(',', ':'))
+            ouentry = {self._event_name: uentry._ordered(uentry)}
+            upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
             dbx = dropbox.Dropbox(upload_token)
             dbx.files_upload(
                 upayload.encode(),
