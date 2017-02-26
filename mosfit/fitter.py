@@ -21,9 +21,10 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
 from mosfit.__init__ import __version__
-from mosfit.utils import (entabbed_json_dump, flux_density_unit,
-                          frequency_unit, get_url_file_handle, is_number,
-                          pretty_num, print_inline, print_wrapped, prompt)
+from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
+                          flux_density_unit, frequency_unit,
+                          get_url_file_handle, is_number, pretty_num,
+                          print_inline, print_wrapped, prompt)
 from schwimmbad import MPIPool, SerialPool
 
 from .model import Model

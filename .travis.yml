@@ -54,4 +54,4 @@ script:
 
 # Run coveralls
 after_success:
-    if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls; fi
