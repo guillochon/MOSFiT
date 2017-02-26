@@ -241,7 +241,7 @@ def main():
         '-f',
         dest='frack_step',
         type=int,
-        default=20,
+        default=50,
         help=("Perform `fracking` every this number of steps while in the "
               "burn-in phase of the fitting process."))
 

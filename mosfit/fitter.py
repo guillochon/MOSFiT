@@ -11,19 +11,19 @@ import warnings
 from collections import OrderedDict
 from difflib import get_close_matches
 
-import emcee
 import numpy as np
-from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
 
+import emcee
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.realization import REALIZATION
+from emcee.autocorr import AutocorrError
 from mosfit.__init__ import __version__
 from mosfit.utils import (entabbed_json_dump, flux_density_unit,
                           frequency_unit, get_url_file_handle, is_number,
                           pretty_num, print_inline, print_wrapped, prompt)
+from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -71,7 +71,7 @@ class Fitter():
                    num_temps=2,
                    parameter_paths=[],
                    fracking=True,
-                   frack_step=20,
+                   frack_step=50,
                    wrap_length=100,
                    travis=False,
                    post_burn=500,
@@ -452,23 +452,25 @@ class Fitter():
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
-            for emi, (
-                    p, lnprob, lnlike
-            ) in enumerate(sampler.sample(
-                    p, iterations=iterations)):
+            for emi, (p, lnprob, lnlike
+                      ) in enumerate(sampler.sample(
+                          p, iterations=iterations)):
                 emi1 = emi + 1
                 messages = []
 
                 # First, redraw any walkers with scores significantly worse
                 # than their peers.
-                medstd = [(np.median(x + y), np.std(x + y))
-                          for x, y in zip(lnprob, lnlike)]
+                maxmedstd = [(np.max(x + y), np.median(x + y), np.std(x + y))
+                             for x, y in zip(lnprob, lnlike)]
                 redraw_count = 0
                 bad_redraws = 0
                 for ti, tprob in enumerate(lnprob):
                     for wi, wprob in enumerate(tprob):
                         tot_score = wprob + lnlike[ti][wi]
-                        if (tot_score <= medstd[ti][0] - 3.0 * medstd[ti][1] or
+                        if (tot_score <= maxmedstd[ti][1] - 3.0 *
+                                maxmedstd[ti][2] or tot_score <=
+                            (maxmedstd[ti][0] - 10.0 *
+                             (maxmedstd[ti][0] - maxmedstd[ti][1])) or
                                 np.isnan(tot_score)):
                             redraw_count = redraw_count + 1
                             dxx = np.random.normal(scale=0.01, size=ndim)
@@ -715,8 +717,7 @@ class Fitter():
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val
-                for x in range(len(band_list_all) - len(band_systems))
+                rep_val for x in range(len(band_list_all) - len(band_systems))
             ]
         if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
