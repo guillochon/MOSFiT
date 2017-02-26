@@ -3,7 +3,7 @@ python:
     - "2.7"
     - "3.4"
     - "3.5"
-    - "3.6-dev"
+    - "3.6"
 notifications:
     slack: astrochats:tV2KNwL9jXSGSv5KhulGNVro
 git:
@@ -23,12 +23,8 @@ before_install:
     - conda config --set always_yes yes --set changeps1 no
     - conda update -q conda;
 install:
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "3.6-dev" ]];
-      then export TPV="3.5.2"; else
-      export TPV=$TRAVIS_PYTHON_VERSION;
-      fi
     - conda update setuptools
-    - conda install --yes python=$TPV matplotlib mpi4py scipy jupyter
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy jupyter
     - pip install coveralls
     - pip install -r requirements.txt
     - coverage run -p setup.py install
@@ -54,4 +50,4 @@ script:
 
 # Run coveralls
 after_success:
-    - if [[ $TRAVIS_PYTHON_VERSION == 3.5 ]]; then coveralls; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then coveralls; fi
