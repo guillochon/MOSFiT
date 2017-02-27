@@ -177,6 +177,12 @@ def frequency_unit(unit):
     return 1.0
 
 
+def hash_bytes(input_string):
+    if sys.version_info[0] < 3:
+        return bytes(input_string)
+    return input_string.encode()
+
+
 def get_model_hash(modeldict, ignore_keys=[]):
     """Return a unique hash for the given model
     """
@@ -185,7 +191,8 @@ def get_model_hash(modeldict, ignore_keys=[]):
         if key not in ignore_keys:
             newdict[key] = modeldict[key]
     string_rep = json.dumps(newdict, sort_keys=True)
-    return hashlib.sha512(string_rep.encode()).hexdigest()[:16]
+
+    return hashlib.sha512(hash_bytes(string_rep)).hexdigest()[:16]
 
 
 def get_mosfit_hash(salt=''):
@@ -205,7 +212,7 @@ def get_mosfit_hash(salt=''):
         with open(match, 'r') as f:
             code_str += f.read()
 
-    return hashlib.sha512(code_str.encode()).hexdigest()[:16]
+    return hashlib.sha512(hash_bytes(code_str)).hexdigest()[:16]
 
 
 def is_master():
