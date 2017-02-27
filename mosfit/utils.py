@@ -3,13 +3,17 @@
 """
 from __future__ import print_function
 
+import hashlib
 import json
 import re
 import signal
 import sys
 from builtins import input
+from collections import OrderedDict
 from math import floor, log10
 from textwrap import fill
+
+import numpy as np
 
 if sys.version_info[:2] < (3, 3):
     old_print = print
@@ -99,6 +103,8 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
             'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
                 len(options)) + '/[n]):'
         ])
+    elif kind == 'string':
+        choices = ''
     else:
         raise ValueError('Unknown prompt kind.')
 
@@ -106,27 +112,28 @@ def prompt(text, wrap_length=100, kind='bool', options=None):
     for txt in prompt_txt[:-1]:
         ptxt = fill(txt, wrap_length, replace_whitespace=False)
         print(ptxt)
-    user_choice = input(
+    user_input = input(
         fill(
             prompt_txt[-1], wrap_length, replace_whitespace=False) + " ")
     if kind == 'bool':
-        return user_choice in ["Y", "y", "Yes", "yes"]
+        return user_input in ["Y", "y", "Yes", "yes"]
     elif kind == 'select':
-        if (is_integer(user_choice) and
-                int(user_choice) in list(range(1, len(options) + 1))):
-            return options[int(user_choice) - 1]
+        if (is_integer(user_input) and
+                int(user_input) in list(range(1, len(options) + 1))):
+            return options[int(user_input) - 1]
         return False
+    elif kind == 'string':
+        return user_input
 
 
 def init_worker():
     signal.signal(signal.SIGINT, signal.SIG_IGN)
 
 
-def entabbed_json_dump(string, f, **kwargs):
+def entabbed_json_dumps(string, **kwargs):
     if sys.version_info[:2] >= (3, 3):
-        json.dump(
+        return json.dumps(
             string,
-            f,
             indent='\t',
             separators=kwargs['separators'],
             ensure_ascii=False)
@@ -141,7 +148,21 @@ def entabbed_json_dump(string, f, **kwargs):
         '\n +',
         lambda match: '\n' + '\t' * (len(match.group().strip('\n')) / 4),
         newstr)
-    f.write(newstr)
+    return newstr
+
+
+def entabbed_json_dump(string, f, **kwargs):
+    f.write(entabbed_json_dumps(string, **kwargs))
+
+
+def calculate_WAIC(scores):
+    """WAIC from Gelman
+    http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
+    """
+    fscores = [x for y in scores for x in y]
+    # Technically needs to be multiplied by -2, but this makes score easily
+    # relatable to maximum likelihood score.
+    return np.mean(fscores) - np.var(fscores)
 
 
 def flux_density_unit(unit):
@@ -154,6 +175,44 @@ def frequency_unit(unit):
     if unit == 'GHz':
         return 1.0 / 1.0e9
     return 1.0
+
+
+def hash_bytes(input_string):
+    if sys.version_info[0] < 3:
+        return bytes(input_string)
+    return input_string.encode()
+
+
+def get_model_hash(modeldict, ignore_keys=[]):
+    """Return a unique hash for the given model
+    """
+    newdict = OrderedDict()
+    for key in modeldict:
+        if key not in ignore_keys:
+            newdict[key] = modeldict[key]
+    string_rep = json.dumps(newdict, sort_keys=True)
+
+    return hashlib.sha512(hash_bytes(string_rep)).hexdigest()[:16]
+
+
+def get_mosfit_hash(salt=''):
+    import fnmatch
+    import os
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    matches = []
+    for root, dirnames, filenames in os.walk(dir_path):
+        for filename in fnmatch.filter(filenames, '*.py'):
+            matches.append(os.path.join(root, filename))
+
+    matches = list(sorted(list(matches)))
+    code_str = salt
+    for match in matches:
+        with open(match, 'r') as f:
+            code_str += f.read()
+
+    return hashlib.sha512(hash_bytes(code_str)).hexdigest()[:16]
 
 
 def is_master():
