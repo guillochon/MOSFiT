@@ -637,9 +637,7 @@ class Fitter():
                  }), (MODEL.CONVERGENCE, {
                      QUANTITY.VALUE: str(aa),
                      QUANTITY.KIND: 'autocorrelationtimes'
-                 }), (MODEL.STEPS, {
-                     QUANTITY.VALUE: str(emi1)
-                 })])
+                 }), (MODEL.STEPS, str(emi1))])
 
         if upload:
             umodeldict = deepcopy(modeldict)

@@ -160,7 +160,9 @@ def calculate_WAIC(scores):
     http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
     """
     fscores = [x for y in scores for x in y]
-    return 2.0 * (np.mean(fscores) - np.var(fscores))
+    # Technically needs to be multiplied by -2, but this makes score easily
+    # relatable to maximum likelihood score.
+    return np.mean(fscores) - np.var(fscores)
 
 
 def flux_density_unit(unit):
@@ -184,6 +186,26 @@ def get_model_hash(modeldict, ignore_keys=[]):
             newdict[key] = modeldict[key]
     string_rep = json.dumps(newdict, sort_keys=True)
     return hashlib.sha512(string_rep.encode()).hexdigest()[:16]
+
+
+def get_mosfit_hash(salt=''):
+    import fnmatch
+    import os
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    matches = []
+    for root, dirnames, filenames in os.walk(dir_path):
+        for filename in fnmatch.filter(filenames, '*.py'):
+            matches.append(os.path.join(root, filename))
+
+    matches = list(sorted(list(matches)))
+    code_str = salt
+    for match in matches:
+        with open(match, 'r') as f:
+            code_str += f.read()
+
+    return hashlib.sha512(code_str.encode()).hexdigest()[:16]
 
 
 def is_master():
