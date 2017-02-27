@@ -58,7 +58,7 @@ The code outputs JSON files for each event/model combination that each contain a
 To upload fits back to the open astronomy catalogs, users simply pass the `-u` to the the code:
 
 ```bash
-python -m mosfit -e LSQ12dlf -m slsn
+python -m mosfit -e LSQ12dlf -m slsn -u
 ```
 
-If the fits satisfy some quality checks, the model fits will be displayed on the open catalogs within 48 hours of their submission.
+After running MOSFiT to completion, and if the fits satisfy some quality checks, the model fits will be displayed on the open catalogs within 48 hours of their submission.
