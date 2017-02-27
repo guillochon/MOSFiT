@@ -180,12 +180,15 @@ class Fitter():
                                     if len(matches) == 5:
                                         break
                             if len(matches):
-                                response = prompt(
-                                    'No exact match to given event '
-                                    'found. Did you mean one of the '
-                                    'following events?',
-                                    kind='select',
-                                    options=list(matches))
+                                if travis:
+                                    response = matches[0]
+                                else:
+                                    response = prompt(
+                                        'No exact match to given event '
+                                        'found. Did you mean one of the '
+                                        'following events?',
+                                        kind='select',
+                                        options=list(matches))
                                 if response:
                                     for name in names:
                                         if response in names[name]:
