@@ -425,7 +425,7 @@ class Fitter():
         global model
         model = self._model
 
-        upload_this = upload
+        upload_this = upload and iterations > 0
 
         if not pool.is_master():
             try:
@@ -626,18 +626,22 @@ class Fitter():
                     task in model._parameter_json):
                 task_copy.update(model._parameter_json[task])
             model_setup[task] = task_copy
-        WAIC = calculate_WAIC(scores)
         modeldict = OrderedDict(
             [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
-             (MODEL.VERSION, __version__), (MODEL.SOURCE, source), (
-                 MODEL.SCORE, {
-                     QUANTITY.VALUE: str(WAIC),
-                     QUANTITY.KIND: 'WAIC'
-                 }), (MODEL.CONVERGENCE, {
-                     QUANTITY.VALUE: str(aa),
-                     QUANTITY.KIND: 'autocorrelationtimes'
-                 }), (MODEL.STEPS, str(emi1))])
+             (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
+
+        if iterations > 0:
+            WAIC = calculate_WAIC(scores)
+            modeldict[MODEL.SCORE] = {
+                QUANTITY.VALUE: str(WAIC),
+                QUANTITY.KIND: 'WAIC'
+            }
+            modeldict[MODEL.CONVERGENCE] = {
+                QUANTITY.VALUE: str(aa),
+                QUANTITY.KIND: 'autocorrelationtimes'
+            }
+            modeldict[MODEL.STEPS] = str(emi1)
 
         if upload:
             umodeldict = deepcopy(modeldict)
