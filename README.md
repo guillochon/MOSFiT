@@ -16,7 +16,7 @@ cd MOSFiT
 python setup.py install
 ```
 
-Once installed, MOSFiT can be run from any directory, and it's typically convenient to make a new directory for your project.
+Once installed, `MOSFiT` can be run from any directory, and it's typically convenient to make a new directory for your project.
 
 ```bash
 mkdir mosfit_runs
@@ -29,7 +29,7 @@ Then, to run `MOSFiT`, pass an event name to the program via the `-e` flag (the 
 python -m mosfit -e LSQ12dlf
 ```
 
-Different models (several are distributed with MOSFiT) can be fit to supernovae using the model flag `-m`:
+Different models (several are distributed with `MOSFiT`) can be fit to supernovae using the model flag `-m`:
 
 ```bash
 python -m mosfit -e LSQ12dlf -m slsn
@@ -41,13 +41,13 @@ Multiple events can be fit in succession by passing a list of names separated by
 python -m mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 ```
 
-MOSFiT is parallelized and can be run in parallel by prepending `mpirun -np #`, where `#` is the number of processors in your machine +1 for the master process. So, if you computer has 4 processors, the above command would be:
+`MOSFiT` is parallelized and can be run in parallel by prepending `mpirun -np #`, where `#` is the number of processors in your machine +1 for the master process. So, if you computer has 4 processors, the above command would be:
 
 ```bash
 mpirun -np 5 python -m mosfit -e LSQ12dlf
 ```
 
-MOSFiT can also be run without specifying an event, which will yield a collection of light curves for the specified model described by the priors on the possible combinations of input parameters specified in the `parameters.json` file. This is useful for determining the range of possible outcomes for a given theoretical model:
+`MOSFiT` can also be run without specifying an event, which will yield a collection of light curves for the specified model described by the priors on the possible combinations of input parameters specified in the `parameters.json` file. This is useful for determining the range of possible outcomes for a given theoretical model:
 
 ```bash
 mpirun -np 5 python -m mosfit -i 0 -m magnetar
@@ -61,4 +61,4 @@ To upload fits back to the open astronomy catalogs, users simply pass the `-u` t
 python -m mosfit -e LSQ12dlf -m slsn -u
 ```
 
-After running MOSFiT to completion, and if the fits satisfy some quality checks, the model fits will be displayed on the open catalogs within 48 hours of their submission.
+After running `MOSFiT` to completion, and if the fits satisfy some quality checks, the model fits will be displayed on the open catalogs within 48 hours of their submission.
