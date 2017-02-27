@@ -37,28 +37,25 @@ class Viscous(Transform):
         evaled = False
         lum_cache = {}
         lum_func = interp1d(self._dense_times_since_exp, self._dense_luminosities)
+        sparse_luminosities = lum_func(self._times_since_exp)
         timesteps = self.N_INT_TIMES
         addlums = False
         nummatch = int(0.02*len(self._dense_times_since_exp)) # this is kinda random right now...
         if nummatch < 10 : nummatch = 10 # have to match at least 10 pts
         min_te = min(self._dense_times_since_exp)
-        j = 0
+        #j = 0
         lumzero = True
         #print (self._dense_luminosities)
         #print (self._dense_times_since_exp)
-        for te in self._times_since_exp:
+        for j,te in enumerate(self._times_since_exp):
             if te <= 0.0:
                 new_lum.append(0.0)
-                j+=1
                 continue
             if te in lum_cache:
-                new_lum.append(lum_cache[te])
-                j+=1
+                new_lum.append(lum_cache[te])   
                 continue
             if lumzero == True and lum_func(te) <= 0:
                 new_lum.append(0.0)
-                #print (lum_func(te))
-                j+=1
                 continue
 
             lumzero = False # at least one nonzero luminosity term
@@ -96,22 +93,21 @@ class Viscous(Transform):
             # The following if statement tests whether the viscously delayed luminosities have converged to 
             # the old ones and if they have then it switches back to the old ones (doesn't do further integration)
             '''if te > tpeak and len(new_lum) > nummatch:
-                #print (new_lum[-nummatch:])
-                #print (self._dense_luminosities[j-nummatch:j])
-                if (np.abs(new_lum[-nummatch:]-self._dense_luminosities[j-nummatch:j]/(
-                    self._dense_luminosities[j-nummatch:j] + 1.)) < .01).all() == True: # if the last 'nummatch' new 
+                if (np.abs(new_lum[-nummatch:]-sparse_luminosities[j-nummatch:j]/(
+                    sparse_luminosities[j-nummatch:j] + 1.)) < .01).all() == True: # if the last 'nummatch' new 
                     # luminosities match the old ones --> viscously delayed lums have converged back to old light curve, 
                     # then just use old light curve for rest of points. Also + 1. in the denominator prevents divisions by zero
                     addlums = True
                     break
             '''
-            j += 1 # keep track of index of te in self._times_since_exp
         
         if addlums == True:
-            new_lum.extend(self._dense_luminosities[j+1:])
+            #notdenselums = lum_func(self._times_since_exp[j+1+i])
+            #new_lum.extend(self._dense_luminosities[j+1:])
+            new_lum.extend(sparse_luminosities[j+1:])
             # add additional lums to dictionary lum_cache here as well:
             for i in range(len(self._dense_luminosities[j+1:])):
-                lum_cache[self._times_since_exp[j+1+i]] = self._dense_luminosities[j+1+i]
+                lum_cache[self._times_since_exp[j+1+i]] = sparse_luminosities[j+1+i] #lum_func(self._dense_luminosities[j+1+i])
 
 
         return {'luminosities': new_lum}
