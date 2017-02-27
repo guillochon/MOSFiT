@@ -181,7 +181,7 @@ class Fitter():
                                         break
                             if len(matches):
                                 if travis:
-                                    response = matches[0]
+                                    response = list(matches)[0]
                                 else:
                                     response = prompt(
                                         'No exact match to given event '
