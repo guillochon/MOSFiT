@@ -1,4 +1,7 @@
 class Module(object):
+    """Base Module class.
+    """
+
     def __init__(self, name, pool, **kwargs):
         self._name = name
         self._log = False

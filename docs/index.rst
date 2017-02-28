@@ -3,14 +3,24 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to MOSFiT's documentation!
-==================================
+MOSFiT documentation
+====================
+
+Using MOSFiT
+------------
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
+   installation.rst
+   getting_started.rst
 
+API
+---
+.. toctree::
+   :maxdepth: 1
+
+   api.rst
 
 Indices and tables
 ==================

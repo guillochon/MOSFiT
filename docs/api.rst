@@ -1,0 +1,3 @@
+API
+===
+.. automodapi:: mosfit.modules

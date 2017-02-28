@@ -1,3 +1,6 @@
+"""The main function.
+"""
+
 import argparse
 import os
 import shutil
