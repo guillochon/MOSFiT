@@ -133,16 +133,16 @@ class Fallback(Engine):
         self._b = kwargs['b'] # change beta to this in parameters.json and tde.json
 
         if 0 <= self._b < 1 : 
-            # 0.6 + (1.12 - 0.6)*b --> 0.6 is min disruption beta43, 1.12 is full disruption beta43
-            beta43 = 0.6 + 0.52*self._b
-            # 0.5 + (0.67 - 0.5)*b --> 0.5 is min disruption beta53, 0.67 is full disruption beta53
-            beta53 = 0.5 + 0.17*self._b 
+            # 0.6 + (1.85 - 0.6)*b --> 0.6 is min disruption beta43, 1.85 is full disruption beta43
+            beta43 = 0.6 + 1.25*self._b
+            # 0.5 + (0.9 - 0.5)*b --> 0.5 is min disruption beta53, 0.9 is full disruption beta53
+            beta53 = 0.5 + 0.4*self._b 
 
             self._beta = {'4-3': beta43, '5-3': beta53}
 
         elif 1 <= self._b <= 2:
-            beta43 = 1.12 + 2.88*(self._b - 1)
-            beta53 = 0.67 + 1.83*(self._b - 1)
+            beta43 = 1.85 + 2.15*(self._b - 1)
+            beta53 = 0.9 + 1.6*(self._b - 1)
             self._beta = {'4-3': beta43, '5-3': beta53}
 
         else: 
@@ -243,14 +243,18 @@ class Fallback(Engine):
 
                     ipeak = np.argmax(dmdt) # index of peak
 
+                    prepeakfunc = CubicSpline(time[:ipeak], dmdt[:ipeak])
+                    prepeaktimes = np.logspace(np.log10(time[0]),np.log10(time[ipeak-1]),1000)
+                    prepeakdmdt = prepeakfunc(prepeaktimes)
+
                     p = 0.1 # fraction of pre-peak dmdt to use for extrapolation to early times
                     start = 5 # will cut off some part of original dmdt array, this # might change
 
-                    index1 = int(ipeak*p)
+                    index1 = int(len(prepeakdmdt)*p) #int(ipeak*p)
 
                     while (index1 < 8):  # p should not be larger than 0.3
                         p += 0.1
-                        index1 = int(ipeak*p)
+                        index1 = int(len(prepeakdmdt)*p) #int(ipeak*p)
                         if p >= 0.3: 
                             #print ('enter')
                             break
@@ -261,17 +265,20 @@ class Fallback(Engine):
                         if start == 0: break
 
 
-                    if p*2 < 0.5 : index2 = int(ipeak*(p*2)) # ensure extrap. won't extend more than halfway to peak
-                    else: index2 = int(ipeak*0.5)
+                    if p*2 < 0.5 : index2 = int(len(prepeakdmdt)*p*2) #int(ipeak*(p*2)) # ensure extrap. won't extend more than halfway to peak
+                    else: index2 = int(len(prepeakdmdt)*0.5) #int(ipeak*0.5)
 
                     #print ('ipeak, p, start, index1, index2', ipeak, p, start, index1, index2)
                     
-                    t1 = time[start:index1]
-                    d1 = dmdt[start:index1]
+                    t1 = prepeaktimes[start:index1]
+                    d1 = prepeakdmdt[start:index1]
 
-                    t2 = time[index2 - (index1 - start):index2]
-                    d2 = dmdt[index2 - (index1 - start):index2]
+                    t2 = prepeaktimes[index2 - (index1 - start):index2]
+                    d2 = prepeakdmdt[index2 - (index1 - start):index2]
 
+                    #print ('index1:',index1)
+                    #print ('index2:', index2)
+                    #print ('p:', p)
                     # exponent for power law fit
                     #print (start, index1, index2)
                     xi = np.log(d1/d2)/np.log(t1/t2)
@@ -286,11 +293,12 @@ class Fallback(Engine):
 
                     logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
 
-                    textp = np.logspace(logtfloor, np.log10(time[start+int(index1/2)]), num = 75) # ending extrapolation here will help make it a smoother transition
+                    indexext = len(time[time<prepeaktimes[index1]])
+                    textp = np.logspace(logtfloor, np.log10(time[start+int(indexext)]), num = 75) # ending extrapolation here will help make it a smoother transition
                     dextp = bavg*textp**xiavg
 
-                    time = np.concatenate((textp,time[start+int(index1/2) + 1:]))
-                    dmdt = np.concatenate((dextp,dmdt[start+int(index1/2) + 1:]))
+                    time = np.concatenate((textp,time[start+int(indexext) + 1:]))
+                    dmdt = np.concatenate((dextp,dmdt[start+int(indexext) + 1:]))
 
                 timedict[g] = time
                 dmdtdict[g] = dmdt
