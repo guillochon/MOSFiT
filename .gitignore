@@ -16,3 +16,4 @@ mosfit.egg-info/
 *.swp
 *.png
 .DS_Store
+_*
