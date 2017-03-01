@@ -118,7 +118,7 @@
             "vejecta"
         ]
     },
-    "TemperatureFloor":{
+    "temperature_floor":{
         "kind":"photosphere",
         "inputs":[
             "texplosion",
@@ -131,7 +131,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "TemperatureFloor",
+            "temperature_floor",
             "temperaturephot",
             "radiusphot"
         ],
