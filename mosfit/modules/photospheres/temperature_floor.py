@@ -3,14 +3,16 @@ from math import pi
 import numexpr as ne
 import numpy as np
 from astropy import constants as c
+
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
 
-CLASS_NAME = 'temperature_floor'
+CLASS_NAME = 'TemperatureFloor'
 
 
-class temperature_floor(Photosphere):
-    """Photosphere that expands and cools with ejecta then recedes at constant final temperature
+class TemperatureFloor(Photosphere):
+    """Photosphere that expands and cools with ejecta then recedes at constant
+    final temperature
     """
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value

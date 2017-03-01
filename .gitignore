@@ -16,3 +16,7 @@ mosfit.egg-info/
 *.swp
 *.png
 .DS_Store
+
+# Documentation
+docs/_build
+docs/api

@@ -13,6 +13,8 @@ from collections import OrderedDict
 from math import floor, log10
 from textwrap import fill
 
+import numpy as np
+
 if sys.version_info[:2] < (3, 3):
     old_print = print
 
@@ -153,6 +155,16 @@ def entabbed_json_dump(string, f, **kwargs):
     f.write(entabbed_json_dumps(string, **kwargs))
 
 
+def calculate_WAIC(scores):
+    """WAIC from Gelman
+    http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
+    """
+    fscores = [x for y in scores for x in y]
+    # Technically needs to be multiplied by -2, but this makes score easily
+    # relatable to maximum likelihood score.
+    return np.mean(fscores) - np.var(fscores)
+
+
 def flux_density_unit(unit):
     if unit == 'µJy':
         return 1.0 / (1.0e-6 * 1.0e-23)
@@ -165,6 +177,12 @@ def frequency_unit(unit):
     return 1.0
 
 
+def hash_bytes(input_string):
+    if sys.version_info[0] < 3:
+        return bytes(input_string)
+    return input_string.encode()
+
+
 def get_model_hash(modeldict, ignore_keys=[]):
     """Return a unique hash for the given model
     """
@@ -173,7 +191,28 @@ def get_model_hash(modeldict, ignore_keys=[]):
         if key not in ignore_keys:
             newdict[key] = modeldict[key]
     string_rep = json.dumps(newdict, sort_keys=True)
-    return hashlib.sha512(string_rep.encode()).hexdigest()[:16]
+
+    return hashlib.sha512(hash_bytes(string_rep)).hexdigest()[:16]
+
+
+def get_mosfit_hash(salt=''):
+    import fnmatch
+    import os
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    matches = []
+    for root, dirnames, filenames in os.walk(dir_path):
+        for filename in fnmatch.filter(filenames, '*.py'):
+            matches.append(os.path.join(root, filename))
+
+    matches = list(sorted(list(matches)))
+    code_str = salt
+    for match in matches:
+        with open(match, 'r') as f:
+            code_str += f.read()
+
+    return hashlib.sha512(hash_bytes(code_str)).hexdigest()[:16]
 
 
 def is_master():

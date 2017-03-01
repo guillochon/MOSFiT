@@ -12,21 +12,21 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
-import dropbox
-import emcee
 import numpy as np
-from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
 
+import emcee
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
+from emcee.autocorr import AutocorrError
 from mosfit.__init__ import __version__
-from mosfit.utils import (entabbed_json_dump, entabbed_json_dumps,
+from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           flux_density_unit, frequency_unit, get_model_hash,
                           get_url_file_handle, is_number, pretty_num,
                           print_inline, print_wrapped, prompt)
+from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -74,7 +74,7 @@ class Fitter():
                    num_temps=2,
                    parameter_paths=[],
                    fracking=True,
-                   frack_step=20,
+                   frack_step=50,
                    wrap_length=100,
                    travis=False,
                    post_burn=500,
@@ -87,6 +87,7 @@ class Fitter():
                    offline=False,
                    upload=False,
                    upload_token='',
+                   check_upload_quality=False,
                    **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -179,12 +180,15 @@ class Fitter():
                                     if len(matches) == 5:
                                         break
                             if len(matches):
-                                response = prompt(
-                                    'No exact match to given event '
-                                    'found. Did you mean one of the '
-                                    'following events?',
-                                    kind='select',
-                                    options=list(matches))
+                                if travis:
+                                    response = list(matches)[0]
+                                else:
+                                    response = prompt(
+                                        'No exact match to given event '
+                                        'found. Did you mean one of the '
+                                        'following events?',
+                                        kind='select',
+                                        options=list(matches))
                                 if response:
                                     for name in names:
                                         if response in names[name]:
@@ -303,7 +307,8 @@ class Fitter():
                             pool=pool,
                             suffix=suffix,
                             upload=upload,
-                            upload_token=upload_token)
+                            upload_token=upload_token,
+                            check_upload_quality=check_upload_quality)
 
                     if pool.is_master():
                         pool.close()
@@ -414,13 +419,16 @@ class Fitter():
                  pool='',
                  suffix='',
                  upload=False,
-                 upload_token=''):
+                 upload_token='',
+                 check_upload_quality=True):
         """Fit the data for a given event with this model using a combination
         of emcee and fracking.
         """
 
         global model
         model = self._model
+
+        upload_this = upload and iterations > 0
 
         if not pool.is_master():
             try:
@@ -461,26 +469,28 @@ class Fitter():
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
-            for emi, (
-                    p, lnprob, lnlike
-            ) in enumerate(sampler.sample(
-                    p, iterations=iterations)):
+            for emi, (p, lnprob, lnlike
+                      ) in enumerate(sampler.sample(
+                          p, iterations=iterations)):
                 emi1 = emi + 1
                 messages = []
 
                 # First, redraw any walkers with scores significantly worse
                 # than their peers.
-                medstd = [(np.median(x + y), np.std(x + y))
-                          for x, y in zip(lnprob, lnlike)]
+                maxmedstd = [(np.max(x + y), np.mean(x + y), np.median(x + y),
+                              np.var(x + y)) for x, y in zip(lnprob, lnlike)]
                 redraw_count = 0
                 bad_redraws = 0
                 for ti, tprob in enumerate(lnprob):
                     for wi, wprob in enumerate(tprob):
                         tot_score = wprob + lnlike[ti][wi]
-                        if (tot_score <= medstd[ti][0] - 3.0 * medstd[ti][1] or
+                        if (tot_score <= maxmedstd[ti][1] - 2.0 *
+                                maxmedstd[ti][3] or tot_score <=
+                            (maxmedstd[ti][0] - 2.0 *
+                             (maxmedstd[ti][0] - maxmedstd[ti][2])) or
                                 np.isnan(tot_score)):
                             redraw_count = redraw_count + 1
-                            dxx = np.random.normal(scale=0.01, size=ndim)
+                            dxx = np.random.normal(scale=0.001, size=ndim)
                             tar_x = np.array(p[np.random.randint(ntemps)][
                                 np.random.randint(nwalkers)])
                             new_x = np.clip(tar_x + dxx, 0.0, 1.0)
@@ -524,12 +534,12 @@ class Fitter():
                 frack_now = (fracking and emi1 <= self._burn_in and
                              emi1 % frack_step == 0)
 
+                scores = [
+                    np.array(x) + np.array(y) for x, y in zip(lnprob, lnlike)
+                ]
                 self.print_status(
                     desc='Fracking' if frack_now else 'Walking',
-                    scores=[
-                        np.array(x) + np.array(y)
-                        for x, y in zip(lnprob, lnlike)
-                    ],
+                    scores=scores,
                     progress=[emi1, iterations],
                     acor=acor,
                     messages=messages)
@@ -624,12 +634,31 @@ class Fitter():
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
              (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
 
+        if iterations > 0:
+            WAIC = calculate_WAIC(scores)
+            modeldict[MODEL.SCORE] = {
+                QUANTITY.VALUE: str(WAIC),
+                QUANTITY.KIND: 'WAIC'
+            }
+            modeldict[MODEL.CONVERGENCE] = {
+                QUANTITY.VALUE: str(aa),
+                QUANTITY.KIND: 'autocorrelationtimes'
+            }
+            modeldict[MODEL.STEPS] = str(emi1)
+
         if upload:
             umodeldict = deepcopy(modeldict)
             umodeldict[MODEL.SOURCE] = usource
             modelhash = get_model_hash(
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
             umodelnum = uentry.add_model(**umodeldict)
+            if check_upload_quality:
+                if WAIC < 0.0:
+                    print_wrapped(
+                        'WAIC score `{}` below 0.0, not uploading this fit.'.
+                        format(pretty_num(WAIC)),
+                        wrap_length=self._wrap_length)
+                    upload_this = False
 
         modelnum = entry.add_model(**modeldict)
 
@@ -645,7 +674,7 @@ class Fitter():
                         output['times'][i] + output['min_times'],
                         PHOTOMETRY.MODEL: modelnum,
                         PHOTOMETRY.SOURCE: source,
-                        PHOTOMETRY.REALIZATION: str(xi * len(p[0]) + yi + 1)
+                        PHOTOMETRY.REALIZATION: str(ri)
                     }
                     if output['observation_types'][i] == 'magnitude':
                         photodict[PHOTOMETRY.BAND] = output['bands'][i]
@@ -666,13 +695,13 @@ class Fitter():
                         photodict[PHOTOMETRY.INSTRUMENT] = output[
                             'instruments'][i]
                     entry.add_photometry(
-                        compare_against_existing=False, **photodict)
+                        compare_to_existing=False, **photodict)
 
-                    if upload:
+                    if upload_this:
                         uphotodict = deepcopy(photodict)
                         uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                         uentry.add_photometry(
-                            compare_against_existing=False, **uphotodict)
+                            compare_to_existing=False, **uphotodict)
 
                 parameters = OrderedDict()
                 derived_keys = set()
@@ -705,7 +734,7 @@ class Fitter():
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
-                if upload:
+                if upload_this:
                     uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
 
@@ -724,7 +753,7 @@ class Fitter():
             entabbed_json_dump(oentry, flast, separators=(',', ':'))
             entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
-        if upload:
+        if upload_this:
             uentry.sanitize()
             print_wrapped('Uploading fit...', wrap_length=self._wrap_length)
             print_wrapped(
@@ -732,13 +761,21 @@ class Fitter():
                 wrap_length=self._wrap_length)
             upath = '/' + '_'.join(
                 [self._event_name, entryhash, modelhash]) + '.json'
-            upayload = entabbed_json_dumps(uentry, separators=(',', ':'))
-            dbx = dropbox.Dropbox(upload_token)
-            dbx.files_upload(
-                upayload.encode(),
-                upath,
-                mode=dropbox.files.WriteMode.overwrite)
-            print_wrapped('Uploading complete!', wrap_length=self._wrap_length)
+            ouentry = {self._event_name: uentry._ordered(uentry)}
+            upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
+            try:
+                dbx = dropbox.Dropbox(upload_token)
+                dbx.files_upload(
+                    upayload.encode(),
+                    upath,
+                    mode=dropbox.files.WriteMode.overwrite)
+                print_wrapped(
+                    'Uploading complete!', wrap_length=self._wrap_length)
+            except:
+                if travis:
+                    pass
+                else:
+                    raise
 
         return (p, lnprob)
 
@@ -766,8 +803,7 @@ class Fitter():
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
             band_systems = band_systems + [
-                rep_val
-                for x in range(len(band_list_all) - len(band_systems))
+                rep_val for x in range(len(band_list_all) - len(band_systems))
             ]
         if len(band_instruments) < len(band_list_all):
             rep_val = '' if len(band_instruments) == 0 else band_instruments[
@@ -816,7 +852,8 @@ class Fitter():
                      progress='',
                      acor='',
                      messages=[]):
-        """Prints a status message showing the current state of the fitting process.
+        """Prints a status message showing the current state of the fitting
+        process.
         """
 
         class bcolors:
@@ -839,11 +876,7 @@ class Fitter():
                 for x in scores
             ]) + ' ]'
             outarr.append(scorestring)
-            # WAIC from Gelman
-            # http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
-            fscores = [x for y in scores for x in y]
-            scorestring = 'WAIC: ' + pretty_num(
-                np.mean(fscores) - np.var(fscores))
+            scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
             outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
