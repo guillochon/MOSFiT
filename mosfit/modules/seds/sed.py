@@ -10,7 +10,7 @@ class SED(Module):
     """Template class for SED Modules.
     """
 
-    C_CONST = (c.c / u.Angstrom).cgs.value
+    C_OVER_ANG = (c.c / u.Angstrom).cgs.value
     N_PTS = 16 + 1
 
     def __init__(self, **kwargs):
@@ -27,7 +27,7 @@ class SED(Module):
                 self._sample_wavelengths.append(
                     np.linspace(rng[0], rng[1], self.N_PTS))
             self._sample_wavelengths = np.array(self._sample_wavelengths)
-        self._sample_frequencies = self.C_CONST / self._sample_wavelengths
+        self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
         old_seds = kwargs.get('seds', None)

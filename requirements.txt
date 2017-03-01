@@ -1,9 +1,11 @@
-astrocats>=0.3.3
+astrocats>=0.3.11
 astropy>=1.1.1
 corner>=2.0.1
 Cython>=0.24.1
+dropbox>=7.1.1
 emcee>=2.2.1
 extinction>=0.2.2
+inflect>=0.2.5
 matplotlib>=1.5.3
 mpi4py>=2.0.0
 nbstripout>=0.2.9

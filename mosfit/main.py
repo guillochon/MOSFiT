@@ -1,11 +1,15 @@
+"""The main function.
+"""
+
 import argparse
 import os
 import shutil
+import sys
 from unicodedata import normalize
 
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import is_master, print_wrapped, prompt
+from mosfit.utils import get_mosfit_hash, is_master, print_wrapped, prompt
 
 
 def main():
@@ -241,7 +245,7 @@ def main():
         '-f',
         dest='frack_step',
         type=int,
-        default=20,
+        default=50,
         help=("Perform `fracking` every this number of steps while in the "
               "burn-in phase of the fitting process."))
 
@@ -255,6 +259,33 @@ def main():
               "The burn-in phase will thus be run for (i - p) iterations, "
               "where i is the total number of iterations set with `-i` and "
               "p is the value of this parameter."))
+
+    parser.add_argument(
+        '--upload',
+        '-u',
+        dest='upload',
+        default=False,
+        action='store_true',
+        help=("Upload results of MOSFiT to appropriate Open Catalog. If "
+              "MOSFiT is only supplied with `-u` and no other arguments, it "
+              "will upload the results of the latest run."))
+
+    parser.add_argument(
+        '--set-upload-token',
+        dest='set_upload_token',
+        const=True,
+        default=False,
+        nargs='?',
+        help=("Set the upload token. If given an argument, expects a 64-"
+              "character token. If given no argument, MOSFiT will prompt "
+              "the user to provide a token."))
+
+    parser.add_argument(
+        '--ignore-upload-quality',
+        dest='check_upload_quality',
+        default=True,
+        action='store_false',
+        help=("Perform some quality checks before uploading fits."))
 
     parser.add_argument(
         '--travis',
@@ -286,6 +317,9 @@ def main():
 
     width = 100
     if is_master():
+        # Get hash of ourselves
+        mosfit_hash = get_mosfit_hash()
+
         # Print our amazing ASCII logo.
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
@@ -293,14 +327,85 @@ def main():
                 firstline = logo.split('\n')[0]
                 if isinstance(firstline, bytes):
                     firstline = firstline.decode('utf-8')
-                width = len(
-                    normalize('NFC', firstline))
+                width = len(normalize('NFC', firstline))
                 print(logo)
-            print('### MOSFiT -- version {} ###'.format(__version__).center(
-                width))
+            print('### MOSFiT -- Version {} ({}) ###'
+                  .format(__version__, mosfit_hash).center(width))
             print('Authored by James Guillochon & Matt Nicholl'.center(width))
             print('Released under the MIT license'.center(width))
             print('https://github.com/guillochon/MOSFiT\n'.center(width))
+
+        # Get/set upload token
+        upload_token = ''
+        get_token_from_user = False
+        if args.set_upload_token:
+            if args.set_upload_token is not True:
+                upload_token = args.set_upload_token
+            get_token_from_user = True
+
+        upload_token_path = os.path.join(dir_path, 'cache', 'dropbox.token')
+
+        # Perform a few checks on upload before running (to keep size
+        # manageable)
+        if args.upload and args.smooth_times > 100:
+            response = prompt(
+                'You have set the `--smooth-times` flag to a value '
+                'greater than 100, which will disable uploading. Continue '
+                'with uploading disabled?')
+            if response:
+                args.upload = False
+            else:
+                sys.exit()
+
+        if args.upload and args.num_walkers * args.num_temps > 200:
+            response = prompt(
+                'The product of `--num-walkers` and `--num-temps` exceeds '
+                '200, which will disable uploading. Continue '
+                'with uploading disabled?')
+            if response:
+                args.upload = False
+            else:
+                sys.exit()
+
+        if args.upload:
+            if not os.path.isfile(upload_token_path):
+                get_token_from_user = True
+            else:
+                with open(upload_token_path, 'r') as f:
+                    upload_token = f.read().splitlines()
+                    if len(upload_token) != 1:
+                        get_token_from_user = True
+                    elif len(upload_token[0]) != 64:
+                        get_token_from_user = True
+                    else:
+                        upload_token = upload_token[0]
+
+        if get_token_from_user:
+            if args.travis:
+                upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
+                                '1234567890abcdefghijklmnopqr')
+            while len(upload_token) != 64:
+                print_wrapped(
+                    "No upload token found! Please visit "
+                    "https://sne.space/mosfit/ to obtain an upload "
+                    "token for MOSFiT.",
+                    wrap_length=width)
+                upload_token = prompt(
+                    "Please paste your Dropbox token, then hit enter:",
+                    kind='string')
+                if len(upload_token) != 64:
+                    print('Error: Token must be exactly 64 characters '
+                          'in length.')
+                    continue
+                break
+            with open(upload_token_path, 'w') as f:
+                f.write(upload_token)
+
+        if args.upload:
+            print("Upload flag set, will upload results after completion.")
+            print("Dropbox token: " + upload_token)
+
+        args.upload_token = upload_token
 
         if changed_iterations:
             print("No events specified, setting iterations to 0.")

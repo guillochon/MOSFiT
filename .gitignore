@@ -2,6 +2,7 @@ build/
 cache/
 products/
 dist/
+src/
 mosfit/modules/observables/filters/*.dat
 mosfit/modules/observables/filters/*.xml
 /models/
@@ -15,3 +16,7 @@ mosfit.egg-info/
 *.swp
 *.png
 .DS_Store
+
+# Documentation
+docs/_build
+docs/api

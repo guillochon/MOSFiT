@@ -18,7 +18,8 @@
         "kind":"parameter",
         "value":1.0e18,
         "class":"parameter",
-        "latex":"n_{\\rm H,host}"
+        "latex":"n_{\\rm H,host}",
+        "derived_keys":"avhost"
     },
     "texplosion":{
         "kind":"parameter",
@@ -94,7 +95,7 @@
             "radiusphot"
         ],
         "requests":{
-            "band_wave_ranges": "filters"
+            "band_wave_ranges": "photometry"
         }
     },
     "losextinction":{
@@ -105,10 +106,10 @@
             "ebv"
         ],
         "requests":{
-            "band_wave_ranges": "filters"
+            "band_wave_ranges": "photometry"
         }
     },
-    "filters":{
+    "photometry":{
         "kind":"observable",
         "inputs":[
             "losextinction",

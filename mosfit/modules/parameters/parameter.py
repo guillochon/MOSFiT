@@ -1,5 +1,7 @@
 import numpy as np
+
 from mosfit.modules.module import Module
+from mosfit.utils import listify
 
 CLASS_NAME = 'Parameter'
 
@@ -22,6 +24,7 @@ class Parameter(Module):
         self._value = kwargs.get('value', None)
         self._log = kwargs.get('log', False)
         self._latex = kwargs.get('latex', self._name)
+        self._derived_keys = listify(kwargs.get('derived_keys', []))
         if (self._log and self._min_value is not None and
                 self._max_value is not None):
             if self._min_value <= 0.0 or self._max_value <= 0.0:
@@ -46,6 +49,9 @@ class Parameter(Module):
         if self._log:
             value = np.exp(value)
         return value
+
+    def get_derived_keys(self):
+        return self._derived_keys
 
     def process(self, **kwargs):
         """Initialize a parameter based upon either a fixed value or a
