@@ -7,7 +7,7 @@ from collections import OrderedDict
 import numpy as np
 from astropy.io.votable import parse as voparse
 
-from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
+from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS, C_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
 
@@ -176,7 +176,9 @@ class Photometry(Module):
                 map(list, zip(*rows)))
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = np.trapz(self._transmissions[i],
+            self._filter_integrals[i] = 3.631e-12 * C_CGS * np.trapz(
+                                    np.array(self._transmissions[i]) /
+                                    np.array(self._band_wavelengths[i])**2,
                                                  self._band_wavelengths[i])
             self._average_wavelengths[i] = np.trapz([
                 x * y
@@ -235,7 +237,8 @@ class Photometry(Module):
                 dx = wavs[1] - wavs[0]
                 yvals = np.interp(
                     wavs, self._band_wavelengths[bi],
-                    self._transmissions[bi]) * kwargs['seds'][li] / zp1
+                    self._transmissions[bi]) * kwargs['seds'][li] * (
+                    1e8 * C_CGS / wavs**2 ) / zp1
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
@@ -252,7 +255,7 @@ class Photometry(Module):
     def abmag(self, eff_fluxes, offsets):
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
-             0.0] = AB_OFFSET - offsets[eff_fluxes != 0.0] - MAG_FAC * (
+             0.0] = offsets[eff_fluxes != 0.0] - MAG_FAC * (
                  np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
         return mags
 
