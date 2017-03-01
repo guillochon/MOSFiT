@@ -6,6 +6,7 @@ from collections import OrderedDict
 
 import numpy as np
 from astropy.io.votable import parse as voparse
+from astropy import constants as c
 
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS, C_CGS
 from mosfit.modules.module import Module
@@ -70,7 +71,7 @@ class Photometry(Module):
         self._filter_integrals = [0.0] * self._n_bands
         self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
-        FLUX_STD = 3.361e-12 * C_CGS
+        FLUX_STD = 3631 * c.Jy.cgs.scale / c.Angstrom.cgs.scale * C_CGS
 
         if self._pool.is_master():
             vo_tabs = {}
