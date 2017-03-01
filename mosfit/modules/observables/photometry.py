@@ -70,6 +70,7 @@ class Photometry(Module):
         self._filter_integrals = [0.0] * self._n_bands
         self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
+        FLUX_STD = 3.361e-12 * C_CGS
 
         if self._pool.is_master():
             vo_tabs = {}
@@ -176,7 +177,7 @@ class Photometry(Module):
                 map(list, zip(*rows)))
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = 3.631e-12 * C_CGS * np.trapz(
+            self._filter_integrals[i] = FLUX_STD * np.trapz(
                                     np.array(self._transmissions[i]) /
                                     np.array(self._band_wavelengths[i])**2,
                                                  self._band_wavelengths[i])
