@@ -23,7 +23,8 @@
                 "includeshost":"exclude",
                 "host":"exclude",
                 "kcorrected":"exclude",
-                "scorrected":"exclude"
+                "scorrected":"exclude",
+                "realization":"exclude"
             },
             "ebv":{
                 "value":"required"

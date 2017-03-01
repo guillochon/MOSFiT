@@ -9,8 +9,8 @@ Several installation methods for MOSFiT are outlined below. If you run into
 issues, `open a new issue <https://github.com/guillochon/mosfit/issues>`_ on
 GitHub.
 
-Anaconda Python Distribution (Recommended)
-------------------------------------------
+Setting up Python with Anaconda
+-------------------------------
 
 **Platforms:** MacOS X, Linux, and Windows
 
