@@ -21,14 +21,10 @@ class Cutoff(SED):
             else:
                 wav_arr = [c.c.cgs.value / self._frequencies[si]]
 
-            # Account for UV absorption
             norm = np.sum(sed)
-            sed[wav_arr < 3000] *= (
-                0.0003 * wav_arr[wav_arr < 3000] - 0.0445)
 
-            sed[sed < 0.0] = 0.0
-
-            sed = np.nan_to_num(sed)
+            # Account for UV absorption: 0% transmission at 0 A, 100% at 3500A
+            sed[wav_arr < 3500] *= (2.857e-2 * wav_arr[wav_arr < 3500])
 
             # Normalize SED so no energy is lost
             sed *= norm / np.sum(sed)
