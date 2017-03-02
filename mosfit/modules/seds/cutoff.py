@@ -17,17 +17,17 @@ class Cutoff(SED):
         for si, sed in enumerate(self._seds):
             bi = self._band_indices[si]
             if bi >= 0:
-                wav_arr = self._sample_wavelengths[bi]
+                wav_arr = self._sample_wavelengths[bi] / zp1
             else:
                 wav_arr = [c.c.cgs.value / self._frequencies[si]]
 
-            norm = np.sum(sed)
+            norm = np.trapz(sed, x=wav_arr)
 
             # Account for UV absorption: 0% transmission at 0 A, 100% at 3500A
             sed[wav_arr < 3500] *= (2.857e-2 * wav_arr[wav_arr < 3500])
 
             # Normalize SED so no energy is lost
-            sed *= norm / np.sum(sed)
+            sed *= norm / np.trapz(sed, x=wav_arr)
 
             self._seds[si] = sed
 

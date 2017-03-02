@@ -242,8 +242,7 @@ class Photometry(Module):
                 dx = wavs[1] - wavs[0]
                 yvals = np.interp(
                     wavs, self._band_wavelengths[bi],
-                    self._transmissions[bi]) * kwargs['seds'][li] * (
-                    C_CGS / ANG_CGS / wavs**2 ) / zp1
+                    self._transmissions[bi]) * kwargs['seds'][li] / zp1
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
