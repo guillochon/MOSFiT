@@ -260,7 +260,7 @@ class Photometry(Module):
     def abmag(self, eff_fluxes, offsets):
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
-             0.0] = offsets[eff_fluxes != 0.0] - MAG_FAC * (
+             0.0] = - offsets[eff_fluxes != 0.0] - MAG_FAC * (
                  np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
         return mags
 
