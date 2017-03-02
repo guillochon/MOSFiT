@@ -1,4 +1,4 @@
-astrocats>=0.3.11
+astrocats>=0.3.12
 astropy>=1.1.1
 corner>=2.0.1
 Cython>=0.24.1

@@ -607,7 +607,9 @@ class Fitter():
                 name=self._event_name,
                 path=self._event_path,
                 merge=False,
-                pop_schema=False)
+                pop_schema=False,
+                ignore_keys=[ENTRY.MODELS],
+                compare_to_existing=False)
         else:
             entry = Entry(name=self._event_name)
 
