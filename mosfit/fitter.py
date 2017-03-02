@@ -610,6 +610,12 @@ class Fitter():
                 pop_schema=False,
                 ignore_keys=[ENTRY.MODELS],
                 compare_to_existing=False)
+            new_photometry = []
+            for photo in entry.get(ENTRY.PHOTOMETRY, []):
+                if PHOTOMETRY.REALIZATION not in photo:
+                    new_photometry.append(photo)
+            if len(new_photometry):
+                entry[ENTRY.PHOTOMETRY] = new_photometry
         else:
             entry = Entry(name=self._event_name)
 
