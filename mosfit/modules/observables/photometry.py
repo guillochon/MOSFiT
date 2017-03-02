@@ -7,6 +7,7 @@ from collections import OrderedDict
 import numpy as np
 from astropy.io.votable import parse as voparse
 from astropy import constants as c
+from astropy import units as u
 
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS, C_CGS
 from mosfit.modules.module import Module
@@ -71,7 +72,8 @@ class Photometry(Module):
         self._filter_integrals = [0.0] * self._n_bands
         self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
-        FLUX_STD = 3631 * c.Jy.cgs.scale / c.Angstrom.cgs.scale * C_CGS
+        FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
+        ANG_CGS = u.Angstrom.cgs.scale
 
         if self._pool.is_master():
             vo_tabs = {}
@@ -228,6 +230,7 @@ class Photometry(Module):
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
         zp1 = 1.0 + kwargs['redshift']
+        ANG_CGS = u.Angstrom.cgs.scale
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
         observations = np.zeros_like(self._luminosities)
@@ -240,7 +243,7 @@ class Photometry(Module):
                 yvals = np.interp(
                     wavs, self._band_wavelengths[bi],
                     self._transmissions[bi]) * kwargs['seds'][li] * (
-                    1e8 * C_CGS / wavs**2 ) / zp1
+                    C_CGS / ANG_CGS / wavs**2 ) / zp1
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
