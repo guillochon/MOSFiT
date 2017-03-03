@@ -3,6 +3,7 @@ inflect
 numexpr
 numpy
 pyparsing
+python-dateutil
 scipy
 sphinx_automodapi
 sphinxcontrib-autoprogram
