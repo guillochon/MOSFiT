@@ -1,4 +1,5 @@
 inflect
+numexpr
 numpy
 scipy
 sphinx_automodapi
