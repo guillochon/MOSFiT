@@ -14,6 +14,7 @@ class Cutoff(SED):
         self._seds = kwargs['seds']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
+        zp1 = 1.0 + kwargs['redshift']
         for si, sed in enumerate(self._seds):
             bi = self._band_indices[si]
             if bi >= 0:
