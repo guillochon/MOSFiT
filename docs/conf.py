@@ -38,7 +38,7 @@ import sphinx_rtd_theme
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
     'sphinx_automodapi.automodapi', 'sphinx_automodapi.smart_resolver',
-    'sphinxarg.ext'
+    'sphinxcontrib.autoprogram'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -157,9 +157,6 @@ texinfo_documents = [
 ]
 
 html_context = {
-    "css_files": [
-        "_static/theme_overrides.css",  # override wide tables in RTD theme
-    ],
     "display_github": True,  # Integrate GitHub
     "github_user": "guillochon",  # Username
     "github_repo": "MOSFiT",  # Repo name
