@@ -9,6 +9,7 @@ numpy
 pandas
 pyparsing
 python-dateutil
+schwimmbad
 scipy
 sphinx_automodapi
 sphinxcontrib-autoprogram
