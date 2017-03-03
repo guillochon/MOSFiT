@@ -3,8 +3,6 @@ from astropy import constants as c
 
 from mosfit.modules.seds.sed import SED
 
-import matplotlib.pyplot as plt
-
 CLASS_NAME = 'Cutoff'
 
 
@@ -17,7 +15,6 @@ class Cutoff(SED):
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
-        plt.figure(1)
         for si, sed in enumerate(self._seds):
             bi = self._band_indices[si]
             if bi >= 0:
@@ -35,7 +32,5 @@ class Cutoff(SED):
 
             self._seds[si] = sed
 
-            plt.plot(wav_arr,sed)
-            plt.show()
 
         return {'seds': self._seds}
