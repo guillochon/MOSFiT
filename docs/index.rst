@@ -20,7 +20,7 @@ Running from Command Line
 .. toctree::
    :maxdepth: 1
 
-   command-line.rst
+   command_line.rst
 
 
 API
