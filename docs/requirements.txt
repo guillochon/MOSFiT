@@ -6,6 +6,7 @@ inflect
 matplotlib
 numexpr
 numpy
+pandas
 pyparsing
 python-dateutil
 scipy
