@@ -1,6 +1,7 @@
 inflect
 numexpr
 numpy
+pyparsing
 scipy
 sphinx_automodapi
 sphinxcontrib-autoprogram
