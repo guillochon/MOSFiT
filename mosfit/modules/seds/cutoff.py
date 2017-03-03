@@ -27,6 +27,10 @@ class Cutoff(SED):
             # Account for UV absorption: 0% transmission at 0 A, 100% at 3000A
             sed[wav_arr < 3000] *= (3.333e-4 * wav_arr[wav_arr < 3000])
 
+            sed[sed < 0.0] = 0.0
+
+            sed = np.nan_to_num(sed)
+
             # Normalize SED so no energy is lost
             sed *= norm / np.trapz(sed, x=wav_arr)
 
