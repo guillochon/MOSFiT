@@ -1,3 +1,4 @@
+dateutil
 inflect
 numexpr
 numpy
