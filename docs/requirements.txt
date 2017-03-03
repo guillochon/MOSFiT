@@ -3,6 +3,7 @@ astropy
 emcee
 extinction
 inflect
+matplotlib
 numexpr
 numpy
 pyparsing
