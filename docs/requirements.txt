@@ -3,3 +3,4 @@ numexpr
 numpy
 scipy
 sphinx_automodapi
+sphinx-argparse

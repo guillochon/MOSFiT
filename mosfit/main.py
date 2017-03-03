@@ -5,6 +5,7 @@ import argparse
 import os
 import shutil
 import sys
+from operator import attrgetter
 from unicodedata import normalize
 
 from mosfit import __version__
@@ -12,15 +13,17 @@ from mosfit.fitter import Fitter
 from mosfit.utils import get_mosfit_hash, is_master, print_wrapped, prompt
 
 
-def main():
-    """First, parse command line arguments.
-    """
+class SortingHelpFormatter(argparse.HelpFormatter):
+    def add_arguments(self, actions):
+        actions = sorted(actions, key=attrgetter('option_strings'))
+        super(SortingHelpFormatter, self).add_arguments(actions)
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
 
+def get_parser():
     parser = argparse.ArgumentParser(
         prog='MOSFiT',
-        description='Fit astrophysical light curves using AstroCats data.')
+        description='Fit astrophysical light curves using AstroCats data.',
+        formatter_class=SortingHelpFormatter)
 
     parser.add_argument(
         '--events',
@@ -296,6 +299,17 @@ def main():
               "generated with each message. Users are unlikely to need this "
               "parameter; it is included as Travis requires new lines to be "
               "produed to detected program output."))
+
+    return parser
+
+
+def main():
+    """First, parse command line arguments.
+    """
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    parser = get_parser()
 
     args = parser.parse_args()
 
