@@ -19,6 +19,8 @@ class Blackbody(SED):
     FLUX_CONST = FOUR_PI * (2.0 * c.h * c.c**2 * pi).cgs.value * u.Angstrom.cgs.scale
     X_CONST = (c.h * c.c / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
+    FLUX_CONST_FREQ = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
+    X_CONST_FREQ = (c.h / c.k_B).cgs.value
 
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
@@ -29,12 +31,16 @@ class Blackbody(SED):
         self._temperature_phot = kwargs['temperaturephot']
         xc = self.X_CONST
         fc = self.FLUX_CONST
+        xcv = self.X_CONST_FREQ
+        fcv = self.FLUX_CONST_FREQ
         cc = self.C_CONST
         temperature_phot = self._temperature_phot
         zp1 = 1.0 + kwargs['redshift']
         seds = []
         evaled = False
         for li, lum in enumerate(self._luminosities):
+            radius_phot = self._radius_phot[li]
+            temperature_phot = self._temperature_phot[li]
             bi = self._band_indices[li]
             if lum == 0.0:
                 if bi >= 0:
@@ -45,22 +51,31 @@ class Blackbody(SED):
             if bi >= 0:
                 rest_wavs = (self._sample_wavelengths[bi]
                             * u.Angstrom.cgs.scale / zp1)
+                if not evaled:
+                    sed = ne.evaluate(
+                        'fc * radius_phot**2 / rest_wavs**5 / '
+                        '(exp(xc / rest_wavs / temperature_phot) - 1.0)')
+                    evaled = True
+                else:
+                    sed = ne.re_evaluate()
+
+                sed = np.nan_to_num(sed)
+
+                seds.append(sed)
+
             else:
                 rest_freqs = [self._frequencies[li] * zp1]
-            radius_phot = self._radius_phot[li]
-            temperature_phot = self._temperature_phot[li]
+                if not evaled:
+                    sed = ne.evaluate(
+                        'fcv * radius_phot**2 * rest_freqs**3 / '
+                        '(exp(xcv * rest_freqs / temperature_phot) - 1.0)')
+                    evaled = True
+                else:
+                    sed = ne.re_evaluate()
 
-            if not evaled:
-                sed = ne.evaluate(
-                    'fc * radius_phot**2 / rest_wavs**5 / '
-                    '(exp(xc / rest_wavs / temperature_phot) - 1.0)')
-                evaled = True
-            else:
-                sed = ne.re_evaluate()
+                sed = np.nan_to_num(sed)
 
-            sed = np.nan_to_num(sed)
-
-            seds.append(sed)
+                seds.append(sed)
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
