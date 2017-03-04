@@ -2,6 +2,7 @@ from math import pi
 
 import numpy as np
 from astropy import constants as c
+from astropy import units as u
 
 from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
@@ -17,6 +18,7 @@ class Synchrotron(SED):
     FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
+    ANG_CGS = u.Angstrom.cgs.scale
 
     def process(self, **kwargs):
         self._luminosities = kwargs['luminosities']
@@ -27,6 +29,8 @@ class Synchrotron(SED):
         self._nu_max = kwargs['numax']
         self._p = kwargs['p']
         self._f0 = kwargs['f0']
+        cc = self.C_CONST
+        ac = self.ANG_CGS
         zp1 = 1.0 + kwargs['redshift']
         seds = []
         for li, lum in enumerate(self._luminosities):
@@ -46,13 +50,16 @@ class Synchrotron(SED):
             fmax = self._f0 * self._radius_source**2 * self._nu_max**2.5
             sed = [
                 self._f0 * self._radius_source**2 * (x / self._nu_max)
-                **2.5 if x < self._nu_max else fmax * (x / self._nu_max)
-                **(-(self._p - 1.0) / 2.0) for x in rest_freqs
+                **2.5  * ac / cc * x**2 if x < self._nu_max
+                else fmax * (x / self._nu_max) **(-(self._p - 1.0) / 2.0)
+                * ac / cc * x**2 for x in rest_freqs
             ]
 
             sed = np.nan_to_num(sed)
 
             seds.append(sed)
+
+            print(seds)
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
