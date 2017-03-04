@@ -1,4 +1,5 @@
 # -*- coding: UTF-8 -*-
+"""Definitions for `Fitter` class."""
 import datetime
 import io
 import json
@@ -12,21 +13,22 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
-import numpy as np
-
 import emcee
+import numpy as np
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+
 from mosfit.__init__ import __version__
+from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           flux_density_unit, frequency_unit, get_model_hash,
                           get_url_file_handle, is_number, pretty_num,
-                          print_inline, print_wrapped, prompt)
-from schwimmbad import MPIPool, SerialPool
+                          print_inline, printer.wrapped, prompt)
 
 from .model import Model
 
@@ -53,9 +55,8 @@ def frack(x):
     return model.frack(x)
 
 
-class Fitter():
-    """Fit transient events with the provided model.
-    """
+class Fitter(object):
+    """Fit transient events with the provided model."""
 
     def __init__(self):
         pass
@@ -88,10 +89,14 @@ class Fitter():
                    upload=False,
                    upload_token='',
                    check_upload_quality=False,
+                   printer=None,
                    **kwargs):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
+
+        if not printer:
+            printer = Printer(wrap_length=wrap_length)
 
         self._event_name = 'Batch'
         for event in events:
@@ -100,7 +105,7 @@ class Fitter():
             if event:
                 try:
                     pool = MPIPool()
-                except:
+                except Exception:
                     pool = SerialPool()
                 if pool.is_master():
                     path = ''
@@ -114,22 +119,20 @@ class Fitter():
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
                         input_name = event.replace('.json', '')
-                        print_wrapped(
+                        printer.wrapped(
                             'Event `{}` interpreted as supernova '
                             'name, downloading list of supernova '
-                            'aliases...'.format(input_name),
-                            wrap_length=self._wrap_length)
+                            'aliases...'.format(input_name))
                         if not offline:
                             try:
                                 response = get_url_file_handle(
                                     'https://sne.space/astrocats/astrocats/'
                                     'supernovae/output/names.min.json',
                                     timeout=10)
-                            except:
-                                print_wrapped(
+                            except Exception:
+                                printer.wrapped(
                                     'Warning: Could not download SN names ('
-                                    'are you online?), using cached list.',
-                                    wrap_length=self._wrap_length)
+                                    'are you online?), using cached list.')
                                 raise
                             else:
                                 with open(names_path, 'wb') as f:
@@ -161,10 +164,9 @@ class Fitter():
                                     event, namekeys, n=5, cutoff=0.8))
                             # matches = []
                             if len(matches) < 5 and is_number(event[0]):
-                                print_wrapped(
+                                printer.wrapped(
                                     'Could not find event, performing '
-                                    'extended name search...',
-                                    wrap_length=self._wrap_length)
+                                    'extended name search...')
                                 snprefixes = set(('SN19', 'SN20'))
                                 for name in names:
                                     ind = re.search("\d", name)
@@ -195,29 +197,27 @@ class Fitter():
                                             self._event_name = name
                                             break
                         if not self._event_name:
-                            print_wrapped('Could not find event by that name, '
-                                          'skipping!', self._wrap_length)
+                            printer.wrapped(
+                                'Could not find event by that name, skipping!')
                             continue
                         urlname = self._event_name + '.json'
                         name_path = os.path.join(dir_path, 'cache', urlname)
 
                         if not offline:
-                            print_wrapped(
+                            printer.wrapped(
                                 'Found event by primary name `{}` in the OSC, '
-                                'downloading data...'.format(self._event_name),
-                                wrap_length=self._wrap_length)
+                                'downloading data...'.format(self._event_name))
                             try:
                                 response = get_url_file_handle(
                                     'https://sne.space/astrocats/astrocats/'
                                     'supernovae/output/json/' + urlname,
                                     timeout=10)
-                            except:
-                                print_wrapped(
+                            except Exception:
+                                printer.wrapped(
                                     'Warning: Could not download data for '
                                     ' `{}`, '
                                     'will attempt to use cached data.'.format(
-                                        self._event_name),
-                                    wrap_length=self._wrap_length)
+                                        self._event_name))
                             else:
                                 with open(name_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -226,15 +226,15 @@ class Fitter():
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
-                        print_wrapped('Event file:', self._wrap_length)
-                        print_wrapped('  ' + path, self._wrap_length)
+                        printer.wrapped('Event file:')
+                        printer.wrapped('  ' + path)
                     else:
-                        print_wrapped(
+                        printer.wrapped(
                             'Error: Could not find data for `{}` locally or '
-                            'on the OSC.'.format(self._event_name),
-                            self._wrap_length)
+                            'on the OSC.'.format(self._event_name))
                         if offline:
-                            print('Try omitting the `--offline` flag.')
+                            printer.wrapped(
+                                'Try omitting the `--offline` flag.')
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
@@ -256,7 +256,7 @@ class Fitter():
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
-                    except:
+                    except Exception:
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
@@ -329,9 +329,7 @@ class Fitter():
                   band_instruments=[],
                   band_bandsets=[],
                   pool=''):
-        """Fit the data for a given event with this model using a combination
-        of emcee and fracking.
-        """
+        """Load the data for the specified event."""
         fixed_parameters = []
         for task in self._model._call_stack:
             cur_task = self._model._call_stack[task]
@@ -366,8 +364,7 @@ class Fitter():
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            print_wrapped('Bands being used for current transient:',
-                          self._wrap_length)
+            printer.wrapped('Bands being used for current transient:')
             bis = list(
                 filter(lambda a: a != -1, set(outputs['all_band_indices'])))
             ois = []
@@ -421,8 +418,9 @@ class Fitter():
                  upload=False,
                  upload_token='',
                  check_upload_quality=True):
-        """Fit the data for a given event with this model using a combination
-        of emcee and fracking.
+        """Fit the data for a given event.
+
+        Fitting performed using a combination of emcee and fracking.
         """
 
         global model
@@ -449,7 +447,8 @@ class Fitter():
 
         for i, pt in enumerate(p0):
             while len(p0[i]) < nwalkers:
-                self.print_status(
+                printer.print_status(
+                    self,
                     desc='Drawing initial walkers',
                     progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
 
@@ -537,7 +536,8 @@ class Fitter():
                 scores = [
                     np.array(x) + np.array(y) for x, y in zip(lnprob, lnlike)
                 ]
-                self.print_status(
+                printer.print_status(
+                    self,
                     desc='Fracking' if frack_now else 'Walking',
                     scores=scores,
                     progress=[emi1, iterations],
@@ -584,7 +584,8 @@ class Fitter():
                         lnprob[wi][ti] = likelihood(bh.x)
                         lnlike[wi][ti] = prior(bh.x)
                 scores = [[-x.fun for x in bhs]]
-                self.print_status(
+                printer.print_status(
+                    self,
                     desc='Fracking Results',
                     scores=scores,
                     progress=[emi1, iterations])
@@ -597,10 +598,10 @@ class Fitter():
                     'save the incomplete run to disk? Previous results will '
                     'be overwritten.', self._wrap_length)):
                 sys.exit()
-        except:
+        except Exception:
             raise
 
-        print_wrapped('Saving output to disk...', self._wrap_length)
+        printer.wrapped('Saving output to disk...')
         if self._event_path:
             entry = Entry.init_from_file(
                 catalog=None,
@@ -662,10 +663,9 @@ class Fitter():
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
                 if WAIC < 0.0:
-                    print_wrapped(
+                    printer.wrapped(
                         'WAIC score `{}` below 0.0, not uploading this fit.'.
-                        format(pretty_num(WAIC)),
-                        wrap_length=self._wrap_length)
+                        format(pretty_num(WAIC)))
                     upload_this = False
 
         modelnum = entry.add_model(**modeldict)
@@ -763,10 +763,9 @@ class Fitter():
 
         if upload_this:
             uentry.sanitize()
-            print_wrapped('Uploading fit...', wrap_length=self._wrap_length)
-            print_wrapped(
-                'Data hash: ' + entryhash + ', model hash: ' + modelhash,
-                wrap_length=self._wrap_length)
+            printer.wrapped('Uploading fit...')
+            printer.wrapped(
+                'Data hash: ' + entryhash + ', model hash: ' + modelhash)
             upath = '/' + '_'.join(
                 [self._event_name, entryhash, modelhash]) + '.json'
             ouentry = {self._event_name: uentry._ordered(uentry)}
@@ -777,9 +776,9 @@ class Fitter():
                     upayload.encode(),
                     upath,
                     mode=dropbox.files.WriteMode.overwrite)
-                print_wrapped(
-                    'Uploading complete!', wrap_length=self._wrap_length)
-            except:
+                printer.wrapped(
+                    'Uploading complete!')
+            except Exception:
                 if travis:
                     pass
                 else:
@@ -853,90 +852,6 @@ class Fitter():
             data[name]['photometry'].append(photodict)
 
         return data
-
-    def print_status(self,
-                     desc='',
-                     scores='',
-                     progress='',
-                     acor='',
-                     messages=[]):
-        """Prints a status message showing the current state of the fitting
-        process.
-        """
-
-        class bcolors:
-            HEADER = '\033[95m'
-            OKBLUE = '\033[94m'
-            OKGREEN = '\033[92m'
-            WARNING = '\033[93m'
-            FAIL = '\033[91m'
-            ENDC = '\033[0m'
-            BOLD = '\033[1m'
-            UNDERLINE = '\033[4m'
-
-        outarr = [self._event_name]
-        if desc:
-            outarr.append(desc)
-        if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join([
-                pretty_num(max(x))
-                if not np.isnan(max(x)) and np.isfinite(max(x)) else 'NaN'
-                for x in scores
-            ]) + ' ]'
-            outarr.append(scorestring)
-            scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
-            outarr.append(scorestring)
-        if isinstance(progress, list):
-            progressstring = 'Progress: [ {}/{} ]'.format(*progress)
-            outarr.append(progressstring)
-        if self._emcee_est_t + self._bh_est_t > 0.0:
-            if self._bh_est_t > 0.0 or not self._fracking:
-                tott = self._emcee_est_t + self._bh_est_t
-            else:
-                tott = 2.0 * self._emcee_est_t
-            timestring = self.get_timestring(tott)
-            outarr.append(timestring)
-        if isinstance(acor, list):
-            acorcstr = pretty_num(acor[1], sig=3)
-            if acor[0] <= 0.0:
-                acorstring = (bcolors.FAIL +
-                              'Chain too short for acor ({})'.format(acorcstr)
-                              + bcolors.ENDC)
-            else:
-                acortstr = pretty_num(acor[0], sig=3)
-                if self._travis:
-                    col = ''
-                elif acor[1] < 5.0:
-                    col = bcolors.FAIL
-                elif acor[1] < 10.0:
-                    col = bcolors.WARNING
-                else:
-                    col = bcolors.OKGREEN
-                acorstring = col
-                acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
-                                                                      acorcstr)
-                acorstring = acorstring + (bcolors.ENDC if col else '')
-            outarr.append(acorstring)
-
-        if not isinstance(messages, list):
-            raise ValueError('`messages` must be list!')
-        outarr.extend(messages)
-
-        line = ''
-        lines = ''
-        li = 0
-        for i, item in enumerate(outarr):
-            oldline = line
-            line = line + (' | ' if li > 0 else '') + item
-            li = li + 1
-            if len(line) > self._wrap_length:
-                li = 1
-                lines = lines + '\n' + oldline
-                line = item
-
-        lines = lines + '\n' + line
-
-        print_inline(lines, new_line=self._travis)
 
     def get_timestring(self, t):
         """Return a string showing the estimated remaining time based upon

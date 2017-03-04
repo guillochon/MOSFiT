@@ -1,5 +1,4 @@
-"""The main function.
-"""
+"""The main function."""
 
 import argparse
 import os
@@ -9,12 +8,12 @@ from unicodedata import normalize
 
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import get_mosfit_hash, is_master, print_wrapped, prompt
+from mosfit.printer import Printer
+from mosfit.utils import get_mosfit_hash, is_master, prompt
 
 
 def main():
-    """First, parse command line arguments.
-    """
+    """First, parse command line arguments."""
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -299,12 +298,14 @@ def main():
 
     args = parser.parse_args()
 
+    printer = Printer(wrap_length=100)
+
     if (isinstance(args.extrapolate_time, list) and
             len(args.extrapolate_time) == 0):
         args.extrapolate_time = 100.0
 
     if len(args.band_list) and args.smooth_times == -1:
-        print_wrapped('Enabling -S as extra bands were defined.')
+        printer.wrapped('Enabling -S as extra bands were defined.')
         args.smooth_times = 0
 
     changed_iterations = False
@@ -315,7 +316,6 @@ def main():
         else:
             args.iterations = 1000
 
-    width = 100
     if is_master():
         # Get hash of ourselves
         mosfit_hash = get_mosfit_hash()
@@ -385,37 +385,37 @@ def main():
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
-                print_wrapped(
+                printer.wrapped(
                     "No upload token found! Please visit "
                     "https://sne.space/mosfit/ to obtain an upload "
-                    "token for MOSFiT.",
-                    wrap_length=width)
+                    "token for MOSFiT.")
                 upload_token = prompt(
                     "Please paste your Dropbox token, then hit enter:",
                     kind='string')
                 if len(upload_token) != 64:
-                    print('Error: Token must be exactly 64 characters '
-                          'in length.')
+                    printer.wrapped(
+                        'Error: Token must be exactly 64 characters in '
+                        'length.')
                     continue
                 break
             with open(upload_token_path, 'w') as f:
                 f.write(upload_token)
 
         if args.upload:
-            print("Upload flag set, will upload results after completion.")
-            print("Dropbox token: " + upload_token)
+            printer.wrapped(
+                "Upload flag set, will upload results after completion.")
+            printer.wrapped("Dropbox token: " + upload_token)
 
         args.upload_token = upload_token
 
         if changed_iterations:
-            print("No events specified, setting iterations to 0.")
+            printer.wrapped("No events specified, setting iterations to 0.")
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
-            print_wrapped(
+            printer.wrapped(
                 'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).',
-                wrap_length=width)
+                '(disable with --no-copy-at-launch).')
             fc = False
             if args.force_copy:
                 fc = prompt(
