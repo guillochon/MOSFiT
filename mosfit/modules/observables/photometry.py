@@ -9,16 +9,16 @@ from astropy.io.votable import parse as voparse
 
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
+from mosfit.utils import get_url_file_handle, listify, syst_syns
 
 CLASS_NAME = 'Photometry'
 
 
 class Photometry(Module):
-    """Band-pass filters.
-    """
+    """Band-pass filters."""
 
     def __init__(self, **kwargs):
+        """Initialize `Photometry`."""
         super(Photometry, self).__init__(**kwargs)
         self._preprocessed = False
         self._bands = []
@@ -102,8 +102,8 @@ class Photometry(Module):
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
                                     timeout=10)
-                            except:
-                                print_inline(
+                            except Exception:
+                                self._printer.inline(
                                     'Warning: Could not download SVO filter '
                                     '(are you online?), using cached filter.')
                             else:
@@ -217,7 +217,7 @@ class Photometry(Module):
     def process(self, **kwargs):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2
+        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']

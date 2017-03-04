@@ -1,11 +1,19 @@
-class Module(object):
-    """Base Module class.
-    """
+"""Definitions for the `Module` class."""
+from mosfit.printer import Printer
 
-    def __init__(self, name, pool, **kwargs):
+
+class Module(object):
+    """Base `Module` class."""
+
+    def __init__(self, name, pool, printer=None, **kwargs):
         self._name = name
         self._log = False
         self._pool = pool
+        if not printer:
+            self._printer = Printer()
+        else:
+            self._printer = printer
+        self._printer = printer
 
     def process(self, **kwargs):
         return {}

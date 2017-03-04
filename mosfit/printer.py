@@ -1,13 +1,14 @@
 """Defines the `Printer` class."""
 from __future__ import print_function
 
+import datetime
 import sys
 from builtins import input
 from textwrap import fill
 
 import numpy as np
 
-from utils import calculate_WAIC, is_integer, pretty_num
+from .utils import calculate_WAIC, is_integer, pretty_num
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -123,7 +124,7 @@ class Printer(object):
                 tott = fitter._emcee_est_t + fitter._bh_est_t
             else:
                 tott = 2.0 * fitter._emcee_est_t
-            timestring = fitter.get_timestring(tott)
+            timestring = self.get_timestring(tott)
             outarr.append(timestring)
         if isinstance(acor, list):
             acorcstr = pretty_num(acor[1], sig=3)
@@ -166,3 +167,12 @@ class Printer(object):
         lines = lines + '\n' + line
 
         self.inline(lines, new_line=fitter._travis)
+
+    def get_timestring(self, t):
+        """Return estimated time remaining.
+
+        Return a string showing the estimated remaining time based upon
+        elapsed times for emcee and fracking.
+        """
+        td = str(datetime.timedelta(seconds=int(round(t))))
+        return ('Estimated time left: [ ' + td + ' ]')
