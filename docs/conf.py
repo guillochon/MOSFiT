@@ -38,7 +38,7 @@ import sphinx_rtd_theme
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
     'sphinx_automodapi.automodapi', 'sphinx_automodapi.smart_resolver',
-    'sphinx.ext.coverage'
+    'sphinx.ext.coverage', 'sphinxcontrib.autoprogram'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
