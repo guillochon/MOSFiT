@@ -2,14 +2,15 @@
 from math import isnan
 
 import numpy as np
+
 from mosfit.modules.engines.engine import Engine
+
 
 # Important: Only define one `Module` class per file.
 
 
 class NickelCobalt(Engine):
-    """Nickel/Cobalt decay engine
-    """
+    """Nickel/Cobalt decay engine."""
 
     NI56_LUM = 6.45e43
     CO56_LUM = 1.45e43

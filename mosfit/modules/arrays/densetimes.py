@@ -6,7 +6,9 @@ from mosfit.modules.module import Module
 
 
 class DenseTimes(Module):
-    """This class ensures an even time-sampling between the time of explosion
+    """Generate an evenly-spaced array of times for use in calculations.
+
+    This class ensures an even time-sampling between the time of explosion
     and the last datapoint, as many transients may lack regular candence data.
     """
 

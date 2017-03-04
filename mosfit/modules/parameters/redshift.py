@@ -8,13 +8,10 @@ from mosfit.modules.parameters.parameter import Parameter
 
 
 class Redshift(Parameter):
-    """Redshift parameter that depends on luminosity distance.
-    """
+    """Redshift parameter that depends on luminosity distance."""
 
     def process(self, **kwargs):
-        """Generate a parameter based upon either a fixed value or a
-        distribution, if one is defined.
-        """
+        """Process module."""
         if (self._name in kwargs or self._min_value is None or
                 self._max_value is None):
             # If this parameter is not free and is already set, then skip

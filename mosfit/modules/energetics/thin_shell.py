@@ -4,12 +4,12 @@ import numpy as np
 from mosfit.constants import FOE, KM_CGS, M_SUN_CGS
 from mosfit.modules.energetics.energetic import Energetic
 
+
 # Important: Only define one `Module` class per file.
 
 
 class ThinShell(Energetic):
-    """Convert an input kinetic energy to velocity assuming ejecta in thin shell
-    """
+    """Generate `vejecta` from `kinetic_energy` if ejecta in thin shell."""
 
     def process(self, **kwargs):
         """Process module."""

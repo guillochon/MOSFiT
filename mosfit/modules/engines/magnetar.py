@@ -2,15 +2,16 @@
 from math import isnan
 
 import numpy as np
+
 from mosfit.constants import DAY_CGS
 from mosfit.modules.engines.engine import Engine
+
 
 # Important: Only define one `Module` class per file.
 
 
 class Magnetar(Engine):
-    """Magnetar spin-down engine
-    """
+    """Magnetar spin-down engine."""
 
     def process(self, **kwargs):
         """Process module."""
@@ -24,10 +25,10 @@ class Magnetar(Engine):
         self._thetaPB = kwargs['thetaPB']
         self._rest_t_explosion = kwargs['resttexplosion']
 
-        Ep = 2.6e52 * (self._Mns / 1.4)**(3. / 2.) * self._Pspin**(-2)
+        Ep = 2.6e52 * (self._Mns / 1.4) ** (3. / 2.) * self._Pspin ** (-2)
 
-        tp = 1.3e5 * self._Bfield**(-2) * self._Pspin**2 * (self._Mns / 1.4)**(
-            3. / 2.) * (np.sin(self._thetaPB))**(-2)
+        tp = 1.3e5 * self._Bfield ** (-2) * self._Pspin ** 2 * (
+            self._Mns / 1.4) ** (3. / 2.) * (np.sin(self._thetaPB)) ** (-2)
 
         ts = [
             np.inf
@@ -35,11 +36,7 @@ class Magnetar(Engine):
             for x in self._times
         ]
 
-        # print(ts)
-        #
-        # raise SystemExit
-        #
-        luminosities = [Ep / tp / (1. + t * DAY_CGS / tp)**2 for t in ts]
+        luminosities = [Ep / tp / (1. + t * DAY_CGS / tp) ** 2 for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
         # Add on to any existing luminosity

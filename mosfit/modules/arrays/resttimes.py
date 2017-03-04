@@ -5,8 +5,7 @@ from mosfit.modules.module import Module
 
 
 class RestTimes(Module):
-    """This class converts the observed times to rest-frame times.
-    """
+    """This class converts the observed times to rest-frame times."""
 
     def process(self, **kwargs):
         """Process module."""

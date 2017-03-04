@@ -1,6 +1,7 @@
 """Definitions for the `LightCurve` class."""
 from mosfit.modules.module import Module
 
+
 # Important: Only define one `Module` class per file.
 
 

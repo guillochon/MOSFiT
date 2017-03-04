@@ -5,7 +5,9 @@ from mosfit.modules.parameters.parameter import Parameter
 
 
 class Constant(Parameter):
-    """Parameter that will throw an error if the user attempts to make the
+    """Constant parameter.
+
+    `Parameter` that will throw an error if the user attempts to make the
     variable free.
     """
 

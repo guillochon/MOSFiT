@@ -1,12 +1,12 @@
 """Definitions for the `Engine` class."""
 from mosfit.modules.module import Module
 
+
 # Important: Only define one `Module` class per file.
 
 
 class Engine(Module):
-    """Generic engine module.
-    """
+    """Generic engine module."""
 
     def add_to_existing_lums(self, new_lums, **kwargs):
         """Process module."""

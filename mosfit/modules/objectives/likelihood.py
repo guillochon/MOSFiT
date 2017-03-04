@@ -7,12 +7,12 @@ from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
 
+
 # Important: Only define one `Module` class per file.
 
 
 class Likelihood(Module):
-    """Calculate the maximum likelihood score for a model.
-    """
+    """Calculate the maximum likelihood score for a model."""
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -33,12 +33,12 @@ class Likelihood(Module):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
-        self._variance2 = kwargs['variance']**2
+        self._variance2 = kwargs['variance'] ** 2
 
         sum_members = [
-            (x - y if not u or (x < y and not isnan(x)) else 0.0)**2 / (
-                (el if x > y else eu)**2 + self._variance2) +
-            np.log(self._variance2 + 0.5 * (el**2 + eu**2))
+            (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
+                (el if x > y else eu) ** 2 + self._variance2) +
+            np.log(self._variance2 + 0.5 * (el ** 2 + eu ** 2))
             for x, y, eu, el, u in zip(self._model_observations, [
                 i
                 for i, o, a in zip(self._mags, self._observed, self._are_mags)
@@ -57,9 +57,9 @@ class Likelihood(Module):
         value = -0.5 * np.sum(sum_members)
 
         sum_members = [
-            (x - y if not u or (x < y and not isnan(x)) else 0.0)**2 / (
-                (el if x > y else eu)**2 + self._variance2) +
-            np.log(self._variance2 + 0.5 * (el**2 + eu**2))
+            (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
+                (el if x > y else eu) ** 2 + self._variance2) +
+            np.log(self._variance2 + 0.5 * (el ** 2 + eu ** 2))
             for x, y, eu, el, u in zip(self._model_observations, [
                 i for i, o, a in zip(self._fds, self._observed, self._are_fds)
                 if o and a
@@ -81,6 +81,7 @@ class Likelihood(Module):
         return {'value': value}
 
     def preprocess(self, **kwargs):
+        """Construct arrays of observations based on data keys."""
         if self._preprocessed:
             return
         self._mags = kwargs.get('magnitudes', [])

@@ -10,7 +10,9 @@ from mosfit.modules.photospheres.photosphere import Photosphere
 
 
 class DenseCore(Photosphere):
-    """Expanding/receding photosphere with a dense core + low-mass power-law
+    """Photosphere with a dense core and a low-mass envelope.
+
+    Expanding/receding photosphere with a dense core + low-mass power-law
     envelope.
     """
 
@@ -38,7 +40,7 @@ class DenseCore(Photosphere):
 
             # Compute density in core
             rho_core = (3.0 * self._m_ejecta * M_SUN_CGS /
-                        (4.0 * pi * radius**3))
+                        (4.0 * pi * radius ** 3))
 
             tau_core = self._kappa * rho_core * radius
 
@@ -49,7 +51,7 @@ class DenseCore(Photosphere):
             if tau_e > (2.0 / 3.0):
                 radius_phot = (2.0 * (slope - 1.0) /
                                (3.0 * self._kappa * rho_core * radius
-                                **slope))**(1.0 / (1.0 - slope))
+                                ** slope)) ** (1.0 / (1.0 - slope))
             else:
                 radius_phot = slope * radius / (slope - 1.0) - 2.0 / (
                     3.0 * self._kappa * rho_core)
@@ -58,15 +60,15 @@ class DenseCore(Photosphere):
             # Prevent weird behaviour as R_phot -> 0
             if tau_core > 1.:
                 temperature_phot = (lum / (radius_phot
-                                           **2 * self.STEF_CONST))**0.25
+                                           ** 2 * self.STEF_CONST)) ** 0.25
                 if li > peak and temperature_phot > temperature_last:
                     temperature_phot = temperature_last
                     radius_phot = (lum / (temperature_phot
-                                          **4 * self.STEF_CONST))**0.5
+                                          ** 4 * self.STEF_CONST)) ** 0.5
             else:
                 temperature_phot = temperature_last
                 radius_phot = (lum / (temperature_phot
-                                      **4 * self.STEF_CONST))**0.5
+                                      ** 4 * self.STEF_CONST)) ** 0.5
 
             temperature_last = temperature_phot
 
