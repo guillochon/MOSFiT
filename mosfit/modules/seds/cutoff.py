@@ -1,3 +1,4 @@
+"""Definitions for the `Cutoff` class."""
 import numpy as np
 from astropy import constants as c
 
@@ -7,8 +8,7 @@ from mosfit.modules.seds.sed import SED
 
 
 class Cutoff(SED):
-    """Apply a cutoff in the UV to the SED.
-    """
+    """Apply a cutoff in the UV to the SED."""
 
     def process(self, **kwargs):
         self._seds = kwargs['seds']

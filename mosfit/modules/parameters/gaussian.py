@@ -1,3 +1,4 @@
+"""Definitions for the `Gaussian` class."""
 import numpy as np
 from mosfit.modules.parameters.parameter import Parameter
 from scipy.special import erfinv
@@ -14,6 +15,7 @@ class Gaussian(Parameter):
     """
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Gaussian, self).__init__(**kwargs)
         self._mu = kwargs.get('mu', None)
         self._sigma = kwargs.get('sigma', None)

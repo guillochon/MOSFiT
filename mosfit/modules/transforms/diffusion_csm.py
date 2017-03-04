@@ -1,3 +1,4 @@
+"""Definitions for the `DiffusionCSM` class."""
 import numexpr as ne
 import numpy as np
 from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, DAY_CGS
@@ -7,8 +8,7 @@ from mosfit.modules.transforms.transform import Transform
 
 
 class DiffusionCSM(Transform):
-    """Photon diffusion transform for CSM model.
-    """
+    """Photon diffusion transform for CSM model."""
 
     N_INT_TIMES = 200
     MIN_EXP_ARG = 50.0

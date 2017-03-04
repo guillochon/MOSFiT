@@ -1,3 +1,4 @@
+"""Definitions for the `Parameter` class."""
 import numpy as np
 
 from mosfit.modules.module import Module
@@ -7,10 +8,10 @@ from mosfit.utils import listify
 
 
 class Parameter(Module):
-    """Model parameter that can either be free or fixed.
-    """
+    """Model parameter that can either be free or fixed."""
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Parameter, self).__init__(**kwargs)
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
@@ -32,6 +33,10 @@ class Parameter(Module):
                     'Parameter with log prior cannot have range values <= 0!')
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
+
+    def is_log(self):
+        """Return if `Parameter`'s value is stored as log10(value)."""
+        return self._log
 
     def latex(self):
         return self._latex

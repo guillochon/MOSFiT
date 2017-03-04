@@ -1,3 +1,4 @@
+"""Definitions for the `PowerLaw` class."""
 import numpy as np
 from mosfit.modules.parameters.parameter import Parameter
 
@@ -5,10 +6,10 @@ from mosfit.modules.parameters.parameter import Parameter
 
 
 class PowerLaw(Parameter):
-
-    "Standard power law, alpha must be > 1"
+    """Standard power law, alpha must be > 1."""
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(PowerLaw, self).__init__(**kwargs)
         self._alpha = kwargs.get('alpha', None)
         if self._log:

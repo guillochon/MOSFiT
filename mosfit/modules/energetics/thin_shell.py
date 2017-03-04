@@ -1,3 +1,4 @@
+"""Definitions for the `ThinShell` class."""
 import numpy as np
 
 from mosfit.constants import FOE, KM_CGS, M_SUN_CGS

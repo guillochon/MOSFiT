@@ -1,11 +1,11 @@
+"""Definitions for the `Line` class."""
 from mosfit.modules.seds.sed import SED
 
 # Important: Only define one `Module` class per file.
 
 
 class Line(SED):
-    """Line spectral energy distribution, modifies existing SED.
-    """
+    """Line spectral energy distribution, modifies existing SED."""
 
     def process(self, **kwargs):
         self._seds = kwargs['seds']

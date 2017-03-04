@@ -1,3 +1,4 @@
+"""Definitions for the `Likelihood` class."""
 from math import isnan
 
 import numpy as np
@@ -14,6 +15,7 @@ class Likelihood(Module):
     """
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Likelihood, self).__init__(**kwargs)
         self._preprocessed = False
 

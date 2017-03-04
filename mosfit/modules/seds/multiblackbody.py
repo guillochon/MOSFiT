@@ -1,3 +1,4 @@
+"""Definitions for the `MultiBlackbody` class."""
 from math import pi
 
 import numexpr as ne

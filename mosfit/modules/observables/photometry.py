@@ -1,3 +1,4 @@
+"""Definitions for the `Photometry` class."""
 import csv
 import json
 import os
@@ -18,7 +19,7 @@ class Photometry(Module):
     """Band-pass filters."""
 
     def __init__(self, **kwargs):
-        """Initialize `Photometry`."""
+        """Initialize module."""
         super(Photometry, self).__init__(**kwargs)
         self._preprocessed = False
         self._bands = []

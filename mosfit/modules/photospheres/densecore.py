@@ -1,3 +1,4 @@
+"""Definitions for the `DenseCore` class."""
 from math import pi
 
 import numpy as np
@@ -10,7 +11,7 @@ from mosfit.modules.photospheres.photosphere import Photosphere
 
 class DenseCore(Photosphere):
     """Expanding/receding photosphere with a dense core + low-mass power-law
-    envelope
+    envelope.
     """
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value

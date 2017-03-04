@@ -1,3 +1,4 @@
+"""Definitions for the `Energetic` class."""
 from mosfit.modules.module import Module
 
 # Important: Only define one `Module` class per file.

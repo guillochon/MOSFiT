@@ -1,3 +1,4 @@
+"""Definitions for the `Transient` class."""
 import inflect
 import numpy as np
 
@@ -12,6 +13,7 @@ class Transient(Module):
     """
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Transient, self).__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
         self._data_determined_parameters = []

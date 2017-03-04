@@ -1,3 +1,4 @@
+"""Definitions for the `Redshift` class."""
 from astropy import units as un
 from astropy.cosmology import Planck15 as cosmo
 from astropy.cosmology import z_at_value
@@ -11,7 +12,7 @@ class Redshift(Parameter):
     """
 
     def process(self, **kwargs):
-        """Initialize a parameter based upon either a fixed value or a
+        """Generate a parameter based upon either a fixed value or a
         distribution, if one is defined.
         """
         if (self._name in kwargs or self._min_value is None or

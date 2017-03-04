@@ -1,3 +1,4 @@
+"""Definitions for the `DenseTimes` class."""
 import numpy as np
 from mosfit.modules.module import Module
 
@@ -13,6 +14,7 @@ class DenseTimes(Module):
     L_T_MIN = -6  # in days
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(DenseTimes, self).__init__(**kwargs)
         self._n_times = kwargs[
             'n_times'] if 'n_times' in kwargs else self.N_TIMES

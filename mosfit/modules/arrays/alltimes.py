@@ -1,3 +1,4 @@
+"""Definitions for the `AllTimes` class."""
 from mosfit.modules.module import Module
 from mosfit.utils import frequency_unit
 
@@ -10,6 +11,7 @@ class AllTimes(Module):
     """
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(AllTimes, self).__init__(**kwargs)
         self._bands = []
         self._systems = []

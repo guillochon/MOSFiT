@@ -1,3 +1,4 @@
+"""Definitions for the `TemperatureFloor` class."""
 from math import pi
 
 import numexpr as ne
@@ -12,7 +13,7 @@ from mosfit.modules.photospheres.photosphere import Photosphere
 
 class TemperatureFloor(Photosphere):
     """Photosphere that expands and cools with ejecta then recedes at constant
-    final temperature
+    final temperature.
     """
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value

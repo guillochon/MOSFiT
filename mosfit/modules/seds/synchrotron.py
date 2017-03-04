@@ -1,3 +1,4 @@
+"""Definitions for the `Synchrotron` class."""
 from math import pi
 
 import numpy as np

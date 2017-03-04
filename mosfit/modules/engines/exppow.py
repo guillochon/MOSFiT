@@ -1,3 +1,4 @@
+"""Definitions for the `ExpPow` class."""
 from math import isnan
 
 import numpy as np
@@ -8,8 +9,7 @@ from mosfit.modules.engines.engine import Engine
 
 
 class ExpPow(Engine):
-    """A simple analytical engine.
-    """
+    """A simple analytical engine."""
 
     def process(self, **kwargs):
         if 'dense_times' in kwargs:

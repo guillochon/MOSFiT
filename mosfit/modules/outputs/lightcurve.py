@@ -1,13 +1,14 @@
+"""Definitions for the `LightCurve` class."""
 from mosfit.modules.module import Module
 
 # Important: Only define one `Module` class per file.
 
 
 class LightCurve(Module):
-    """Output a light curve to disk.
-    """
+    """Output a light curve to disk."""
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(LightCurve, self).__init__(**kwargs)
         self._n_times = kwargs.get('ntimes', 0)
 

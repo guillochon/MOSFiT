@@ -1,3 +1,4 @@
+"""Definitions for the `Constant` class."""
 from mosfit.modules.parameters.parameter import Parameter
 
 # Important: Only define one `Module` class per file.
@@ -9,6 +10,7 @@ class Constant(Parameter):
     """
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Constant, self).__init__(**kwargs)
         if self._min_value is not None or self._max_value is not None:
             raise ValueError('`Constant` class cannot be assigned minimum and '

@@ -1,3 +1,4 @@
+"""Definitions for the `NickelCobalt` class."""
 from math import isnan
 
 import numpy as np

@@ -1,3 +1,4 @@
+"""Definitions for the `RProcess` class."""
 from math import isnan
 
 import numpy as np

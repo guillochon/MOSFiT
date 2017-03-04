@@ -1,3 +1,4 @@
+"""Definitions for the `Engine` class."""
 from mosfit.modules.module import Module
 
 # Important: Only define one `Module` class per file.

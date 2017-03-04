@@ -1,3 +1,4 @@
+"""Definitions for the `SED` class."""
 import numpy as np
 from astropy import constants as c
 from astropy import units as u
@@ -14,6 +15,7 @@ class SED(Module):
     N_PTS = 16 + 1
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(SED, self).__init__(**kwargs)
         self._sample_wavelengths = []
 
