@@ -1,7 +1,7 @@
 import numpy as np
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'DenseTimes'
+# Important: Only define one `Module` class per file.
 
 
 class DenseTimes(Module):

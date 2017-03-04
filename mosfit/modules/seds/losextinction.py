@@ -4,7 +4,7 @@ from extinction import apply as eapp
 from extinction import odonnell94
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'LOSExtinction'
+# Important: Only define one `Module` class per file.
 
 
 class LOSExtinction(SED):

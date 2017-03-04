@@ -4,7 +4,7 @@ import numpy as np
 from mosfit.modules.module import Module
 from mosfit.utils import is_number, listify
 
-CLASS_NAME = 'Transient'
+# Important: Only define one `Module` class per file.
 
 
 class Transient(Module):

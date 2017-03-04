@@ -3,7 +3,7 @@ from astropy import constants as c
 
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Cutoff'
+# Important: Only define one `Module` class per file.
 
 
 class Cutoff(SED):

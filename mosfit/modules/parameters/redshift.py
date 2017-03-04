@@ -3,7 +3,7 @@ from astropy.cosmology import Planck15 as cosmo
 from astropy.cosmology import z_at_value
 from mosfit.modules.parameters.parameter import Parameter
 
-CLASS_NAME = 'Redshift'
+# Important: Only define one `Module` class per file.
 
 
 class Redshift(Parameter):

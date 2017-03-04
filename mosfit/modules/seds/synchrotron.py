@@ -6,7 +6,7 @@ from astropy import constants as c
 from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Synchrotron'
+# Important: Only define one `Module` class per file.
 
 
 class Synchrotron(SED):

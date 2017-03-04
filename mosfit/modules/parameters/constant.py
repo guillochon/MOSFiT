@@ -1,6 +1,6 @@
 from mosfit.modules.parameters.parameter import Parameter
 
-CLASS_NAME = 'Constant'
+# Important: Only define one `Module` class per file.
 
 
 class Constant(Parameter):

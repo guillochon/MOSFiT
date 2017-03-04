@@ -4,7 +4,7 @@ import numpy as np
 from mosfit.constants import DAY_CGS
 from mosfit.modules.engines.engine import Engine
 
-CLASS_NAME = 'Magnetar'
+# Important: Only define one `Module` class per file.
 
 
 class Magnetar(Engine):

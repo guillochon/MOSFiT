@@ -193,7 +193,7 @@ class Model(object):
             # mod_name)
             # mod = importlib.machinery.SourceFileLoader(mod_name,
             #                                            mod_path).load_module()
-            # mod_class = getattr(mod, mod.CLASS_NAME)
+            # mod_class = getattr(mod, class_name)
             # if (cur_task['kind'] == 'parameter' and task in
             #         self._parameter_json):
             #     cur_task.update(self._parameter_json[task])

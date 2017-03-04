@@ -3,7 +3,7 @@ import numpy as np
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
-CLASS_NAME = 'Parameter'
+# Important: Only define one `Module` class per file.
 
 
 class Parameter(Module):

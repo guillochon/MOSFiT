@@ -1,6 +1,6 @@
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'RestTimes'
+# Important: Only define one `Module` class per file.
 
 
 class RestTimes(Module):

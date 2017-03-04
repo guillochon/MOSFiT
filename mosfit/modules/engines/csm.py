@@ -4,7 +4,7 @@ import numpy as np
 from mosfit.modules.engines.engine import Engine
 from scipy import interpolate
 
-CLASS_NAME = 'CSM'
+# Important: Only define one `Module` class per file.
 
 
 class CSM(Engine):

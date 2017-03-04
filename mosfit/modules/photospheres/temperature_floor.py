@@ -7,7 +7,7 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
 
-CLASS_NAME = 'TemperatureFloor'
+# Important: Only define one `Module` class per file.
 
 
 class TemperatureFloor(Photosphere):

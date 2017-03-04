@@ -1,7 +1,7 @@
 import numpy as np
 from mosfit.modules.parameters.parameter import Parameter
 
-CLASS_NAME = 'PowerLaw'
+# Important: Only define one `Module` class per file.
 
 
 class PowerLaw(Parameter):

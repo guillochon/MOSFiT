@@ -3,7 +3,7 @@ import numpy as np
 from mosfit.constants import FOE, KM_CGS, M_SUN_CGS
 from mosfit.modules.energetics.energetic import Energetic
 
-CLASS_NAME = 'HomologousExpansion'
+# Important: Only define one `Module` class per file.
 
 
 class HomologousExpansion(Energetic):

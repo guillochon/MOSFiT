@@ -6,7 +6,7 @@ from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
 
-CLASS_NAME = 'Likelihood'
+# Important: Only define one `Module` class per file.
 
 
 class Likelihood(Module):

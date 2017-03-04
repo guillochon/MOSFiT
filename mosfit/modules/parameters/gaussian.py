@@ -2,7 +2,7 @@ import numpy as np
 from mosfit.modules.parameters.parameter import Parameter
 from scipy.special import erfinv
 
-CLASS_NAME = 'Gaussian'
+# Important: Only define one `Module` class per file.
 
 
 class Gaussian(Parameter):

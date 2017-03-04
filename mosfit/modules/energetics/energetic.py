@@ -1,6 +1,6 @@
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'Energetic'
+# Important: Only define one `Module` class per file.
 
 
 class Energetic(Module):

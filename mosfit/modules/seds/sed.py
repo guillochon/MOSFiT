@@ -3,7 +3,7 @@ from astropy import constants as c
 from astropy import units as u
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'SED'
+# Important: Only define one `Module` class per file.
 
 
 class SED(Module):

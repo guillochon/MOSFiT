@@ -11,7 +11,7 @@ from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, syst_syns
 
-CLASS_NAME = 'Photometry'
+# Important: Only define one `Module` class per file.
 
 
 class Photometry(Module):

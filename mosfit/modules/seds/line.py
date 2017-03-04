@@ -1,6 +1,6 @@
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Line'
+# Important: Only define one `Module` class per file.
 
 
 class Line(SED):

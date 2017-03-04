@@ -1,7 +1,7 @@
 from mosfit.modules.module import Module
 from mosfit.utils import frequency_unit
 
-CLASS_NAME = 'AllTimes'
+# Important: Only define one `Module` class per file.
 
 
 class AllTimes(Module):
