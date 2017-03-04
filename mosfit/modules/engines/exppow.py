@@ -12,6 +12,7 @@ class ExpPow(Engine):
     """A simple analytical engine."""
 
     def process(self, **kwargs):
+        """Process module."""
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:

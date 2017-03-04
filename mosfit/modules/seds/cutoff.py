@@ -11,6 +11,7 @@ class Cutoff(SED):
     """Apply a cutoff in the UV to the SED."""
 
     def process(self, **kwargs):
+        """Process module."""
         self._seds = kwargs['seds']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']

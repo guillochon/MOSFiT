@@ -292,7 +292,7 @@ def get_parser():
         dest='check_upload_quality',
         default=True,
         action='store_false',
-        help=("Perform some quality checks before uploading fits."))
+        help=("Ignore all quality checks when uploading fits."))
 
     parser.add_argument(
         '--travis',

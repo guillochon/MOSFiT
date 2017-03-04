@@ -20,6 +20,7 @@ class MultiBlackbody(SED):
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
     def process(self, **kwargs):
+        """Process module."""
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']

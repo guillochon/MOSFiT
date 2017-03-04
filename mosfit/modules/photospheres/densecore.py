@@ -18,6 +18,7 @@ class DenseCore(Photosphere):
     PL_ENV = 10.0
 
     def process(self, **kwargs):
+        """Process module."""
         self._rest_t_explosion = kwargs['resttexplosion']
         self._times = kwargs['rest_times']
         self._luminosities = kwargs['luminosities']

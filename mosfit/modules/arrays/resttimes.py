@@ -9,6 +9,7 @@ class RestTimes(Module):
     """
 
     def process(self, **kwargs):
+        """Process module."""
         self._times = kwargs['all_times']
         self._t_explosion = kwargs['texplosion']
 

@@ -14,6 +14,7 @@ class DiffusionCSM(Transform):
     MIN_EXP_ARG = 50.0
 
     def process(self, **kwargs):
+        """Process module."""
         self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']
         self._mass = kwargs['mcsm'] * M_SUN_CGS

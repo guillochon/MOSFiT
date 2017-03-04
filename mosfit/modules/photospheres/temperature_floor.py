@@ -20,6 +20,7 @@ class TemperatureFloor(Photosphere):
     RAD_CONST = KM_CGS * DAY_CGS
 
     def process(self, **kwargs):
+        """Process module."""
         self._rest_t_explosion = kwargs['resttexplosion']
         self._times = kwargs['rest_times']
         self._luminosities = kwargs['luminosities']

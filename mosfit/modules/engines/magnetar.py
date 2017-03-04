@@ -13,6 +13,7 @@ class Magnetar(Engine):
     """
 
     def process(self, **kwargs):
+        """Process module."""
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:

@@ -17,6 +17,7 @@ class NickelCobalt(Engine):
     CO56_LIFE = 111.3
 
     def process(self, **kwargs):
+        """Process module."""
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:

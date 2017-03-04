@@ -20,6 +20,7 @@ class RProcess(Engine):
     M_sun = 1.99e33
 
     def process(self, **kwargs):
+        """Process module."""
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:

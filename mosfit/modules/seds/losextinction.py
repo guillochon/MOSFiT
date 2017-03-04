@@ -20,6 +20,7 @@ class LOSExtinction(SED):
         self._preprocessed = False
 
     def process(self, **kwargs):
+        """Process module."""
         self.preprocess(**kwargs)
         zp1 = 1.0 + kwargs['redshift']
         self._seds = kwargs['seds']

@@ -20,6 +20,7 @@ class DenseTimes(Module):
             'n_times'] if 'n_times' in kwargs else self.N_TIMES
 
     def process(self, **kwargs):
+        """Process module."""
         self._rest_times = kwargs['rest_times']
         self._t_explosion = kwargs['texplosion']
 

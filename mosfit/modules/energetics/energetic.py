@@ -9,4 +9,5 @@ class Energetic(Module):
     """
 
     def process(self, **kwargs):
+        """Process module."""
         return {}

@@ -20,6 +20,7 @@ class Transient(Module):
         self._inflect = inflect.engine()
 
     def process(self, **kwargs):
+        """Process module."""
         return self._data
 
     def set_data(self,

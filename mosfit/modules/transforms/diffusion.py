@@ -16,7 +16,7 @@ class Diffusion(Transform):
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS ** 2)
 
     def process(self, **kwargs):
-        """Process `Diffusion`."""
+        """Process module."""
         self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']
         self._kappa_gamma = kwargs['kappagamma']

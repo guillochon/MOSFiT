@@ -17,6 +17,7 @@ class CSM(Engine):
     """
 
     def process(self, **kwargs):
+        """Process module."""
         self._s = kwargs['s']
         self._delta = kwargs['delta']  # [0,3)
         self._n = kwargs['n']  # [6,10]

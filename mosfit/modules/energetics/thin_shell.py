@@ -12,6 +12,7 @@ class ThinShell(Energetic):
     """
 
     def process(self, **kwargs):
+        """Process module."""
         self._energy = kwargs['kinetic_energy']
         self._m_ejecta = kwargs['mejecta']
 

@@ -20,6 +20,7 @@ class Likelihood(Module):
         self._preprocessed = False
 
     def process(self, **kwargs):
+        """Process module."""
         self.preprocess(**kwargs)
         self._model_observations = kwargs['model_observations']
         self._all_band_indices = kwargs['all_band_indices']

@@ -8,4 +8,5 @@ class Photosphere(Module):
     """Template class for photosphere Modules."""
 
     def process(self, **kwargs):
+        """Process module."""
         return {}

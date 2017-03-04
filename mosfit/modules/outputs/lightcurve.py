@@ -13,6 +13,7 @@ class LightCurve(Module):
         self._n_times = kwargs.get('ntimes', 0)
 
     def process(self, **kwargs):
+        """Process module."""
         output = {}
         for key in [
                 'magnitudes', 'e_magnitudes', 'model_observations',
