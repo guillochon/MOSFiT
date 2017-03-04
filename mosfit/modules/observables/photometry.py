@@ -20,6 +20,9 @@ class Photometry(Module):
     """Band-pass filters.
     """
 
+    FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
+    ANG_CGS = u.Angstrom.cgs.scale
+
     def __init__(self, **kwargs):
         super(Photometry, self).__init__(**kwargs)
         self._preprocessed = False
@@ -72,8 +75,8 @@ class Photometry(Module):
         self._filter_integrals = [0.0] * self._n_bands
         self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
-        FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
-        ANG_CGS = u.Angstrom.cgs.scale
+        FLUX_STD = self.FLUX_STD
+        ANG_CGS = self.ANG_CGS
 
         if self._pool.is_master():
             vo_tabs = {}
