@@ -8,7 +8,6 @@ from astropy import units as u
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.seds.sed import SED
 
-import matplotlib.pyplot as plt
 
 CLASS_NAME = 'Blackbody'
 
@@ -61,10 +60,6 @@ class Blackbody(SED):
                 sed = ne.re_evaluate()
 
             sed = np.nan_to_num(sed)
-
-            if bi < 0:
-                sed *= rest_wavs**2 / cc
-            # if radio, convert to F_nu
 
             seds.append(sed)
 

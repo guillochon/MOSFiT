@@ -232,8 +232,9 @@ class Photometry(Module):
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
+        self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
-        ANG_CGS = u.Angstrom.cgs.scale
+        ANG_CGS = self.ANG_CGS
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
         observations = np.zeros_like(self._luminosities)
@@ -249,7 +250,8 @@ class Photometry(Module):
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
-                eff_fluxes[li] = kwargs['seds'][li][0]
+                eff_fluxes[li] = kwargs['seds'][li][0] / ANG_CGS * C_CGS / (
+                                self._frequencies[li]**2)
         nbs = np.array(self._band_indices) < 0
         ybs = np.array(self._band_indices) >= 0
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
