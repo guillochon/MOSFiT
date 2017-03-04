@@ -1,7 +1,7 @@
 """Definitions for the `Constant` class."""
 from mosfit.modules.parameters.parameter import Parameter
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Constant(Parameter):

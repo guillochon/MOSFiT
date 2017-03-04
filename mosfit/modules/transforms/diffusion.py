@@ -5,7 +5,7 @@ import numpy as np
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Diffusion(Transform):

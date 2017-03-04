@@ -5,7 +5,7 @@ from mosfit.constants import FOE, KM_CGS, M_SUN_CGS
 from mosfit.modules.energetics.energetic import Energetic
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class HomologousExpansion(Energetic):

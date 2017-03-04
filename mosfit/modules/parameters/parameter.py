@@ -4,7 +4,7 @@ import numpy as np
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Parameter(Module):

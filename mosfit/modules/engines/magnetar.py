@@ -7,7 +7,7 @@ from mosfit.constants import DAY_CGS
 from mosfit.modules.engines.engine import Engine
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Magnetar(Engine):

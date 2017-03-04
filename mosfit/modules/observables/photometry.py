@@ -13,7 +13,7 @@ from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, syst_syns
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Photometry(Module):

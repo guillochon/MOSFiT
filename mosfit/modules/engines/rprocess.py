@@ -6,7 +6,7 @@ import numpy as np
 from mosfit.modules.engines.engine import Engine
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class RProcess(Engine):

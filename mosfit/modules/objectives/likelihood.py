@@ -8,7 +8,7 @@ from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Likelihood(Module):

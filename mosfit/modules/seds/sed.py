@@ -4,7 +4,7 @@ from astropy import constants as c
 from astropy import units as u
 from mosfit.modules.module import Module
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class SED(Module):
@@ -19,7 +19,7 @@ class SED(Module):
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):
-        """Receive requests from other `Module`s."""
+        """Receive requests from other ``Module``s."""
         self._sample_wavelengths = requests.get('sample_wavelengths', [])
         if not self._sample_wavelengths:
             wave_ranges = requests.get('band_wave_ranges', [])

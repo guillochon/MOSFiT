@@ -6,7 +6,7 @@ from mosfit.modules.module import Module
 from mosfit.utils import is_number, listify
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Transient(Module):

@@ -7,7 +7,7 @@ from scipy import interpolate
 from mosfit.modules.engines.engine import Engine
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class CSM(Engine):

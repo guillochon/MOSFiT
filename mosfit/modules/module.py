@@ -1,9 +1,9 @@
-"""Definitions for the `Module` class."""
+"""Definitions for the ``Module`` class."""
 from mosfit.printer import Printer
 
 
 class Module(object):
-    """Base `Module` class."""
+    """Base ``Module`` class."""
 
     def __init__(self, name, pool, printer=None, **kwargs):
         """Initialize module.
@@ -33,7 +33,7 @@ class Module(object):
         return self._name
 
     def receive_requests(self, **kwargs):
-        """Receive requests from other `Module`s."""
+        """Receive requests from other ``Module``s."""
         pass
 
     def set_event_name(self, event_name):
@@ -41,5 +41,5 @@ class Module(object):
         self._event_name = event_name
 
     def get_bibcode(self):
-        """Return any bibcodes associated with the present `Module`."""
+        """Return any bibcodes associated with the present ``Module``."""
         return []

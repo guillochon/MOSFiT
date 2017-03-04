@@ -6,7 +6,7 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class DenseCore(Photosphere):

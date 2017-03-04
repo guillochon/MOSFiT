@@ -1,7 +1,7 @@
 """Definitions for the `Transform` class."""
 from mosfit.modules.module import Module
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Transform(Module):

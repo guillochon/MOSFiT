@@ -8,7 +8,7 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.seds.sed import SED
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class MultiBlackbody(SED):

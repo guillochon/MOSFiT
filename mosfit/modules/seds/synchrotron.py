@@ -8,7 +8,7 @@ from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
 
 
-# Important: Only define one `Module` class per file.
+# Important: Only define one ``Module`` class per file.
 
 
 class Synchrotron(SED):
