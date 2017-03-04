@@ -47,7 +47,7 @@ class Fallback(Engine):
         self._sim_beta = {self._gammas[0]:[], self._gammas[1]:[]}
 
         for g in self._gammas:
-            
+            #print ('entered')
             dmdedir = os.path.dirname(__file__)[:-15] + 'models/tde/data/' + g + '/' #'../../models/tde/data/'
            
             #dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
