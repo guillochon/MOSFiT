@@ -12,15 +12,15 @@ from mosfit.modules.seds.sed import SED
 
 
 class MultiBlackbody(SED):
-    """Blackbody spectral energy distribution for given temperature and radius
-    """
+    """Generalized multiple blackbody spectral energy distribution."""
 
-    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
+    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c ** 2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
     def process(self, **kwargs):
         """Process module."""
+        raise RuntimeError('`MultiBlackbody` is not yet functional.')
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']

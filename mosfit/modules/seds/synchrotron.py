@@ -7,15 +7,15 @@ from astropy import constants as c
 from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
 
+
 # Important: Only define one `Module` class per file.
 
 
 class Synchrotron(SED):
-    """Synchrotron spectral energy distribution
-    """
+    """Synchrotron spectral energy distribution."""
 
     C_CONST = c.c.cgs.value
-    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
+    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c ** 2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
@@ -45,11 +45,11 @@ class Synchrotron(SED):
                 rest_freqs = [self._frequencies[li] * zp1]
 
             # Below is not scaled properly, just proof of concept
-            fmax = self._f0 * self._radius_source**2 * self._nu_max**2.5
+            fmax = self._f0 * self._radius_source ** 2 * self._nu_max ** 2.5
             sed = [
-                self._f0 * self._radius_source**2 * (x / self._nu_max)
-                **2.5 if x < self._nu_max else fmax * (x / self._nu_max)
-                **(-(self._p - 1.0) / 2.0) for x in rest_freqs
+                self._f0 * self._radius_source ** 2 * (x / self._nu_max)
+                ** 2.5 if x < self._nu_max else fmax * (x / self._nu_max)
+                ** (-(self._p - 1.0) / 2.0) for x in rest_freqs
             ]
 
             sed = np.nan_to_num(sed)

@@ -5,18 +5,17 @@ import numexpr as ne
 import numpy as np
 from astropy import constants as c
 
-from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
 
 # Important: Only define one `Module` class per file.
 
 
 class Blackbody(SED):
-    """Blackbody spectral energy distribution for given temperature and radius
-    """
+    """Blackbody spectral energy dist. for given temperature and radius."""
 
     C_CONST = c.c.cgs.value
-    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c**2) * pi).cgs.value
+    FLUX_CONST = FOUR_PI * (2.0 * c.h / (c.c ** 2) * pi).cgs.value
     X_CONST = (c.h / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 

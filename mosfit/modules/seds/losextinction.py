@@ -9,8 +9,7 @@ from mosfit.modules.seds.sed import SED
 
 
 class LOSExtinction(SED):
-    """Adds extinction to SED from both host galaxy and MW.
-    """
+    """Adds extinction to SED from both host galaxy and MW."""
 
     MW_RV = 3.1
 
@@ -58,6 +57,7 @@ class LOSExtinction(SED):
         }
 
     def preprocess(self, **kwargs):
+        """Preprocess module."""
         if not self._preprocessed:
             self._ebv = kwargs['ebv']
             self._av_mw = self.MW_RV * self._ebv

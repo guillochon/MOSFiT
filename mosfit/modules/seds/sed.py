@@ -8,8 +8,7 @@ from mosfit.modules.module import Module
 
 
 class SED(Module):
-    """Template class for SED Modules.
-    """
+    """Template class for SED Modules."""
 
     C_OVER_ANG = (c.c / u.Angstrom).cgs.value
     N_PTS = 16 + 1
@@ -20,6 +19,7 @@ class SED(Module):
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):
+        """Receive requests from other `Module`s."""
         self._sample_wavelengths = requests.get('sample_wavelengths', [])
         if not self._sample_wavelengths:
             wave_ranges = requests.get('band_wave_ranges', [])
@@ -32,12 +32,14 @@ class SED(Module):
         self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
+        """Add SED from present module to existing `seds` key."""
         old_seds = kwargs.get('seds', None)
         if old_seds is not None:
             new_seds += old_seds
         return new_seds
 
     def send_request(self, request):
+        """Send a request."""
         if request == 'sample_wavelengths':
             return self._sample_wavelengths
         return []

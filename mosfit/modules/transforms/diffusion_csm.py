@@ -1,8 +1,10 @@
 """Definitions for the `DiffusionCSM` class."""
 import numexpr as ne
 import numpy as np
-from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, DAY_CGS
+
+from mosfit.constants import C_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
+
 
 # Important: Only define one `Module` class per file.
 
@@ -18,17 +20,24 @@ class DiffusionCSM(Transform):
         self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']
         self._mass = kwargs['mcsm'] * M_SUN_CGS
-        self._R0 = kwargs['r0'] * 1.496e13 #AU to cm
+        self._R0 = kwargs['r0'] * 1.496e13  # AU to cm
         self._s = kwargs['s']
         self._rho = kwargs['rho']
-        self._q = self._rho * self._R0**self._s    # scaling constant for CSM density profile
-        self._Rcsm = ((3.0 - self._s) / (4.0 * np.pi * self._q) * self._mass + self._R0 ** (3.0 - self._s))\
-                     ** (1.0 / (3.0 - self._s))  # outer radius of CSM shell
-        self._Rph = abs((-2.0 * (1.0 - self._s) / (3.0 * self._kappa * self._q) + self._Rcsm ** (1.0 - self._s))
-                        **(1.0 / (1.0 - self._s))) # radius of photosphere (should be within CSM)
-        self._tau_diff = (self._kappa * self._mass) / (13.8 * C_CGS * self._Rph) / DAY_CGS
+        # scaling constant for CSM density profile
+        self._q = self._rho * self._R0 ** self._s
+        # outer radius of CSM shell
+        self._Rcsm = (
+            (3.0 - self._s) / (4.0 * np.pi * self._q) * self._mass + self._R0
+            ** (3.0 - self._s)) ** (1.0 / (3.0 - self._s))
+        # radius of photosphere (should be within CSM)
+        self._Rph = abs(
+            (-2.0 * (1.0 - self._s) / (3.0 * self._kappa * self._q) +
+             self._Rcsm ** (1.0 - self._s))
+            ** (1.0 / (1.0 - self._s)))
+        self._tau_diff = (
+            self._kappa * self._mass) / (13.8 * C_CGS * self._Rph) / DAY_CGS
 
-        tbarg = self.MIN_EXP_ARG * self._tau_diff**2
+        tbarg = self.MIN_EXP_ARG * self._tau_diff ** 2
         new_lum = []
         evaled = False
         lum_cache = {}
@@ -40,7 +49,7 @@ class DiffusionCSM(Transform):
             if te in lum_cache:
                 new_lum.append(lum_cache[te])
                 continue
-            te2 = te**2
+            te2 = te ** 2
             tb = max(np.sqrt(max(te2 - tbarg, 0.0)), min_te)
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
