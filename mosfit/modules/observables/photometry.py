@@ -191,6 +191,7 @@ class Photometry(Module):
                 self._band_offsets[i] = zps[-1]
 
     def find_band_index(self, band, instrument='', bandset='', system=''):
+        """Find the index corresponding to the provided band information."""
         for i in range(4):
             for bi, bnd in enumerate(self._unique_bands):
                 if (i == 0 and band == bnd['name'] and
@@ -216,6 +217,7 @@ class Photometry(Module):
                                                          instrument, system))
 
     def process(self, **kwargs):
+        """Process module."""
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
@@ -248,9 +250,11 @@ class Photometry(Module):
         return {'model_observations': observations}
 
     def band_names(self):
+        """Return the list of unique band names."""
         return self._band_names
 
     def abmag(self, eff_fluxes, offsets):
+        """Convert fluxes into AB magnitude."""
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
              0.0] = AB_OFFSET - offsets[eff_fluxes != 0.0] - MAG_FAC * (
@@ -258,6 +262,7 @@ class Photometry(Module):
         return mags
 
     def send_request(self, request):
+        """Send requests to other modules."""
         if request == 'photometry':
             return self
         elif request == 'band_wave_ranges':
