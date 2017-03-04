@@ -32,7 +32,18 @@ class SED(Module):
         self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
-        """Add SED from present module to existing `seds` key."""
+        """Add SED from present module to existing ``seds`` key.
+
+        Parameters
+        ----------
+        new_seds : array
+            The new SEDs to add to the existing SEDs.
+
+        Returns
+        -------
+        new_seds : array
+            The result of summing the new and existing SEDs.
+        """
         old_seds = kwargs.get('seds', None)
         if old_seds is not None:
             new_seds += old_seds
