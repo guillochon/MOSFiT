@@ -400,9 +400,10 @@ class Fitter(object):
                 ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
                 .ljust(band_len) + ' [' + ', '.join(
                     list(
-                        filter(None, ('Bandset: ' + s[1] if s[
-                            1] else '', 'System: ' + s[0] if s[0] else '',
-                                      'AB offset: ' + pretty_num(s[3]))))) +
+                        filter(None, (
+                            'Bandset: ' + s[1] if s[1] else '',
+                            'System: ' + s[0] if s[0] else '',
+                            'AB offset: ' + pretty_num(s[3]))))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')

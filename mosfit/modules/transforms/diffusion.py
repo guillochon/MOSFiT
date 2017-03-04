@@ -1,20 +1,22 @@
+"""Definitions for the `Diffusion` class."""
 import numexpr as ne
 import numpy as np
-from mosfit.constants import C_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, DAY_CGS
+
+from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
 
-CLASS_NAME = 'Diffusion'
+# Important: Only define one `Module` class per file.
 
 
 class Diffusion(Transform):
-    """Photon diffusion transform.
-    """
+    """Photon diffusion transform."""
 
     N_INT_TIMES = 1000
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
-    TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS**2)
+    TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS ** 2)
 
     def process(self, **kwargs):
+        """Process `Diffusion`."""
         self.set_times_lums(**kwargs)
         self._kappa = kwargs['kappa']
         self._kappa_gamma = kwargs['kappagamma']
@@ -22,9 +24,10 @@ class Diffusion(Transform):
         self._v_ejecta = kwargs['vejecta']
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
                                  self._m_ejecta / self._v_ejecta) / DAY_CGS
-        self._trap_coeff = (self.TRAP_CONST * self._kappa_gamma *
-                            self._m_ejecta / (self._v_ejecta**2)) / DAY_CGS**2
-        td2, A = self._tau_diff**2, self._trap_coeff
+        self._trap_coeff = (
+            self.TRAP_CONST * self._kappa_gamma * self._m_ejecta /
+            (self._v_ejecta ** 2)) / DAY_CGS ** 2
+        td2, A = self._tau_diff ** 2, self._trap_coeff  # noqa: F841
 
         new_lum = []
         evaled = False
@@ -37,13 +40,14 @@ class Diffusion(Transform):
             if te in lum_cache:
                 new_lum.append(lum_cache[te])
                 continue
-            te2 = te**2
+            te2 = te ** 2  # noqa: F841
             tb = max(0.0, min_te)
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
 
-            int_lums = np.interp(int_times, self._dense_times_since_exp,
-                                 self._dense_luminosities)
+            int_lums = np.interp(  # noqa: F841
+                int_times, self._dense_times_since_exp,
+                self._dense_luminosities)
 
             if not evaled:
                 int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '

@@ -1,5 +1,4 @@
-"""MOSFiT: Modular light curve fitting software.
-"""
+"""MOSFiT: Modular light curve fitting software."""
 
 __version__ = '0.3.0'
 __author__ = 'James Guillochon & Matt Nicholl'

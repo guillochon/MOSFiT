@@ -1,5 +1,4 @@
-"""Entry point for MOSFiT scripts.
-"""
+"""Entry point for MOSFiT scripts."""
 
 if __name__ == "__main__":
     from . import main

@@ -1,11 +1,10 @@
-"""Functions for assisting with plotting, inherited from AstroCats.
-"""
+"""Functions for assisting with plotting, inherited from AstroCats."""
 
 from collections import OrderedDict
 from random import seed, shuffle
-from matplotlib.colors import rgb2hex
-import seaborn as sns
 
+import seaborn as sns
+from matplotlib.colors import rgb2hex
 from palettable import colorbrewer, cubehelix, wesanderson
 
 __all__ = [
