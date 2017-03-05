@@ -4,6 +4,7 @@ from astropy import constants as c
 
 from mosfit.modules.seds.sed import SED
 
+
 # Important: Only define one ``Module`` class per file.
 
 
@@ -36,6 +37,5 @@ class Cutoff(SED):
             sed *= norm / np.trapz(sed, x=wav_arr)
 
             self._seds[si] = sed
-
 
         return {'seds': self._seds}

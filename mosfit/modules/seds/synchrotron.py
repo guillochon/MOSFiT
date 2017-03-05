@@ -51,10 +51,10 @@ class Synchrotron(SED):
             # Below is not scaled properly, just proof of concept
             fmax = self._f0 * self._radius_source ** 2 * self._nu_max ** 2.5
             sed = [
-                self._f0 * self._radius_source**2 * (x / self._nu_max)
-                **2.5  * ac / cc * x**2 if x < self._nu_max
-                else fmax * (x / self._nu_max) **(-(self._p - 1.0) / 2.0)
-                * ac / cc * x**2 for x in rest_freqs
+                self._f0 * self._radius_source ** 2 * (x / self._nu_max)
+                ** 2.5 * ac / cc * x ** 2 if x < self._nu_max
+                else fmax * (x / self._nu_max) ** (-(self._p - 1.0) / 2.0)
+                * ac / cc * x ** 2 for x in rest_freqs
             ]
 
             sed = np.nan_to_num(sed)

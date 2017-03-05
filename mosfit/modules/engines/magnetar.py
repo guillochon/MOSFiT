@@ -28,8 +28,8 @@ class Magnetar(Engine):
         Ep = 2.6e52 * (self._Mns / 1.4) ** (3. / 2.) * self._Pspin ** (-2)
         # ^ E_rot = 1/2 I (2pi/P)^2, unit = erg
 
-        tp = 1.3e5 * self._Bfield ** (-2) * self._Pspin ** 2 * (self._Mns / 1.4) ** (
-            3. / 2.) * (np.sin(self._thetaPB)) ** (-2)
+        tp = 1.3e5 * self._Bfield ** (-2) * self._Pspin ** 2 * (
+            self._Mns / 1.4) ** (3. / 2.) * (np.sin(self._thetaPB)) ** (-2)
         # ^ tau_spindown = P/(dP/dt), unit = s
         # Magnetic dipole: power = 2/(3c^3)*(R^3 Bsin(theta))^2 * (2pi/P)^4
         # Set equal to -d/dt(E_rot) to derive tau
@@ -40,7 +40,8 @@ class Magnetar(Engine):
             for x in self._times
         ]
 
-        luminosities = [2 * Ep / tp / (1. + 2 * t * DAY_CGS / tp) ** 2 for t in ts]
+        luminosities = [2 * Ep / tp / (
+            1. + 2 * t * DAY_CGS / tp) ** 2 for t in ts]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
         # ^ From Ostriker and Gunn 1971 eq 4
 
