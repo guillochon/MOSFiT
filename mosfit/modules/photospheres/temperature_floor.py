@@ -1,24 +1,25 @@
-from math import pi
-
-import numexpr as ne
+"""Definitions for the `TemperatureFloor` class."""
 import numpy as np
 from astropy import constants as c
 
-from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
 
-CLASS_NAME = 'TemperatureFloor'
+# Important: Only define one ``Module`` class per file.
 
 
 class TemperatureFloor(Photosphere):
-    """Photosphere that expands and cools with ejecta then recedes at constant
-    final temperature
+    """Photosphere with a minimum allowed temperature.
+
+    Photosphere that expands and cools with ejecta then recedes at constant
+    final temperature.
     """
 
-    STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
+    STEF_CONST = (FOUR_PI * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
 
     def process(self, **kwargs):
+        """Process module."""
         self._rest_t_explosion = kwargs['resttexplosion']
         self._times = kwargs['rest_times']
         self._luminosities = kwargs['luminosities']
@@ -27,10 +28,10 @@ class TemperatureFloor(Photosphere):
         self._m_ejecta = kwargs['mejecta']
         self._kappa = kwargs['kappa']
         self._radius2 = [(self.RAD_CONST *
-                          self._v_ejecta * (x - self._rest_t_explosion))**2
+                          self._v_ejecta * (x - self._rest_t_explosion)) ** 2
                          for x in self._times]
         self._rec_radius2 = [
-            x / (self.STEF_CONST * self._temperature**4)
+            x / (self.STEF_CONST * self._temperature ** 4)
             for x in self._luminosities
         ]
         rphot = []
@@ -40,7 +41,7 @@ class TemperatureFloor(Photosphere):
             radius2 = self._radius2[li]
             rec_radius2 = self._rec_radius2[li]
             if radius2 < rec_radius2:
-                temperature = (lum / (self.STEF_CONST * radius2))**0.25
+                temperature = (lum / (self.STEF_CONST * radius2)) ** 0.25
             else:
                 radius2 = rec_radius2
                 temperature = self._temperature

@@ -1,15 +1,19 @@
+"""Definitions for the `AllTimes` class."""
 from mosfit.modules.module import Module
 from mosfit.utils import frequency_unit
 
-CLASS_NAME = 'AllTimes'
+# Important: Only define one ``Module`` class per file.
 
 
 class AllTimes(Module):
-    """Create lists of observations that are either only real observations or
-    also include interpolations/extrapolations.
+    """Generate all times for which observations will be constructed.
+
+    Create lists of observation times that associated with real observations
+    and interpolations/extrapolations if such flags are passed to MOSFiT.
     """
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(AllTimes, self).__init__(**kwargs)
         self._bands = []
         self._systems = []
@@ -18,6 +22,7 @@ class AllTimes(Module):
         self._frequencies = []
 
     def process(self, **kwargs):
+        """Process module."""
         old_bands = (self._systems, self._instruments, self._bandsets,
                      self._bands, self._frequencies)
         if (kwargs.get('root', 'output') == 'output' and

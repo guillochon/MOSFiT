@@ -1,0 +1,15 @@
+astrocats
+astropy
+emcee
+extinction
+inflect
+matplotlib
+numexpr
+numpy
+pandas
+pyparsing
+python-dateutil
+schwimmbad
+scipy
+sphinx_automodapi
+sphinxcontrib-autoprogram

@@ -1,3 +1,4 @@
+"""Definitions for the `Photometry` class."""
 import csv
 import json
 import os
@@ -11,19 +12,20 @@ from astropy import units as u
 
 from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS, C_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
+from mosfit.utils import get_url_file_handle, listify, syst_syns
 
-CLASS_NAME = 'Photometry'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class Photometry(Module):
-    """Band-pass filters.
-    """
+    """Band-pass filters."""
 
     FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
     ANG_CGS = u.Angstrom.cgs.scale
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Photometry, self).__init__(**kwargs)
         self._preprocessed = False
         self._bands = []
@@ -109,8 +111,8 @@ class Photometry(Module):
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
                                     timeout=10)
-                            except:
-                                print_inline(
+                            except Exception:
+                                self._printer.inline(
                                     'Warning: Could not download SVO filter '
                                     '(are you online?), using cached filter.')
                             else:
@@ -199,6 +201,7 @@ class Photometry(Module):
                 self._band_offsets[i] = zps[-1]
 
     def find_band_index(self, band, instrument='', bandset='', system=''):
+        """Find the index corresponding to the provided band information."""
         for i in range(4):
             for bi, bnd in enumerate(self._unique_bands):
                 if (i == 0 and band == bnd['name'] and
@@ -224,9 +227,10 @@ class Photometry(Module):
                                                          instrument, system))
 
     def process(self, **kwargs):
+        """Process module."""
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2
+        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']
@@ -259,9 +263,11 @@ class Photometry(Module):
         return {'model_observations': observations}
 
     def band_names(self):
+        """Return the list of unique band names."""
         return self._band_names
 
     def abmag(self, eff_fluxes, offsets):
+        """Convert fluxes into AB magnitude."""
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
              0.0] = - offsets[eff_fluxes != 0.0] - MAG_FAC * (
@@ -269,6 +275,7 @@ class Photometry(Module):
         return mags
 
     def send_request(self, request):
+        """Send requests to other modules."""
         if request == 'photometry':
             return self
         elif request == 'band_wave_ranges':

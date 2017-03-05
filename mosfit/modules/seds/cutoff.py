@@ -1,16 +1,17 @@
+"""Definitions for the `Cutoff` class."""
 import numpy as np
 from astropy import constants as c
 
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'Cutoff'
+# Important: Only define one ``Module`` class per file.
 
 
 class Cutoff(SED):
-    """Apply a cutoff in the UV to the SED.
-    """
+    """Apply a cutoff in the UV to the SED."""
 
     def process(self, **kwargs):
+        """Process module."""
         self._seds = kwargs['seds']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']

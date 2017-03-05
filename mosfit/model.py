@@ -1,4 +1,6 @@
+"""Definitions for the `Model` class."""
 import importlib
+import inspect
 import json
 import logging
 import os
@@ -11,27 +13,38 @@ from scipy.optimize import minimize
 
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.utils import listify, print_wrapped
+from mosfit.modules.module import Module
+from mosfit.printer import Printer
+from mosfit.utils import listify
 
 
-class Model:
-    """Define a semi-analytical model to fit transients with.
-    """
+class Model(object):
+    """Define a semi-analytical model to fit transients with."""
 
     MODEL_OUTPUT_DIR = 'products'
 
-    class outClass(object):
-        pass
+    # class outClass(object):
+    #     pass
 
     def __init__(self,
                  parameter_path='parameters.json',
                  model='default',
                  wrap_length=100,
-                 pool=None):
+                 pool=None,
+                 fitter=None):
+        """Initialize `Model` object."""
         self._model_name = model
         self._pool = pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
+        self._fitter = fitter
+
+        if self._fitter:
+            self._printer = self._fitter._printer
+        else:
+            self._printer = Printer(wrap_length=wrap_length)
+
+        prt = self._printer
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -92,12 +105,12 @@ class Model:
             raise ValueError('Could not find parameter file!')
 
         if self._is_master:
-            print_wrapped('Basic model file:', wrap_length)
-            print_wrapped('  ' + basic_model_path, wrap_length)
-            print_wrapped('Model file:', wrap_length)
-            print_wrapped('  ' + model_path, wrap_length)
-            print_wrapped('Parameter file:', wrap_length)
-            print_wrapped('  ' + pp + '\n', wrap_length)
+            prt.wrapped('Basic model file:', wrap_length)
+            prt.wrapped('  ' + basic_model_path, wrap_length)
+            prt.wrapped('Model file:', wrap_length)
+            prt.wrapped('  ' + model_path, wrap_length)
+            prt.wrapped('Parameter file:', wrap_length)
+            prt.wrapped('  ' + pp + '\n', wrap_length)
 
         with open(pp, 'r') as f:
             self._parameter_json = json.load(f, object_pairs_hook=OrderedDict)
@@ -153,36 +166,43 @@ class Model:
             if cur_task[
                     'kind'] == 'parameter' and task in self._parameter_json:
                 cur_task.update(self._parameter_json[task])
-            class_name = cur_task.get('class', task)
+            mod_name = cur_task.get('class', task)
             mod = importlib.import_module(
-                '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
+                '.' + 'modules.' + cur_task['kind'] + 's.' + mod_name,
                 package='mosfit')
-            mod_class = getattr(mod, mod.CLASS_NAME)
-            self._modules[task] = mod_class(name=task, pool=pool, **cur_task)
-            if class_name == 'photometry':
+            class_name = [
+                x[0] for x in
+                inspect.getmembers(mod, inspect.isclass)
+                if issubclass(x[1], Module) and
+                x[1].__module__ == mod.__name__][0]
+            mod_class = getattr(mod, class_name)
+            self._modules[task] = mod_class(
+                name=task, pool=pool, printer=self._printer, **cur_task)
+            if mod_name == 'photometry':
                 self._bands = self._modules[task].band_names()
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
-            # class_name = cur_task.get('class', task)
+            # mod_name = cur_task.get('class', task)
             # mod_path = os.path.join('modules', cur_task['kind'] + 's',
-            #                         class_name + '.py')
+            #                         mod_name + '.py')
             # if not os.path.isfile(mod_path):
             #     mod_path = os.path.join(self._dir_path, 'modules',
             #                             cur_task['kind'] + 's',
-            #                             class_name + '.py')
+            #                             mod_name + '.py')
             # mod_name = ('mosfit.modules.' + cur_task['kind'] + 's.' +
-            # class_name)
+            # mod_name)
             # mod = importlib.machinery.SourceFileLoader(mod_name,
             #                                            mod_path).load_module()
-            # mod_class = getattr(mod, mod.CLASS_NAME)
+            # mod_class = getattr(mod, class_name)
             # if (cur_task['kind'] == 'parameter' and task in
             #         self._parameter_json):
             #     cur_task.update(self._parameter_json[task])
             # self._modules[task] = mod_class(name=task, **cur_task)
-            # if class_name == 'photometry':
+            # if mod_name == 'photometry':
             #     self._bands = self._modules[task].band_names()
 
     def determine_free_parameters(self, extra_fixed_parameters):
+        """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -194,6 +214,7 @@ class Model:
         self._num_free_parameters = len(self._free_parameters)
 
     def exchange_requests(self):
+        """Exchange requests between modules."""
         for task in reversed(self._call_stack):
             cur_task = self._call_stack[task]
             if 'requests' in cur_task:
@@ -204,8 +225,9 @@ class Model:
                 self._modules[task].receive_requests(**requests)
 
     def frack(self, arg):
-        """Perform fracking upon a single walker, using a local minimization
-        method.
+        """Perform fracking upon a single walker.
+
+        Uses a randomly-selected global or local minimization method.
         """
         x = np.array(arg[0])
         step = 0.2
@@ -266,8 +288,7 @@ class Model:
         return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
-        """Construct call trees for each root.
-        """
+        """Construct call trees for each root."""
         for tag in d:
             entry = d[tag].copy()
             new_roots = roots
@@ -290,7 +311,9 @@ class Model:
                     trees[tag]['children'].update(children)
 
     def draw_walker(self, test=True):
-        """Draw a walker randomly from the full range of all parameters, reject
+        """Draw a walker randomly.
+
+        Draw a walker randomly from the full range of all parameters, reject
         walkers that return invalid scores.
         """
         p = None
@@ -310,8 +333,7 @@ class Model:
         return p
 
     def get_max_depth(self, tag, parent, max_depth):
-        """Return the maximum depth a given task is found in a tree.
-        """
+        """Return the maximum depth a given task is found in a tree."""
         for child in parent.get('children', []):
             if child == tag:
                 new_max = parent['children'][child]['depth']
@@ -325,14 +347,12 @@ class Model:
         return max_depth
 
     def likelihood(self, x):
-        """Return score related to maximum likelihood.
-        """
+        """Return score related to maximum likelihood."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
     def prior(self, x):
-        """Return score related to paramater priors.
-        """
+        """Return score related to paramater priors."""
         prior = 0.0
         for pi, par in enumerate(self._free_parameters):
             lprior = self._modules[par].lnprior_pdf(x[pi])
@@ -340,6 +360,7 @@ class Model:
         return prior
 
     def boprob(self, **kwargs):
+        """Score for `BayesianOptimization`."""
         x = []
         for key in sorted(kwargs):
             x.append(kwargs[key])
@@ -350,15 +371,16 @@ class Model:
         return l
 
     def fprob(self, x):
-        """Return score for fracking.
-        """
+        """Return score for fracking."""
         l = -(self.likelihood(x) + self.prior(x))
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l
 
     def run_stack(self, x, root='objective'):
-        """Run a stack of modules as defined in the model definition file. Only
+        """Run module stack.
+
+        Run a stack of modules as defined in the model definition file. Only
         run functions that match the specified root.
         """
         inputs = OrderedDict()

@@ -1,35 +1,20 @@
 # -*- coding: UTF-8 -*-
-"""Miscellaneous utility functions.
-"""
-from __future__ import print_function
+"""Miscellaneous utility functions."""
 
 import hashlib
 import json
 import re
-import signal
 import sys
-from builtins import input
 from collections import OrderedDict
 from math import floor, log10
-from textwrap import fill
 
 import numpy as np
-
-if sys.version_info[:2] < (3, 3):
-    old_print = print
-
-    def print(*args, **kwargs):
-        flush = kwargs.pop('flush', False)
-        old_print(*args, **kwargs)
-        file = kwargs.get('file', sys.stdout)
-        if flush and file is not None:
-            file.flush()
-
 
 syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega', 'Landolt': 'Vega'}
 
 
 def get_url_file_handle(url, timeout=10):
+    """Get file handle from urllib request of URL."""
     if sys.version_info[0] >= 3:
         from urllib.request import urlopen
     else:
@@ -38,6 +23,7 @@ def get_url_file_handle(url, timeout=10):
 
 
 def is_number(s):
+    """Check if input is numeric."""
     if isinstance(s, bool):
         return False
     try:
@@ -48,6 +34,7 @@ def is_number(s):
 
 
 def is_integer(s):
+    """Check if input is an integer."""
     if isinstance(s, list) and not isinstance(s, str):
         try:
             [int(x) for x in s]
@@ -63,74 +50,30 @@ def is_integer(s):
 
 
 def pretty_num(x, sig=4):
+    """Convert number into string with specified significant digits."""
     return str('%g' % (round_sig(x, sig)))
 
 
 def round_sig(x, sig=4):
+    """Round number with specified significant digits."""
     if x == 0.0:
         return 0.0
     return round(x, sig - int(floor(log10(abs(x)))) - 1)
 
 
 def listify(x):
+    """Convert item to a `list` of items if it isn't already a `list`."""
     if not isinstance(x, list):
         return [x]
     return x
 
 
-def print_inline(x, new_line=False):
-    lines = x.split('\n')
-    if not new_line:
-        for line in lines:
-            sys.stdout.write("\033[F")
-            sys.stdout.write("\033[K")
-    print(x, flush=True)
-
-
-def print_wrapped(text, wrap_length=100):
-    print(fill(text, wrap_length))
-
-
-def prompt(text, wrap_length=100, kind='bool', options=None):
-    if kind == 'bool':
-        choices = ' (y/[n])'
-    elif kind == 'select':
-        choices = '\n' + '\n'.join([
-            ' ' + str(i + 1) + '.  ' + options[i] for i in range(
-                len(options))
-        ] + [
-            '[n]. None of the above, skip this event.\n'
-            'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
-                len(options)) + '/[n]):'
-        ])
-    elif kind == 'string':
-        choices = ''
-    else:
-        raise ValueError('Unknown prompt kind.')
-
-    prompt_txt = (text + choices).split('\n')
-    for txt in prompt_txt[:-1]:
-        ptxt = fill(txt, wrap_length, replace_whitespace=False)
-        print(ptxt)
-    user_input = input(
-        fill(
-            prompt_txt[-1], wrap_length, replace_whitespace=False) + " ")
-    if kind == 'bool':
-        return user_input in ["Y", "y", "Yes", "yes"]
-    elif kind == 'select':
-        if (is_integer(user_input) and
-                int(user_input) in list(range(1, len(options) + 1))):
-            return options[int(user_input) - 1]
-        return False
-    elif kind == 'string':
-        return user_input
-
-
-def init_worker():
-    signal.signal(signal.SIGINT, signal.SIG_IGN)
-
-
 def entabbed_json_dumps(string, **kwargs):
+    """Produce entabbed string for JSON output.
+
+    This is necessary because Python 2 does not allow tabs to be used in its
+    JSON dump(s) functions.
+    """
     if sys.version_info[:2] >= (3, 3):
         return json.dumps(
             string,
@@ -152,11 +95,13 @@ def entabbed_json_dumps(string, **kwargs):
 
 
 def entabbed_json_dump(string, f, **kwargs):
+    """Write `entabbed_json_dumps` output to file handle."""
     f.write(entabbed_json_dumps(string, **kwargs))
 
 
 def calculate_WAIC(scores):
-    """WAIC from Gelman
+    """WAIC from Gelman.
+
     http://www.stat.columbia.edu/~gelman/research/published/waic_understand3
     """
     fscores = [x for y in scores for x in y]
@@ -166,26 +111,31 @@ def calculate_WAIC(scores):
 
 
 def flux_density_unit(unit):
+    """Return coeffiecent to convert µJy to Jy."""
     if unit == 'µJy':
         return 1.0 / (1.0e-6 * 1.0e-23)
     return 1.0
 
 
 def frequency_unit(unit):
+    """Return coeffiecent to convert GHz to Hz."""
     if unit == 'GHz':
         return 1.0 / 1.0e9
     return 1.0
 
 
 def hash_bytes(input_string):
+    """Return a hash bytestring.
+
+    Necessary to have consistent behavior between Python 2 & 3.
+    """
     if sys.version_info[0] < 3:
         return bytes(input_string)
     return input_string.encode()
 
 
 def get_model_hash(modeldict, ignore_keys=[]):
-    """Return a unique hash for the given model
-    """
+    """Return a unique hash for the given model."""
     newdict = OrderedDict()
     for key in modeldict:
         if key not in ignore_keys:
@@ -196,6 +146,7 @@ def get_model_hash(modeldict, ignore_keys=[]):
 
 
 def get_mosfit_hash(salt=''):
+    """Return a unique hash for the MOSFiT code."""
     import fnmatch
     import os
 
@@ -216,6 +167,7 @@ def get_mosfit_hash(salt=''):
 
 
 def is_master():
+    """Determine if we are the master process."""
     try:
         from mpi4py import MPI
         return MPI.COMM_WORLD.Get_rank() == 0

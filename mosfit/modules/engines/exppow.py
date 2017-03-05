@@ -1,17 +1,19 @@
+"""Definitions for the `ExpPow` class."""
 from math import isnan
 
 import numpy as np
 
 from mosfit.modules.engines.engine import Engine
 
-CLASS_NAME = 'ExpPow'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class ExpPow(Engine):
-    """A simple analytical engine.
-    """
+    """A simple analytical engine."""
 
     def process(self, **kwargs):
+        """Process module."""
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:
@@ -30,7 +32,7 @@ class ExpPow(Engine):
 
         luminosities = [
             self._lum_scale * (1.0 - np.exp(-t / self._t_peak))
-            **self._alpha * (t / self._t_peak)**(-self._beta) for t in ts
+            ** self._alpha * (t / self._t_peak) ** (-self._beta) for t in ts
         ]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 

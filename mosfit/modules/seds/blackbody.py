@@ -1,3 +1,4 @@
+"""Definitions for the `Blackbody` class."""
 from math import pi
 
 import numexpr as ne
@@ -5,23 +6,23 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 
-from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import FOUR_PI
 from mosfit.modules.seds.sed import SED
 
 
-CLASS_NAME = 'Blackbody'
+# Important: Only define one ``Module`` class per file.
 
 
 class Blackbody(SED):
-    """Blackbody spectral energy distribution for given temperature and radius
-    """
+    """Blackbody spectral energy dist. for given temperature and radius."""
 
     C_CONST = c.c.cgs.value
-    FLUX_CONST = FOUR_PI * (2.0 * c.h * c.c**2 * pi).cgs.value * u.Angstrom.cgs.scale
+    FLUX_CONST = FOUR_PI * (2.0 * c.h * c.c ** 2 * pi).cgs.value * u.Angstrom.cgs.scale
     X_CONST = (c.h * c.c / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
     def process(self, **kwargs):
+        """Process module."""
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
