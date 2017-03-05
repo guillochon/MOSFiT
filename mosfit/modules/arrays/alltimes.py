@@ -31,10 +31,10 @@ class AllTimes(Array):
             obs_keys = ['times', 'systems', 'instruments', 'bandsets',
                         'bands', 'frequencies']
             obslist = (list(
-                zip(*([[kwargs.get(k) for k in obs_keys]] +
+                zip(*([kwargs.get(k) for k in obs_keys] +
                       [[True for x in range(len(kwargs['times']))]]))
             ) + list(
-                zip(*([[kwargs.get('extra_' + k) for k in obs_keys]] +
+                zip(*([kwargs.get('extra_' + k) for k in obs_keys] +
                       [[False for x in range(len(kwargs['extra_times']))]]))))
             obslist.sort()
 
