@@ -73,6 +73,9 @@
         "class":"parameter",
         "latex":"\\sigma"
     },
+    "constraint":{
+        "kind":"constraint"
+    },
     "likelihood":{
         "kind":"objective",
         "inputs":[
@@ -80,7 +83,8 @@
             "variance",
             "photometry",
             "default_upper_limit_error",
-            "default_no_error_bar_error"
+            "default_no_error_bar_error",
+            "constraint"
         ]
     },
     "alltimes":{
