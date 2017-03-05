@@ -15,8 +15,8 @@ Using MOSFiT
    getting_started.rst
 
 
-Running from Command Line
--------------------------
+Command line arguments
+----------------------
 .. toctree::
    :maxdepth: 1
 
