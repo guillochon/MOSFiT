@@ -1,11 +1,12 @@
 """Definitions for the `AllTimes` class."""
-from mosfit.modules.module import Module
+from mosfit.modules.arrays.array import Array
 from mosfit.utils import frequency_unit
+
 
 # Important: Only define one ``Module`` class per file.
 
 
-class AllTimes(Module):
+class AllTimes(Array):
     """Generate all times for which observations will be constructed.
 
     Create lists of observation times that associated with real observations
@@ -27,16 +28,14 @@ class AllTimes(Module):
                      self._bands, self._frequencies)
         if (kwargs.get('root', 'output') == 'output' and
                 'extra_times' in kwargs):
+            obs_keys = ['times', 'systems', 'instruments', 'bandsets',
+                        'bands', 'frequencies']
             obslist = (list(
-                zip(*(kwargs['times'], kwargs['systems'], kwargs[
-                    'instruments'], kwargs['bandsets'], kwargs[
-                        'bands'], kwargs['frequencies'],
-                      [True for x in range(len(kwargs['times']))]))
+                zip(*([[kwargs.get(k) for k in obs_keys]] +
+                      [[True for x in range(len(kwargs['times']))]]))
             ) + list(
-                zip(*(kwargs['extra_times'], kwargs['extra_systems'], kwargs[
-                    'extra_instruments'], kwargs['extra_bandsets'], kwargs[
-                        'extra_bands'], kwargs['extra_frequencies'],
-                      [False for x in range(len(kwargs['extra_times']))]))))
+                zip(*([[kwargs.get('extra_' + k) for k in obs_keys]] +
+                      [[False for x in range(len(kwargs['extra_times']))]]))))
             obslist.sort()
 
             (self._times, self._systems, self._instruments, self._bandsets,
@@ -74,4 +73,5 @@ class AllTimes(Module):
         return outputs
 
     def receive_requests(self, **requests):
+        """Receive requests from other ``Module`` objects."""
         self._photometry = requests.get('photometry', None)
