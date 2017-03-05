@@ -1,26 +1,33 @@
-"""The main function.
-"""
+"""The main function."""
 
 import argparse
 import os
 import shutil
 import sys
+from operator import attrgetter
 from unicodedata import normalize
 
 from mosfit import __version__
 from mosfit.fitter import Fitter
-from mosfit.utils import get_mosfit_hash, is_master, print_wrapped, prompt
+from mosfit.printer import Printer
+from mosfit.utils import get_mosfit_hash, is_master
 
 
-def main():
-    """First, parse command line arguments.
-    """
+class SortingHelpFormatter(argparse.HelpFormatter):
+    """Sort argparse arguments by argument name."""
 
-    dir_path = os.path.dirname(os.path.realpath(__file__))
+    def add_arguments(self, actions):
+        """Add sorting action based on `option_strings`."""
+        actions = sorted(actions, key=attrgetter('option_strings'))
+        super(SortingHelpFormatter, self).add_arguments(actions)
 
+
+def get_parser():
+    """Retrieve MOSFiT's `argparse.ArgumentParser` object."""
     parser = argparse.ArgumentParser(
         prog='MOSFiT',
-        description='Fit astrophysical light curves using AstroCats data.')
+        description='Fit astrophysical light curves using AstroCats data.',
+        formatter_class=SortingHelpFormatter)
 
     parser.add_argument(
         '--events',
@@ -285,7 +292,7 @@ def main():
         dest='check_upload_quality',
         default=True,
         action='store_false',
-        help=("Perform some quality checks before uploading fits."))
+        help=("Ignore all quality checks when uploading fits."))
 
     parser.add_argument(
         '--travis',
@@ -297,14 +304,26 @@ def main():
               "parameter; it is included as Travis requires new lines to be "
               "produed to detected program output."))
 
+    return parser
+
+
+def main():
+    """Main function for MOSFiT."""
+    dir_path = os.path.dirname(os.path.realpath(__file__))
+
+    parser = get_parser()
+
     args = parser.parse_args()
+
+    prt = Printer(wrap_length=100)
+    args.printer = prt
 
     if (isinstance(args.extrapolate_time, list) and
             len(args.extrapolate_time) == 0):
         args.extrapolate_time = 100.0
 
     if len(args.band_list) and args.smooth_times == -1:
-        print_wrapped('Enabling -S as extra bands were defined.')
+        prt.wrapped('Enabling -S as extra bands were defined.')
         args.smooth_times = 0
 
     changed_iterations = False
@@ -315,7 +334,6 @@ def main():
         else:
             args.iterations = 1000
 
-    width = 100
     if is_master():
         # Get hash of ourselves
         mosfit_hash = get_mosfit_hash()
@@ -348,7 +366,7 @@ def main():
         # Perform a few checks on upload before running (to keep size
         # manageable)
         if args.upload and args.smooth_times > 100:
-            response = prompt(
+            response = prt.prompt(
                 'You have set the `--smooth-times` flag to a value '
                 'greater than 100, which will disable uploading. Continue '
                 'with uploading disabled?')
@@ -358,7 +376,7 @@ def main():
                 sys.exit()
 
         if args.upload and args.num_walkers * args.num_temps > 200:
-            response = prompt(
+            response = prt.prompt(
                 'The product of `--num-walkers` and `--num-temps` exceeds '
                 '200, which will disable uploading. Continue '
                 'with uploading disabled?')
@@ -385,40 +403,40 @@ def main():
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
-                print_wrapped(
+                prt.wrapped(
                     "No upload token found! Please visit "
                     "https://sne.space/mosfit/ to obtain an upload "
-                    "token for MOSFiT.",
-                    wrap_length=width)
-                upload_token = prompt(
+                    "token for MOSFiT.")
+                upload_token = prt.prompt(
                     "Please paste your Dropbox token, then hit enter:",
                     kind='string')
                 if len(upload_token) != 64:
-                    print('Error: Token must be exactly 64 characters '
-                          'in length.')
+                    prt.wrapped(
+                        'Error: Token must be exactly 64 characters in '
+                        'length.')
                     continue
                 break
             with open(upload_token_path, 'w') as f:
                 f.write(upload_token)
 
         if args.upload:
-            print("Upload flag set, will upload results after completion.")
-            print("Dropbox token: " + upload_token)
+            prt.wrapped(
+                "Upload flag set, will upload results after completion.")
+            prt.wrapped("Dropbox token: " + upload_token)
 
         args.upload_token = upload_token
 
         if changed_iterations:
-            print("No events specified, setting iterations to 0.")
+            prt.wrapped("No events specified, setting iterations to 0.")
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
-            print_wrapped(
+            prt.wrapped(
                 'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).',
-                wrap_length=width)
+                '(disable with --no-copy-at-launch).')
             fc = False
             if args.force_copy:
-                fc = prompt(
+                fc = prt.prompt(
                     "The flag `--force-copy-at-launch` has been set. Do you "
                     "really wish to overwrite your local model/module/jupyter "
                     "file hierarchy? This action cannot be reversed.", width)

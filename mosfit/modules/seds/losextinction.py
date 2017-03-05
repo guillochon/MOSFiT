@@ -1,23 +1,25 @@
+"""Definitions for the `LOSExtinction` class."""
 import numpy as np
 
 from extinction import apply as eapp
 from extinction import odonnell94
 from mosfit.modules.seds.sed import SED
 
-CLASS_NAME = 'LOSExtinction'
+# Important: Only define one ``Module`` class per file.
 
 
 class LOSExtinction(SED):
-    """Adds extinction to SED from both host galaxy and MW.
-    """
+    """Adds extinction to SED from both host galaxy and MW."""
 
     MW_RV = 3.1
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(LOSExtinction, self).__init__(**kwargs)
         self._preprocessed = False
 
     def process(self, **kwargs):
+        """Process module."""
         self.preprocess(**kwargs)
         zp1 = 1.0 + kwargs['redshift']
         self._seds = kwargs['seds']
@@ -55,6 +57,7 @@ class LOSExtinction(SED):
         }
 
     def preprocess(self, **kwargs):
+        """Preprocess module."""
         if not self._preprocessed:
             self._ebv = kwargs['ebv']
             self._av_mw = self.MW_RV * self._ebv

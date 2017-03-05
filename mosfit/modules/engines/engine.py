@@ -1,16 +1,15 @@
+"""Definitions for the `Engine` class."""
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'Engine'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class Engine(Module):
-    """Generic engine module.
-    """
-
-    def process(self, **kwargs):
-        return {}
+    """Generic engine module."""
 
     def add_to_existing_lums(self, new_lums, **kwargs):
+        """Process module."""
         # Add on to any existing luminosity
         old_lums = kwargs.get('luminosities', None)
         if old_lums is not None:
