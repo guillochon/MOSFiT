@@ -33,7 +33,7 @@ class Module(object):
         return self._name
 
     def receive_requests(self, **kwargs):
-        """Receive requests from other ``Module``s."""
+        """Receive requests from other ``Module`` objects."""
         pass
 
     def set_event_name(self, event_name):
