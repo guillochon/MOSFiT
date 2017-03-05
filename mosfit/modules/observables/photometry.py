@@ -7,8 +7,10 @@ from collections import OrderedDict
 
 import numpy as np
 from astropy.io.votable import parse as voparse
+from astropy import constants as c
+from astropy import units as u
 
-from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
+from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS, C_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, syst_syns
 
@@ -18,6 +20,9 @@ from mosfit.utils import get_url_file_handle, listify, syst_syns
 
 class Photometry(Module):
     """Band-pass filters."""
+
+    FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
+    ANG_CGS = u.Angstrom.cgs.scale
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -72,6 +77,8 @@ class Photometry(Module):
         self._filter_integrals = [0.0] * self._n_bands
         self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
+        FLUX_STD = self.FLUX_STD
+        ANG_CGS = self.ANG_CGS
 
         if self._pool.is_master():
             vo_tabs = {}
@@ -178,7 +185,9 @@ class Photometry(Module):
                 map(list, zip(*rows)))
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = np.trapz(self._transmissions[i],
+            self._filter_integrals[i] = FLUX_STD * np.trapz(
+                                    np.array(self._transmissions[i]) /
+                                    np.array(self._band_wavelengths[i])**2,
                                                  self._band_wavelengths[i])
             self._average_wavelengths[i] = np.trapz([
                 x * y
@@ -227,7 +236,9 @@ class Photometry(Module):
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
+        self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
+        ANG_CGS = self.ANG_CGS
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
         observations = np.zeros_like(self._luminosities)
@@ -243,7 +254,8 @@ class Photometry(Module):
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
-                eff_fluxes[li] = kwargs['seds'][li][0]
+                eff_fluxes[li] = kwargs['seds'][li][0] / ANG_CGS * C_CGS / (
+                                self._frequencies[li]**2)
         nbs = np.array(self._band_indices) < 0
         ybs = np.array(self._band_indices) >= 0
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
@@ -258,7 +270,7 @@ class Photometry(Module):
         """Convert fluxes into AB magnitude."""
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
-             0.0] = AB_OFFSET - offsets[eff_fluxes != 0.0] - MAG_FAC * (
+             0.0] = - offsets[eff_fluxes != 0.0] - MAG_FAC * (
                  np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
         return mags
 
