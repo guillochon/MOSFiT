@@ -399,7 +399,12 @@ class Model(object):
                 inputs.update({'fraction': x[pos]})
                 inputs.setdefault('fractions', []).append(x[pos])
                 pos = pos + 1
-            new_outs = self._modules[task].process(**inputs)
+            try:
+                new_outs = self._modules[task].process(**inputs)
+            except Exception:
+                self._printer.wrapped(
+                    "Failed to execute module `{}`\'s process().".format(task))
+                raise
             outputs.update(new_outs)
 
             if cur_task['kind'] == root:
