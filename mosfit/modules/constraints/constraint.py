@@ -9,7 +9,6 @@ from mosfit.utils import listify
 class Constraint(Module):
     def __init__(self, **kwargs):
         super(Constraint, self).__init__(**kwargs)
-        self._score_modifier = 1.0 #setting score here??
-    def process(self):
+    def process(self, **kwargs):
         self._score_modifier = 1.0
-        return {'score_modifier':score_modifier} #setting score here?
+        return {'score_modifier':self._score_modifier}

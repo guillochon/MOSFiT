@@ -34,7 +34,7 @@ class Likelihood(Module):
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
         self._variance2 = kwargs['variance'] ** 2
-        self._score_modifier = kwargs['score_modifier']
+        self._score_modifier = kwargs.get('score_modifier',1.0)
 
         sum_members = [
             (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
@@ -77,9 +77,8 @@ class Likelihood(Module):
         ]
         value += -0.5 * np.sum(sum_members)
 
-        if isnan(value):
+        if isnan(value) or isnan(self._score_modifier * value):
             return {'value': LIKELIHOOD_FLOOR}
-        print(self._score_modifier)
         return {'value': value * self._score_modifier}
 
     def preprocess(self, **kwargs):
