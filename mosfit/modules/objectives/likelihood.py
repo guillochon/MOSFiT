@@ -34,6 +34,7 @@ class Likelihood(Module):
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
         self._variance2 = kwargs['variance'] ** 2
+        self._score_modifier = kwargs.get('score_modifier',1.0)
 
         sum_members = [
             (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
@@ -76,9 +77,9 @@ class Likelihood(Module):
         ]
         value += -0.5 * np.sum(sum_members)
 
-        if isnan(value):
+        if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
-        return {'value': value}
+        return {'value': max(LIKELIHOOD_FLOOR, value + self._score_modifier)}
 
     def preprocess(self, **kwargs):
         """Construct arrays of observations based on data keys."""
