@@ -1,10 +1,10 @@
 """Definitions for the `RestTimes` class."""
-from mosfit.modules.module import Module
+from mosfit.modules.arrays.array import Array
 
 # Important: Only define one ``Module`` class per file.
 
 
-class RestTimes(Module):
+class RestTimes(Array):
     """This class converts the observed times to rest-frame times."""
 
     def process(self, **kwargs):

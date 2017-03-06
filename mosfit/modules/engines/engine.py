@@ -9,7 +9,18 @@ class Engine(Module):
     """Generic engine module."""
 
     def add_to_existing_lums(self, new_lums, **kwargs):
-        """Process module."""
+        """Add luminosities from module to existing ``luminosities`` key.
+
+        Parameters
+        ----------
+        new_lums : array
+            The new luminosities to add to the existing luminosities.
+
+        Returns
+        -------
+        new_lums : array
+            The result of summing the new and existing luminosities.
+        """
         # Add on to any existing luminosity
         old_lums = kwargs.get('luminosities', None)
         if old_lums is not None:

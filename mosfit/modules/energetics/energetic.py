@@ -7,7 +7,3 @@ from mosfit.modules.module import Module
 
 class Energetic(Module):
     """Template class for energy/velocity conversions."""
-
-    def process(self, **kwargs):
-        """Process module."""
-        return {}

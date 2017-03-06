@@ -75,6 +75,12 @@
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cutoff}"
+    },
     "magnetar":{
         "kind":"engine",
         "inputs":[
@@ -118,10 +124,11 @@
             "band_wave_ranges": "photometry"
         }
     },
-    "cutoff":{
+    "bluecutoff":{
         "kind":"sed",
         "inputs":[
-            "blackbody"
+            "blackbody",
+            "cutoff_wavelength"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -130,7 +137,7 @@
     "losextinction":{
         "kind":"sed",
         "inputs":[
-            "cutoff",
+            "bluecutoff",
             "nhhost",
             "ebv"
         ],

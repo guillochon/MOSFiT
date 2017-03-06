@@ -1,11 +1,11 @@
 """Definitions for the `DenseTimes` class."""
 import numpy as np
-from mosfit.modules.module import Module
+from mosfit.modules.arrays.array import Array
 
 # Important: Only define one ``Module`` class per file.
 
 
-class DenseTimes(Module):
+class DenseTimes(Array):
     """Generate an evenly-spaced array of times for use in calculations.
 
     This class ensures an even time-sampling between the time of explosion

@@ -17,7 +17,8 @@ class Blackbody(SED):
     """Blackbody spectral energy dist. for given temperature and radius."""
 
     C_CONST = c.c.cgs.value
-    FLUX_CONST = FOUR_PI * (2.0 * c.h * c.c ** 2 * pi).cgs.value * u.Angstrom.cgs.scale
+    FLUX_CONST = FOUR_PI * (
+        2.0 * c.h * c.c ** 2 * pi).cgs.value * u.Angstrom.cgs.scale
     X_CONST = (c.h * c.c / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
 
@@ -48,7 +49,7 @@ class Blackbody(SED):
                 continue
             if bi >= 0:
                 rest_wavs = (self._sample_wavelengths[bi]
-                            * u.Angstrom.cgs.scale / zp1)
+                             * u.Angstrom.cgs.scale / zp1)
             else:
                 rest_wavs = [cc / (self._frequencies[li] * zp1)]
 

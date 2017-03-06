@@ -19,7 +19,7 @@ class SED(Module):
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):
-        """Receive requests from other ``Module``s."""
+        """Receive requests from other ``Module`` objects."""
         self._sample_wavelengths = requests.get('sample_wavelengths', [])
         if not self._sample_wavelengths:
             wave_ranges = requests.get('band_wave_ranges', [])
@@ -32,7 +32,7 @@ class SED(Module):
         self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
-        """Add SED from present module to existing ``seds`` key.
+        """Add SED from module to existing ``seds`` key.
 
         Parameters
         ----------
