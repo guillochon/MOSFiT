@@ -77,9 +77,9 @@ class Likelihood(Module):
         ]
         value += -0.5 * np.sum(sum_members)
 
-        if isnan(value) or isnan(self._score_modifier * value):
+        if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
-        return {'value': value * self._score_modifier}
+        return {'value': max(LIKELIHOOD_FLOOR, value + self._score_modifier)}
 
     def preprocess(self, **kwargs):
         """Construct arrays of observations based on data keys."""

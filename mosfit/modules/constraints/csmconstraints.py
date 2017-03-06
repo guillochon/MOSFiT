@@ -18,7 +18,7 @@ class CSMConstaints(Constraint):
     def process(self, **kwargs):
         """add constraints below"""
 
-        self._score_modifier = 1.0
+        self._score_modifier = 0.0
 
         self._n = kwargs['n']
         self._delta = kwargs['delta']
@@ -66,11 +66,9 @@ class CSMConstaints(Constraint):
         self._td = np.sqrt(2.*self._kappa*self._Mcsm_th/(self._vejecta*13.7*3.e10))
         #Constraint 1: R0<= Rph <= Rcsm
         if (self._R_csm < self._R_ph) | (self._r0 > self._R_ph):
-            self._score_modifier *= LIKELIHOOD_FLOOR
+            self._score_modifier += LIKELIHOOD_FLOOR
 
         #Constraint 2: td < ts
         if (self._ts < self._td):
-            self._score_modifier *= LIKELIHOOD_FLOOR
-
-
+            self._score_modifier += LIKELIHOOD_FLOOR
         return {'score_modifier':self._score_modifier}
