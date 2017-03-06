@@ -8,6 +8,11 @@
         "min_value":-500.0,
         "max_value":500.0
     },
+    "temperature":{
+        "min_value":1.0,
+        "max_value":10000,
+        "log":true
+    },
     "n":{
         "value":12.0
     },
