@@ -1,4 +1,4 @@
-"""Definitions for the `Blackbody` class."""
+"""Definitions for the `BlackbodyCutoff` class."""
 from math import pi
 
 import numexpr as ne
