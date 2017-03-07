@@ -1,4 +1,5 @@
 """Definitions for the `Likelihood` class."""
+from collections import OrderedDict
 from math import isnan
 
 import numpy as np
@@ -23,6 +24,7 @@ class Likelihood(Module):
         """Process module."""
         self.preprocess(**kwargs)
         self._model_observations = kwargs['model_observations']
+        self._all_bands = kwargs['all_bands']
         self._all_band_indices = kwargs['all_band_indices']
         self._fractions = kwargs['fractions']
         self._are_mags = np.array(self._all_band_indices) >= 0
@@ -33,14 +35,19 @@ class Likelihood(Module):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
-        self._variance2 = kwargs['variance'] ** 2
         self._score_modifier = kwargs.get('score_modifier', 1.0)
+        self._variance2 = kwargs.get('variance', 0.0) ** 2
+
+        band_v2s = OrderedDict()
+        for key in kwargs:
+            if key.startswith('variance-band-'):
+                band_v2s[key.split('-')[-1]] = kwargs[key] ** 2
 
         sum_members = [
             (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
-                (el if x > y else eu) ** 2 + self._variance2) +
-            np.log(self._variance2 + 0.5 * (el ** 2 + eu ** 2))
-            for x, y, eu, el, u in zip(self._model_observations, [
+                (el if x > y else eu) ** 2 + v2) +
+            np.log(v2 + 0.5 * (el ** 2 + eu ** 2))
+            for x, y, eu, el, u, v2 in zip(self._model_observations, [
                 i
                 for i, o, a in zip(self._mags, self._observed, self._are_mags)
                 if o and a
@@ -53,6 +60,10 @@ class Likelihood(Module):
             ], [
                 i for i, o, a in zip(self._upper_limits, self._observed,
                                      self._are_mags) if o and a
+            ], [
+                band_v2s.get(i, self._variance2) for i, o, a in zip(
+                    self._all_bands, self._observed,
+                    self._are_mags) if o and a
             ])
         ]
         value = -0.5 * np.sum(sum_members)
