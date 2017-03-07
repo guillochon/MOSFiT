@@ -112,22 +112,12 @@
             "temperature"
         ]
     },
-    "blackbody":{
+    "blackbody_cutoff":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
             "temperature_floor",
-            "radiusphot"
-        ],
-        "requests":{
-            "band_wave_ranges": "photometry"
-        }
-    },
-    "bluecutoff":{
-        "kind":"sed",
-        "inputs":[
-            "blackbody",
             "cutoff_wavelength"
         ],
         "requests":{
@@ -137,7 +127,7 @@
     "losextinction":{
         "kind":"sed",
         "inputs":[
-            "bluecutoff",
+            "blackbody_cutoff",
             "nhhost",
             "ebv"
         ],
