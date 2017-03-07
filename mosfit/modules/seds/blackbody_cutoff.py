@@ -33,10 +33,7 @@ class BlackbodyCutoff(SED):
         self._radius_phot = kwargs['radiusphot']
         self._temperature_phot = kwargs['temperaturephot']
         self._cutoff_wavelength = kwargs['cutoff_wavelength']
-        if 'dense_times' in kwargs:
-            self._times = kwargs['dense_times']
-        else:
-            self._times = kwargs['rest_times']
+        self._times = kwargs['rest_times']
         xc = self.X_CONST
         fc = self.FLUX_CONST
         cc = self.C_CONST
@@ -106,9 +103,9 @@ class BlackbodyCutoff(SED):
                 (self._cutoff_wavelength * ac)**3) / (n**4 * xc**4)
                 for n in range (1,11))
 
-            norm = lum / (f_blue + f_red)
-            norm_arr[time] = norm
-            # print('calc',norm_arr[time])
+                norm = lum / (f_blue + f_red)
+                norm_arr[time] = norm
+                # print('calc',norm_arr[time])
 
             # Apply renormalisation
             sed *= norm
