@@ -33,7 +33,7 @@ install:
 script:
     - echo "travis_fold:start:FIT Fitting test data"
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le --travis -i 1 -f 1 -p 0
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le.json --travis -i 1 --no-fracking -m magnetar
+    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2006le.json --travis -i 1 --no-fracking -m magnetar -T 2
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m csm
     - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 1 --no-fracking -m rprocess
     - coverage run -p --source=mosfit -m mosfit -e SN2007bg --travis -i 1 --no-fracking -m ic
