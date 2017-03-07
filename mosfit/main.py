@@ -199,7 +199,7 @@ def get_parser():
         '-T',
         dest='num_temps',
         type=int,
-        default=2,
+        default=1,
         help=("Number of temperatures to use in the parallel-tempered emcee "
               "sampler. `-T 1` is equivalent to the standard "
               "EnsembleSampler."))
