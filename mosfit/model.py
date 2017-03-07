@@ -225,10 +225,7 @@ class Model(object):
                     new_task = cur_task.copy()
                     new_call_stack[new_task_name] = new_task
                     if 'latex' in new_task:
-                        li = new_task['latex'].rfind('$')
-                        new_task['latex'] = (
-                            new_task['latex'][
-                                :li] + '_{\\\\rm ' + band + '}' + '$')
+                        new_task['latex'] += '_{\\rm ' + band + '}'
                     new_call_stack[new_task_name] = new_task
                     self._modules[new_task_name] = self._load_task_module(
                         new_task_name, call_stack=new_call_stack)
