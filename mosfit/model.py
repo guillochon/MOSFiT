@@ -31,7 +31,8 @@ class Model(object):
                  model='default',
                  wrap_length=100,
                  pool=None,
-                 fitter=None):
+                 fitter=None,
+                 variance_for_each=''):
         """Initialize `Model` object."""
         self._model_name = model
         self._pool = pool
@@ -129,11 +130,11 @@ class Model(object):
         unsorted_call_stack = OrderedDict()
         self._max_depth_all = -1
         for tag in self._model:
-            cur_model = self._model[tag]
+            model_tag = self._model[tag]
             roots = []
-            if cur_model['kind'] in root_kinds:
+            if model_tag['kind'] in root_kinds:
                 max_depth = 0
-                roots = [cur_model['kind']]
+                roots = [model_tag['kind']]
             else:
                 max_depth = -1
                 for tag2 in self._trees:
@@ -145,7 +146,7 @@ class Model(object):
                     if depth > self._max_depth_all:
                         self._max_depth_all = depth
             roots = list(set(roots))
-            new_entry = cur_model.copy()
+            new_entry = model_tag.copy()
             new_entry['roots'] = roots
             if 'children' in new_entry:
                 del (new_entry['children'])
@@ -200,6 +201,16 @@ class Model(object):
             # self._modules[task] = mod_class(name=task, **cur_task)
             # if mod_name == 'photometry':
             #     self._bands = self._modules[task].band_names()
+
+        new_call_stack = []
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if cur_task.get('class', '') == 'variance':
+                if variance_for_each == 'band':
+                    self._call_stack
+            else:
+                new_call_stack.append(cur_task.copy())
+        self._call_stack = new_call_stack
 
     def determine_free_parameters(self, extra_fixed_parameters):
         """Generate `_free_parameters` and `_num_free_parameters`."""

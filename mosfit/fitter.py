@@ -95,6 +95,7 @@ class Fitter(object):
                    upload_token='',
                    check_upload_quality=False,
                    printer=None,
+                   variance_for_each='',
                    **kwargs):
         """Fit a list of events with a list of models."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -272,7 +273,8 @@ class Fitter(object):
                         model=mod_name,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
-                        pool=pool)
+                        pool=pool,
+                        variance_for_each=variance_for_each)
 
                     if not event:
                         print('No event specified, generating dummy data.')

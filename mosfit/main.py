@@ -304,6 +304,14 @@ def get_parser():
               "parameter; it is included as Travis requires new lines to be "
               "produed to detected program output."))
 
+    parser.add_argument(
+        '--variance-for-each',
+        dest='variance_for_each',
+        default=[],
+        nargs='+',
+        help=("Create a separate `Variance` for each type of observation "
+              "specified. Currently `band` is the only valid option."))
+
     return parser
 
 
