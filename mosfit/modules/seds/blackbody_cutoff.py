@@ -33,7 +33,7 @@ class BlackbodyCutoff(SED):
         self._radius_phot = kwargs['radiusphot']
         self._temperature_phot = kwargs['temperaturephot']
         self._cutoff_wavelength = kwargs['cutoff_wavelength']
-        self._times = kwargs['rest_times']
+        self._times = kwargs['all_times']
         xc = self.X_CONST
         fc = self.FLUX_CONST
         cc = self.C_CONST
