@@ -44,7 +44,6 @@ class CSMConstaints(Constraint):
             As = [0.62, 0.27, 0.15, 0.096, 0.067, 0.038, 0.025]
 
         Bf_func = interpolate.interp1d(ns, Bfs)
-        Br_func = interpolate.interp1d(ns, Brs)
         A_func = interpolate.interp1d(ns, As)
 
         beta_f = Bf_func(self._n)
@@ -66,8 +65,8 @@ class CSMConstaints(Constraint):
         self._Mcsm_th = 4.0 * np.pi * self._q / (3.0 - self._s) * (
             self._R_ph ** (3.0 - self._s) - self._r0 ** (3.0 - self._s))
         self._ts = (
-            (self._R_csm - self._r0) / beta_f / (A * self._gn / self._q)
-            ** (1. / (self._n - self._s))) ** ((self._n - self._s) /
+            (self._R_csm - self._r0) / beta_f / (A * self._gn / self._q) ** (
+                1. / (self._n - self._s))) ** ((self._n - self._s) /
                                                (self._n - 3))
         self._td = np.sqrt(2. * self._kappa * self._Mcsm_th /
                            (self._vejecta * 13.7 * 3.e10))
