@@ -9,7 +9,7 @@ from mosfit.modules.constraints.constraint import Constraint
 # Important: Only define one ``Module`` class per file.
 
 
-class CSMConstaints(Constraint):
+class CSMConstraints(Constraint):
     """CSM constraints.
 
     1. R0 <= Rph <= Rcsm. The photospheric radius is within the CSM
