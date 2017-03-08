@@ -73,6 +73,12 @@
         "class":"variance",
         "latex":"\\sigma"
     },
+    "covariance":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"\\sigma_{ij}"
+    },
     "constraint":{
         "kind":"constraint"
     },
@@ -81,6 +87,7 @@
         "inputs":[
             "transient",
             "variance",
+            "covariance",
             "photometry",
             "default_upper_limit_error",
             "default_no_error_bar_error",

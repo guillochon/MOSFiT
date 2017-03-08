@@ -50,5 +50,10 @@
         "min_value":1.0e-3,
         "max_value":100.0,
         "log":true
+    },
+    "covariance":{
+        "min_value":1.0e-6,
+        "max_value":1.0,
+        "log":true
     }
 }

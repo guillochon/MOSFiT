@@ -3,7 +3,7 @@ from collections import OrderedDict
 from math import isnan
 
 import numpy as np
-
+import scipy
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
@@ -36,18 +36,67 @@ class Likelihood(Module):
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
         self._score_modifier = kwargs.get('score_modifier', 1.0)
-        self._variance2 = kwargs.get('variance', 0.0) ** 2
+        self._variance = kwargs.get('variance', 0.0)
+        self._variance2 = self._variance ** 2
 
-        band_v2s = OrderedDict()
+        band_vs = OrderedDict()
         for key in kwargs:
             if key.startswith('variance-band-'):
-                band_v2s[key.split('-')[-1]] = kwargs[key] ** 2
+                band_vs[key.split('-')[-1]] = kwargs[key]
 
-        sum_members = [
-            (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
-                (el if x > y else eu) ** 2 + v2) +
-            np.log(v2 + 0.5 * (el ** 2 + eu ** 2))
-            for x, y, eu, el, u, v2 in zip(self._model_observations, [
+        self._band_vs = [
+            band_vs.get(i, self._variance) for i in self._all_bands]
+
+        # No covariance
+        # sum_members = [
+        #     (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
+        #         (el if x > y else eu) ** 2 + v2) +
+        #     np.log(v2 + 0.5 * (el ** 2 + eu ** 2))
+        #     for x, y, eu, el, u, v2 in zip(self._model_observations, [
+        #         i
+        #         for i, o, a in zip(self._mags, self._observed, self._are_mags)
+        #         if o and a
+        #     ], [
+        #         i for i, o, a in zip(self._e_u_mags, self._observed,
+        #                              self._are_mags) if o and a
+        #     ], [
+        #         i for i, o, a in zip(self._e_l_mags, self._observed,
+        #                              self._are_mags) if o and a
+        #     ], [
+        #         i for i, o, a in zip(self._upper_limits, self._observed,
+        #                              self._are_mags) if o and a
+        #     ], [
+        #         band_v2s.get(i, self._variance2) for i, o, a in zip(
+        #             self._all_bands, self._observed,
+        #             self._are_mags) if o and a
+        #     ])
+        # ]
+        # value = -0.5 * np.sum(sum_members)
+        #
+        # sum_members = [
+        #     (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
+        #         (el if x > y else eu) ** 2 + self._variance2) +
+        #     np.log(self._variance2 + 0.5 * (el ** 2 + eu ** 2))
+        #     for x, y, eu, el, u in zip(self._model_observations, [
+        #         i for i, o, a in zip(self._fds, self._observed, self._are_fds)
+        #         if o and a
+        #     ], [
+        #         i for i, o, a in zip(self._e_u_fds, self._observed,
+        #                              self._are_fds) if o and a
+        #     ], [
+        #         i for i, o, a in zip(self._e_l_fds, self._observed,
+        #                              self._are_fds) if o and a
+        #     ], [
+        #         i for i, o, a in zip(self._upper_limits, self._observed,
+        #                              self._are_fds) if o and a
+        #     ])
+        # ]
+        # value += -0.5 * np.sum(sum_members)
+
+        # With covariance
+        residuals = np.array([
+            (x - y if not u or (x < y and not isnan(x)) else 0.0)
+            for x, y, eu, el, u in zip(self._model_observations, [
                 i
                 for i, o, a in zip(self._mags, self._observed, self._are_mags)
                 if o and a
@@ -60,33 +109,46 @@ class Likelihood(Module):
             ], [
                 i for i, o, a in zip(self._upper_limits, self._observed,
                                      self._are_mags) if o and a
+            ])
+        ])
+
+        diag = [
+            (el if x > y else eu) ** 2 + v ** 2
+            for x, y, eu, el, v in zip(self._model_observations, [
+                i
+                for i, o, a in zip(self._mags, self._observed, self._are_mags)
+                if o and a
             ], [
-                band_v2s.get(i, self._variance2) for i, o, a in zip(
+                i for i, o, a in zip(self._e_u_mags, self._observed,
+                                     self._are_mags) if o and a
+            ], [
+                i for i, o, a in zip(self._e_l_mags, self._observed,
+                                     self._are_mags) if o and a
+            ], [
+                band_vs.get(i, self._variance2) for i, o, a in zip(
                     self._all_bands, self._observed,
                     self._are_mags) if o and a
             ])
         ]
-        value = -0.5 * np.sum(sum_members)
 
-        sum_members = [
-            (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
-                (el if x > y else eu) ** 2 + self._variance2) +
-            np.log(self._variance2 + 0.5 * (el ** 2 + eu ** 2))
-            for x, y, eu, el, u in zip(self._model_observations, [
-                i for i, o, a in zip(self._fds, self._observed, self._are_fds)
-                if o and a
-            ], [
-                i for i, o, a in zip(self._e_u_fds, self._observed,
-                                     self._are_fds) if o and a
-            ], [
-                i for i, o, a in zip(self._e_l_fds, self._observed,
-                                     self._are_fds) if o and a
-            ], [
-                i for i, o, a in zip(self._upper_limits, self._observed,
-                                     self._are_fds) if o and a
-            ])
+        # Time deltas (radial distance) for covariance matrix.
+        self._o_m_times = [
+            i for i, o, a in zip(self._times, self._observed,
+                                 self._are_mags) if o and a
         ]
-        value += -0.5 * np.sum(sum_members)
+        self._o_m_dt2s = np.array([
+            [kwargs['covariance'] * np.exp(-0.5 * (ti - tj) ** 2) for ti in
+             self._o_m_times] for tj in
+            self._o_m_times
+        ])
+
+        kmat = self._o_m_dt2s
+        for i in range(len(self._o_m_dt2s)):
+            kmat[i, i] = diag[i]
+
+        value = -0.5 * (
+            np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
+                      residuals) + np.log(scipy.linalg.det(kmat)))
 
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
@@ -96,6 +158,7 @@ class Likelihood(Module):
         """Construct arrays of observations based on data keys."""
         if self._preprocessed:
             return
+        self._times = kwargs.get('times', [])
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
