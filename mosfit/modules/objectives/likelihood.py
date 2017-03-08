@@ -132,19 +132,20 @@ class Likelihood(Module):
             i for i, o, a in zip(self._times, self._observed,
                                  self._are_mags) if o and a
         ]
-        self._kmat = np.array([
+        kmat = np.array([
             [vi * vj * np.exp(
                 -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
              zip(self._o_m_times, self._band_vs)] for tj, vj in
             zip(self._o_m_times, self._band_vs)
         ])
 
-        for i in range(len(self._kmat)):
-            self._kmat[i, i] += diag[i]
+        for i in range(len(kmat)):
+            kmat[i, i] += diag[i]
 
+        # print('kmat cond: {}'.format(np.linalg.cond(kmat)))
         value = -0.5 * (
-            np.matmul(np.matmul(residuals.T, scipy.linalg.inv(self._kmat)),
-                      residuals) + np.log(scipy.linalg.det(self._kmat)))
+            np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
+                      residuals) + np.log(scipy.linalg.det(kmat)))
 
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
