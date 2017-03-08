@@ -15,20 +15,20 @@ from difflib import get_close_matches
 import dropbox
 import emcee
 import numpy as np
-from astrocats.catalog.entry import ENTRY, Entry
-from astrocats.catalog.model import MODEL
-from astrocats.catalog.photometry import PHOTOMETRY
-from astrocats.catalog.quantity import QUANTITY
-from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-
 from mosfit.__init__ import __version__
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           is_number, pretty_num)
+from schwimmbad import MPIPool, SerialPool
+
+from astrocats.catalog.entry import ENTRY, Entry
+from astrocats.catalog.model import MODEL
+from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.quantity import QUANTITY
+from astrocats.catalog.realization import REALIZATION
 
 from .model import Model
 
@@ -499,37 +499,37 @@ class Fitter(object):
                 messages = []
 
                 # First, redraw any walkers with scores significantly worse
-                # than their peers.
-                maxmedstd = [(np.max(x + y), np.mean(x + y), np.median(x + y),
-                              np.var(x + y)) for x, y in zip(lnprob, lnlike)]
-                redraw_count = 0
-                bad_redraws = 0
-                for ti, tprob in enumerate(lnprob):
-                    for wi, wprob in enumerate(tprob):
-                        tot_score = wprob + lnlike[ti][wi]
-                        if (tot_score <= maxmedstd[ti][1] - 2.0 *
-                                maxmedstd[ti][3] or tot_score <=
-                            (maxmedstd[ti][0] - 2.0 *
-                             (maxmedstd[ti][0] - maxmedstd[ti][2])) or
-                                np.isnan(tot_score)):
-                            redraw_count = redraw_count + 1
-                            dxx = np.random.normal(scale=0.001, size=ndim)
-                            tar_x = np.array(p[np.random.randint(ntemps)][
-                                np.random.randint(nwalkers)])
-                            new_x = np.clip(tar_x + dxx, 0.0, 1.0)
-                            new_prob = likelihood(new_x)
-                            new_like = prior(new_x)
-                            if (new_prob + new_like > tot_score or
-                                    np.isnan(tot_score)):
-                                p[ti][wi] = new_x
-                                lnprob[ti][wi] = new_prob
-                                lnlike[ti][wi] = new_like
-                            else:
-                                bad_redraws = bad_redraws + 1
-                if redraw_count > 0:
-                    messages.append('{:.1%} redraw, {}/{} success'.format(
-                        redraw_count / (nwalkers * ntemps), redraw_count -
-                        bad_redraws, redraw_count))
+                # than their peers (only during burn-in).
+                if emi <= self._burn_in:
+                    maxmedstd = [(np.max(x), np.mean(x), np.median(x),
+                                  np.var(x)) for x in lnprob]
+                    redraw_count = 0
+                    bad_redraws = 0
+                    for ti, tprob in enumerate(lnprob):
+                        for wi, wprob in enumerate(tprob):
+                            if (wprob <= maxmedstd[ti][1] - 2.0 *
+                                    maxmedstd[ti][3] or wprob <=
+                                (maxmedstd[ti][0] - 2.0 *
+                                 (maxmedstd[ti][0] - maxmedstd[ti][2])) or
+                                    np.isnan(wprob)):
+                                redraw_count = redraw_count + 1
+                                dxx = np.random.normal(scale=0.001, size=ndim)
+                                tar_x = np.array(p[np.random.randint(ntemps)][
+                                    np.random.randint(nwalkers)])
+                                new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                new_like = likelihood(new_x)
+                                new_prob = new_like + prior(new_x)
+                                if new_prob > wprob or np.isnan(wprob):
+                                    p[ti][wi] = new_x
+                                    lnlike[ti][wi] = new_like
+                                    lnprob[ti][wi] = new_prob
+                                else:
+                                    bad_redraws = bad_redraws + 1
+                    if redraw_count > 0:
+                        messages.append('{:.1%} redraw, {}/{} success'.format(
+                            redraw_count / (nwalkers * ntemps), redraw_count -
+                            bad_redraws, redraw_count))
+
                 low = 10
                 asize = 0.1 * 0.5 * emi
                 acorc = max(1, min(10, int(np.floor(asize / low))))
