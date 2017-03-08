@@ -158,8 +158,7 @@ class Likelihood(Module):
         #               residuals) + np.log(scipy.linalg.det(kmat)))
 
         try:
-            chol_kmat = scipy.linalg.cholesky(kmat, overwrite_a=True,
-                                              check_finite=False)
+            chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
 
             value = np.linalg.slogdet(chol_kmat)[-1]
             value -= 0.5 * (
