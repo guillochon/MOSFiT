@@ -129,11 +129,11 @@ class Model(object):
         unsorted_call_stack = OrderedDict()
         self._max_depth_all = -1
         for tag in self._model:
-            cur_model = self._model[tag]
+            model_tag = self._model[tag]
             roots = []
-            if cur_model['kind'] in root_kinds:
+            if model_tag['kind'] in root_kinds:
                 max_depth = 0
-                roots = [cur_model['kind']]
+                roots = [model_tag['kind']]
             else:
                 max_depth = -1
                 for tag2 in self._trees:
@@ -145,7 +145,7 @@ class Model(object):
                     if depth > self._max_depth_all:
                         self._max_depth_all = depth
             roots = list(set(roots))
-            new_entry = cur_model.copy()
+            new_entry = model_tag.copy()
             new_entry['roots'] = roots
             if 'children' in new_entry:
                 del (new_entry['children'])
@@ -163,21 +163,11 @@ class Model(object):
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
+            mod_name = cur_task.get('class', task)
             if cur_task[
                     'kind'] == 'parameter' and task in self._parameter_json:
                 cur_task.update(self._parameter_json[task])
-            mod_name = cur_task.get('class', task)
-            mod = importlib.import_module(
-                '.' + 'modules.' + cur_task['kind'] + 's.' + mod_name,
-                package='mosfit')
-            class_name = [
-                x[0] for x in
-                inspect.getmembers(mod, inspect.isclass)
-                if issubclass(x[1], Module) and
-                x[1].__module__ == mod.__name__][0]
-            mod_class = getattr(mod, class_name)
-            self._modules[task] = mod_class(
-                name=task, pool=pool, printer=self._printer, **cur_task)
+            self._modules[task] = self._load_task_module(task)
             if mod_name == 'photometry':
                 self._bands = self._modules[task].band_names()
             # This is currently not functional for MPI
@@ -200,6 +190,50 @@ class Model(object):
             # self._modules[task] = mod_class(name=task, **cur_task)
             # if mod_name == 'photometry':
             #     self._bands = self._modules[task].band_names()
+
+    def _load_task_module(self, task, call_stack=None):
+        if not call_stack:
+            call_stack = self._call_stack
+        cur_task = call_stack[task]
+        mod_name = cur_task.get('class', task)
+        mod = importlib.import_module(
+            '.' + 'modules.' + cur_task['kind'] + 's.' + mod_name,
+            package='mosfit')
+        class_name = [
+            x[0] for x in
+            inspect.getmembers(mod, inspect.isclass)
+            if issubclass(x[1], Module) and
+            x[1].__module__ == mod.__name__][0]
+        mod_class = getattr(mod, class_name)
+        return mod_class(
+            name=task, pool=self._pool, printer=self._printer, **cur_task)
+
+    def create_data_dependent_free_parameters(
+            self, variance_for_each=[], output={}):
+        """Create free parameters that depend on loaded data."""
+        all_bands = list(set(output.get('all_bands', [])))
+        needs_general_variance = any(
+            np.array(output.get('all_band_indices')) < 0)
+
+        new_call_stack = OrderedDict()
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if (cur_task.get('class', '') == 'variance' and
+                    'band' in listify(variance_for_each)):
+                for band in all_bands:
+                    new_task_name = '-'.join([task, 'band', band])
+                    new_task = cur_task.copy()
+                    new_call_stack[new_task_name] = new_task
+                    if 'latex' in new_task:
+                        new_task['latex'] += '_{\\rm ' + band + '}'
+                    new_call_stack[new_task_name] = new_task
+                    self._modules[new_task_name] = self._load_task_module(
+                        new_task_name, call_stack=new_call_stack)
+                if needs_general_variance:
+                    new_call_stack[task] = cur_task.copy()
+            else:
+                new_call_stack[task] = cur_task.copy()
+        self._call_stack = new_call_stack
 
     def determine_free_parameters(self, extra_fixed_parameters):
         """Generate `_free_parameters` and `_num_free_parameters`."""

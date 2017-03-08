@@ -95,6 +95,7 @@ class Fitter(object):
                    upload_token='',
                    check_upload_quality=False,
                    printer=None,
+                   variance_for_each=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -303,6 +304,7 @@ class Fitter(object):
                         band_systems=band_systems,
                         band_instruments=band_instruments,
                         band_bandsets=band_bandsets,
+                        variance_for_each=variance_for_each,
                         pool=pool)
 
                     if success:
@@ -338,6 +340,7 @@ class Fitter(object):
                   band_systems=[],
                   band_instruments=[],
                   band_bandsets=[],
+                  variance_for_each=[],
                   pool=''):
         """Load the data for the specified event."""
         prt = self._printer
@@ -368,10 +371,19 @@ class Fitter(object):
 
         self._model.exchange_requests()
 
-        # Run through once to set all inits
+        # Run through once to set all inits.
         outputs = self._model.run_stack(
             [0.0 for x in range(self._model._num_free_parameters)],
             root='output')
+
+        # Create any data-dependent free parameters.
+        self._model.create_data_dependent_free_parameters(
+            variance_for_each, outputs)
+
+        # Determine free parameters again as above may have changed them.
+        self._model.determine_free_parameters(fixed_parameters)
+
+        self._model.exchange_requests()
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
