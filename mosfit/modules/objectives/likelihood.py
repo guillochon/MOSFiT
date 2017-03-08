@@ -113,8 +113,8 @@ class Likelihood(Module):
         ])
 
         diag = [
-            (el if x > y else eu) ** 2 + v ** 2
-            for x, y, eu, el, v in zip(self._model_observations, [
+            (el if x > y else eu) ** 2
+            for x, y, eu, el in zip(self._model_observations, [
                 i
                 for i, o, a in zip(self._mags, self._observed, self._are_mags)
                 if o and a
@@ -124,10 +124,6 @@ class Likelihood(Module):
             ], [
                 i for i, o, a in zip(self._e_l_mags, self._observed,
                                      self._are_mags) if o and a
-            ], [
-                band_vs.get(i, self._variance2) for i, o, a in zip(
-                    self._all_bands, self._observed,
-                    self._are_mags) if o and a
             ])
         ]
 
@@ -136,19 +132,19 @@ class Likelihood(Module):
             i for i, o, a in zip(self._times, self._observed,
                                  self._are_mags) if o and a
         ]
-        self._o_m_dt2s = np.array([
-            [kwargs['covariance'] * np.exp(-0.5 * (ti - tj) ** 2) for ti in
-             self._o_m_times] for tj in
-            self._o_m_times
+        self._kmat = np.array([
+            [vi * vj * np.exp(
+                -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
+             zip(self._o_m_times, self._band_vs)] for tj, vj in
+            zip(self._o_m_times, self._band_vs)
         ])
 
-        kmat = self._o_m_dt2s
-        for i in range(len(self._o_m_dt2s)):
-            kmat[i, i] = diag[i]
+        for i in range(len(self._kmat)):
+            self._kmat[i, i] += diag[i]
 
         value = -0.5 * (
-            np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
-                      residuals) + np.log(scipy.linalg.det(kmat)))
+            np.matmul(np.matmul(residuals.T, scipy.linalg.inv(self._kmat)),
+                      residuals) + np.log(scipy.linalg.det(self._kmat)))
 
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
