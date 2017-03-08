@@ -1,6 +1,6 @@
 """Definitions for the `Variance` class."""
 
-from mosfit.modules.parameters import Parameter
+from mosfit.modules.parameters.parameter import Parameter
 
 # Important: Only define one ``Module`` class per file.
 
