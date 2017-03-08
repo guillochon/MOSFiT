@@ -15,6 +15,8 @@ from mosfit.utils import flux_density_unit
 class Likelihood(Module):
     """Calculate the maximum likelihood score for a model."""
 
+    MIN_COV_TERM = 1.0e-10
+
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Likelihood, self).__init__(**kwargs)
@@ -139,13 +141,30 @@ class Likelihood(Module):
             zip(self._o_m_times, self._band_vs)
         ])
 
+        # full_size = np.count_nonzero(kmat)
+
+        # Remove small covariance terms
+        min_cov = self.MIN_COV_TERM * np.max(kmat)
+        kmat[kmat <= min_cov] = 0.0
+
+        # print("Sparse frac: {:.2%}".format(
+        #     float(full_size - np.count_nonzero(kmat)) / full_size))
+
         for i in range(len(kmat)):
             kmat[i, i] += diag[i]
 
-        # print('kmat cond: {}'.format(np.linalg.cond(kmat)))
+        # ovalue = -0.5 * (
+        #     np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
+        #               residuals) + np.log(scipy.linalg.det(kmat)))
+
+        chol_kmat = scipy.linalg.cholesky(kmat)
+
+        logdet = np.linalg.slogdet(chol_kmat)[-1]
         value = -0.5 * (
-            np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
-                      residuals) + np.log(scipy.linalg.det(kmat)))
+            np.matmul(residuals.T, scipy.linalg.cho_solve(
+                (chol_kmat, False), residuals))) - logdet
+
+        # print(value, ovalue)
 
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
