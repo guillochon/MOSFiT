@@ -96,37 +96,33 @@ class Likelihood(Module):
         # value += -0.5 * np.sum(sum_members)
 
         # With covariance
+        self._o_m_mags = [
+            i for i, o, a in zip(self._mags, self._observed, self._are_mags)
+            if o and a
+        ]
+        self._o_m_e_u_mags = [
+            i for i, o, a in zip(self._e_u_mags, self._observed,
+                                 self._are_mags) if o and a
+        ]
+        self._o_m_e_l_mags = [
+            i for i, o, a in zip(self._e_l_mags, self._observed,
+                                 self._are_mags) if o and a
+        ]
+
         residuals = np.array([
             (x - y if not u or (x < y and not isnan(x)) else 0.0)
-            for x, y, eu, el, u in zip(self._model_observations, [
-                i
-                for i, o, a in zip(self._mags, self._observed, self._are_mags)
-                if o and a
-            ], [
-                i for i, o, a in zip(self._e_u_mags, self._observed,
-                                     self._are_mags) if o and a
-            ], [
-                i for i, o, a in zip(self._e_l_mags, self._observed,
-                                     self._are_mags) if o and a
-            ], [
-                i for i, o, a in zip(self._upper_limits, self._observed,
-                                     self._are_mags) if o and a
-            ])
+            for x, y, eu, el, u in zip(
+                self._model_observations, self._o_m_mags, self._o_m_e_u_mags,
+                self._o_m_e_l_mags,
+                [i for i, o, a in zip(self._upper_limits, self._observed,
+                                      self._are_mags) if o and a])
         ])
 
         diag = [
             (el if x > y else eu) ** 2
-            for x, y, eu, el in zip(self._model_observations, [
-                i
-                for i, o, a in zip(self._mags, self._observed, self._are_mags)
-                if o and a
-            ], [
-                i for i, o, a in zip(self._e_u_mags, self._observed,
-                                     self._are_mags) if o and a
-            ], [
-                i for i, o, a in zip(self._e_l_mags, self._observed,
-                                     self._are_mags) if o and a
-            ])
+            for x, y, eu, el in zip(
+                self._model_observations, self._o_m_mags, self._o_m_e_u_mags,
+                self._o_m_e_l_mags)
         ]
 
         # Time deltas (radial distance) for covariance matrix.
@@ -134,12 +130,16 @@ class Likelihood(Module):
             i for i, o, a in zip(self._times, self._observed,
                                  self._are_mags) if o and a
         ]
-        kmat = np.array([
-            [vi * vj * np.exp(
-                -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
-             zip(self._o_m_times, self._band_vs)] for tj, vj in
-            zip(self._o_m_times, self._band_vs)
-        ])
+        if 'cowidth' in kwargs:
+            kmat = np.array([
+                [vi * vj * np.exp(
+                    -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
+                 zip(self._o_m_times, self._band_vs)] for tj, vj in
+                zip(self._o_m_times, self._band_vs)
+            ])
+        else:
+            ksh = len(self._o_m_times)
+            kmat = np.zeros((ksh, ksh))
 
         # full_size = np.count_nonzero(kmat)
 
