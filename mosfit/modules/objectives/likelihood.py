@@ -157,13 +157,18 @@ class Likelihood(Module):
         #     np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
         #               residuals) + np.log(scipy.linalg.det(kmat)))
 
-        chol_kmat = scipy.linalg.cholesky(kmat, overwrite_a=True,
-                                          check_finite=False)
+        try:
+            chol_kmat = scipy.linalg.cholesky(kmat, overwrite_a=True,
+                                              check_finite=False)
 
-        logdet = np.linalg.slogdet(chol_kmat)[-1]
-        value = -0.5 * (
-            np.matmul(residuals.T, scipy.linalg.cho_solve(
-                (chol_kmat, False), residuals, check_finite=False))) - logdet
+            value = np.linalg.slogdet(chol_kmat)[-1]
+            value -= 0.5 * (
+                np.matmul(residuals.T, scipy.linalg.cho_solve(
+                    (chol_kmat, False), residuals, check_finite=False)))
+        except Exception:
+            value = -0.5 * (
+                np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
+                          residuals) + np.log(scipy.linalg.det(kmat)))
 
         # print(value, ovalue)
 

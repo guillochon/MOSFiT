@@ -92,6 +92,7 @@ class Printer(object):
                scores='',
                progress='',
                acor='',
+               fracking=False,
                messages=[]):
         """Print status message showing state of fitting process."""
         class bcolors(object):
@@ -108,14 +109,16 @@ class Printer(object):
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join([
+            scorestring = 'Fracking' if fracking else 'Best'
+            scorestring += ' scores: [ ' + ', '.join([
                 pretty_num(max(x))
                 if not np.isnan(max(x)) and np.isfinite(max(x)) else 'NaN'
                 for x in scores
             ]) + ' ]'
             outarr.append(scorestring)
-            scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
-            outarr.append(scorestring)
+            if not fracking:
+                scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
+                outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
             outarr.append(progressstring)
