@@ -138,24 +138,19 @@ class Likelihood(Module):
                 zip(self._o_m_times, self._band_vs)
             ])
         else:
-            ksh = len(self._o_m_times)
-            kmat = np.zeros((ksh, ksh))
-
-        # full_size = np.count_nonzero(kmat)
-
-        # Remove small covariance terms
-        min_cov = self.MIN_COV_TERM * np.max(kmat)
-        kmat[kmat <= min_cov] = 0.0
-
-        # print("Sparse frac: {:.2%}".format(
-        #     float(full_size - np.count_nonzero(kmat)) / full_size))
+            kmat = np.diag(np.array(self._band_vs) ** 2)
 
         for i in range(len(kmat)):
             kmat[i, i] += diag[i]
 
-        # ovalue = -0.5 * (
-        #     np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
-        #               residuals) + np.log(scipy.linalg.det(kmat)))
+        # full_size = np.count_nonzero(kmat)
+
+        # Remove small covariance terms
+        # min_cov = self.MIN_COV_TERM * np.max(kmat)
+        # kmat[kmat <= min_cov] = 0.0
+
+        # print("Sparse frac: {:.2%}".format(
+        #     float(full_size - np.count_nonzero(kmat)) / full_size))
 
         try:
             chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
@@ -168,8 +163,6 @@ class Likelihood(Module):
             value = -0.5 * (
                 np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
                           residuals) + np.log(scipy.linalg.det(kmat)))
-
-        # print(value, ovalue)
 
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
