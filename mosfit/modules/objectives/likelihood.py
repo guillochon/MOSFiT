@@ -96,33 +96,21 @@ class Likelihood(Module):
         # value += -0.5 * np.sum(sum_members)
 
         # With covariance
-        self._o_m_mags = [
-            i for i, o, a in zip(self._mags, self._observed, self._are_mags)
-            if o and a
-        ]
-        self._o_m_e_u_mags = [
-            i for i, o, a in zip(self._e_u_mags, self._observed,
-                                 self._are_mags) if o and a
-        ]
-        self._o_m_e_l_mags = [
-            i for i, o, a in zip(self._e_l_mags, self._observed,
-                                 self._are_mags) if o and a
-        ]
-
         residuals = np.array([
-            (x - y if not u or (x < y and not isnan(x)) else 0.0)
-            for x, y, eu, el, u in zip(
-                self._model_observations, self._o_m_mags, self._o_m_e_u_mags,
-                self._o_m_e_l_mags,
-                [i for i, o, a in zip(self._upper_limits, self._observed,
-                                      self._are_mags) if o and a])
+            (x - y if not u or (x < y and not isnan(x)) else 0.0) if a else
+            (x - fd if not u or (x > fd and not isnan(x)) else 0.0)
+            for x, y, fd, u, o, a in zip(
+                self._model_observations, self._mags, self._fds,
+                self._upper_limits, self._observed, self._are_mags) if o
         ])
 
         diag = [
-            (el if x > y else eu) ** 2
-            for x, y, eu, el in zip(
-                self._model_observations, self._o_m_mags, self._o_m_e_u_mags,
-                self._o_m_e_l_mags)
+            ((el if x > y else eu) ** 2) if a else
+            ((fdel if x < fd else fdeu) ** 2)
+            for x, y, eu, el, fd, fdeu, fdel, o, a in zip(
+                self._model_observations, self._mags,
+                self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
+                self._e_l_fds, self._observed, self._are_mags) if o
         ]
 
         # Time deltas (radial distance) for covariance matrix.
