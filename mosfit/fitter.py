@@ -615,6 +615,7 @@ class Fitter(object):
                     self,
                     desc='Fracking Results',
                     scores=scores,
+                    fracking=True,
                     progress=[emi1, iterations])
                 tft = tft + time.time() - sft
         except KeyboardInterrupt:
