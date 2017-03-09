@@ -15,6 +15,7 @@ from difflib import get_close_matches
 import dropbox
 import emcee
 import numpy as np
+import scipy
 from emcee.autocorr import AutocorrError
 from mosfit.__init__ import __version__
 from mosfit.printer import Printer
@@ -465,6 +466,9 @@ class Fitter(object):
         test_walker = iterations > 0
         lnprob = None
         pool_size = max(pool.size, 1)
+        # Derived so only half a walker redrawn with Gaussian distribution.
+        redraw_mult = 2.0 * np.sqrt(
+            2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         print('{} dimensions in problem.\n\n'.format(ndim))
         p0 = [[] for x in range(ntemps)]
@@ -501,19 +505,18 @@ class Fitter(object):
                 # First, redraw any walkers with scores significantly worse
                 # than their peers (only during burn-in).
                 if emi <= self._burn_in:
-                    maxmedstd = [(np.max(x), np.mean(x), np.median(x),
-                                  np.var(x)) for x in lnprob]
+                    pmedian = [np.median(x) for x in lnprob]
+                    pmead = [np.mean([abs(y - pmedian) for y in x])
+                             for x in lnprob]
                     redraw_count = 0
                     bad_redraws = 0
                     for ti, tprob in enumerate(lnprob):
                         for wi, wprob in enumerate(tprob):
-                            if (wprob <= maxmedstd[ti][1] - 2.0 *
-                                    maxmedstd[ti][3] or wprob <=
-                                (maxmedstd[ti][0] - 2.0 *
-                                 (maxmedstd[ti][0] - maxmedstd[ti][2])) or
+                            if (wprob <= pmedian[ti] -
+                                redraw_mult * pmead[ti] or
                                     np.isnan(wprob)):
                                 redraw_count = redraw_count + 1
-                                dxx = np.random.normal(scale=0.001, size=ndim)
+                                dxx = np.random.normal(scale=0.01, size=ndim)
                                 tar_x = np.array(p[np.random.randint(ntemps)][
                                     np.random.randint(nwalkers)])
                                 new_x = np.clip(tar_x + dxx, 0.0, 1.0)
