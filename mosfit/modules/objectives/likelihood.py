@@ -130,7 +130,7 @@ class Likelihood(Module):
             i for i, o, a in zip(self._times, self._observed,
                                  self._are_mags) if o and a
         ]
-        if kwargs.get('cowidth', -1) < 0:
+        if kwargs.get('cowidth', -1) >= 0:
             kmat = np.array([
                 [vi * vj * np.exp(
                     -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
