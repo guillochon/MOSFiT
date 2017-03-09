@@ -138,7 +138,7 @@ class Likelihood(Module):
                 zip(self._o_m_times, self._band_vs)
             ])
         else:
-            kmat = np.diag(np.array(self._band_vs) ** 2)
+            kmat = np.diag([x * x for x in self._band_vs])
 
         for i in range(len(kmat)):
             kmat[i, i] += diag[i]
@@ -155,7 +155,7 @@ class Likelihood(Module):
         try:
             chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
 
-            value = np.linalg.slogdet(chol_kmat)[-1]
+            value = -np.linalg.slogdet(chol_kmat)[-1]
             value -= 0.5 * (
                 np.matmul(residuals.T, scipy.linalg.cho_solve(
                     (chol_kmat, False), residuals, check_finite=False)))
