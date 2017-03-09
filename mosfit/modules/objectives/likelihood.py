@@ -49,53 +49,7 @@ class Likelihood(Module):
         self._band_vs = [
             band_vs.get(i, self._variance) for i in self._all_bands]
 
-        # No covariance
-        # sum_members = [
-        #     (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
-        #         (el if x > y else eu) ** 2 + v2) +
-        #     np.log(v2 + 0.5 * (el ** 2 + eu ** 2))
-        #     for x, y, eu, el, u, v2 in zip(self._model_observations, [
-        #         i
-        #         for i, o, a in zip(self._mags, self._observed, self._are_mags)
-        #         if o and a
-        #     ], [
-        #         i for i, o, a in zip(self._e_u_mags, self._observed,
-        #                              self._are_mags) if o and a
-        #     ], [
-        #         i for i, o, a in zip(self._e_l_mags, self._observed,
-        #                              self._are_mags) if o and a
-        #     ], [
-        #         i for i, o, a in zip(self._upper_limits, self._observed,
-        #                              self._are_mags) if o and a
-        #     ], [
-        #         band_v2s.get(i, self._variance2) for i, o, a in zip(
-        #             self._all_bands, self._observed,
-        #             self._are_mags) if o and a
-        #     ])
-        # ]
-        # value = -0.5 * np.sum(sum_members)
-        #
-        # sum_members = [
-        #     (x - y if not u or (x < y and not isnan(x)) else 0.0) ** 2 / (
-        #         (el if x > y else eu) ** 2 + self._variance2) +
-        #     np.log(self._variance2 + 0.5 * (el ** 2 + eu ** 2))
-        #     for x, y, eu, el, u in zip(self._model_observations, [
-        #         i for i, o, a in zip(self._fds, self._observed, self._are_fds)
-        #         if o and a
-        #     ], [
-        #         i for i, o, a in zip(self._e_u_fds, self._observed,
-        #                              self._are_fds) if o and a
-        #     ], [
-        #         i for i, o, a in zip(self._e_l_fds, self._observed,
-        #                              self._are_fds) if o and a
-        #     ], [
-        #         i for i, o, a in zip(self._upper_limits, self._observed,
-        #                              self._are_fds) if o and a
-        #     ])
-        # ]
-        # value += -0.5 * np.sum(sum_members)
-
-        # With covariance
+        # Calculate (model - obs) residuals.
         residuals = np.array([
             (x - y if not u or (x < y and not isnan(x)) else 0.0) if a else
             (x - fd if not u or (x > fd and not isnan(x)) else 0.0)
@@ -104,6 +58,7 @@ class Likelihood(Module):
                 self._upper_limits, self._observed, self._are_mags) if o
         ])
 
+        # Observational errors to be put in diagonal of error matrix.
         diag = [
             ((el if x > y else eu) ** 2) if a else
             ((fdel if x < fd else fdeu) ** 2)
@@ -114,16 +69,15 @@ class Likelihood(Module):
         ]
 
         # Time deltas (radial distance) for covariance matrix.
-        self._o_m_times = [
-            i for i, o, a in zip(self._times, self._observed,
-                                 self._are_mags) if o and a
+        self._o_times = [
+            i for i, o in zip(self._times, self._observed) if o
         ]
         if kwargs.get('cowidth', -1) >= 0:
             kmat = np.array([
                 [vi * vj * np.exp(
                     -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
-                 zip(self._o_m_times, self._band_vs)] for tj, vj in
-                zip(self._o_m_times, self._band_vs)
+                 zip(self._o_times, self._band_vs)] for tj, vj in
+                zip(self._o_times, self._band_vs)
             ])
         else:
             kmat = np.diag([x * x for x in self._band_vs])
