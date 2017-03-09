@@ -90,6 +90,7 @@
     "csm":{
         "kind":"engine",
         "inputs":[
+            "csmconstraints",
             "transient",
             "n",
             "s",
@@ -152,17 +153,6 @@
             "rho",
             "vejecta",
             "kappa"
-        ]
-    },
-    "likelihood":{
-        "kind":"objective",
-        "inputs":[
-            "transient",
-            "variance",
-            "photometry",
-            "default_upper_limit_error",
-            "default_no_error_bar_error",
-            "csmconstraints"
         ]
     },
     "losextinction":{
