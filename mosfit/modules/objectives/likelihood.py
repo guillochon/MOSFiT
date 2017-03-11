@@ -80,28 +80,32 @@ class Likelihood(Module):
             i for i, o in zip(self._all_band_avgs, self._observed) if o
         ]
 
-        kmat = np.ones((len(self._o_times), len(self._o_times)))
-        for i in range(len(kmat)):
-            kmat[i, i] = self._band_vs[i]
+        self._o_band_vs = [
+            i for i, o in zip(self._band_vs, self._observed) if o
+        ]
+
+        if (kwargs.get('codeltatime', -1) >= 0 or
+                kwargs.get('codeltalambda', -1) >= 0):
+            kmat = np.array([
+                [vi * vj for vi in self._o_band_vs] for vj in self._o_band_vs
+            ])
+        else:
+            kmat = np.diag(self._o_band_vs)
 
         if kwargs.get('codeltatime', -1) >= 0:
             kmat *= np.array([
-                [1.0 if i == j else vi * vj * np.exp(
+                [1.0 if i == j else np.exp(
                     -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
-                 i, (ti, vi) in
-                 enumerate(zip(self._o_times, self._band_vs))] for
-                j, (tj, vj) in
-                enumerate(zip(self._o_times, self._band_vs))
+                 i, ti in enumerate(self._o_times)] for
+                j, tj in enumerate(self._o_time)
             ])
 
         if kwargs.get('codeltalambda', -1) >= 0:
             kmat *= np.array([
-                [1.0 if i == j else vi * vj * np.exp(
+                [1.0 if i == j else np.exp(
                     -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
-                 i, (li, vi) in
-                 enumerate(zip(self._o_waves, self._band_vs))] for
-                j, (lj, vj) in
-                enumerate(zip(self._o_waves, self._band_vs))
+                 i, li in enumerate(self._o_waves)] for
+                j, lj in enumerate(self._o_waves)
             ])
 
         for i in range(len(kmat)):
