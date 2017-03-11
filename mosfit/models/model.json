@@ -101,7 +101,7 @@
             "constraint"
         ],
         "requests":{
-            "photometry": "average_wavelengths"
+            "average_wavelengths": "photometry"
         }
     },
     "alltimes":{

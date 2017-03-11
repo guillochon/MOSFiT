@@ -79,21 +79,24 @@ class Likelihood(Module):
         self._o_waves = [
             i for i, o in zip(self._all_band_avgs, self._observed) if o
         ]
-        kmat = np.diag([x * x for x in self._band_vs])
+
+        kmat = np.ones((len(self._o_times), len(self._o_times)))
+        for i in range(len(kmat)):
+            kmat[i, i] = self._band_vs[i]
+
         if kwargs.get('codeltatime', -1) >= 0:
-            kmat += np.array([
-                [0.0 if i == j else vi * vj * np.exp(
+            kmat *= np.array([
+                [1.0 if i == j else vi * vj * np.exp(
                     -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
                  i, (ti, vi) in
                  enumerate(zip(self._o_times, self._band_vs))] for
                 j, (tj, vj) in
                 enumerate(zip(self._o_times, self._band_vs))
             ])
-        else:
 
         if kwargs.get('codeltalambda', -1) >= 0:
-            kmat += np.array([
-                [0.0 if i == j else vi * vj * np.exp(
+            kmat *= np.array([
+                [1.0 if i == j else vi * vj * np.exp(
                     -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
                  i, (li, vi) in
                  enumerate(zip(self._o_waves, self._band_vs))] for
