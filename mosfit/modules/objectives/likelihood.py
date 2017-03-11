@@ -97,7 +97,7 @@ class Likelihood(Module):
                 [1.0 if i == j else np.exp(
                     -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
                  i, ti in enumerate(self._o_times)] for
-                j, tj in enumerate(self._o_time)
+                j, tj in enumerate(self._o_times)
             ])
 
         if kwargs.get('codeltalambda', -1) >= 0:
