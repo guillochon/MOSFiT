@@ -32,8 +32,8 @@ class Likelihood(Module):
         self._fractions = kwargs['fractions']
         self._are_mags = np.array(self._all_band_indices) >= 0
         self._are_fds = np.array(self._all_band_indices) < 0
-        self._all_band_avgs = [
-            self._average_wavelengths[bi] for bi in self._all_band_indices]
+        self._all_band_avgs = np.array([
+            self._average_wavelengths[bi] for bi in self._all_band_indices])
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
             return {'value': LIKELIHOOD_FLOOR}
         for oi, obs in enumerate(self._model_observations):
@@ -49,8 +49,8 @@ class Likelihood(Module):
             if key.startswith('variance-band-'):
                 band_vs[key.split('-')[-1]] = kwargs[key]
 
-        self._band_vs = [
-            band_vs.get(i, self._variance) for i in self._all_bands]
+        self._band_vs = np.array([
+            band_vs.get(i, self._variance) for i in self._all_bands])
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
@@ -72,17 +72,13 @@ class Likelihood(Module):
         ]
 
         # Time deltas (radial distance) for covariance matrix.
-        self._o_times = [
-            i for i, o in zip(self._times, self._observed) if o
-        ]
+        self._o_times = self._times[self._observed]
         # Wavelength deltas (radial distance) for covariance matrix.
-        self._o_waves = [
-            i for i, o in zip(self._all_band_avgs, self._observed) if o
-        ]
+        self._o_waves = self._all_band_avgs[self._observed]
 
-        self._o_band_vs = [
-            i for i, o in zip(self._band_vs, self._observed) if o
-        ]
+        self._o_band_vs = self._band_vs[self._observed]
+
+        kn = len(self._o_times)
 
         if (kwargs.get('codeltatime', -1) >= 0 or
                 kwargs.get('codeltalambda', -1) >= 0):
@@ -108,7 +104,8 @@ class Likelihood(Module):
                 j, lj in enumerate(self._o_waves)
             ])
 
-        for i in range(len(kmat)):
+        # Add observed errors to diagonal
+        for i in range(kn):
             kmat[i, i] += diag[i]
 
         # full_size = np.count_nonzero(kmat)
@@ -144,7 +141,7 @@ class Likelihood(Module):
         """Construct arrays of observations based on data keys."""
         if self._preprocessed:
             return
-        self._times = kwargs.get('times', [])
+        self._times = np.array(kwargs.get('times', []))
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
@@ -156,7 +153,7 @@ class Likelihood(Module):
         self._u_fds = kwargs.get('u_fluxdensities', [])
         self._u_freqs = kwargs.get('u_frequencies', [])
         self._upper_limits = kwargs.get('upperlimits', [])
-        self._observed = kwargs['observed']
+        self._observed = np.array(kwargs['observed'])
 
         # Magnitudes first
         self._e_u_mags = [
