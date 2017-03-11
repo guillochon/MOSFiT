@@ -276,4 +276,6 @@ class Photometry(Module):
             return self
         elif request == 'band_wave_ranges':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
+        elif request == 'average_wavelengths':
+            return self._average_wavelengths
         return []

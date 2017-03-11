@@ -618,7 +618,7 @@ class Fitter(object):
                     fracking=True,
                     progress=[emi1, iterations])
                 tft = tft + time.time() - sft
-        except KeyboardInterrupt:
+        except (KeyboardInterrupt, SystemExit):
             pool.close()
             print(self._wrap_length)
             if (not prt.prompt(

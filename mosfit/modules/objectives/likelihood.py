@@ -4,6 +4,7 @@ from math import isnan
 
 import numpy as np
 import scipy
+
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
@@ -31,6 +32,8 @@ class Likelihood(Module):
         self._fractions = kwargs['fractions']
         self._are_mags = np.array(self._all_band_indices) >= 0
         self._are_fds = np.array(self._all_band_indices) < 0
+        self._all_band_avgs = [
+            self._average_wavelengths[bi] for bi in self._all_band_indices]
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
             return {'value': LIKELIHOOD_FLOOR}
         for oi, obs in enumerate(self._model_observations):
@@ -72,15 +75,31 @@ class Likelihood(Module):
         self._o_times = [
             i for i, o in zip(self._times, self._observed) if o
         ]
-        if kwargs.get('cowidth', -1) >= 0:
-            kmat = np.array([
-                [vi * vj * np.exp(
-                    -0.5 * ((ti - tj) / kwargs['cowidth']) ** 2) for ti, vi in
-                 zip(self._o_times, self._band_vs)] for tj, vj in
-                zip(self._o_times, self._band_vs)
+        # Wavelength deltas (radial distance) for covariance matrix.
+        self._o_waves = [
+            i for i, o in zip(self._all_band_avgs, self._observed) if o
+        ]
+        kmat = np.diag([x * x for x in self._band_vs])
+        if kwargs.get('codeltatime', -1) >= 0:
+            kmat += np.array([
+                [0.0 if i == j else vi * vj * np.exp(
+                    -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
+                 i, (ti, vi) in
+                 enumerate(zip(self._o_times, self._band_vs))] for
+                j, (tj, vj) in
+                enumerate(zip(self._o_times, self._band_vs))
             ])
         else:
-            kmat = np.diag([x * x for x in self._band_vs])
+
+        if kwargs.get('codeltalambda', -1) >= 0:
+            kmat += np.array([
+                [0.0 if i == j else vi * vj * np.exp(
+                    -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
+                 i, (li, vi) in
+                 enumerate(zip(self._o_waves, self._band_vs))] for
+                j, (lj, vj) in
+                enumerate(zip(self._o_waves, self._band_vs))
+            ])
 
         for i in range(len(kmat)):
             kmat[i, i] += diag[i]
@@ -109,6 +128,10 @@ class Likelihood(Module):
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
         return {'value': max(LIKELIHOOD_FLOOR, value + self._score_modifier)}
+
+    def receive_requests(self, **requests):
+        """Receive requests from other ``Module`` objects."""
+        self._average_wavelengths = requests.get('average_wavelengths', [])
 
     def preprocess(self, **kwargs):
         """Construct arrays of observations based on data keys."""
