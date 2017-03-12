@@ -11,7 +11,6 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
-from six import string_types
 
 import dropbox
 import emcee
@@ -25,6 +24,7 @@ from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           is_number, pretty_num)
 from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
@@ -445,6 +445,7 @@ class Fitter(object):
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
         self._fracking = fracking
+        self._post_burn = post_burn
         self._burn_in = max(iterations - post_burn, 0)
 
         return True
@@ -486,7 +487,7 @@ class Fitter(object):
         lnprob = None
         pool_size = max(pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
-        redraw_mult = 2.0 * np.sqrt(
+        redraw_mult = 1.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         print('{} dimensions in problem.\n\n'.format(ndim))
@@ -512,6 +513,7 @@ class Fitter(object):
         try:
             st = time.time()
             tft = 0.0  # Total fracking time
+            acor = None
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
@@ -571,8 +573,6 @@ class Fitter(object):
                             aa = a
                             break
                     acor = [acort, aa]
-                else:
-                    acor = None
 
                 self._emcee_est_t = float(time.time() - st - tft) / emi1 * (
                     iterations - emi1) + tft / emi1 * max(0, self._burn_in -
@@ -699,10 +699,11 @@ class Fitter(object):
                 QUANTITY.VALUE: str(WAIC),
                 QUANTITY.KIND: 'WAIC'
             }
-            modeldict[MODEL.CONVERGENCE] = {
-                QUANTITY.VALUE: str(aa),
-                QUANTITY.KIND: 'autocorrelationtimes'
-            }
+            if acor:
+                modeldict[MODEL.CONVERGENCE] = {
+                    QUANTITY.VALUE: str(aa),
+                    QUANTITY.KIND: 'autocorrelationtimes'
+                }
             modeldict[MODEL.STEPS] = str(emi1)
 
         if upload:
@@ -721,45 +722,64 @@ class Fitter(object):
         modelnum = entry.add_model(**modeldict)
 
         ri = 1
-        for xi, x in enumerate(p):
-            for yi, y in enumerate(p[xi]):
-                output = model.run_stack(y, root='output')
-                for i in range(len(output['times'])):
-                    if not np.isfinite(output['model_observations'][i]):
-                        continue
-                    photodict = {
-                        PHOTOMETRY.TIME:
-                        output['times'][i] + output['min_times'],
-                        PHOTOMETRY.MODEL: modelnum,
-                        PHOTOMETRY.SOURCE: source,
-                        PHOTOMETRY.REALIZATION: str(ri)
-                    }
-                    if output['observation_types'][i] == 'magnitude':
-                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
-                        photodict[PHOTOMETRY.MAGNITUDE] = output[
-                            'model_observations'][i]
-                    if output['observation_types'][i] == 'fluxdensity':
-                        photodict[PHOTOMETRY.FREQUENCY] = output[
-                            'frequencies'][i] * frequency_unit('GHz')
-                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                            'model_observations'][i] * flux_density_unit('µJy')
-                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
-                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                    if output['systems'][i]:
-                        photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                    if output['bandsets'][i]:
-                        photodict[PHOTOMETRY.BAND_SET] = output['bandsets'][i]
-                    if output['instruments'][i]:
-                        photodict[PHOTOMETRY.INSTRUMENT] = output[
-                            'instruments'][i]
-                    entry.add_photometry(
-                        compare_to_existing=False, **photodict)
+        pout = sampler.chain[:, :, -1, :]
+        lnprobout = sampler.lnprobability[:, :, -1]
+        lnlikeout = sampler.lnlikelihood[:, :, -1]
+        if acor:
+            actc = int(np.ceil(acort))
+            for i in range(1, np.int(float(emi - self._burn_in) / actc)):
+                pout = np.concatenate(
+                    (sampler.chain[:, :, -i * actc, :], pout), axis=1)
+                lnprobout = np.concatenate(
+                    (sampler.lnprobability[:, :, -i * actc], lnprobout),
+                    axis=1)
+                lnlikeout = np.concatenate(
+                    (sampler.lnlikelihood[:, :, -i * actc], lnlikeout), axis=1)
+        for xi, x in enumerate(pout):
+            for yi, y in enumerate(pout[xi]):
+                # Only produce LCs for end walker state.
+                if yi <= nwalkers:
+                    output = model.run_stack(y, root='output')
+                    for i in range(len(output['times'])):
+                        if not np.isfinite(output['model_observations'][i]):
+                            continue
+                        photodict = {
+                            PHOTOMETRY.TIME:
+                            output['times'][i] + output['min_times'],
+                            PHOTOMETRY.MODEL: modelnum,
+                            PHOTOMETRY.SOURCE: source,
+                            PHOTOMETRY.REALIZATION: str(ri)
+                        }
+                        if output['observation_types'][i] == 'magnitude':
+                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                            photodict[PHOTOMETRY.MAGNITUDE] = output[
+                                'model_observations'][i]
+                        if output['observation_types'][i] == 'fluxdensity':
+                            photodict[PHOTOMETRY.FREQUENCY] = output[
+                                'frequencies'][i] * frequency_unit('GHz')
+                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                                'model_observations'][
+                                    i] * flux_density_unit('µJy')
+                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['systems'][i]:
+                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                        if output['bandsets'][i]:
+                            photodict[PHOTOMETRY.BAND_SET] = output[
+                                'bandsets'][i]
+                        if output['instruments'][i]:
+                            photodict[PHOTOMETRY.INSTRUMENT] = output[
+                                'instruments'][i]
+                        entry.add_photometry(
+                            compare_to_existing=False, **photodict)
 
-                    if upload_this:
-                        uphotodict = deepcopy(photodict)
-                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                        uentry.add_photometry(
-                            compare_to_existing=False, **uphotodict)
+                        if upload_this:
+                            uphotodict = deepcopy(photodict)
+                            uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                            uentry.add_photometry(
+                                compare_to_existing=False, **uphotodict)
+                else:
+                    output = model.run_stack(y, root='objective')
 
                 parameters = OrderedDict()
                 derived_keys = set()
@@ -786,9 +806,9 @@ class Fitter(object):
                     parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprob is not None and lnlike is not None:
-                    realdict[REALIZATION.SCORE] = str(lnprob[xi][yi] + lnprob[
-                        xi][yi])
+                if lnprobout is not None and lnlike is not None:
+                    realdict[REALIZATION.SCORE] = str(
+                        lnprobout[xi][yi] + lnlikeout[xi][yi])
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
@@ -834,7 +854,7 @@ class Fitter(object):
                 else:
                     raise
 
-        return (p, lnprob)
+        return (pout, lnprobout, lnlikeout)
 
     def generate_dummy_data(self,
                             name,
