@@ -485,12 +485,15 @@ class Fitter(object):
 
         test_walker = iterations > 0
         lnprob = None
+        lnlike = None
         pool_size = max(pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
         redraw_mult = 1.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        print('{} dimensions in problem.\n\n'.format(ndim))
+        print('{} dimensions in problem ({} variance{}).\n\n'.format(
+            ndim, model._num_variances,
+            's' if model._num_variances > 1 else ''))
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
@@ -510,10 +513,12 @@ class Fitter(object):
         print('\n\n')
         p = list(p0)
 
+        emi = 0
+        tft = 0.0  # Total fracking time
+        acor = None
+
         try:
             st = time.time()
-            tft = 0.0  # Total fracking time
-            acor = None
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
@@ -722,10 +727,18 @@ class Fitter(object):
         modelnum = entry.add_model(**modeldict)
 
         ri = 1
-        pout = sampler.chain[:, :, -1, :]
-        lnprobout = sampler.lnprobability[:, :, -1]
-        lnlikeout = sampler.lnlikelihood[:, :, -1]
-        if acor:
+        if emi > 0:
+            pout = sampler.chain[:, :, -1, :]
+            lnprobout = sampler.lnprobability[:, :, -1]
+            lnlikeout = sampler.lnlikelihood[:, :, -1]
+        else:
+            pout = p
+            lnprobout = lnprob
+            lnlikeout = lnlike
+
+        # Here, we append to the vector of walkers from the full chain based
+        # upon the value of acort (the autocorrelation timescale).
+        if acor and acort > 0:
             actc = int(np.ceil(acort))
             for i in range(1, np.int(float(emi - self._burn_in) / actc)):
                 pout = np.concatenate(

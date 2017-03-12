@@ -261,6 +261,7 @@ class Model(object):
     def determine_free_parameters(self, extra_fixed_parameters):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
+        self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if (task not in extra_fixed_parameters and
@@ -268,6 +269,8 @@ class Model(object):
                     'min_value' in cur_task and 'max_value' in cur_task and
                     cur_task['min_value'] != cur_task['max_value']):
                 self._free_parameters.append(task)
+                if cur_task.get('class', '') == 'variance':
+                    self._num_variances += 1
         self._num_free_parameters = len(self._free_parameters)
 
     def exchange_requests(self):

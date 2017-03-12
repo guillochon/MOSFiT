@@ -55,56 +55,62 @@ class Likelihood(Module):
                 self._e_l_fds, self._observed, self._are_mags) if o
         ]
 
-        kn = len(self._o_times)
-
+        is_diag = False
         if (kwargs.get('codeltatime', -1) >= 0 or
                 kwargs.get('codeltalambda', -1) >= 0):
             kmat = np.array([
                 [vi * vj for vi in self._o_band_vs] for vj in self._o_band_vs
             ])
         else:
-            kmat = np.diag(self._o_band_vs ** 2)
+            # Shortcut when matrix is diagonal.
+            is_diag = True
+            value = -0.5 * np.sum(
+                residuals ** 2 / (self._o_band_vs ** 2 + diag) +
+                2 * np.log(self._o_band_vs))
 
-        if kwargs.get('codeltatime', -1) >= 0:
-            kmat *= np.array([
-                [1.0 if i == j else np.exp(
-                    -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
-                 i, ti in enumerate(self._o_times)] for
-                j, tj in enumerate(self._o_times)
-            ])
+        if not is_diag:
+            kn = len(self._o_times)
 
-        if kwargs.get('codeltalambda', -1) >= 0:
-            kmat *= np.array([
-                [1.0 if i == j else np.exp(
-                    -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
-                 i, li in enumerate(self._o_waves)] for
-                j, lj in enumerate(self._o_waves)
-            ])
+            if kwargs.get('codeltatime', -1) >= 0:
+                kmat *= np.array([
+                    [1.0 if i == j else np.exp(
+                        -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
+                     i, ti in enumerate(self._o_times)] for
+                    j, tj in enumerate(self._o_times)
+                ])
 
-        # Add observed errors to diagonal
-        for i in range(kn):
-            kmat[i, i] += diag[i]
+            if kwargs.get('codeltalambda', -1) >= 0:
+                kmat *= np.array([
+                    [1.0 if i == j else np.exp(
+                        -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
+                     i, li in enumerate(self._o_waves)] for
+                    j, lj in enumerate(self._o_waves)
+                ])
 
-        # full_size = np.count_nonzero(kmat)
+            # Add observed errors to diagonal
+            for i in range(kn):
+                kmat[i, i] += diag[i]
 
-        # Remove small covariance terms
-        # min_cov = self.MIN_COV_TERM * np.max(kmat)
-        # kmat[kmat <= min_cov] = 0.0
+            # full_size = np.count_nonzero(kmat)
 
-        # print("Sparse frac: {:.2%}".format(
-        #     float(full_size - np.count_nonzero(kmat)) / full_size))
+            # Remove small covariance terms
+            # min_cov = self.MIN_COV_TERM * np.max(kmat)
+            # kmat[kmat <= min_cov] = 0.0
 
-        try:
-            chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
+            # print("Sparse frac: {:.2%}".format(
+            #     float(full_size - np.count_nonzero(kmat)) / full_size))
 
-            value = -np.linalg.slogdet(chol_kmat)[-1]
-            value -= 0.5 * (
-                np.matmul(residuals.T, scipy.linalg.cho_solve(
-                    (chol_kmat, False), residuals, check_finite=False)))
-        except Exception:
-            value = -0.5 * (
-                np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
-                          residuals) + np.log(scipy.linalg.det(kmat)))
+            try:
+                chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
+
+                value = -np.linalg.slogdet(chol_kmat)[-1]
+                value -= 0.5 * (
+                    np.matmul(residuals.T, scipy.linalg.cho_solve(
+                        (chol_kmat, False), residuals, check_finite=False)))
+            except Exception:
+                value = -0.5 * (
+                    np.matmul(np.matmul(residuals.T, scipy.linalg.inv(kmat)),
+                              residuals) + np.log(scipy.linalg.det(kmat)))
 
         if isnan(value) or isnan(self._score_modifier + value):
             return {'value': LIKELIHOOD_FLOOR}
