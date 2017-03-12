@@ -25,9 +25,10 @@ if sys.version_info[:2] < (3, 3):
 class Printer(object):
     """Print class for MOSFiT."""
 
-    def __init__(self, wrap_length=100):
+    def __init__(self, pool=None, wrap_length=100):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
+        self._pool = pool
 
     def inline(self, x, new_line=False):
         """Print inline, erasing underlying pre-existing text."""
@@ -38,12 +39,14 @@ class Printer(object):
                 sys.stdout.write("\033[K")
         print(x, flush=True)
 
-    def wrapped(self, text, wrap_length=None):
+    def wrapped(self, text, wrap_length=None, master_only=True):
         """Print text wrapped to either the specified length or the default."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
         else:
             wl = self._wrap_length
+        if master_only and self._pool and not self._pool.is_master():
+            return
         print(fill(text, wl))
 
     def prompt(self, text, wrap_length=None, kind='bool', options=None):
@@ -91,7 +94,7 @@ class Printer(object):
                desc='',
                scores='',
                progress='',
-               acor='',
+               acor=None,
                fracking=False,
                messages=[]):
         """Print status message showing state of fitting process."""
@@ -129,12 +132,12 @@ class Printer(object):
                 tott = 2.0 * fitter._emcee_est_t
             timestring = self.get_timestring(tott)
             outarr.append(timestring)
-        if isinstance(acor, list):
+        if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
                 acorstring = (bcolors.FAIL +
-                              'Chain too short for acor ({})'.format(acorcstr)
-                              + bcolors.ENDC)
+                              'Chain too short for acor ({})'.format(
+                                  acorcstr) + bcolors.ENDC)
             else:
                 acortstr = pretty_num(acor[0], sig=3)
                 if fitter._travis:

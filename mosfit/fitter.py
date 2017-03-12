@@ -37,6 +37,24 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
+class MOSSampler(emcee.PTSampler):
+    """Override PTSampler methods."""
+
+    def get_autocorr_time(self, min_step=0, **kwargs):
+        """Return a matrix of autocorrelation lengths.
+
+        Returns a matrix of autocorrelation lengths for each
+        parameter in each temperature of shape ``(Ntemps, Ndim)``.
+        Any arguments will be passed to :func:`autocorr.integrate_time`.
+        """
+        acors = np.zeros((self.ntemps, self.dim))
+
+        for i in range(self.ntemps):
+            x = np.mean(self._chain[i, :, min_step:, :], axis=0)
+            acors[i, :] = emcee.autocorr.integrated_time(x, **kwargs)
+        return acors
+
+
 def draw_walker(test=True):
     """Draw a walker from the global model variable."""
     global model
@@ -457,7 +475,7 @@ class Fitter(object):
         if not pool.is_master():
             try:
                 pool.wait()
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, SystemExit):
                 pass
             return
 
@@ -484,7 +502,7 @@ class Fitter(object):
                 nmap = nwalkers - len(p0[i])
                 p0[i].extend(pool.map(draw_walker, [test_walker] * nmap))
 
-        sampler = emcee.PTSampler(
+        sampler = MOSSampler(
             ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
 
         prt.inline('Initial draws completed!')
@@ -535,23 +553,27 @@ class Fitter(object):
                             bad_redraws, redraw_count))
 
                 low = 10
-                asize = 0.1 * 0.5 * emi
-                acorc = max(1, min(10, int(np.floor(asize / low))))
-                acort = -1.0
-                aa = 1
-                for a in range(acorc, 0, -1):
-                    try:
-                        acort = max([
-                            max(x)
-                            for x in sampler.get_autocorr_time(
-                                low=low, c=a)
-                        ])
-                    except AutocorrError:
-                        continue
-                    else:
-                        aa = a
-                        break
-                acor = [acort, aa]
+                asize = emi - self._burn_in
+                if asize >= 1:
+                    acorc = max(1, min(10, int(np.floor(asize / low))))
+                    acort = -1.0
+                    aa = 1
+                    for a in range(acorc, 0, -1):
+                        try:
+                            acort = max([
+                                max(x)
+                                for x in sampler.get_autocorr_time(
+                                    low=low, c=a, min_step=self._burn_in)
+                            ])
+                        except AutocorrError:
+                            continue
+                        else:
+                            aa = a
+                            break
+                    acor = [acort, aa]
+                else:
+                    acor = None
+
                 self._emcee_est_t = float(time.time() - st - tft) / emi1 * (
                     iterations - emi1) + tft / emi1 * max(0, self._burn_in -
                                                           emi1)
@@ -621,7 +643,6 @@ class Fitter(object):
                 tft = tft + time.time() - sft
         except (KeyboardInterrupt, SystemExit):
             pool.close()
-            print(self._wrap_length)
             if (not prt.prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '

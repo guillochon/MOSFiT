@@ -43,7 +43,7 @@ class Model(object):
         if self._fitter:
             self._printer = self._fitter._printer
         else:
-            self._printer = Printer(wrap_length=wrap_length)
+            self._printer = Printer(pool=pool, wrap_length=wrap_length)
 
         prt = self._printer
 
@@ -251,7 +251,8 @@ class Model(object):
                 self._printer.wrapped(
                     'Anchoring variances for the following filters '
                     '(interpolating variances for the rest): ' +
-                    (', '.join([x[1] for x in variance_bands])))
+                    (', '.join([x[1] for x in variance_bands])),
+                    master_only=True)
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = cur_task.copy()
