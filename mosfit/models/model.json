@@ -101,7 +101,8 @@
             "constraint"
         ],
         "requests":{
-            "average_wavelengths": "photometry"
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
         }
     },
     "alltimes":{

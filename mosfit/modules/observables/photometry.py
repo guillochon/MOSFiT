@@ -190,7 +190,8 @@ class Photometry(Module):
                 x * y
                 for x, y in zip(self._transmissions[i], self._band_wavelengths[
                     i])
-            ], self._band_wavelengths[i]) / self._filter_integrals[i]
+            ], self._band_wavelengths[i]) / np.trapz(self._transmissions[i],
+                                                     self._band_wavelengths[i])
 
             if 'offset' in band:
                 self._band_offsets[i] = band['offset']
@@ -258,8 +259,18 @@ class Photometry(Module):
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
         return {'model_observations': observations}
 
-    def band_names(self):
+    def average_wavelengths(self, indices=None):
+        """Return average wavelengths for specified band indices."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._average_wavelengths) if i in indices]
+        return self._average_wavelengths
+
+    def band_names(self, indices=None):
         """Return the list of unique band names."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._band_names) if i in indices]
         return self._band_names
 
     def abmag(self, eff_fluxes, offsets):
@@ -270,6 +281,31 @@ class Photometry(Module):
                  np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
         return mags
 
+    def set_variance_bands(self, band_pairs):
+        """Set band (or pair of bands) that variance will be anchored to."""
+        self._variance_bands = []
+        for i, wave in enumerate(self._average_wavelengths):
+            match_found = False
+            for pwave, band in band_pairs:
+                if wave == pwave:
+                    self._variance_bands.append(band)
+                    match_found = True
+                    break
+            if not match_found:
+                for bpi, (pwave, band) in enumerate(band_pairs):
+                    if wave < pwave:
+                        if bpi > 0:
+                            frac = ((wave - band_pairs[bpi - 1][0]) /
+                                    (pwave - band_pairs[bpi - 1][0]))
+                            self._variance_bands.append(
+                                [frac, [x[1] for x in
+                                        band_pairs[bpi - 1:bpi + 1]]])
+                        else:
+                            self._variance_bands.append(band)
+                        break
+                    if bpi == len(band_pairs) - 1:
+                        self._variance_bands.append(band)
+
     def send_request(self, request):
         """Send requests to other modules."""
         if request == 'photometry':
@@ -278,4 +314,6 @@ class Photometry(Module):
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
         elif request == 'average_wavelengths':
             return self._average_wavelengths
+        elif request == 'variance_bands':
+            return getattr(self, '_variance_bands', [])
         return []

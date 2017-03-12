@@ -22,6 +22,7 @@ class Model(object):
     """Define a semi-analytical model to fit transients with."""
 
     MODEL_OUTPUT_DIR = 'products'
+    MIN_WAVE_FRAC_DIFF = 0.1
 
     # class outClass(object):
     #     pass
@@ -211,16 +212,30 @@ class Model(object):
     def create_data_dependent_free_parameters(
             self, variance_for_each=[], output={}):
         """Create free parameters that depend on loaded data."""
-        all_bands = list(set(output.get('all_bands', [])))
+        unique_band_indices = list(set(output.get('all_band_indices', [])))
         needs_general_variance = any(
-            np.array(output.get('all_band_indices')) < 0)
+            np.array(output.get('all_band_indices', [])) < 0)
 
         new_call_stack = OrderedDict()
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if (cur_task.get('class', '') == 'variance' and
                     'band' in listify(variance_for_each)):
-                for band in all_bands:
+                # Find photometry in call stack.
+                for ptask in self._call_stack:
+                    if ptask == 'photometry':
+                        awaves = self._modules[ptask].average_wavelengths(
+                            unique_band_indices)
+                        abands = self._modules[ptask].band_names(
+                            unique_band_indices)
+                        band_pairs = list(sorted(zip(awaves, abands)))
+                        break
+                owav = 0.0
+                variance_bands = []
+                for bi, (awav, band) in enumerate(band_pairs):
+                    wave_frac_diff = abs(awav - owav) / (awav + owav)
+                    if wave_frac_diff < self.MIN_WAVE_FRAC_DIFF:
+                        continue
                     new_task_name = '-'.join([task, 'band', band])
                     new_task = cur_task.copy()
                     new_call_stack[new_task_name] = new_task
@@ -229,8 +244,15 @@ class Model(object):
                     new_call_stack[new_task_name] = new_task
                     self._modules[new_task_name] = self._load_task_module(
                         new_task_name, call_stack=new_call_stack)
+                    owav = awav
+                    variance_bands.append([awav, band])
                 if needs_general_variance:
                     new_call_stack[task] = cur_task.copy()
+                self._printer.wrapped(
+                    'Anchoring variances for the following filters '
+                    '(interpolating variances for the rest): ' +
+                    (', '.join([x[1] for x in variance_bands])))
+                self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = cur_task.copy()
         self._call_stack = new_call_stack

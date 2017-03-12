@@ -27,30 +27,14 @@ class Likelihood(Module):
         """Process module."""
         self.preprocess(**kwargs)
         self._model_observations = kwargs['model_observations']
-        self._all_bands = kwargs['all_bands']
-        self._all_band_indices = kwargs['all_band_indices']
         self._fractions = kwargs['fractions']
-        self._are_mags = np.array(self._all_band_indices) >= 0
-        self._are_fds = np.array(self._all_band_indices) < 0
-        self._all_band_avgs = np.array([
-            self._average_wavelengths[bi] for bi in self._all_band_indices])
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
             return {'value': LIKELIHOOD_FLOOR}
         for oi, obs in enumerate(self._model_observations):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
-        self._score_modifier = kwargs.get('score_modifier', 1.0)
-        self._variance = kwargs.get('variance', 0.0)
-        self._variance2 = self._variance ** 2
-
-        band_vs = OrderedDict()
-        for key in kwargs:
-            if key.startswith('variance-band-'):
-                band_vs[key.split('-')[-1]] = kwargs[key]
-
-        self._band_vs = np.array([
-            band_vs.get(i, self._variance) for i in self._all_bands])
+        self._score_modifier = kwargs.get('score_modifier', 0.0)
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
@@ -71,13 +55,6 @@ class Likelihood(Module):
                 self._e_l_fds, self._observed, self._are_mags) if o
         ]
 
-        # Time deltas (radial distance) for covariance matrix.
-        self._o_times = self._times[self._observed]
-        # Wavelength deltas (radial distance) for covariance matrix.
-        self._o_waves = self._all_band_avgs[self._observed]
-
-        self._o_band_vs = self._band_vs[self._observed]
-
         kn = len(self._o_times)
 
         if (kwargs.get('codeltatime', -1) >= 0 or
@@ -86,7 +63,7 @@ class Likelihood(Module):
                 [vi * vj for vi in self._o_band_vs] for vj in self._o_band_vs
             ])
         else:
-            kmat = np.diag(self._o_band_vs)
+            kmat = np.diag(self._o_band_vs ** 2)
 
         if kwargs.get('codeltatime', -1) >= 0:
             kmat *= np.array([
@@ -136,6 +113,7 @@ class Likelihood(Module):
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
         self._average_wavelengths = requests.get('average_wavelengths', [])
+        self._variance_bands = requests.get('variance_bands', [])
 
     def preprocess(self, **kwargs):
         """Construct arrays of observations based on data keys."""
@@ -154,6 +132,11 @@ class Likelihood(Module):
         self._u_freqs = kwargs.get('u_frequencies', [])
         self._upper_limits = kwargs.get('upperlimits', [])
         self._observed = np.array(kwargs['observed'])
+        self._all_band_indices = kwargs.get('all_band_indices', [])
+        self._are_mags = np.array(self._all_band_indices) >= 0
+        self._are_fds = np.array(self._all_band_indices) < 0
+        self._all_band_avgs = np.array([
+            self._average_wavelengths[bi] for bi in self._all_band_indices])
 
         # Magnitudes first
         self._e_u_mags = [
@@ -195,4 +178,33 @@ class Likelihood(Module):
             x / flux_density_unit(y) if x != '' else ''
             for x, y in zip(self._e_l_fds, self._u_fds)
         ]
+
+        # Time deltas (radial distance) for covariance matrix.
+        self._o_times = self._times[self._observed]
+        # Wavelength deltas (radial distance) for covariance matrix.
+        self._o_waves = self._all_band_avgs[self._observed]
+
+        # Get band variances
+        self._variance = kwargs.get('variance', 0.0)
+
+        band_vs = OrderedDict()
+        for key in kwargs:
+            if key.startswith('variance-band-'):
+                band_vs[key.split('-')[-1]] = kwargs[key]
+
+        if len(self._variance_bands):
+            var_bands = [
+                self._variance_bands[i] for i in self._all_band_indices]
+
+            self._band_vs = np.array([
+                band_vs.get(i, self._variance) if isinstance(i, str) else
+                (i[0] * band_vs.get(i[1][0], self._variance) +
+                 (1.0 - i[0]) * band_vs.get(i[1][0], self._variance)) for i in
+                var_bands])
+        else:
+            self._band_vs = np.full(
+                len(self._all_band_indices), self._variance)
+
+        self._o_band_vs = self._band_vs[self._observed]
+
         self._preprocessed = True
