@@ -7,6 +7,7 @@ import re
 import sys
 from collections import OrderedDict
 from math import floor, log10
+from six import string_types
 
 import numpy as np
 
@@ -35,7 +36,7 @@ def is_number(s):
 
 def is_integer(s):
     """Check if input is an integer."""
-    if isinstance(s, list) and not isinstance(s, str):
+    if isinstance(s, list) and not isinstance(s, string_types):
         try:
             [int(x) for x in s]
             return True

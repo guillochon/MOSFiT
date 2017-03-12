@@ -4,10 +4,10 @@ from math import isnan
 
 import numpy as np
 import scipy
-
 from mosfit.constants import LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
+from six import string_types
 
 
 # Important: Only define one ``Module`` class per file.
@@ -197,10 +197,10 @@ class Likelihood(Module):
                 self._variance_bands[i] for i in self._all_band_indices]
 
             self._band_vs = np.array([
-                band_vs.get(i, self._variance) if isinstance(i, str) else
-                (i[0] * band_vs.get(i[1][0], self._variance) +
-                 (1.0 - i[0]) * band_vs.get(i[1][0], self._variance)) for i in
-                var_bands])
+                band_vs.get(i, self._variance) if isinstance(i, string_types)
+                else (i[0] * band_vs.get(i[1][0], self._variance) +
+                      (1.0 - i[0]) * band_vs.get(i[1][0], self._variance))
+                for i in var_bands])
         else:
             self._band_vs = np.full(
                 len(self._all_band_indices), self._variance)

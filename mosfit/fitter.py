@@ -11,6 +11,7 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
+from six import string_types
 
 import dropbox
 import emcee
@@ -828,13 +829,13 @@ class Fitter(object):
         times = np.repeat(time_list, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
-        if isinstance(band_systems, str):
+        if isinstance(band_systems, string_types):
             band_systems = [band_systems for x in range(len(band_list_all))]
-        if isinstance(band_instruments, str):
+        if isinstance(band_instruments, string_types):
             band_instruments = [
                 band_instruments for x in range(len(band_list_all))
             ]
-        if isinstance(band_bandsets, str):
+        if isinstance(band_bandsets, string_types):
             band_bandsets = [band_bandsets for x in range(len(band_list_all))]
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
