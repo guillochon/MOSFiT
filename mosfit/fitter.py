@@ -560,8 +560,8 @@ class Fitter(object):
                             bad_redraws, redraw_count))
 
                 low = 10
-                asize = emi - self._burn_in
-                if asize >= 1:
+                asize = 0.5 * (emi - self._burn_in) / low
+                if asize >= 0:
                     acorc = max(1, min(10, int(np.floor(asize / low))))
                     acort = -1.0
                     aa = 1
