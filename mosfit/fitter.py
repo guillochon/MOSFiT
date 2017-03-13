@@ -516,6 +516,7 @@ class Fitter(object):
         emi = 0
         tft = 0.0  # Total fracking time
         acor = None
+        s_exception = None
 
         try:
             st = time.time()
@@ -646,15 +647,21 @@ class Fitter(object):
                     fracking=True,
                     progress=[emi1, iterations])
                 tft = tft + time.time() - sft
+                if s_exception:
+                    break
         except (KeyboardInterrupt, SystemExit):
+            self._printer.inline('Ctrl + C pressed, halting...')
+            s_exception = sys.exc_info()
+        except Exception:
+            raise
+
+        if s_exception:
             pool.close()
             if (not prt.prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '
                     'be overwritten.', self._wrap_length)):
                 sys.exit()
-        except Exception:
-            raise
 
         prt.wrapped('Saving output to disk...')
         if self._event_path:
@@ -727,7 +734,7 @@ class Fitter(object):
         modelnum = entry.add_model(**modeldict)
 
         ri = 1
-        if emi > 0:
+        if not s_exception and emi > 0:
             pout = sampler.chain[:, :, -1, :]
             lnprobout = sampler.lnprobability[:, :, -1]
             lnlikeout = sampler.lnlikelihood[:, :, -1]
