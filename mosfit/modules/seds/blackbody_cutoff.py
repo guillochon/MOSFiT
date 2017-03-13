@@ -4,7 +4,7 @@ from math import pi
 import numpy as np
 from astropy import constants as c
 from astropy import units as u
-from mosfit.constants import FOUR_PI
+from mosfit.constants import FOUR_PI, ANG_CGS
 from mosfit.modules.seds.sed import SED
 
 
@@ -23,7 +23,6 @@ class BlackbodyCutoff(SED):
         2.0 * c.h * c.c ** 2 * pi).cgs.value * u.Angstrom.cgs.scale
     X_CONST = (c.h * c.c / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
-    ANG_CGS = u.Angstrom.cgs.scale
     F_TERMS = 10
 
     def __init__(self, **kwargs):

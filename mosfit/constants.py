@@ -16,3 +16,4 @@ M_SUN_CGS = c.M_sun.cgs.value
 KM_CGS = 1.0e5
 C_CGS = c.c.cgs.value
 FOE = 1.0e51
+ANG_CGS = u.Angstrom.cgs.scale

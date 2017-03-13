@@ -4,7 +4,7 @@ from math import isnan
 
 import numpy as np
 import scipy
-from mosfit.constants import LIKELIHOOD_FLOOR
+from mosfit.constants import ANG_CGS, C_CGS, LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
 from six import string_types
@@ -16,7 +16,7 @@ from six import string_types
 class Likelihood(Module):
     """Calculate the maximum likelihood score for a model."""
 
-    MIN_COV_TERM = 1.0e-10
+    MIN_COV_TERM = 1.0e-30
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -94,8 +94,8 @@ class Likelihood(Module):
             # full_size = np.count_nonzero(kmat)
 
             # Remove small covariance terms
-            # min_cov = self.MIN_COV_TERM * np.max(kmat)
-            # kmat[kmat <= min_cov] = 0.0
+            min_cov = self.MIN_COV_TERM * np.max(kmat)
+            kmat[kmat <= min_cov] = 0.0
 
             # print("Sparse frac: {:.2%}".format(
             #     float(full_size - np.count_nonzero(kmat)) / full_size))
@@ -128,6 +128,7 @@ class Likelihood(Module):
         self._times = np.array(kwargs.get('times', []))
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
+        self._freqs = kwargs.get('frequencies', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
         self._e_l_mags = kwargs.get('e_lower_magnitudes', [])
         self._e_mags = kwargs.get('e_magnitudes', [])
@@ -142,7 +143,9 @@ class Likelihood(Module):
         self._are_mags = np.array(self._all_band_indices) >= 0
         self._are_fds = np.array(self._all_band_indices) < 0
         self._all_band_avgs = np.array([
-            self._average_wavelengths[bi] for bi in self._all_band_indices])
+            self._average_wavelengths[bi] if bi >= 0 else
+            C_CGS / self._freqs[i] / ANG_CGS for i, bi in
+            enumerate(self._all_band_indices)])
 
         # Magnitudes first
         self._e_u_mags = [
