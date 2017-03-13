@@ -25,19 +25,35 @@ if sys.version_info[:2] < (3, 3):
 class Printer(object):
     """Print class for MOSFiT."""
 
+    class bcolors(object):
+        """Special formatting characters."""
+
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+
     def __init__(self, pool=None, wrap_length=100):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._pool = pool
 
-    def inline(self, x, new_line=False):
+    def inline(self, x, new_line=False, error=False):
         """Print inline, erasing underlying pre-existing text."""
         lines = x.split('\n')
+        if error:
+            sys.stdout.write(self.bcolors.FAIL)
         if not new_line:
             for line in lines:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
         print(x, flush=True)
+        if error:
+            sys.stdout.write(self.bcolors.ENDC)
 
     def wrapped(self, text, wrap_length=None, master_only=True):
         """Print text wrapped to either the specified length or the default."""
@@ -98,16 +114,6 @@ class Printer(object):
                fracking=False,
                messages=[]):
         """Print status message showing state of fitting process."""
-        class bcolors(object):
-            HEADER = '\033[95m'
-            OKBLUE = '\033[94m'
-            OKGREEN = '\033[92m'
-            WARNING = '\033[93m'
-            FAIL = '\033[91m'
-            ENDC = '\033[0m'
-            BOLD = '\033[1m'
-            UNDERLINE = '\033[4m'
-
         outarr = [fitter._event_name]
         if desc:
             outarr.append(desc)
@@ -135,23 +141,23 @@ class Printer(object):
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
-                acorstring = (bcolors.FAIL +
+                acorstring = (self.bcolors.FAIL +
                               'Chain too short for acor ({})'.format(
-                                  acorcstr) + bcolors.ENDC)
+                                  acorcstr) + self.bcolors.ENDC)
             else:
                 acortstr = pretty_num(acor[0], sig=3)
                 if fitter._travis:
                     col = ''
                 elif acor[1] < 5.0:
-                    col = bcolors.FAIL
+                    col = self.bcolors.FAIL
                 elif acor[1] < 10.0:
-                    col = bcolors.WARNING
+                    col = self.bcolors.WARNING
                 else:
-                    col = bcolors.OKGREEN
+                    col = self.bcolors.OKGREEN
                 acorstring = col
                 acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
                                                                       acorcstr)
-                acorstring = acorstring + (bcolors.ENDC if col else '')
+                acorstring = acorstring + (self.bcolors.ENDC if col else '')
             outarr.append(acorstring)
 
         if not isinstance(messages, list):

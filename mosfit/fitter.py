@@ -650,7 +650,7 @@ class Fitter(object):
                 if s_exception:
                     break
         except (KeyboardInterrupt, SystemExit):
-            self._printer.inline('Ctrl + C pressed, halting...')
+            self._printer.inline('Ctrl + C pressed, halting...', error=True)
             s_exception = sys.exc_info()
         except Exception:
             raise
