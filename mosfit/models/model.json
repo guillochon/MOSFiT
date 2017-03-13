@@ -76,13 +76,13 @@
     "codeltatime":{
         "kind":"parameter",
         "value":-1.0,
-        "class":"parameter",
+        "class":"covariance",
         "latex":"l_t"
     },
     "codeltalambda":{
         "kind":"parameter",
         "value":-1.0,
-        "class":"parameter",
+        "class":"covariance",
         "latex":"l_\\lambda"
     },
     "constraint":{

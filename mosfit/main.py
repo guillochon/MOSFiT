@@ -126,6 +126,21 @@ def get_parser():
               "the bands listed in `--exclude-bands`."))
 
     parser.add_argument(
+        '--fix-parameters',
+        '-F',
+        dest='user_fixed_parameters',
+        default=[],
+        nargs='+',
+        help=("Pairs of parameter names and values to fix for the current "
+              "fit. Example: `-F kappa 1.0 vejecta 1.0e4` would fix the "
+              "`kappa` and `vejecta` parameters to those values. If the "
+              "second value is recognized to be an existing key, the whole "
+              "list will be assumed to just be a list of keys and the "
+              "default values specified in the model JSON files will be "
+              "used. If the name is a parameter class (e.g. `covariance`), "
+              "all variables of that class will be fixed."))
+
+    parser.add_argument(
         '--iterations',
         '-i',
         dest='iterations',

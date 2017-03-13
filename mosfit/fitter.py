@@ -116,6 +116,7 @@ class Fitter(object):
                    check_upload_quality=False,
                    printer=None,
                    variance_for_each=[],
+                   user_fixed_parameters=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -325,6 +326,7 @@ class Fitter(object):
                         band_instruments=band_instruments,
                         band_bandsets=band_bandsets,
                         variance_for_each=variance_for_each,
+                        user_fixed_parameters=user_fixed_parameters,
                         pool=pool)
 
                     if success:
@@ -361,6 +363,7 @@ class Fitter(object):
                   band_instruments=[],
                   band_bandsets=[],
                   variance_for_each=[],
+                  user_fixed_parameters=[],
                   pool=''):
         """Load the data for the specified event."""
         prt = self._printer
@@ -386,6 +389,17 @@ class Fitter(object):
                     return False
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
+
+            # Fix user-specified parameters.
+            for fi, param in enumerate(user_fixed_parameters):
+                if (task == param or
+                        self._model._call_stack[task].get(
+                            'class', '') == param):
+                    fixed_parameters.append(task)
+                    if fi < len(user_fixed_parameters) - 1:
+                        value = user_fixed_parameters[fi + 1]
+                        if value not in self._model._call_stack:
+                            self._model._call_stack[task]['value'] = value
 
         self._model.determine_free_parameters(fixed_parameters)
 
