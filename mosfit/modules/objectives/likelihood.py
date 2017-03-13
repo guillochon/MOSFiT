@@ -66,7 +66,7 @@ class Likelihood(Module):
             is_diag = True
             value = -0.5 * np.sum(
                 residuals ** 2 / (self._o_band_vs ** 2 + diag) +
-                2 * np.log(self._o_band_vs))
+                np.log(self._o_band_vs ** 2 + diag))
 
         if not is_diag:
             kn = len(self._o_times)
