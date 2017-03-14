@@ -43,7 +43,7 @@ class BlackbodyCutoff(SED):
         xc = self.X_CONST
         fc = self.FLUX_CONST
         cc = self.C_CONST
-        ac = self.ANG_CGS
+        ac = ANG_CGS
         cwave_ac = self._cutoff_wavelength * ac
         cwave_ac2 = cwave_ac * cwave_ac
         cwave_ac3 = cwave_ac2 * cwave_ac
