@@ -97,8 +97,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore",
-            "radiusphot"
+            "densecore"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
