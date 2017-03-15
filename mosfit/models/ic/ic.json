@@ -136,6 +136,7 @@
         "inputs":[
             "synchrotron",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{

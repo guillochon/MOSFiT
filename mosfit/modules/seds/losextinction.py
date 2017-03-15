@@ -24,6 +24,7 @@ class LOSExtinction(SED):
         zp1 = 1.0 + kwargs['redshift']
         self._seds = kwargs['seds']
         self._nh_host = kwargs['nhhost']
+        self._rv_host = kwargs['rvhost']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
@@ -38,7 +39,8 @@ class LOSExtinction(SED):
             if bi >= 0:
                 if bi not in extinct_cache:
                     extinct_cache[bi] = odonnell94(
-                        self._band_rest_wavelengths[bi], av_host, self.MW_RV)
+                        self._band_rest_wavelengths[bi], av_host,
+                        self._rv_host)
                 # Add host and MW contributions
                 eapp(
                     self._mw_extinct[bi] + extinct_cache[bi],

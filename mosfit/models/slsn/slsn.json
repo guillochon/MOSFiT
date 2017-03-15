@@ -135,6 +135,7 @@
         "inputs":[
             "blackbody_cutoff",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{
