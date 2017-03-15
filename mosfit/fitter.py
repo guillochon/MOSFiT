@@ -839,9 +839,8 @@ class Fitter(object):
                     parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprobout is not None and lnlike is not None:
-                    realdict[REALIZATION.SCORE] = str(
-                        lnprobout[xi][yi] + lnlikeout[xi][yi])
+                if lnprob is not None and lnlike is not None:
+                    realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)

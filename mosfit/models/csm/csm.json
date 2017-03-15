@@ -158,6 +158,7 @@
         "inputs":[
             "blackbody",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{

@@ -85,6 +85,12 @@
         "class":"covariance",
         "latex":"l_\\lambda"
     },
+    "rvhost":{
+        "kind":"parameter",
+        "value":3.1,
+        "class":"parameter",
+        "latex":"R_{\\rm V, host}"
+    },
     "constraint":{
         "kind":"constraint"
     },
