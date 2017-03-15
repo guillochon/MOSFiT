@@ -197,9 +197,9 @@ class Model(object):
         if not call_stack:
             call_stack = self._call_stack
         cur_task = call_stack[task]
-        mod_name = cur_task.get('class', task)
+        mod_name = cur_task.get('class', task).lower()
         mod = importlib.import_module(
-            '.' + 'modules.' + cur_task['kind'] + 's.' + mod_name,
+            '.' + 'modules.' + cur_task['kind'].lower() + 's.' + mod_name,
             package='mosfit')
         class_name = [
             x[0] for x in
@@ -373,13 +373,13 @@ class Model(object):
                     if inp not in d:
                         suggests = get_close_matches(inp, d, n=1, cutoff=0.8)
                         warn_str = (
-                            'Warning: Module `{}` for input to `{}` '
+                            'Module `{}` for input to `{}` '
                             'not found!'.format(inp, leaf))
                         if len(suggests):
                             warn_str += (
                                 ' Did you perhaps mean `{}`?'.
                                 format(suggests[0]))
-                        self._printer.wrapped(warn_str, warning=True)
+                        raise RuntimeError(warn_str)
                     children = OrderedDict()
                     self.construct_trees(
                         d,

@@ -32,7 +32,7 @@ class Module(object):
         """Return own name."""
         return self._name
 
-    def receive_requests(self, **kwargs):
+    def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
         pass
 
