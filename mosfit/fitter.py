@@ -606,8 +606,9 @@ class Fitter(object):
                     (wi, ti) = tuple(selijs[bhi])
                     if -bh.fun > lnprob[wi][ti] + lnlike[wi][ti]:
                         p[wi][ti] = bh.x
-                        lnprob[wi][ti] = likelihood(bh.x) + prior(bh.x)
-                        lnlike[wi][ti] = likelihood(bh.x)
+                        like = likelihood(bh.x)
+                        lnprob[wi][ti] = like + prior(bh.x)
+                        lnlike[wi][ti] = like
                 scores = [[-x.fun for x in bhs]]
                 prt.status(
                     self,
@@ -699,7 +700,6 @@ class Fitter(object):
         for xi, x in enumerate(p):
             for yi, y in enumerate(p[xi]):
                 output = model.run_stack(y, root='output')
-                print(lnprob[xi][yi], likelihood(y))
                 for i in range(len(output['times'])):
                     if not np.isfinite(output['model_observations'][i]):
                         continue
