@@ -560,9 +560,7 @@ class Fitter(object):
                 frack_now = (fracking and emi1 <= self._burn_in and
                              emi1 % frack_step == 0)
 
-                scores = [
-                    np.array(x) + np.array(y) for x, y in zip(lnprob, lnlike)
-                ]
+                scores = [np.array(x) for x in lnprob]
                 prt.status(
                     self,
                     desc='Fracking' if frack_now else 'Walking',
@@ -608,8 +606,8 @@ class Fitter(object):
                     (wi, ti) = tuple(selijs[bhi])
                     if -bh.fun > lnprob[wi][ti] + lnlike[wi][ti]:
                         p[wi][ti] = bh.x
-                        lnprob[wi][ti] = likelihood(bh.x)
-                        lnlike[wi][ti] = prior(bh.x)
+                        lnprob[wi][ti] = likelihood(bh.x) + prior(bh.x)
+                        lnlike[wi][ti] = likelihood(bh.x)
                 scores = [[-x.fun for x in bhs]]
                 prt.status(
                     self,
@@ -701,6 +699,7 @@ class Fitter(object):
         for xi, x in enumerate(p):
             for yi, y in enumerate(p[xi]):
                 output = model.run_stack(y, root='output')
+                print(lnprob[xi][yi], likelihood(y))
                 for i in range(len(output['times'])):
                     if not np.isfinite(output['model_observations'][i]):
                         continue
