@@ -24,6 +24,7 @@ class MagnetarConstraints(Constraint):
         self._t_explosion = kwargs['texplosion']
         self._lums = kwargs['luminosities']
         self._redshift = kwargs['redshift']
+        self._neutrino_energy = kwargs['neutrino_energy']
 
         # Magnetar rotational energy
         self._Ep = 2.6e52 * (self._Mns / 1.4) ** (3. /
@@ -48,7 +49,7 @@ class MagnetarConstraints(Constraint):
         E_rad = sum(L_arr * (norm_times - shift_times) * DAY_CGS)
 
         # Kinetic energy < magnetar energy - radiative loss + neutrinos (10^51)
-        if (self._Ek > self._Ep - E_rad + 1.e51):
+        if (self._Ek > self._Ep - E_rad + self._neutrino_energy):
             self._score_modifier += LIKELIHOOD_FLOOR
 
         return {'score_modifier': self._score_modifier}
