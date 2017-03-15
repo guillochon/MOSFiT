@@ -282,6 +282,10 @@ class Model(object):
                 requests = OrderedDict()
                 reqs = cur_task['requests']
                 for req in reqs:
+                    if reqs[req] not in self._modules:
+                        raise RuntimeError(
+                            'Request cannot be satisfied because module '
+                            '`{}` could not be found.'.format(reqs[req]))
                     requests[req] = self._modules[reqs[req]].send_request(req)
                 self._modules[task].receive_requests(**requests)
 
