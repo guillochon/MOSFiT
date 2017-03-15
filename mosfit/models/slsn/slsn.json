@@ -81,6 +81,12 @@
         "class":"parameter",
         "latex":"\\lambda_{\\rm cutoff}"
     },
+    "neutrino_energy":{
+        "kind":"parameter",
+        "value":1.0e51,
+        "class":"parameter",
+        "latex":"E_{\\nu}"
+    },
     "magnetar":{
         "kind":"engine",
         "inputs":[
@@ -152,7 +158,8 @@
             "diffusion",
             "texplosion",
             "redshift",
-            "all_times"
+            "alltimes",
+            "neutrino_energy"
         ]
     },
     "likelihood":{
@@ -160,10 +167,16 @@
         "inputs":[
             "transient",
             "variance",
+            "codeltatime",
+            "codeltalambda",
             "photometry",
             "default_upper_limit_error",
             "default_no_error_bar_error",
-            "magnetar_constraints"
-        ]
+            "constraint"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        }
     }
 }
