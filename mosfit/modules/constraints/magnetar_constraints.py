@@ -1,6 +1,6 @@
 """Definitions for the `MagnetarConstraints` class."""
 import numpy as np
-from mosfit.constants import DAY_CGS, KM_CGS, LIKELIHOOD_FLOOR, M_SUN_CGS
+from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.constraints.constraint import Constraint
 
 
