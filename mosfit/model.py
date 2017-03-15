@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from collections import OrderedDict
+from difflib import get_close_matches
 from math import isnan
 
 import numpy as np
@@ -349,6 +350,11 @@ class Model(object):
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root."""
+        leaf = kinds if len(kinds) else name
+        if depth > 100:
+            raise RuntimeError(
+                'Error: Tree depth greater than 100, suggests a recursive '
+                'input loop in `{}`.'.format(leaf))
         for tag in d:
             entry = d[tag].copy()
             new_roots = roots
@@ -361,12 +367,15 @@ class Model(object):
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
                     if inp not in d:
-                        leaf = kinds if len(kinds) else name
-                        self._printer.wrapped(
+                        suggests = get_close_matches(inp, d, n=1, cutoff=0.8)
+                        warn_str = (
                             'Warning: Module `{}` for input to `{}` '
-                            'not found!'.
-                            format(inp, leaf),
-                            warning=True)
+                            'not found!'.format(inp, leaf))
+                        if len(suggests):
+                            warn_str += (
+                                ' Did you perhaps mean `{}`?'.
+                                format(suggests[0]))
+                        self._printer.wrapped(warn_str, warning=True)
                     children = OrderedDict()
                     self.construct_trees(
                         d,
