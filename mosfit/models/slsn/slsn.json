@@ -172,7 +172,7 @@
             "photometry",
             "default_upper_limit_error",
             "default_no_error_bar_error",
-            "constraint"
+            "magnetar_constraints"
         ],
         "requests":{
             "average_wavelengths": "photometry",

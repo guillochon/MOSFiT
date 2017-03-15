@@ -42,9 +42,11 @@ class Printer(object):
         self._wrap_length = wrap_length
         self._pool = pool
 
-    def inline(self, x, new_line=False, error=False):
+    def inline(self, x, new_line=False, warning=False, error=False):
         """Print inline, erasing underlying pre-existing text."""
         lines = x.split('\n')
+        if warning:
+            sys.stdout.write(self.bcolors.WARNING)
         if error:
             sys.stdout.write(self.bcolors.FAIL)
         if not new_line:
@@ -52,10 +54,11 @@ class Printer(object):
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
         print(x, flush=True)
-        if error:
+        if error or warning:
             sys.stdout.write(self.bcolors.ENDC)
 
-    def wrapped(self, text, wrap_length=None, master_only=True):
+    def wrapped(self, text, wrap_length=None, master_only=True, warning=False,
+                error=False):
         """Print text wrapped to either the specified length or the default."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -63,7 +66,13 @@ class Printer(object):
             wl = self._wrap_length
         if master_only and self._pool and not self._pool.is_master():
             return
+        if warning:
+            sys.stdout.write(self.bcolors.WARNING)
+        if error:
+            sys.stdout.write(self.bcolors.FAIL)
         print(fill(text, wl))
+        if error or warning:
+            sys.stdout.write(self.bcolors.ENDC)
 
     def prompt(self, text, wrap_length=None, kind='bool', options=None):
         """Prompt the user for input and return a value based on response."""

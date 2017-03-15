@@ -360,6 +360,13 @@ class Model(object):
                 trees[tag] = entry
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
+                    if inp not in d:
+                        leaf = kinds if len(kinds) else name
+                        self._printer.wrapped(
+                            'Warning: Module `{}` for input to `{}` '
+                            'not found!'.
+                            format(inp, leaf),
+                            warning=True)
                     children = OrderedDict()
                     self.construct_trees(
                         d,
