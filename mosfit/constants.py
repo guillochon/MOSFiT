@@ -4,16 +4,18 @@ import astropy.constants as c
 import astropy.units as u
 import numpy as np
 
-LOG2 = np.log(2.0)
 LIKELIHOOD_FLOOR = -np.inf
 LOCAL_LIKELIHOOD_FLOOR = -1.0e8
-FOUR_PI = 4.0 * np.pi
-MAG_FAC = 2.5
+
 AB_OFFSET = -48.60
-MPC_CGS = (1.0 * u.Mpc).cgs.value
-DAY_CGS = (1.0 * u.day).cgs.value
-M_SUN_CGS = c.M_sun.cgs.value
-KM_CGS = 1.0e5
-C_CGS = c.c.cgs.value
-FOE = 1.0e51
 ANG_CGS = u.Angstrom.cgs.scale
+AU_CGS = u.au.cgs.scale
+C_CGS = c.c.cgs.value
+DAY_CGS = u.day.cgs.scale
+FOE = 1.0e51
+FOUR_PI = 4.0 * np.pi
+KM_CGS = u.km.cgs.scale
+LOG2 = np.log(2.0)
+M_SUN_CGS = c.M_sun.cgs.value
+MAG_FAC = 2.5
+MPC_CGS = u.Mpc.cgs.scale

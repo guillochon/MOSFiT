@@ -127,7 +127,6 @@
             "texplosion",
             "redshift",
             "densecore",
-            "temperaturephot",
             "radiusphot"
         ],
         "requests":{

@@ -111,7 +111,6 @@
             "texplosion",
             "redshift",
             "temperature_floor",
-            "temperaturephot",
             "radiusphot"
         ],
         "requests":{
