@@ -51,7 +51,7 @@ class MagnetarConstraints(Constraint):
         # Kinetic energy < magnetar energy - radiative loss + neutrinos (10^51)
         if (self._Ek > self._Ep - E_rad + self._neutrino_energy):
             self._score_modifier += -(
-                self._Ek - (self._Ep - E_rad + self._neutrino_energy))**2 / (
-                    2 * self._neutrino_energy**2)
+                self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
+                    2 * self._neutrino_energy ** 2)
 
         return {'score_modifier': self._score_modifier}
