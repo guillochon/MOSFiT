@@ -141,5 +141,29 @@
             "losextinction",
             "lumdist"
         ]
+    },
+    "magnetar_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "mejecta",
+            "vejecta",
+            "Pspin",
+            "Mns",
+            "diffusion",
+            "texplosion",
+            "redshift",
+            "all_times"
+        ]
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "transient",
+            "variance",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error",
+            "magnetar_constraints"
+        ]
     }
 }
