@@ -1,6 +1,6 @@
 """Definitions for the `MagnetarConstraints` class."""
 import numpy as np
-from mosfit.constants import DAY_CGS, KM_CGS, LIKELIHOOD_FLOOR, M_SUN_CGS
+from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.constraints.constraint import Constraint
 
 
@@ -50,6 +50,8 @@ class MagnetarConstraints(Constraint):
 
         # Kinetic energy < magnetar energy - radiative loss + neutrinos (10^51)
         if (self._Ek > self._Ep - E_rad + self._neutrino_energy):
-            self._score_modifier += LIKELIHOOD_FLOOR
+            self._score_modifier += -(self._Ek - (self._Ep - E_rad +
+                                            self._neutrino_energy))**2 / (2 *
+                                            self._neutrino_energy**2)
 
         return {'score_modifier': self._score_modifier}
