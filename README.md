@@ -7,7 +7,7 @@
 
 `MOSFiT` (**M**odular **O**pen-**S**ource **Fi**tter for **T**ransients) is a Python 2.7/3.x package that performs maximum likelihood analysis to fit semi-analytical model predictions to observed transient data. Data can be provided by the user, or can be pulled automatically from the [Open Supernova Catalog](https://sne.space) by its name, and thus the code can be used to fit *any* supernova within that database, or any database that shares the format described in the [OSC schema](https://github.com/astrocatalogs/supernovae/blob/master/SCHEMA.md) (such as the [Open TDE Catalog](https://tde.space) or the [Open Nova Catalog](https://opennova.space)). With the use of an optional upload flag, fits performed by users can then be uploaded back to the aforementioned catalogs.<br clear="all">
 
-##Installation
+## Installation
 
 `MOSFiT` is available on pip, and can be installed in the standard way:
 
@@ -23,6 +23,6 @@ cd MOSFiT
 python setup.py install
 ```
 
-##Using MOSFiT
+## Using MOSFiT
 
 For detailed instructions on using MOSFiT, please see our documentation on RTD: http://mosfit.readthedocs.io/
