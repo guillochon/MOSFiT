@@ -25,10 +25,23 @@ if sys.version_info[:2] < (3, 3):
 class Printer(object):
     """Print class for MOSFiT."""
 
-    def __init__(self, wrap_length=100, quiet=False):
+    class bcolors(object):
+        """Special formatting characters."""
+
+        HEADER = '\033[95m'
+        OKBLUE = '\033[94m'
+        OKGREEN = '\033[92m'
+        WARNING = '\033[93m'
+        FAIL = '\033[91m'
+        ENDC = '\033[0m'
+        BOLD = '\033[1m'
+        UNDERLINE = '\033[4m'
+
+    def __init__(self, pool=None, wrap_length=100, quiet=False):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._quiet = quiet
+        self._pool = pool
 
     def prt(self, text):
         """Print text without modification."""
@@ -36,18 +49,25 @@ class Printer(object):
             return
         print(text)
 
-    def inline(self, x, new_line=False):
+    def inline(self, x, new_line=False, warning=False, error=False):
         """Print inline, erasing underlying pre-existing text."""
         if self._quiet:
             return
         lines = x.split('\n')
+        if warning:
+            sys.stdout.write(self.bcolors.WARNING)
+        if error:
+            sys.stdout.write(self.bcolors.FAIL)
         if not new_line:
             for line in lines:
                 sys.stdout.write("\033[F")
                 sys.stdout.write("\033[K")
         print(x, flush=True)
+        if error or warning:
+            sys.stdout.write(self.bcolors.ENDC)
 
-    def wrapped(self, text, wrap_length=None, warning=False):
+    def wrapped(self, text, wrap_length=None, master_only=True, warning=False,
+                error=False):
         """Print text wrapped to either the specified length or the default."""
         if self._quiet:
             return
@@ -55,7 +75,15 @@ class Printer(object):
             wl = wrap_length
         else:
             wl = self._wrap_length
+        if master_only and self._pool and not self._pool.is_master():
+            return
+        if warning:
+            sys.stdout.write(self.bcolors.WARNING)
+        if error:
+            sys.stdout.write(self.bcolors.FAIL)
         print(fill(text, wl))
+        if error or warning:
+            sys.stdout.write(self.bcolors.ENDC)
 
     def prompt(self, text, wrap_length=None, kind='bool', options=None):
         """Prompt the user for input and return a value based on response."""
@@ -102,19 +130,10 @@ class Printer(object):
                desc='',
                scores='',
                progress='',
-               acor='',
+               acor=None,
+               fracking=False,
                messages=[]):
         """Print status message showing state of fitting process."""
-        class bcolors(object):
-            HEADER = '\033[95m'
-            OKBLUE = '\033[94m'
-            OKGREEN = '\033[92m'
-            WARNING = '\033[93m'
-            FAIL = '\033[91m'
-            ENDC = '\033[0m'
-            BOLD = '\033[1m'
-            UNDERLINE = '\033[4m'
-
         if self._quiet:
             return
 
@@ -122,14 +141,16 @@ class Printer(object):
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join([
+            scorestring = 'Fracking' if fracking else 'Best'
+            scorestring += ' scores: [ ' + ', '.join([
                 pretty_num(max(x))
                 if not np.isnan(max(x)) and np.isfinite(max(x)) else 'NaN'
                 for x in scores
             ]) + ' ]'
             outarr.append(scorestring)
-            scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
-            outarr.append(scorestring)
+            if not fracking:
+                scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
+                outarr.append(scorestring)
         if isinstance(progress, list):
             progressstring = 'Progress: [ {}/{} ]'.format(*progress)
             outarr.append(progressstring)
@@ -140,26 +161,26 @@ class Printer(object):
                 tott = 2.0 * fitter._emcee_est_t
             timestring = self.get_timestring(tott)
             outarr.append(timestring)
-        if isinstance(acor, list):
+        if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
-                acorstring = (bcolors.FAIL +
-                              'Chain too short for acor ({})'.format(acorcstr)
-                              + bcolors.ENDC)
+                acorstring = (self.bcolors.FAIL +
+                              'Chain too short for acor ({})'.format(
+                                  acorcstr) + self.bcolors.ENDC)
             else:
                 acortstr = pretty_num(acor[0], sig=3)
                 if fitter._travis:
                     col = ''
                 elif acor[1] < 5.0:
-                    col = bcolors.FAIL
+                    col = self.bcolors.FAIL
                 elif acor[1] < 10.0:
-                    col = bcolors.WARNING
+                    col = self.bcolors.WARNING
                 else:
-                    col = bcolors.OKGREEN
+                    col = self.bcolors.OKGREEN
                 acorstring = col
                 acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
                                                                       acorcstr)
-                acorstring = acorstring + (bcolors.ENDC if col else '')
+                acorstring = acorstring + (self.bcolors.ENDC if col else '')
             outarr.append(acorstring)
 
         if not isinstance(messages, list):
