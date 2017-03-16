@@ -25,10 +25,10 @@ Testing
 - [ ] Test on Windows (CI not possible yet)
 
 Cleanup
-- [ ] Make `--quiet` actually quiet
+- [x] Make `--quiet` actually quiet
 
 Integration
-- [ ] Importing `mosfit` for use in other codes
+- [x] Importing `mosfit` for use in other codes
 
 Output
 - [x] Model LCs

@@ -323,8 +323,10 @@ def main():
 
     args = parser.parse_args()
 
-    prt = Printer(wrap_length=100)
+    prt = Printer(wrap_length=100, quiet=args.quiet)
     args.printer = prt
+
+    args.write = True
 
     if (isinstance(args.extrapolate_time, list) and
             len(args.extrapolate_time) == 0):

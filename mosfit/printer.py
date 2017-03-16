@@ -25,12 +25,21 @@ if sys.version_info[:2] < (3, 3):
 class Printer(object):
     """Print class for MOSFiT."""
 
-    def __init__(self, wrap_length=100):
+    def __init__(self, wrap_length=100, quiet=False):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
+        self._quiet = quiet
+
+    def prt(self, text):
+        """Print text without modification."""
+        if self._quiet:
+            return
+        print(text)
 
     def inline(self, x, new_line=False):
         """Print inline, erasing underlying pre-existing text."""
+        if self._quiet:
+            return
         lines = x.split('\n')
         if not new_line:
             for line in lines:
@@ -40,6 +49,8 @@ class Printer(object):
 
     def wrapped(self, text, wrap_length=None):
         """Print text wrapped to either the specified length or the default."""
+        if self._quiet:
+            return
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
         else:
@@ -103,6 +114,9 @@ class Printer(object):
             ENDC = '\033[0m'
             BOLD = '\033[1m'
             UNDERLINE = '\033[4m'
+
+        if self._quiet:
+            return
 
         outarr = [fitter._event_name]
         if desc:
