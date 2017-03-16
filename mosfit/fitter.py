@@ -489,7 +489,7 @@ class Fitter(object):
                 pool.wait()
             except KeyboardInterrupt:
                 pass
-            return
+            return (None, None, None)
 
         ntemps, ndim, nwalkers = (num_temps, model._num_free_parameters,
                                   num_walkers)
