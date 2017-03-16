@@ -47,7 +47,7 @@ class Printer(object):
                 sys.stdout.write("\033[K")
         print(x, flush=True)
 
-    def wrapped(self, text, wrap_length=None):
+    def wrapped(self, text, wrap_length=None, warning=False):
         """Print text wrapped to either the specified length or the default."""
         if self._quiet:
             return

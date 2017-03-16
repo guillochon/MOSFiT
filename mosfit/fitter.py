@@ -412,6 +412,8 @@ class Fitter(object):
         # Determine free parameters again as above may have changed them.
         self._model.determine_free_parameters(fixed_parameters)
 
+        self._model.determine_number_of_measurements()
+
         self._model.exchange_requests()
 
         # Collect observed band info
@@ -499,7 +501,15 @@ class Fitter(object):
         redraw_mult = 2.0 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        self._printer.prt('{} dimensions in problem.\n\n'.format(ndim))
+        self._printer.prt(
+            '{} measurements, {} free parameters.'.format(
+                model._num_measurements, ndim))
+        if model._num_measurements <= ndim:
+            self._printer.wrapped(
+                'Warning: Number of free parameters exceeds number of '
+                'measurements. Please treat results with caution.',
+                warning=True)
+        self._printer.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
