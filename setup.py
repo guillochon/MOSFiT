@@ -8,7 +8,17 @@ with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
-exec(open(os.path.join(dir_path, 'mosfit', '__init__.py')).read())
+
+init_string = open(os.path.join(dir_path, 'mosfit', '__init__.py')).read()
+VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VERS, init_string, re.M)
+__version__ = mo.group(1)
+AUTH = r"^__author__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(AUTH, init_string, re.M)
+__author__ = mo.group(1)
+LICE = r"^__license__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(LICE, init_string, re.M)
+__license__ = mo.group(1)
 
 matches = []
 for root, dirnames, filenames in os.walk('mosfit'):
