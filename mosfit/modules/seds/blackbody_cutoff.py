@@ -66,7 +66,7 @@ class BlackbodyCutoff(SED):
             if bi >= 0:
                 rest_wavs = self._sample_wavelengths[bi] * ac / zp1
             else:
-                rest_wavs = [cc / (self._frequencies[li] * zp1)]
+                rest_wavs = np.array([cc / (self._frequencies[li] * zp1)])
 
             # Apply absorption to SED only bluewards of cutoff wavelength
             absorbed = rest_wavs < cwave_ac

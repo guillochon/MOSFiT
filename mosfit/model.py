@@ -259,6 +259,15 @@ class Model(object):
                 new_call_stack[task] = cur_task.copy()
         self._call_stack = new_call_stack
 
+    def determine_number_of_measurements(self):
+        """Estimate the number of measurements."""
+        self._num_measurements = 0
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if cur_task['kind'] == 'data':
+                self._num_measurements += len(
+                    self._modules[task]._data['times'])
+
     def determine_free_parameters(self, extra_fixed_parameters):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []

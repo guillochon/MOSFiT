@@ -37,13 +37,22 @@ class Printer(object):
         BOLD = '\033[1m'
         UNDERLINE = '\033[4m'
 
-    def __init__(self, pool=None, wrap_length=100):
+    def __init__(self, pool=None, wrap_length=100, quiet=False):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
+        self._quiet = quiet
         self._pool = pool
+
+    def prt(self, text):
+        """Print text without modification."""
+        if self._quiet:
+            return
+        print(text)
 
     def inline(self, x, new_line=False, warning=False, error=False):
         """Print inline, erasing underlying pre-existing text."""
+        if self._quiet:
+            return
         lines = x.split('\n')
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
@@ -60,6 +69,8 @@ class Printer(object):
     def wrapped(self, text, wrap_length=None, master_only=True, warning=False,
                 error=False):
         """Print text wrapped to either the specified length or the default."""
+        if self._quiet:
+            return
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
         else:
@@ -123,6 +134,9 @@ class Printer(object):
                fracking=False,
                messages=[]):
         """Print status message showing state of fitting process."""
+        if self._quiet:
+            return
+
         outarr = [fitter._event_name]
         if desc:
             outarr.append(desc)

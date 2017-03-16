@@ -22,7 +22,7 @@ from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          is_number, pretty_num)
+                          is_number, listify, pretty_num)
 from schwimmbad import MPIPool, SerialPool
 from six import string_types
 
@@ -98,7 +98,7 @@ class Fitter(object):
                    iterations=1000,
                    num_walkers=50,
                    num_temps=1,
-                   parameter_paths=[],
+                   parameter_paths=[''],
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
@@ -112,6 +112,8 @@ class Fitter(object):
                    suffix='',
                    offline=False,
                    upload=False,
+                   write=False,
+                   quiet=False,
                    upload_token='',
                    check_upload_quality=False,
                    printer=None,
@@ -124,14 +126,29 @@ class Fitter(object):
         self._wrap_length = wrap_length
 
         if not printer:
-            self._printer = Printer(wrap_length=wrap_length)
+            self._printer = Printer(wrap_length=wrap_length, quiet=quiet)
         else:
             self._printer = printer
 
         prt = self._printer
 
+        event_list = listify(events)
+        model_list = listify(models)
+
+        if not len(event_list) and not len(model_list):
+            self._printer.wrapped(
+                'No events or models specified, initializing and then '
+                'exiting.', warning=True)
+
+        entries = [[None for y in range(len(model_list))] for
+                   x in range(len(event_list))]
+        ps = [[None for y in range(len(model_list))] for
+              x in range(len(event_list))]
+        lnprobs = [[None for y in range(len(model_list))] for
+                   x in range(len(event_list))]
+
         self._event_name = 'Batch'
-        for event in events:
+        for ei, event in enumerate(event_list):
             self._event_name = ''
             self._event_path = ''
             if event:
@@ -174,9 +191,12 @@ class Fitter(object):
                                 names = json.load(
                                     f, object_pairs_hook=OrderedDict)
                         else:
-                            print('Error: Could not read list of SN names!')
+                            self._printer.wrapped(
+                                'Warning: Could not read list of SN names!',
+                                warning=True)
                             if offline:
-                                print('Try omitting the `--offline` flag.')
+                                self._printer.wrapped(
+                                    'Try omitting the `--offline` flag.')
                             raise RuntimeError
 
                         if event in names:
@@ -284,7 +304,7 @@ class Fitter(object):
                 if pool.is_master():
                     pool.close()
 
-            for mod_name in models:
+            for mi, mod_name in enumerate(model_list):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
@@ -294,10 +314,12 @@ class Fitter(object):
                         model=mod_name,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
+                        fitter=self,
                         pool=pool)
 
                     if not event:
-                        print('No event specified, generating dummy data.')
+                        self._printer.wrapped(
+                            'No event specified, generating dummy data.')
                         self._event_name = mod_name
                         gen_args = {
                             'name': mod_name,
@@ -330,7 +352,7 @@ class Fitter(object):
                         pool=pool)
 
                     if success:
-                        self.fit_data(
+                        entry, p, lnprob = self.fit_data(
                             event_name=self._event_name,
                             iterations=iterations,
                             num_walkers=num_walkers,
@@ -340,12 +362,18 @@ class Fitter(object):
                             post_burn=post_burn,
                             pool=pool,
                             suffix=suffix,
+                            write=write,
                             upload=upload,
                             upload_token=upload_token,
                             check_upload_quality=check_upload_quality)
+                        entries[ei][mi] = deepcopy(entry)
+                        ps[ei][mi] = deepcopy(p)
+                        lnprobs[ei][mi] = deepcopy(lnprob)
 
                     if pool.is_master():
                         pool.close()
+
+        return (entries, ps, lnprobs)
 
     def load_data(self,
                   data,
@@ -417,6 +445,8 @@ class Fitter(object):
         # Determine free parameters again as above may have changed them.
         self._model.determine_free_parameters(fixed_parameters)
 
+        self._model.determine_number_of_measurements()
+
         self._model.exchange_requests()
 
         # Collect observed band info
@@ -453,7 +483,7 @@ class Fitter(object):
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
-            print('\n'.join(filterrows))
+            self._printer.prt('\n'.join(filterrows))
 
         self._event_name = event_name
         self._emcee_est_t = 0.0
@@ -474,6 +504,7 @@ class Fitter(object):
                  post_burn=500,
                  pool='',
                  suffix='',
+                 write=False,
                  upload=False,
                  upload_token='',
                  check_upload_quality=True):
@@ -505,9 +536,15 @@ class Fitter(object):
         redraw_mult = 1.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        print('{} dimensions in problem ({} variance{}).\n\n'.format(
-            ndim, model._num_variances,
-            's' if model._num_variances > 1 else ''))
+        self._printer.prt(
+            '{} measurements, {} free parameters.'.format(
+                model._num_measurements, ndim))
+        if model._num_measurements <= ndim:
+            self._printer.wrapped(
+                'Warning: Number of free parameters exceeds number of '
+                'measurements. Please treat results with caution.',
+                warning=True)
+        self._printer.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
@@ -524,7 +561,7 @@ class Fitter(object):
             ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
 
         prt.inline('Initial draws completed!')
-        print('\n\n')
+        self._printer.prt('\n\n')
         p = list(p0)
 
         emi = 0
@@ -676,7 +713,9 @@ class Fitter(object):
                     'be overwritten.', self._wrap_length)):
                 sys.exit()
 
-        prt.wrapped('Saving output to disk...')
+        if write:
+            prt.wrapped('Saving output to disk...')
+
         if self._event_path:
             entry = Entry.init_from_file(
                 catalog=None,
@@ -854,14 +893,16 @@ class Fitter(object):
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
-        with io.open(
-                os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                'w') as flast, io.open(
-                    os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
-                        ('_' + suffix)
-                        if suffix else '') + '.json'), 'w') as feven:
-            entabbed_json_dump(oentry, flast, separators=(',', ':'))
-            entabbed_json_dump(oentry, feven, separators=(',', ':'))
+        if write:
+            with io.open(
+                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                    'w') as flast, io.open(os.path.join(
+                        model.MODEL_OUTPUT_DIR,
+                        self._event_name + (
+                            ('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
+                entabbed_json_dump(oentry, flast, separators=(',', ':'))
+                entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
         if upload_this:
             uentry.sanitize()
@@ -886,7 +927,7 @@ class Fitter(object):
                 else:
                     raise
 
-        return (pout, lnprobout, lnlikeout)
+        return (entry, pout, lnprobout)
 
     def generate_dummy_data(self,
                             name,

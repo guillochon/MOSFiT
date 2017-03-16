@@ -42,6 +42,7 @@ script:
     - echo "travis_fold:start:GEN Generating random models"
     - coverage run -p --source=mosfit -m mosfit --travis -i 0
     - coverage run -p --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
+    - coverage run -p test.py
     - echo "travis_fold:end:GEN Generating random models done"
     - echo "travis_fold:start:JUP Testing Jupyter notebooks"
     - echo "travis_fold:end:JUP Testing Jupyter notebooks"
