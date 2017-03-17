@@ -8,7 +8,7 @@ class Transform(Module):
     """Parent class for transforms."""
 
     def set_times_lums(self, **kwargs):
-        """Set dense_* and *_since_exp times/luminosities keys."""
+        """Set `dense_*` and `*_since_exp` times/luminosities keys."""
         self._times = kwargs['rest_times']
         self._rest_t_explosion = kwargs['resttexplosion']
         if 'dense_times' in kwargs:
