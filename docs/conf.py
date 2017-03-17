@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+"""Documentation configuration script."""
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # MOSFiT documentation build configuration file, created by
@@ -18,13 +19,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
+
+import sphinx_rtd_theme
+
 sys.path.append(os.path.abspath('.'))
 sys.path.append(os.path.abspath('..'))
 sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
 
-from mosfit import __version__
-import sphinx_rtd_theme
+dir_path = os.path.dirname(os.path.realpath(__file__))
+init_string = open(os.path.join(dir_path, '..', 'mosfit',
+                                '__init__.py')).read()
+VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VERS, init_string, re.M)
+__version__ = mo.group(1)
 
 # -- General configuration ------------------------------------------------
 

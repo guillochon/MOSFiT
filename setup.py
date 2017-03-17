@@ -1,3 +1,4 @@
+"""Setup script for MOSFiT."""
 import fnmatch
 import os
 import re
@@ -24,10 +25,6 @@ matches = []
 for root, dirnames, filenames in os.walk('mosfit'):
     for filename in fnmatch.filter(filenames, '*.pyx'):
         matches.append(os.path.join(root, filename))
-
-
-def read(fname):
-    return open(os.path.join(os.path.dirname(__file__), fname)).read()
 
 
 try:
