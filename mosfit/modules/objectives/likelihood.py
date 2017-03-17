@@ -1,6 +1,6 @@
 """Definitions for the `Likelihood` class."""
 from collections import OrderedDict
-from math import isfinite, isnan
+from math import isnan
 
 import numpy as np
 import scipy
@@ -113,7 +113,7 @@ class Likelihood(Module):
                               residuals) + np.log(scipy.linalg.det(kmat)))
 
         score = self._score_modifier + value
-        if isnan(score) or not isfinite(score):
+        if isnan(score) or not np.isfinite(score):
             return {'value': LIKELIHOOD_FLOOR}
         return {'value': max(LIKELIHOOD_FLOOR, value + self._score_modifier)}
 
