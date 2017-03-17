@@ -690,7 +690,7 @@ class Fitter(object):
                 bhs = list(pool.map(frack, frack_args))
                 for bhi, bh in enumerate(bhs):
                     (wi, ti) = tuple(selijs[bhi])
-                    if -bh.fun > lnprob[wi][ti] + lnlike[wi][ti]:
+                    if -bh.fun > lnprob[wi][ti]:
                         p[wi][ti] = bh.x
                         like = likelihood(bh.x)
                         lnprob[wi][ti] = like + prior(bh.x)
