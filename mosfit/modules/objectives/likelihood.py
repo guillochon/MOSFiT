@@ -1,6 +1,6 @@
 """Definitions for the `Likelihood` class."""
 from collections import OrderedDict
-from math import isnan
+from math import isfinite, isnan
 
 import numpy as np
 
@@ -88,7 +88,8 @@ class Likelihood(Module):
         ]
         value += -0.5 * np.sum(sum_members)
 
-        if isnan(value) or isnan(self._score_modifier + value):
+        score = self._score_modifier + value
+        if isnan(score) or not isfinite(score):
             return {'value': LIKELIHOOD_FLOOR}
         return {'value': max(LIKELIHOOD_FLOOR, value + self._score_modifier)}
 
