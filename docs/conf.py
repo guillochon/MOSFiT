@@ -47,7 +47,7 @@ __version__ = mo.group(1)
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
     'sphinx_automodapi.automodapi', 'sphinx_automodapi.smart_resolver',
-    'sphinx.ext.coverage', 'sphinxcontrib.autoprogram'
+    'sphinx.ext.coverage', 'sphinxcontrib.autoprogram', 'numpydoc.numpydoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -90,6 +90,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+
+numpydoc_show_class_members = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False
