@@ -17,7 +17,6 @@ import emcee
 import numpy as np
 import scipy
 from emcee.autocorr import AutocorrError
-from mosfit.__init__ import __version__
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
@@ -478,6 +477,7 @@ class Fitter(object):
 
         Fitting performed using a combination of emcee and fracking.
         """
+        from mosfit.__init__ import __version__
         global model
         model = self._model
         prt = self._printer
@@ -822,8 +822,9 @@ class Fitter(object):
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                     'w') as flast, io.open(os.path.join(
                         model.MODEL_OUTPUT_DIR,
-                        self._event_name + (('_' + suffix)
-                                            if suffix else '') + '.json'), 'w') as feven:
+                        self._event_name + (
+                            ('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
                 entabbed_json_dump(oentry, flast, separators=(',', ':'))
                 entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
