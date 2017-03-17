@@ -6,10 +6,10 @@ import json
 import re
 import sys
 from collections import OrderedDict
-from math import floor, log10
-from six import string_types
+from math import floor, isfinite, isnan, log10
 
 import numpy as np
+from six import string_types
 
 syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega', 'Landolt': 'Vega'}
 
@@ -52,6 +52,8 @@ def is_integer(s):
 
 def pretty_num(x, sig=4):
     """Convert number into string with specified significant digits."""
+    if isnan(x) or not isfinite(x):
+        return str(x)
     return str('%g' % (round_sig(x, sig)))
 
 
