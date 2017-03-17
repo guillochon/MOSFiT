@@ -115,7 +115,7 @@ class Likelihood(Module):
         score = self._score_modifier + value
         if isnan(score) or not np.isfinite(score):
             return {'value': LIKELIHOOD_FLOOR}
-        return {'value': max(LIKELIHOOD_FLOOR, value + self._score_modifier)}
+        return {'value': max(LIKELIHOOD_FLOOR, score)}
 
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""

@@ -427,6 +427,12 @@ class Fitter(object):
                         value = user_fixed_parameters[fi + 1]
                         if value not in self._model._call_stack:
                             self._model._call_stack[task]['value'] = value
+                    if 'min_value' in self._model._call_stack[task]:
+                        del self._model._call_stack[task]['min_value']
+                    if 'max_value' in self._model._call_stack[task]:
+                        del self._model._call_stack[task]['max_value']
+                    self._model._modules[task].fix_value(
+                        self._model._call_stack[task]['value'])
 
         self._model.determine_free_parameters(fixed_parameters)
 
@@ -878,7 +884,7 @@ class Fitter(object):
                     parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprob is not None and lnlike is not None:
+                if lnprobout is not None:
                     realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
