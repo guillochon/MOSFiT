@@ -17,7 +17,6 @@ import emcee
 import numpy as np
 import scipy
 from emcee.autocorr import AutocorrError
-from mosfit.__init__ import __version__
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
@@ -512,6 +511,7 @@ class Fitter(object):
 
         Fitting performed using a combination of emcee and fracking.
         """
+        from mosfit.__init__ import __version__
         global model
         model = self._model
         prt = self._printer
