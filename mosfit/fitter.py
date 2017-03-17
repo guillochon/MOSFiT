@@ -424,7 +424,7 @@ class Fitter(object):
                             'class', '') == param):
                     fixed_parameters.append(task)
                     if fi < len(user_fixed_parameters) - 1:
-                        value = user_fixed_parameters[fi + 1]
+                        value = float(user_fixed_parameters[fi + 1])
                         if value not in self._model._call_stack:
                             self._model._call_stack[task]['value'] = value
                     if 'min_value' in self._model._call_stack[task]:
