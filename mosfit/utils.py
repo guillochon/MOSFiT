@@ -6,7 +6,7 @@ import json
 import re
 import sys
 from collections import OrderedDict
-from math import floor, isfinite, isnan, log10
+from math import floor, isnan, log10
 
 import numpy as np
 
@@ -51,7 +51,7 @@ def is_integer(s):
 
 def pretty_num(x, sig=4):
     """Convert number into string with specified significant digits."""
-    if isnan(x) or not isfinite(x):
+    if isnan(x) or not np.isfinite(x):
         return str(x)
     return str('%g' % (round_sig(x, sig)))
 
