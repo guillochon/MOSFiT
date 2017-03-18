@@ -293,6 +293,19 @@ def get_parser():
               "will upload the results of the latest run."))
 
     parser.add_argument(
+        '--run-until-converged',
+        '-R',
+        dest='run_until_converged',
+        default=False,
+        const=10.0,
+        nargs='?',
+        help=("Run each model until the autocorrelation time is measured "
+              "accurately and chain has burned in for the specified number "
+              "of autocorrelation times [Default: 10.0]. This will run "
+              "beyond the specified number of iterations, and is recommended "
+              "when the `--upload/-u` flag is set."))
+
+    parser.add_argument(
         '--set-upload-token',
         dest='set_upload_token',
         const=True,

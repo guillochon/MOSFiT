@@ -39,7 +39,7 @@ warnings.filterwarnings("ignore")
 class MOSSampler(emcee.PTSampler):
     """Override PTSampler methods."""
 
-    def get_autocorr_time(self, min_step=0, **kwargs):
+    def get_autocorr_time(self, min_step=0, chain=[], **kwargs):
         """Return a matrix of autocorrelation lengths.
 
         Returns a matrix of autocorrelation lengths for each
@@ -49,7 +49,10 @@ class MOSSampler(emcee.PTSampler):
         acors = np.zeros((self.ntemps, self.dim))
 
         for i in range(self.ntemps):
-            x = np.mean(self._chain[i, :, min_step:, :], axis=0)
+            if len(chain):
+                x = np.mean(chain[i, :, min_step:, :], axis=0)
+            else:
+                x = np.mean(self._chain[i, :, min_step:, :], axis=0)
             acors[i, :] = emcee.autocorr.integrated_time(x, **kwargs)
         return acors
 
@@ -118,6 +121,7 @@ class Fitter(object):
                    printer=None,
                    variance_for_each=[],
                    user_fixed_parameters=[],
+                   run_until_converged=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -364,7 +368,8 @@ class Fitter(object):
                             write=write,
                             upload=upload,
                             upload_token=upload_token,
-                            check_upload_quality=check_upload_quality)
+                            check_upload_quality=check_upload_quality,
+                            run_until_converged=run_until_converged)
                         entries[ei][mi] = deepcopy(entry)
                         ps[ei][mi] = deepcopy(p)
                         lnprobs[ei][mi] = deepcopy(lnprob)
@@ -512,7 +517,8 @@ class Fitter(object):
                  write=False,
                  upload=False,
                  upload_token='',
-                 check_upload_quality=True):
+                 check_upload_quality=True,
+                 run_until_converged=False):
         """Fit the data for a given event.
 
         Fitting performed using a combination of emcee and fracking.
@@ -574,137 +580,181 @@ class Fitter(object):
         tft = 0.0  # Total fracking time
         acor = None
         s_exception = None
+        all_chain = []
 
         try:
             st = time.time()
 
+            max_chunk = 10
+            iter_chunks = int(np.ceil(float(iterations) / max_chunk))
+            iter_arr = [max_chunk if xi < iter_chunks - 1 else
+                        iterations - max_chunk * (iter_chunks - 1)
+                        for xi, x in enumerate(range(iter_chunks))]
+
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
-            for emi, (p, lnprob, lnlike
-                      ) in enumerate(sampler.sample(
-                          p, iterations=iterations)):
-                emi1 = emi + 1
-                messages = []
+            for ici, ic in enumerate(iter_arr):
+                for li, (
+                        p, lnprob, lnlike) in enumerate(
+                            sampler.sample(p, iterations=ic)):
+                    emi = emi + 1
+                    emim1 = emi - 1
+                    messages = []
 
-                # First, redraw any walkers with scores significantly worse
-                # than their peers (only during burn-in).
-                if emi <= self._burn_in:
-                    pmedian = [np.median(x) for x in lnprob]
-                    pmead = [np.mean([abs(y - pmedian) for y in x])
-                             for x in lnprob]
-                    redraw_count = 0
-                    bad_redraws = 0
-                    for ti, tprob in enumerate(lnprob):
-                        for wi, wprob in enumerate(tprob):
-                            if (wprob <= pmedian[ti] -
-                                redraw_mult * pmead[ti] or
-                                    np.isnan(wprob)):
-                                redraw_count = redraw_count + 1
-                                dxx = np.random.normal(scale=0.01, size=ndim)
-                                tar_x = np.array(p[np.random.randint(ntemps)][
-                                    np.random.randint(nwalkers)])
-                                new_x = np.clip(tar_x + dxx, 0.0, 1.0)
-                                new_like = likelihood(new_x)
-                                new_prob = new_like + prior(new_x)
-                                if new_prob > wprob or np.isnan(wprob):
-                                    p[ti][wi] = new_x
-                                    lnlike[ti][wi] = new_like
-                                    lnprob[ti][wi] = new_prob
-                                else:
-                                    bad_redraws = bad_redraws + 1
-                    if redraw_count > 0:
-                        messages.append('{:.1%} redraw, {}/{} success'.format(
-                            redraw_count / (nwalkers * ntemps), redraw_count -
-                            bad_redraws, redraw_count))
+                    # First, redraw any walkers with scores significantly
+                    # worse than their peers (only during burn-in).
+                    if emim1 <= self._burn_in:
+                        pmedian = [np.median(x) for x in lnprob]
+                        pmead = [np.mean([abs(y - pmedian) for y in x])
+                                 for x in lnprob]
+                        redraw_count = 0
+                        bad_redraws = 0
+                        for ti, tprob in enumerate(lnprob):
+                            for wi, wprob in enumerate(tprob):
+                                if (wprob <= pmedian[ti] -
+                                    redraw_mult * pmead[ti] or
+                                        np.isnan(wprob)):
+                                    redraw_count = redraw_count + 1
+                                    dxx = np.random.normal(
+                                        scale=0.01, size=ndim)
+                                    tar_x = np.array(
+                                        p[np.random.randint(ntemps)][
+                                            np.random.randint(nwalkers)])
+                                    new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                    new_like = likelihood(new_x)
+                                    new_prob = new_like + prior(new_x)
+                                    if new_prob > wprob or np.isnan(wprob):
+                                        p[ti][wi] = new_x
+                                        lnlike[ti][wi] = new_like
+                                        lnprob[ti][wi] = new_prob
+                                    else:
+                                        bad_redraws = bad_redraws + 1
+                        if redraw_count > 0:
+                            messages.append(
+                                '{:.1%} redraw, {}/{} success'.format(
+                                    redraw_count / (nwalkers * ntemps),
+                                    redraw_count - bad_redraws, redraw_count))
 
-                low = 10
-                asize = 0.5 * (emi - self._burn_in) / low
-                if asize >= 0:
-                    acorc = max(1, min(10, int(np.floor(asize / low))))
-                    acort = -1.0
-                    aa = 1
-                    for a in range(acorc, 0, -1):
-                        try:
-                            acort = max([
-                                max(x)
-                                for x in sampler.get_autocorr_time(
-                                    low=low, c=a, min_step=self._burn_in)
-                            ])
-                        except AutocorrError:
-                            continue
-                        else:
-                            aa = a
+                    low = 10
+                    asize = 0.5 * (emim1 - self._burn_in) / low
+                    if asize >= 0:
+                        acorc = max(1, min(10, int(np.floor(asize / low))))
+                        acort = -1.0
+                        aa = 1
+                        cur_chain = (np.concatenate(
+                            (all_chain, sampler.chain[:, :, :li, :]),
+                            axis=2) if len(all_chain) else
+                            sampler.chain[:, :, :li, :])
+                        for a in range(acorc, 0, -1):
+                            try:
+                                acort = max([
+                                    max(x)
+                                    for x in sampler.get_autocorr_time(
+                                        chain=cur_chain, low=low, c=a,
+                                        min_step=self._burn_in)
+                                ])
+                            except AutocorrError:
+                                continue
+                            else:
+                                aa = a
+                                break
+                        acor = [acort, aa]
+
+                        if (run_until_converged and
+                            aa == acorc and acort > 0.0 and
+                                run_until_converged * acort < self._burn_in):
+                            self._printer.wrapped('Convergence criteria met!')
                             break
-                    acor = [acort, aa]
 
-                self._emcee_est_t = float(time.time() - st - tft) / emi1 * (
-                    iterations - emi1) + tft / emi1 * max(0, self._burn_in -
-                                                          emi1)
+                    if run_until_converged:
+                        self._emcee_est_t = -1.0
+                    else:
+                        self._emcee_est_t = float(
+                            time.time() - st - tft) / emi * (
+                            iterations - emi) + tft / emi * max(
+                                0, self._burn_in - emi)
 
-                # Perform fracking if we are still in the burn in phase and
-                # iteration count is a multiple of the frack step.
-                frack_now = (fracking and emi1 <= self._burn_in and
-                             emi1 % frack_step == 0)
+                    # Perform fracking if we are still in the burn in phase
+                    # and iteration count is a multiple of the frack step.
+                    frack_now = (fracking and emi <= self._burn_in and
+                                 emi % frack_step == 0)
 
-                scores = [np.array(x) for x in lnprob]
-                prt.status(
-                    self,
-                    desc='Fracking' if frack_now else 'Walking',
-                    scores=scores,
-                    progress=[emi1, iterations],
-                    acor=acor,
-                    messages=messages)
+                    scores = [np.array(x) for x in lnprob]
+                    prt.status(
+                        self,
+                        desc='Fracking' if frack_now else 'Walking',
+                        scores=scores,
+                        progress=[emi, None if
+                                  run_until_converged else iterations],
+                        acor=acor,
+                        messages=messages)
 
-                if not frack_now:
-                    continue
+                    if not frack_now:
+                        continue
 
-                # Fracking starts here
-                sft = time.time()
-                ijperms = [[x, y] for x in range(ntemps)
-                           for y in range(nwalkers)]
-                ijprobs = np.array([
-                    1.0
-                    # lnprob[x][y]
-                    for x in range(ntemps) for y in range(nwalkers)
-                ])
-                ijprobs -= max(ijprobs)
-                ijprobs = [np.exp(0.1 * x) for x in ijprobs]
-                ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
-                nonzeros = len([x for x in ijprobs if x > 0.0])
-                selijs = [
-                    ijperms[x]
-                    for x in np.random.choice(
-                        range(len(ijperms)),
-                        pool_size,
-                        p=ijprobs,
-                        replace=(pool_size > nonzeros))
-                ]
+                    # Fracking starts here
+                    sft = time.time()
+                    ijperms = [[x, y] for x in range(ntemps)
+                               for y in range(nwalkers)]
+                    ijprobs = np.array([
+                        1.0
+                        # lnprob[x][y]
+                        for x in range(ntemps) for y in range(nwalkers)
+                    ])
+                    ijprobs -= max(ijprobs)
+                    ijprobs = [np.exp(0.1 * x) for x in ijprobs]
+                    ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
+                    nonzeros = len([x for x in ijprobs if x > 0.0])
+                    selijs = [
+                        ijperms[x]
+                        for x in np.random.choice(
+                            range(len(ijperms)),
+                            pool_size,
+                            p=ijprobs,
+                            replace=(pool_size > nonzeros))
+                    ]
 
-                bhwalkers = [p[i][j] for i, j in selijs]
+                    bhwalkers = [p[i][j] for i, j in selijs]
 
-                seeds = [
-                    int(round(time.time() * 1000.0)) % 4294900000 + x
-                    for x in range(len(bhwalkers))
-                ]
-                frack_args = list(zip(bhwalkers, seeds))
-                bhs = list(pool.map(frack, frack_args))
-                for bhi, bh in enumerate(bhs):
-                    (wi, ti) = tuple(selijs[bhi])
-                    if -bh.fun > lnprob[wi][ti]:
-                        p[wi][ti] = bh.x
-                        like = likelihood(bh.x)
-                        lnprob[wi][ti] = like + prior(bh.x)
-                        lnlike[wi][ti] = like
-                scores = [[-x.fun for x in bhs]]
-                prt.status(
-                    self,
-                    desc='Fracking Results',
-                    scores=scores,
-                    fracking=True,
-                    progress=[emi1, iterations])
-                tft = tft + time.time() - sft
-                if s_exception:
-                    break
+                    seeds = [
+                        int(round(time.time() * 1000.0)) % 4294900000 + x
+                        for x in range(len(bhwalkers))
+                    ]
+                    frack_args = list(zip(bhwalkers, seeds))
+                    bhs = list(pool.map(frack, frack_args))
+                    for bhi, bh in enumerate(bhs):
+                        (wi, ti) = tuple(selijs[bhi])
+                        if -bh.fun > lnprob[wi][ti]:
+                            p[wi][ti] = bh.x
+                            like = likelihood(bh.x)
+                            lnprob[wi][ti] = like + prior(bh.x)
+                            lnlike[wi][ti] = like
+                    scores = [[-x.fun for x in bhs]]
+                    prt.status(
+                        self,
+                        desc='Fracking Results',
+                        scores=scores,
+                        fracking=True,
+                        progress=[emi, None if
+                                  run_until_converged else iterations])
+                    tft = tft + time.time() - sft
+                    if s_exception:
+                        break
+
+                if ici == 0:
+                    all_chain = sampler.chain
+                    all_lnprob = sampler.lnprobability
+                    all_lnlike = sampler.lnlikelihood
+                else:
+                    all_chain = np.concatenate(
+                        (all_chain, sampler.chain), axis=2)
+                    all_lnprob = np.concatenate(
+                        (all_lnprob, sampler.lnprobability), axis=2)
+                    all_lnlike = np.concatenate(
+                        (all_lnlike, sampler.lnlikelihood), axis=2)
+
+                sampler.reset()
+
         except (KeyboardInterrupt, SystemExit):
             self._printer.inline('Ctrl + C pressed, halting...', error=True)
             s_exception = sys.exc_info()
@@ -774,7 +824,7 @@ class Fitter(object):
                     QUANTITY.VALUE: str(aa),
                     QUANTITY.KIND: 'autocorrelationtimes'
                 }
-            modeldict[MODEL.STEPS] = str(emi1)
+            modeldict[MODEL.STEPS] = str(emi)
 
         if upload:
             umodeldict = deepcopy(modeldict)
@@ -793,13 +843,13 @@ class Fitter(object):
 
         ri = 1
         if not s_exception and emi > 0:
-            pout = sampler.chain[:, :, -1, :]
-            lnprobout = sampler.lnprobability[:, :, -1]
-            lnlikeout = sampler.lnlikelihood[:, :, -1]
+            pout = all_chain[:, :, -1, :]
+            lnprobout = all_lnprob[:, :, -1]
+            lnlikeout = all_lnlike[:, :, -1]
         else:
-            pout = p
-            lnprobout = lnprob
-            lnlikeout = lnlike
+            pout = all_chain
+            lnprobout = all_lnprob
+            lnlikeout = all_lnlike
 
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
@@ -807,12 +857,11 @@ class Fitter(object):
             actc = int(np.ceil(acort))
             for i in range(1, np.int(float(emi - self._burn_in) / actc)):
                 pout = np.concatenate(
-                    (sampler.chain[:, :, -i * actc, :], pout), axis=1)
+                    (all_chain[:, :, -i * actc, :], pout), axis=1)
                 lnprobout = np.concatenate(
-                    (sampler.lnprobability[:, :, -i * actc], lnprobout),
-                    axis=1)
+                    (all_lnprob[:, :, -i * actc], lnprobout), axis=1)
                 lnlikeout = np.concatenate(
-                    (sampler.lnlikelihood[:, :, -i * actc], lnlikeout), axis=1)
+                    (all_lnlike[:, :, -i * actc], lnlikeout), axis=1)
         for xi, x in enumerate(pout):
             for yi, y in enumerate(pout[xi]):
                 # Only produce LCs for end walker state.

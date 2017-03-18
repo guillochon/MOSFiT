@@ -152,9 +152,14 @@ class Printer(object):
                 scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
                 outarr.append(scorestring)
         if isinstance(progress, list):
-            progressstring = 'Progress: [ {}/{} ]'.format(*progress)
+            if progress[1]:
+                progressstring = 'Progress: [ {}/{} ]'.format(*progress)
+            else:
+                progressstring = 'Progress: [ {} ]'.format(progress[0])
             outarr.append(progressstring)
-        if fitter._emcee_est_t + fitter._bh_est_t > 0.0:
+        if fitter._emcee_est_t < 0.0:
+            outarr.append('Running until convergence')
+        elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
             if fitter._bh_est_t > 0.0 or not fitter._fracking:
                 tott = fitter._emcee_est_t + fitter._bh_est_t
             else:
