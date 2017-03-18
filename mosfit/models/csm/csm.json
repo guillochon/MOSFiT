@@ -57,7 +57,7 @@
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-   "rho":{
+    "rho":{
         "kind":"parameter",
         "value":1.0e-12,
         "class":"parameter",
@@ -90,6 +90,7 @@
     "csm":{
         "kind":"engine",
         "inputs":[
+            "csmconstraints",
             "transient",
             "n",
             "s",
@@ -132,9 +133,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor",
-            "temperaturephot",
-            "radiusphot"
+            "temperature_floor"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -152,17 +151,6 @@
             "rho",
             "vejecta",
             "kappa"
-        ]
-    },
-    "likelihood":{
-        "kind":"objective",
-        "inputs":[
-            "transient",
-            "variance",
-            "photometry",
-            "default_upper_limit_error",
-            "default_no_error_bar_error",
-            "csmconstraints"
         ]
     },
     "losextinction":{

@@ -5,6 +5,7 @@ import json
 import logging
 import os
 from collections import OrderedDict
+from difflib import get_close_matches
 from math import isnan
 
 import numpy as np
@@ -22,6 +23,7 @@ class Model(object):
     """Define a semi-analytical model to fit transients with."""
 
     MODEL_OUTPUT_DIR = 'products'
+    MIN_WAVE_FRAC_DIFF = 0.1
 
     # class outClass(object):
     #     pass
@@ -42,7 +44,7 @@ class Model(object):
         if self._fitter:
             self._printer = self._fitter._printer
         else:
-            self._printer = Printer(wrap_length=wrap_length)
+            self._printer = Printer(pool=pool, wrap_length=wrap_length)
 
         prt = self._printer
 
@@ -195,9 +197,9 @@ class Model(object):
         if not call_stack:
             call_stack = self._call_stack
         cur_task = call_stack[task]
-        mod_name = cur_task.get('class', task)
+        mod_name = cur_task.get('class', task).lower()
         mod = importlib.import_module(
-            '.' + 'modules.' + cur_task['kind'] + 's.' + mod_name,
+            '.' + 'modules.' + cur_task['kind'].lower() + 's.' + mod_name,
             package='mosfit')
         class_name = [
             x[0] for x in
@@ -211,16 +213,30 @@ class Model(object):
     def create_data_dependent_free_parameters(
             self, variance_for_each=[], output={}):
         """Create free parameters that depend on loaded data."""
-        all_bands = list(set(output.get('all_bands', [])))
+        unique_band_indices = list(set(output.get('all_band_indices', [])))
         needs_general_variance = any(
-            np.array(output.get('all_band_indices')) < 0)
+            np.array(output.get('all_band_indices', [])) < 0)
 
         new_call_stack = OrderedDict()
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if (cur_task.get('class', '') == 'variance' and
                     'band' in listify(variance_for_each)):
-                for band in all_bands:
+                # Find photometry in call stack.
+                for ptask in self._call_stack:
+                    if ptask == 'photometry':
+                        awaves = self._modules[ptask].average_wavelengths(
+                            unique_band_indices)
+                        abands = self._modules[ptask].band_names(
+                            unique_band_indices)
+                        band_pairs = list(sorted(zip(awaves, abands)))
+                        break
+                owav = 0.0
+                variance_bands = []
+                for bi, (awav, band) in enumerate(band_pairs):
+                    wave_frac_diff = abs(awav - owav) / (awav + owav)
+                    if wave_frac_diff < self.MIN_WAVE_FRAC_DIFF:
+                        continue
                     new_task_name = '-'.join([task, 'band', band])
                     new_task = cur_task.copy()
                     new_call_stack[new_task_name] = new_task
@@ -229,8 +245,16 @@ class Model(object):
                     new_call_stack[new_task_name] = new_task
                     self._modules[new_task_name] = self._load_task_module(
                         new_task_name, call_stack=new_call_stack)
+                    owav = awav
+                    variance_bands.append([awav, band])
                 if needs_general_variance:
                     new_call_stack[task] = cur_task.copy()
+                self._printer.wrapped(
+                    'Anchoring variances for the following filters '
+                    '(interpolating variances for the rest): ' +
+                    (', '.join([x[1] for x in variance_bands])),
+                    master_only=True)
+                self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = cur_task.copy()
         self._call_stack = new_call_stack
@@ -247,6 +271,7 @@ class Model(object):
     def determine_free_parameters(self, extra_fixed_parameters):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
+        self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if (task not in extra_fixed_parameters and
@@ -254,6 +279,8 @@ class Model(object):
                     'min_value' in cur_task and 'max_value' in cur_task and
                     cur_task['min_value'] != cur_task['max_value']):
                 self._free_parameters.append(task)
+                if cur_task.get('class', '') == 'variance':
+                    self._num_variances += 1
         self._num_free_parameters = len(self._free_parameters)
 
     def exchange_requests(self):
@@ -264,6 +291,10 @@ class Model(object):
                 requests = OrderedDict()
                 reqs = cur_task['requests']
                 for req in reqs:
+                    if reqs[req] not in self._modules:
+                        raise RuntimeError(
+                            'Request cannot be satisfied because module '
+                            '`{}` could not be found.'.format(reqs[req]))
                     requests[req] = self._modules[reqs[req]].send_request(req)
                 self._modules[task].receive_requests(**requests)
 
@@ -332,6 +363,11 @@ class Model(object):
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root."""
+        leaf = kinds if len(kinds) else name
+        if depth > 100:
+            raise RuntimeError(
+                'Error: Tree depth greater than 100, suggests a recursive '
+                'input loop in `{}`.'.format(leaf))
         for tag in d:
             entry = d[tag].copy()
             new_roots = roots
@@ -343,6 +379,16 @@ class Model(object):
                 trees[tag] = entry
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
+                    if inp not in d:
+                        suggests = get_close_matches(inp, d, n=1, cutoff=0.8)
+                        warn_str = (
+                            'Module `{}` for input to `{}` '
+                            'not found!'.format(inp, leaf))
+                        if len(suggests):
+                            warn_str += (
+                                ' Did you perhaps mean `{}`?'.
+                                format(suggests[0]))
+                        raise RuntimeError(warn_str)
                     children = OrderedDict()
                     self.construct_trees(
                         d,

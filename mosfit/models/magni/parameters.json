@@ -53,5 +53,15 @@
         "min_value":1.0e-3,
         "max_value":100.0,
         "log":true
+    },
+    "codeltatime":{
+        "min_value":1.0e-3,
+        "max_value":100.0,
+        "log":true
+    },
+    "codeltalambda":{
+        "min_value":1.0e-1,
+        "max_value":1.0e5,
+        "log":true
     }
 }

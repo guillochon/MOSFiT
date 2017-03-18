@@ -34,6 +34,12 @@ class Parameter(Module):
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
 
+    def fix_value(self, value):
+        """Fix value of parameter."""
+        self._max_value = None
+        self._min_value = None
+        self._value = value
+
     def is_log(self):
         """Return if `Parameter`'s value is stored as log10(value)."""
         return self._log

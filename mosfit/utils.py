@@ -9,6 +9,7 @@ from collections import OrderedDict
 from math import floor, isnan, log10
 
 import numpy as np
+from six import string_types
 
 syst_syns = {'': 'Vega', 'SDSS': 'AB', 'Standard': 'Vega', 'Landolt': 'Vega'}
 
@@ -35,7 +36,7 @@ def is_number(s):
 
 def is_integer(s):
     """Check if input is an integer."""
-    if isinstance(s, list) and not isinstance(s, str):
+    if isinstance(s, list) and not isinstance(s, string_types):
         try:
             [int(x) for x in s]
             return True

@@ -23,6 +23,7 @@ from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           is_number, listify, pretty_num)
 from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
@@ -33,6 +34,24 @@ from astrocats.catalog.realization import REALIZATION
 from .model import Model
 
 warnings.filterwarnings("ignore")
+
+
+class MOSSampler(emcee.PTSampler):
+    """Override PTSampler methods."""
+
+    def get_autocorr_time(self, min_step=0, **kwargs):
+        """Return a matrix of autocorrelation lengths.
+
+        Returns a matrix of autocorrelation lengths for each
+        parameter in each temperature of shape ``(Ntemps, Ndim)``.
+        Any arguments will be passed to :func:`autocorr.integrate_time`.
+        """
+        acors = np.zeros((self.ntemps, self.dim))
+
+        for i in range(self.ntemps):
+            x = np.mean(self._chain[i, :, min_step:, :], axis=0)
+            acors[i, :] = emcee.autocorr.integrated_time(x, **kwargs)
+        return acors
 
 
 def draw_walker(test=True):
@@ -98,6 +117,7 @@ class Fitter(object):
                    check_upload_quality=False,
                    printer=None,
                    variance_for_each=[],
+                   user_fixed_parameters=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -327,6 +347,7 @@ class Fitter(object):
                         band_instruments=band_instruments,
                         band_bandsets=band_bandsets,
                         variance_for_each=variance_for_each,
+                        user_fixed_parameters=user_fixed_parameters,
                         pool=pool)
 
                     if success:
@@ -369,6 +390,7 @@ class Fitter(object):
                   band_instruments=[],
                   band_bandsets=[],
                   variance_for_each=[],
+                  user_fixed_parameters=[],
                   pool=''):
         """Load the data for the specified event."""
         prt = self._printer
@@ -394,6 +416,23 @@ class Fitter(object):
                     return False
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
+
+            # Fix user-specified parameters.
+            for fi, param in enumerate(user_fixed_parameters):
+                if (task == param or
+                        self._model._call_stack[task].get(
+                            'class', '') == param):
+                    fixed_parameters.append(task)
+                    if fi < len(user_fixed_parameters) - 1:
+                        value = float(user_fixed_parameters[fi + 1])
+                        if value not in self._model._call_stack:
+                            self._model._call_stack[task]['value'] = value
+                    if 'min_value' in self._model._call_stack[task]:
+                        del self._model._call_stack[task]['min_value']
+                    if 'max_value' in self._model._call_stack[task]:
+                        del self._model._call_stack[task]['max_value']
+                    self._model._modules[task].fix_value(
+                        self._model._call_stack[task]['value'])
 
         self._model.determine_free_parameters(fixed_parameters)
 
@@ -455,6 +494,7 @@ class Fitter(object):
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
         self._fracking = fracking
+        self._post_burn = post_burn
         self._burn_in = max(iterations - post_burn, 0)
 
         return True
@@ -487,7 +527,7 @@ class Fitter(object):
         if not pool.is_master():
             try:
                 pool.wait()
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, SystemExit):
                 pass
             return (None, None, None)
 
@@ -496,9 +536,10 @@ class Fitter(object):
 
         test_walker = iterations > 0
         lnprob = None
+        lnlike = None
         pool_size = max(pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
-        redraw_mult = 2.0 * np.sqrt(
+        redraw_mult = 1.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         self._printer.prt(
@@ -522,16 +563,20 @@ class Fitter(object):
                 nmap = nwalkers - len(p0[i])
                 p0[i].extend(pool.map(draw_walker, [test_walker] * nmap))
 
-        sampler = emcee.PTSampler(
+        sampler = MOSSampler(
             ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
 
         prt.inline('Initial draws completed!')
         self._printer.prt('\n\n')
         p = list(p0)
 
+        emi = 0
+        tft = 0.0  # Total fracking time
+        acor = None
+        s_exception = None
+
         try:
             st = time.time()
-            tft = 0.0  # Total fracking time
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
@@ -573,23 +618,25 @@ class Fitter(object):
                             bad_redraws, redraw_count))
 
                 low = 10
-                asize = 0.1 * 0.5 * emi
-                acorc = max(1, min(10, int(np.floor(asize / low))))
-                acort = -1.0
-                aa = 1
-                for a in range(acorc, 0, -1):
-                    try:
-                        acort = max([
-                            max(x)
-                            for x in sampler.get_autocorr_time(
-                                low=low, c=a)
-                        ])
-                    except AutocorrError:
-                        continue
-                    else:
-                        aa = a
-                        break
-                acor = [acort, aa]
+                asize = 0.5 * (emi - self._burn_in) / low
+                if asize >= 0:
+                    acorc = max(1, min(10, int(np.floor(asize / low))))
+                    acort = -1.0
+                    aa = 1
+                    for a in range(acorc, 0, -1):
+                        try:
+                            acort = max([
+                                max(x)
+                                for x in sampler.get_autocorr_time(
+                                    low=low, c=a, min_step=self._burn_in)
+                            ])
+                        except AutocorrError:
+                            continue
+                        else:
+                            aa = a
+                            break
+                    acor = [acort, aa]
+
                 self._emcee_est_t = float(time.time() - st - tft) / emi1 * (
                     iterations - emi1) + tft / emi1 * max(0, self._burn_in -
                                                           emi1)
@@ -643,7 +690,7 @@ class Fitter(object):
                 bhs = list(pool.map(frack, frack_args))
                 for bhi, bh in enumerate(bhs):
                     (wi, ti) = tuple(selijs[bhi])
-                    if -bh.fun > lnprob[wi][ti] + lnlike[wi][ti]:
+                    if -bh.fun > lnprob[wi][ti]:
                         p[wi][ti] = bh.x
                         like = likelihood(bh.x)
                         lnprob[wi][ti] = like + prior(bh.x)
@@ -653,17 +700,24 @@ class Fitter(object):
                     self,
                     desc='Fracking Results',
                     scores=scores,
+                    fracking=True,
                     progress=[emi1, iterations])
                 tft = tft + time.time() - sft
-        except KeyboardInterrupt:
+                if s_exception:
+                    break
+        except (KeyboardInterrupt, SystemExit):
+            self._printer.inline('Ctrl + C pressed, halting...', error=True)
+            s_exception = sys.exc_info()
+        except Exception:
+            raise
+
+        if s_exception:
             pool.close()
             if (not prt.prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '
                     'be overwritten.', self._wrap_length)):
                 sys.exit()
-        except Exception:
-            raise
 
         if write:
             prt.wrapped('Saving output to disk...')
@@ -715,10 +769,11 @@ class Fitter(object):
                 QUANTITY.VALUE: str(WAIC),
                 QUANTITY.KIND: 'WAIC'
             }
-            modeldict[MODEL.CONVERGENCE] = {
-                QUANTITY.VALUE: str(aa),
-                QUANTITY.KIND: 'autocorrelationtimes'
-            }
+            if acor:
+                modeldict[MODEL.CONVERGENCE] = {
+                    QUANTITY.VALUE: str(aa),
+                    QUANTITY.KIND: 'autocorrelationtimes'
+                }
             modeldict[MODEL.STEPS] = str(emi1)
 
         if upload:
@@ -737,45 +792,72 @@ class Fitter(object):
         modelnum = entry.add_model(**modeldict)
 
         ri = 1
-        for xi, x in enumerate(p):
-            for yi, y in enumerate(p[xi]):
-                output = model.run_stack(y, root='output')
-                for i in range(len(output['times'])):
-                    if not np.isfinite(output['model_observations'][i]):
-                        continue
-                    photodict = {
-                        PHOTOMETRY.TIME:
-                        output['times'][i] + output['min_times'],
-                        PHOTOMETRY.MODEL: modelnum,
-                        PHOTOMETRY.SOURCE: source,
-                        PHOTOMETRY.REALIZATION: str(ri)
-                    }
-                    if output['observation_types'][i] == 'magnitude':
-                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
-                        photodict[PHOTOMETRY.MAGNITUDE] = output[
-                            'model_observations'][i]
-                    if output['observation_types'][i] == 'fluxdensity':
-                        photodict[PHOTOMETRY.FREQUENCY] = output[
-                            'frequencies'][i] * frequency_unit('GHz')
-                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                            'model_observations'][i] * flux_density_unit('µJy')
-                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
-                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                    if output['systems'][i]:
-                        photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                    if output['bandsets'][i]:
-                        photodict[PHOTOMETRY.BAND_SET] = output['bandsets'][i]
-                    if output['instruments'][i]:
-                        photodict[PHOTOMETRY.INSTRUMENT] = output[
-                            'instruments'][i]
-                    entry.add_photometry(
-                        compare_to_existing=False, **photodict)
+        if not s_exception and emi > 0:
+            pout = sampler.chain[:, :, -1, :]
+            lnprobout = sampler.lnprobability[:, :, -1]
+            lnlikeout = sampler.lnlikelihood[:, :, -1]
+        else:
+            pout = p
+            lnprobout = lnprob
+            lnlikeout = lnlike
 
-                    if upload_this:
-                        uphotodict = deepcopy(photodict)
-                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                        uentry.add_photometry(
-                            compare_to_existing=False, **uphotodict)
+        # Here, we append to the vector of walkers from the full chain based
+        # upon the value of acort (the autocorrelation timescale).
+        if acor and acort > 0:
+            actc = int(np.ceil(acort))
+            for i in range(1, np.int(float(emi - self._burn_in) / actc)):
+                pout = np.concatenate(
+                    (sampler.chain[:, :, -i * actc, :], pout), axis=1)
+                lnprobout = np.concatenate(
+                    (sampler.lnprobability[:, :, -i * actc], lnprobout),
+                    axis=1)
+                lnlikeout = np.concatenate(
+                    (sampler.lnlikelihood[:, :, -i * actc], lnlikeout), axis=1)
+        for xi, x in enumerate(pout):
+            for yi, y in enumerate(pout[xi]):
+                # Only produce LCs for end walker state.
+                if yi <= nwalkers:
+                    output = model.run_stack(y, root='output')
+                    for i in range(len(output['times'])):
+                        if not np.isfinite(output['model_observations'][i]):
+                            continue
+                        photodict = {
+                            PHOTOMETRY.TIME:
+                            output['times'][i] + output['min_times'],
+                            PHOTOMETRY.MODEL: modelnum,
+                            PHOTOMETRY.SOURCE: source,
+                            PHOTOMETRY.REALIZATION: str(ri)
+                        }
+                        if output['observation_types'][i] == 'magnitude':
+                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                            photodict[PHOTOMETRY.MAGNITUDE] = output[
+                                'model_observations'][i]
+                        if output['observation_types'][i] == 'fluxdensity':
+                            photodict[PHOTOMETRY.FREQUENCY] = output[
+                                'frequencies'][i] * frequency_unit('GHz')
+                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                                'model_observations'][
+                                    i] * flux_density_unit('µJy')
+                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['systems'][i]:
+                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                        if output['bandsets'][i]:
+                            photodict[PHOTOMETRY.BAND_SET] = output[
+                                'bandsets'][i]
+                        if output['instruments'][i]:
+                            photodict[PHOTOMETRY.INSTRUMENT] = output[
+                                'instruments'][i]
+                        entry.add_photometry(
+                            compare_to_existing=False, **photodict)
+
+                        if upload_this:
+                            uphotodict = deepcopy(photodict)
+                            uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                            uentry.add_photometry(
+                                compare_to_existing=False, **uphotodict)
+                else:
+                    output = model.run_stack(y, root='objective')
 
                 parameters = OrderedDict()
                 derived_keys = set()
@@ -802,8 +884,8 @@ class Fitter(object):
                     parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprob is not None and lnlike is not None:
-                    realdict[REALIZATION.SCORE] = str(lnprob[xi][yi])
+                if lnprobout is not None:
+                    realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
@@ -851,7 +933,7 @@ class Fitter(object):
                 else:
                     raise
 
-        return (entry, p, lnprob)
+        return (entry, pout, lnprobout)
 
     def generate_dummy_data(self,
                             name,
@@ -867,13 +949,13 @@ class Fitter(object):
         times = np.repeat(time_list, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
-        if isinstance(band_systems, str):
+        if isinstance(band_systems, string_types):
             band_systems = [band_systems for x in range(len(band_list_all))]
-        if isinstance(band_instruments, str):
+        if isinstance(band_instruments, string_types):
             band_instruments = [
                 band_instruments for x in range(len(band_list_all))
             ]
-        if isinstance(band_bandsets, str):
+        if isinstance(band_bandsets, string_types):
             band_bandsets = [band_bandsets for x in range(len(band_list_all))]
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]

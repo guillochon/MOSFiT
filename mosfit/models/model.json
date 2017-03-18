@@ -73,6 +73,18 @@
         "class":"variance",
         "latex":"\\sigma"
     },
+    "codeltatime":{
+        "kind":"parameter",
+        "value":-1.0,
+        "class":"covariance",
+        "latex":"l_t"
+    },
+    "codeltalambda":{
+        "kind":"parameter",
+        "value":-1.0,
+        "class":"covariance",
+        "latex":"l_\\lambda"
+    },
     "rvhost":{
         "kind":"parameter",
         "value":3.1,
@@ -87,11 +99,17 @@
         "inputs":[
             "transient",
             "variance",
+            "codeltatime",
+            "codeltalambda",
             "photometry",
             "default_upper_limit_error",
             "default_no_error_bar_error",
             "constraint"
-        ]
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        }
     },
     "alltimes":{
         "kind":"array",

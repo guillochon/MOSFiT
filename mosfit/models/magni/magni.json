@@ -126,9 +126,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore",
-            "temperaturephot",
-            "radiusphot"
+            "densecore"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
