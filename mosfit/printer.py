@@ -145,7 +145,7 @@ class Printer(object):
         if isinstance(scores, list):
             scorestring = 'Fracking scores' if fracking else 'Score ranges'
             scorestring += ': [ ' + ', '.join([
-                ' … '.join([
+                u' … '.join([
                     pretty_num(min(x))
                     if not np.isnan(min(x)) and np.isfinite(min(x))
                     else 'NaN',
