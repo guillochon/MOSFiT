@@ -312,7 +312,7 @@ def get_parser():
         dest='draw_above_likelihood',
         type=float,
         default=False,
-        const=0.0,
+        const=True,
         nargs='?',
         help=("When randomly drawing walkers initially, do not accept a draw "
               "unless a likelihood value is greater than this value. By "

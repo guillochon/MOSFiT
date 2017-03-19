@@ -159,7 +159,7 @@ class Printer(object):
                 scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
                 outarr.append(scorestring)
         if isinstance(accepts, list):
-            scorestring = 'Acceptance fractions: [ '
+            scorestring = 'Moves accepted: [ '
             scorestring += ', '.join([
                 (self.bcolors.FAIL if x < 0.01 else
                  (self.bcolors.WARNING if x < 0.1 else

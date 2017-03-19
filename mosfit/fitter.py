@@ -575,6 +575,7 @@ class Fitter(object):
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
+            dwscores = []
             while len(p0[i]) < nwalkers:
                 prt.status(
                     self,
@@ -582,10 +583,17 @@ class Fitter(object):
                     progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
 
                 if pool.size == 0:
-                    p0[i].append(draw_walker())
+                    p, score = draw_walker()
+                    p0[i].append(p)
+                    dwscores.append(score)
                 else:
                     nmap = nwalkers - len(p0[i])
-                    p0[i].extend(pool.map(draw_walker, [test_walker] * nmap))
+                    dws = pool.map(draw_walker, [test_walker] * nmap)
+                    p0[i].extend([x[0] for x in dws])
+                    dwscores.extend([x[1] for x in dws])
+
+                if self._draw_above_likelihood is not False:
+                    self._draw_above_likelihood = np.mean(dwscores)
 
         sampler = MOSSampler(
             ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
@@ -665,7 +673,7 @@ class Fitter(object):
                                         bad_redraws = bad_redraws + 1
                         if redraw_count > 0:
                             messages.append(
-                                '{:.1%} redraw, {}/{} success'.format(
+                                '{:.0%} redraw, {}/{} success'.format(
                                     redraw_count / (nwalkers * ntemps),
                                     redraw_count - bad_redraws, redraw_count))
 

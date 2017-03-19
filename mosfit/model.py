@@ -416,13 +416,14 @@ class Model(object):
             ]
             if not test:
                 p = draw
+                score = None
                 break
             score = self.likelihood(draw)
             if (not isnan(score) and np.isfinite(score) and
-                (self._fitter._draw_above_likelihood is False or
+                (not isinstance(self._fitter._draw_above_likelihood, float) or
                  score > self._fitter._draw_above_likelihood)):
                 p = draw
-        return p
+        return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):
         """Return the maximum depth a given task is found in a tree."""
