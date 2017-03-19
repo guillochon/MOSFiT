@@ -1,5 +1,8 @@
 """Definitions for the `RestTimes` class."""
+from collections import OrderedDict
+
 from mosfit.modules.arrays.array import Array
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -12,7 +15,7 @@ class RestTimes(Array):
         self._times = kwargs['all_times']
         self._t_explosion = kwargs['texplosion']
 
-        outputs = {}
+        outputs = OrderedDict()
         outputs['rest_times'] = [
             x / (1.0 + kwargs['redshift']) for x in self._times
         ]

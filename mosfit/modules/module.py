@@ -1,4 +1,6 @@
 """Definitions for the ``Module`` class."""
+import json
+
 from mosfit.printer import Printer
 
 
@@ -19,6 +21,10 @@ class Module(object):
         else:
             self._printer = printer
         self._printer = printer
+
+    def __repr__(self):
+        """Return a string representation of self."""
+        return json.dumps(self.__dict__)
 
     def process(self, **kwargs):
         """Process module, should always return a dictionary."""

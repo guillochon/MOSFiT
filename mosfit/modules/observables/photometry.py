@@ -78,7 +78,7 @@ class Photometry(Module):
         self._band_offsets = [0.0] * self._n_bands
 
         if self._pool.is_master():
-            vo_tabs = {}
+            vo_tabs = OrderedDict()
 
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():

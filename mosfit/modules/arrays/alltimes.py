@@ -1,4 +1,6 @@
 """Definitions for the `AllTimes` class."""
+from collections import OrderedDict
+
 from mosfit.modules.arrays.array import Array
 from mosfit.utils import frequency_unit
 
@@ -52,7 +54,7 @@ class AllTimes(Array):
             ]
             self._observed = [True for x in kwargs['times']]
 
-        outputs = {}
+        outputs = OrderedDict()
         outputs['all_times'] = self._times
         outputs['all_systems'] = self._systems
         outputs['all_instruments'] = self._instruments

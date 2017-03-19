@@ -1,7 +1,8 @@
 """Definitions for the `Transient` class."""
+from collections import OrderedDict
+
 import inflect
 import numpy as np
-
 from mosfit.modules.module import Module
 from mosfit.utils import is_number, listify
 
@@ -38,7 +39,7 @@ class Transient(Module):
                  band_bandsets=[]):
         """Set transient data."""
         self._all_data = all_data
-        self._data = {}
+        self._data = OrderedDict()
         if not self._all_data:
             return
         name = list(self._all_data.keys())[0]

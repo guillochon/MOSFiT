@@ -1,7 +1,8 @@
 """Definitions for the `DiffusionCSM` class."""
+from collections import OrderedDict
+
 import numexpr as ne
 import numpy as np
-
 from mosfit.constants import C_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
 
@@ -40,7 +41,7 @@ class DiffusionCSM(Transform):
         tbarg = self.MIN_EXP_ARG * self._tau_diff ** 2
         new_lum = []
         evaled = False
-        lum_cache = {}
+        lum_cache = OrderedDict()
         min_te = min(self._dense_times_since_exp)
         for te in self._times_since_exp:
             if te <= 0.0:

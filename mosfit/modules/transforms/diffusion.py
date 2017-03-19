@@ -1,9 +1,11 @@
 """Definitions for the `Diffusion` class."""
+from collections import OrderedDict
+
 import numexpr as ne
 import numpy as np
-
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -31,7 +33,7 @@ class Diffusion(Transform):
 
         new_lum = []
         evaled = False
-        lum_cache = {}
+        lum_cache = OrderedDict()
         min_te = min(self._dense_times_since_exp)
         for te in self._times_since_exp:
             if te <= 0.0:

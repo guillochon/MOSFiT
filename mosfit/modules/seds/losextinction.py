@@ -1,9 +1,12 @@
 """Definitions for the `LOSExtinction` class."""
+from collections import OrderedDict
+
 import numpy as np
+from mosfit.modules.seds.sed import SED
 
 from extinction import apply as eapp
 from extinction import odonnell94
-from mosfit.modules.seds.sed import SED
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -32,7 +35,7 @@ class LOSExtinction(SED):
 
         av_host = self._nh_host / 1.8e21
 
-        extinct_cache = {}
+        extinct_cache = OrderedDict()
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]
             # Extinct out host gal (using rest wavelengths)

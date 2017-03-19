@@ -1,10 +1,11 @@
 """Definitions for the `BlackbodyCutoff` class."""
+from collections import OrderedDict
 from math import pi
 
 import numpy as np
 from astropy import constants as c
 from astropy import units as u
-from mosfit.constants import FOUR_PI, ANG_CGS
+from mosfit.constants import ANG_CGS, FOUR_PI
 from mosfit.modules.seds.sed import SED
 
 
@@ -49,7 +50,7 @@ class BlackbodyCutoff(SED):
         cwave_ac3 = cwave_ac2 * cwave_ac
         zp1 = 1.0 + kwargs['redshift']
         seds = []
-        norm_arr = {}
+        norm_arr = OrderedDict()
         for li, lum in enumerate(self._luminosities):
             radius_phot = self._radius_phot[li]
             tp = self._temperature_phot[li]
@@ -106,7 +107,7 @@ class BlackbodyCutoff(SED):
                         nxc ** 3 + 3 * nxc ** 2 * cwave_ac * tp + 6 * (
                             nxc * cwave_ac2 * tp2 + cwave_ac3 *
                             tp3)) / cwave_ac3) / (nxc ** 4)
-                        for nxc in self._nxcs]))
+                         for nxc in self._nxcs]))
 
                 norm = lum / (fc / ac * radius_phot ** 2 * (f_blue + f_red))
                 norm_arr[time] = norm

@@ -1,4 +1,6 @@
 """Definitions for the `LightCurve` class."""
+from collections import OrderedDict
+
 from mosfit.modules.module import Module
 
 
@@ -15,7 +17,7 @@ class LightCurve(Module):
 
     def process(self, **kwargs):
         """Process module."""
-        output = {}
+        output = OrderedDict()
         for key in [
                 'magnitudes', 'e_magnitudes', 'model_observations',
                 'all_bands', 'all_systems', 'all_instruments', 'all_bandsets',

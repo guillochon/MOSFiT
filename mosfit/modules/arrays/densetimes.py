@@ -1,6 +1,9 @@
 """Definitions for the `DenseTimes` class."""
+from collections import OrderedDict
+
 import numpy as np
 from mosfit.modules.arrays.array import Array
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -26,7 +29,7 @@ class DenseTimes(Array):
         self._rest_times = kwargs['rest_times']
         self._t_explosion = kwargs['texplosion']
 
-        outputs = {}
+        outputs = OrderedDict()
         max_times = max(self._rest_times)
         if max_times > self._t_explosion:
             outputs['dense_times'] = list(
