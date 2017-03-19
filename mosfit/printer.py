@@ -37,6 +37,17 @@ class Printer(object):
         ENDC = '\033[0m'
         BOLD = '\033[1m'
         UNDERLINE = '\033[4m'
+        CYAN = '\033[96m'
+        MAGENTA = '\033[1;35m'
+
+        codes = {
+            '!e': ENDC,
+            '!m': MAGENTA,
+            '!y': WARNING,
+            '!b': OKBLUE,
+            '!r': FAIL,
+            '!g': OKGREEN
+        }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False):
         """Initialize printer, setting wrap length."""

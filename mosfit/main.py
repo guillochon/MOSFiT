@@ -406,6 +406,8 @@ def main():
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
                 logo = f.read()
+                for code in prt.bcolors.codes:
+                    logo = logo.replace(code, prt.bcolors.codes[code])
                 firstline = logo.split('\n')[0]
                 if isinstance(firstline, bytes):
                     firstline = firstline.decode('utf-8')
