@@ -131,7 +131,7 @@ class Transient(Module):
             print('No fittable data in `{}`!'.format(name))
             return False
 
-        for key in self._data.copy():
+        for key in list(self._data.keys()):
             if isinstance(self._data[key], list):
                 if not any(is_number(x) for x in self._data[key]):
                     continue

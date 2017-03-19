@@ -4,11 +4,11 @@ import json
 import os
 import shutil
 from collections import OrderedDict
+from copy import deepcopy
 
 import numpy as np
 from astropy import units as u
 from astropy.io.votable import parse as voparse
-
 from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, syst_syns
@@ -58,8 +58,8 @@ class Photometry(Module):
                 for bnd in rule.get('filters', []):
                     if band == bnd or band == '':
                         for perm in sysinstperms:
-                            new_band = rule['filters'][bnd].copy()
-                            new_band.update(perm.copy())
+                            new_band = deepcopy(rule['filters'][bnd])
+                            new_band.update(deepcopy(perm))
                             new_band['name'] = bnd
                             band_list.append(new_band)
 

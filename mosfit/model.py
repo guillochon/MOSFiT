@@ -1,22 +1,23 @@
 """Definitions for the `Model` class."""
+# import hashlib
 import importlib
 import inspect
 import json
 import logging
 import os
 from collections import OrderedDict
+from copy import deepcopy
 from difflib import get_close_matches
 from math import isnan
 
 import numpy as np
-# from scipy.optimize import differential_evolution
-from scipy.optimize import minimize
-
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.printer import Printer
 from mosfit.utils import listify
+# from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
 
 
 class Model(object):
@@ -146,8 +147,8 @@ class Model(object):
                         max_depth = depth
                     if depth > self._max_depth_all:
                         self._max_depth_all = depth
-            roots = list(set(roots))
-            new_entry = model_tag.copy()
+            roots = list(sorted(set(roots)))
+            new_entry = deepcopy(model_tag)
             new_entry['roots'] = roots
             if 'children' in new_entry:
                 del (new_entry['children'])
@@ -213,7 +214,8 @@ class Model(object):
     def create_data_dependent_free_parameters(
             self, variance_for_each=[], output={}):
         """Create free parameters that depend on loaded data."""
-        unique_band_indices = list(set(output.get('all_band_indices', [])))
+        unique_band_indices = list(
+            sorted(set(output.get('all_band_indices', []))))
         needs_general_variance = any(
             np.array(output.get('all_band_indices', [])) < 0)
 
@@ -238,7 +240,7 @@ class Model(object):
                     if wave_frac_diff < self.MIN_WAVE_FRAC_DIFF:
                         continue
                     new_task_name = '-'.join([task, 'band', band])
-                    new_task = cur_task.copy()
+                    new_task = deepcopy(cur_task)
                     new_call_stack[new_task_name] = new_task
                     if 'latex' in new_task:
                         new_task['latex'] += '_{\\rm ' + band + '}'
@@ -248,7 +250,7 @@ class Model(object):
                     owav = awav
                     variance_bands.append([awav, band])
                 if needs_general_variance:
-                    new_call_stack[task] = cur_task.copy()
+                    new_call_stack[task] = deepcopy(cur_task)
                 self._printer.wrapped(
                     'Anchoring variances for the following filters '
                     '(interpolating variances for the rest): ' +
@@ -256,7 +258,7 @@ class Model(object):
                     master_only=True)
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
-                new_call_stack[task] = cur_task.copy()
+                new_call_stack[task] = deepcopy(cur_task)
         self._call_stack = new_call_stack
 
     def determine_number_of_measurements(self):
@@ -369,13 +371,13 @@ class Model(object):
                 'Error: Tree depth greater than 100, suggests a recursive '
                 'input loop in `{}`.'.format(leaf))
         for tag in d:
-            entry = d[tag].copy()
+            entry = deepcopy(d[tag])
             new_roots = roots
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 if entry['kind'] in kinds:
                     new_roots.append(entry['kind'])
-                entry['roots'] = list(set(new_roots))
+                entry['roots'] = list(sorted(set(new_roots)))
                 trees[tag] = entry
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
@@ -417,7 +419,12 @@ class Model(object):
                 p = draw
                 break
             score = self.likelihood(draw)
-            if not isnan(score) and np.isfinite(score):
+            # print(hashlib.sha512(json.dumps(
+            #     self._trees, sort_keys=True).encode(
+            #         'utf-8')).hexdigest()[:16], score)
+            if (not isnan(score) and np.isfinite(score) and
+                (self._fitter._draw_above_likelihood is False or
+                 score > self._fitter._draw_above_likelihood)):
                 p = draw
         return p
 

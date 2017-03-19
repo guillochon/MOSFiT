@@ -122,11 +122,13 @@ class Fitter(object):
                    variance_for_each=[],
                    user_fixed_parameters=[],
                    run_until_converged=False,
+                   draw_above_likelihood=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
+        self._draw_above_likelihood = draw_above_likelihood
 
         if not printer:
             self._printer = Printer(wrap_length=wrap_length, quiet=quiet)
@@ -214,9 +216,9 @@ class Fitter(object):
                             namekeys = []
                             for name in names:
                                 namekeys.extend(names[name])
-                            matches = set(
-                                get_close_matches(
-                                    event, namekeys, n=5, cutoff=0.8))
+                            namekeys = list(sorted(set(namekeys)))
+                            matches = get_close_matches(
+                                event, namekeys, n=5, cutoff=0.8)
                             # matches = []
                             if len(matches) < 5 and is_number(event[0]):
                                 prt.wrapped(
@@ -227,25 +229,26 @@ class Fitter(object):
                                     ind = re.search("\d", name)
                                     if ind and ind.start() > 0:
                                         snprefixes.add(name[:ind.start()])
-                                snprefixes = list(snprefixes)
+                                snprefixes = list(sorted(snprefixes))
                                 for prefix in snprefixes:
                                     testname = prefix + event
                                     new_matches = get_close_matches(
                                         testname, namekeys, cutoff=0.95, n=1)
-                                    if len(new_matches):
-                                        matches.add(new_matches[0])
+                                    if (len(new_matches) and
+                                            new_matches[0] not in matches):
+                                        matches.append(new_matches[0])
                                     if len(matches) == 5:
                                         break
                             if len(matches):
                                 if travis:
-                                    response = list(matches)[0]
+                                    response = matches[0]
                                 else:
                                     response = prt.prompt(
                                         'No exact match to given event '
                                         'found. Did you mean one of the '
                                         'following events?',
                                         kind='select',
-                                        options=list(matches))
+                                        options=matches)
                                 if response:
                                     for name in names:
                                         if response in names[name]:
@@ -463,7 +466,8 @@ class Fitter(object):
         if pool.is_master() and 'photometry' in self._model._modules:
             prt.wrapped('Bands being used for current transient:')
             bis = list(
-                filter(lambda a: a != -1, set(outputs['all_band_indices'])))
+                filter(lambda a: a != -1,
+                       sorted(set(outputs['all_band_indices']))))
             ois = []
             for bi in bis:
                 ois.append(
@@ -566,8 +570,11 @@ class Fitter(object):
                     desc='Drawing initial walkers',
                     progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
 
-                nmap = nwalkers - len(p0[i])
-                p0[i].extend(pool.map(draw_walker, [test_walker] * nmap))
+                if pool.size == 0:
+                    p0[i].append(draw_walker())
+                else:
+                    nmap = nwalkers - len(p0[i])
+                    p0[i].extend(pool.map(draw_walker, [test_walker] * nmap))
 
         sampler = MOSSampler(
             ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
@@ -594,7 +601,9 @@ class Fitter(object):
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
             converged = False
-            for ici, ic in enumerate(iter_arr):
+            ici = 0
+            while run_until_converged or ici < len(iter_arr):
+                ic = max_chunk if run_until_converged else iter_arr[ici]
                 if run_until_converged and converged:
                     break
                 for li, (
@@ -642,26 +651,27 @@ class Fitter(object):
                     low = 10
                     asize = 0.5 * (emim1 - self._burn_in) / low
                     if asize >= 0:
-                        acorc = max(1, min(10, int(np.floor(asize / low))))
+                        acorc = max(1, min(10, int(np.floor(
+                            0.5 * emi / low))))
                         acort = -1.0
                         aa = 1
                         cur_chain = (np.concatenate(
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
                             sampler.chain[:, :, :li, :])
-                        for a in range(acorc, 0, -1):
+                        for a in range(1, acorc):
                             try:
+                                acorts = sampler.get_autocorr_time(
+                                    chain=cur_chain, low=low, c=a,
+                                    min_step=self._burn_in)
                                 acort = max([
                                     max(x)
-                                    for x in sampler.get_autocorr_time(
-                                        chain=cur_chain, low=low, c=a,
-                                        min_step=self._burn_in)
+                                    for x in acorts
                                 ])
                             except AutocorrError:
-                                continue
+                                break
                             else:
                                 aa = a
-                                break
                         acor = [acort, aa]
 
                         if (run_until_converged and
@@ -694,6 +704,9 @@ class Fitter(object):
                                   run_until_converged else iterations],
                         acor=acor,
                         messages=messages)
+
+                    if s_exception:
+                        break
 
                     if not frack_now:
                         continue
@@ -760,6 +773,7 @@ class Fitter(object):
                         (all_lnlike, sampler.lnlikelihood), axis=2)
 
                 sampler.reset()
+                ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
             self._printer.inline('Ctrl + C pressed, halting...', error=True)
@@ -809,7 +823,7 @@ class Fitter(object):
         source = entry.add_source(name='MOSFiT paper')
         model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
-            task_copy = model._call_stack[task].copy()
+            task_copy = deepcopy(model._call_stack[task])
             if (task_copy['kind'] == 'parameter' and
                     task in model._parameter_json):
                 task_copy.update(model._parameter_json[task])

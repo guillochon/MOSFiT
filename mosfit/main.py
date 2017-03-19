@@ -296,6 +296,7 @@ def get_parser():
         '--run-until-converged',
         '-R',
         dest='run_until_converged',
+        type=float,
         default=False,
         const=10.0,
         nargs='?',
@@ -304,6 +305,19 @@ def get_parser():
               "of autocorrelation times [Default: 10.0]. This will run "
               "beyond the specified number of iterations, and is recommended "
               "when the `--upload/-u` flag is set."))
+
+    parser.add_argument(
+        '--draw-above-likelihood',
+        '-d',
+        dest='draw_above_likelihood',
+        type=float,
+        default=False,
+        const=0.0,
+        nargs='?',
+        help=("When randomly drawing walkers initially, do not accept a draw "
+              "unless a likelihood value is greater than this value. By "
+              "default, any score greater than the likelihood floor will be "
+              "retained."))
 
     parser.add_argument(
         '--set-upload-token',
