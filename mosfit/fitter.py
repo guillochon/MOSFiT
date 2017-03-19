@@ -615,7 +615,8 @@ class Fitter(object):
                         for ti, tprob in enumerate(lnprob):
                             for wi, wprob in enumerate(tprob):
                                 if (wprob <= pmedian[ti] -
-                                    max(redraw_mult * pmead[ti], 10.0) or
+                                    max(redraw_mult * pmead[ti],
+                                        float(nwalkers)) or
                                         np.isnan(wprob)):
                                     redraw_count = redraw_count + 1
                                     dxx = np.random.normal(
