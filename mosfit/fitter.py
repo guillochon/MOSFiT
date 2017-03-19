@@ -545,7 +545,7 @@ class Fitter(object):
         lnlike = None
         pool_size = max(pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
-        redraw_mult = 1.5 * np.sqrt(
+        redraw_mult = 1.0 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         self._printer.prt(
@@ -615,7 +615,7 @@ class Fitter(object):
                         for ti, tprob in enumerate(lnprob):
                             for wi, wprob in enumerate(tprob):
                                 if (wprob <= pmedian[ti] -
-                                    redraw_mult * pmead[ti] or
+                                    max(redraw_mult * pmead[ti], 10.0) or
                                         np.isnan(wprob)):
                                     redraw_count = redraw_count + 1
                                     dxx = np.random.normal(
