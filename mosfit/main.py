@@ -406,18 +406,18 @@ def main():
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
                 logo = f.read()
-                for code in prt.bcolors.codes:
-                    logo = logo.replace(code, prt.bcolors.codes[code])
+                logo = prt.colorify(logo)
                 firstline = logo.split('\n')[0]
                 if isinstance(firstline, bytes):
                     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
                 print(logo)
-            print('### MOSFiT -- Version {} ({}) ###'
-                  .format(__version__, mosfit_hash).center(width))
+            print(prt.colorify('### !mM!gO!rS!yFi!bT!e -- Version {} ({}) ###')
+                  .format(__version__, mosfit_hash).center(width + 32))
             print('Authored by James Guillochon & Matt Nicholl'.center(width))
             print('Released under the MIT license'.center(width))
-            print('https://github.com/guillochon/MOSFiT\n'.center(width))
+            print(prt.colorify('!u!chttps://github.com/guillochon/MOSFiT!e\n')
+                  .center(width + 15))
 
         # Get/set upload token
         upload_token = ''

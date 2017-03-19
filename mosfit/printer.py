@@ -46,7 +46,9 @@ class Printer(object):
             '!y': WARNING,
             '!b': OKBLUE,
             '!r': FAIL,
-            '!g': OKGREEN
+            '!g': OKGREEN,
+            '!u': UNDERLINE,
+            '!c': CYAN
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False):
@@ -54,6 +56,13 @@ class Printer(object):
         self._wrap_length = wrap_length
         self._quiet = quiet
         self._pool = pool
+
+    def colorify(self, text):
+        """Add colors to text."""
+        output = text
+        for code in self.bcolors.codes:
+            output = output.replace(code, self.bcolors.codes[code])
+        return output
 
     def prt(self, text):
         """Print text without modification."""
