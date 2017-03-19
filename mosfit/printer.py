@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """Defines the `Printer` class."""
 from __future__ import print_function
 
