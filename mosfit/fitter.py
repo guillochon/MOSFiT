@@ -585,7 +585,7 @@ class Fitter(object):
         try:
             st = time.time()
 
-            max_chunk = 10
+            max_chunk = 1000
             iter_chunks = int(np.ceil(float(iterations) / max_chunk))
             iter_arr = [max_chunk if xi < iter_chunks - 1 else
                         iterations - max_chunk * (iter_chunks - 1)
@@ -593,7 +593,10 @@ class Fitter(object):
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
+            converged = False
             for ici, ic in enumerate(iter_arr):
+                if run_until_converged and converged:
+                    break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
                             sampler.sample(p, iterations=ic)):
@@ -662,8 +665,10 @@ class Fitter(object):
 
                         if (run_until_converged and
                             aa == acorc and acort > 0.0 and
-                                run_until_converged * acort < self._burn_in):
+                                run_until_converged * acort < emi -
+                                self._burn_in):
                             self._printer.wrapped('Convergence criteria met!')
+                            converged = True
                             break
 
                     if run_until_converged:
