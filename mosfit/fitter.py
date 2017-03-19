@@ -123,8 +123,15 @@ class Fitter(object):
                    user_fixed_parameters=[],
                    run_until_converged=False,
                    draw_above_likelihood=False,
+                   maximum_walltime=False,
+                   start_time=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
+        if start_time is False:
+            start_time = time.time()
+        self._start_time = start_time
+        self._maximum_walltime = maximum_walltime
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
@@ -620,14 +627,24 @@ class Fitter(object):
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
             converged = False
+            exceeded_walltime = False
             ici = 0
             while run_until_converged or ici < len(iter_arr):
                 ic = max_chunk if run_until_converged else iter_arr[ici]
+                if exceeded_walltime:
+                    break
                 if run_until_converged and converged:
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
                             sampler.sample(p, iterations=ic)):
+                    if (self._maximum_walltime is not False and
+                            time.time() - self._start_time >
+                            self._maximum_walltime):
+                        self._printer.wrapped(
+                            'Walltime exceeded, exiting...', warning=True)
+                        exceeded_walltime = True
+                        break
                     emi = emi + 1
                     emim1 = emi - 1
                     messages = []

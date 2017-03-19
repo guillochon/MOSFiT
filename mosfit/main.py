@@ -4,6 +4,7 @@ import argparse
 import os
 import shutil
 import sys
+import time
 from operator import attrgetter
 from unicodedata import normalize
 
@@ -307,6 +308,15 @@ def get_parser():
               "when the `--upload/-u` flag is set."))
 
     parser.add_argument(
+        '--maximum-walltime',
+        '-W',
+        dest='maximum_walltime',
+        type=float,
+        default=False,
+        help=("Total execution time (in seconds) constrained to be no "
+              "greater than this value."))
+
+    parser.add_argument(
         '--draw-above-likelihood',
         '-d',
         dest='draw_above_likelihood',
@@ -369,6 +379,8 @@ def main():
     args.printer = prt
 
     args.write = True
+
+    args.start_time = time.time()
 
     if (isinstance(args.extrapolate_time, list) and
             len(args.extrapolate_time) == 0):
