@@ -1,5 +1,4 @@
 """Definitions for the `Model` class."""
-import hashlib
 import importlib
 import inspect
 import json
@@ -419,9 +418,6 @@ class Model(object):
                 p = draw
                 break
             score = self.likelihood(draw)
-            print(hashlib.sha512(
-                ''.join([x.__repr__() for x in self._modules]).encode(
-                    'utf-8')).hexdigest()[:16], score)
             if (not isnan(score) and np.isfinite(score) and
                 (self._fitter._draw_above_likelihood is False or
                  score > self._fitter._draw_above_likelihood)):
@@ -497,6 +493,8 @@ class Model(object):
                 pos = pos + 1
             try:
                 new_outs = self._modules[task].process(**inputs)
+                if not isinstance(new_outs, OrderedDict):
+                    new_outs = OrderedDict(sorted(new_outs.items()))
             except Exception:
                 self._printer.wrapped(
                     "Failed to execute module `{}`\'s process().".format(task))

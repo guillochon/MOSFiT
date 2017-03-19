@@ -1,4 +1,6 @@
 """Definitions for the `Constraint` class."""
+from collections import OrderedDict
+
 from mosfit.modules.module import Module
 
 
@@ -11,4 +13,4 @@ class Constraint(Module):
     def process(self, **kwargs):
         """Process module."""
         self._score_modifier = 0.0
-        return {'score_modifier': self._score_modifier}
+        return OrderedDict(['score_modifier', self._score_modifier])

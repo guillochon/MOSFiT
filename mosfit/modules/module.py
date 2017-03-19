@@ -1,5 +1,6 @@
 """Definitions for the ``Module`` class."""
 import json
+from collections import OrderedDict
 
 from mosfit.printer import Printer
 
@@ -16,6 +17,7 @@ class Module(object):
         self._name = name
         self._log = False
         self._pool = pool
+        self._preprocessed = False
         if not printer:
             self._printer = Printer()
         else:
@@ -28,7 +30,11 @@ class Module(object):
 
     def process(self, **kwargs):
         """Process module, should always return a dictionary."""
-        return {}
+        return OrderedDict()
+
+    def reset_preprocessed(self):
+        """Reset preprocessed flag."""
+        self._preprocessed = False
 
     def send_request(self, request):
         """Send a request."""

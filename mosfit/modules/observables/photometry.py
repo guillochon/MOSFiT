@@ -26,7 +26,6 @@ class Photometry(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Photometry, self).__init__(**kwargs)
-        self._preprocessed = False
         self._bands = []
 
         bands = kwargs.get('bands', '')

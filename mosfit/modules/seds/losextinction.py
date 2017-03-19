@@ -16,11 +16,6 @@ class LOSExtinction(SED):
 
     MW_RV = 3.1
 
-    def __init__(self, **kwargs):
-        """Initialize module."""
-        super(LOSExtinction, self).__init__(**kwargs)
-        self._preprocessed = False
-
     def process(self, **kwargs):
         """Process module."""
         self.preprocess(**kwargs)

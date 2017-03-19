@@ -447,9 +447,10 @@ class Fitter(object):
         self._model.exchange_requests()
 
         # Run through once to set all inits.
-        outputs = self._model.run_stack(
-            [0.0 for x in range(self._model._num_free_parameters)],
-            root='output')
+        for root in ['output', 'objective']:
+            outputs = self._model.run_stack(
+                [0.0 for x in range(self._model._num_free_parameters)],
+                root=root)
 
         # Create any data-dependent free parameters.
         self._model.create_data_dependent_free_parameters(
@@ -461,6 +462,16 @@ class Fitter(object):
         self._model.determine_number_of_measurements()
 
         self._model.exchange_requests()
+
+        # Reset modules
+        for task in self._model._call_stack:
+            self._model._modules[task].reset_preprocessed()
+
+        # Run through inits once more.
+        for root in ['output', 'objective']:
+            outputs = self._model.run_stack(
+                [0.0 for x in range(self._model._num_free_parameters)],
+                root=root)
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:

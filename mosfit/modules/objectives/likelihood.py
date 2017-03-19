@@ -18,11 +18,6 @@ class Likelihood(Module):
 
     MIN_COV_TERM = 1.0e-30
 
-    def __init__(self, **kwargs):
-        """Initialize module."""
-        super(Likelihood, self).__init__(**kwargs)
-        self._preprocessed = False
-
     def process(self, **kwargs):
         """Process module."""
         self.preprocess(**kwargs)
@@ -139,7 +134,7 @@ class Likelihood(Module):
         self._u_fds = kwargs.get('u_fluxdensities', [])
         self._u_freqs = kwargs.get('u_frequencies', [])
         self._upper_limits = kwargs.get('upperlimits', [])
-        self._observed = np.array(kwargs['observed'])
+        self._observed = np.array(kwargs.get('observed', []))
         self._all_band_indices = kwargs.get('all_band_indices', [])
         self._are_mags = np.array(self._all_band_indices) >= 0
         self._are_fds = np.array(self._all_band_indices) < 0
