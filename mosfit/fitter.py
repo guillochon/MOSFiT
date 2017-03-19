@@ -847,14 +847,14 @@ class Fitter(object):
         modelnum = entry.add_model(**modeldict)
 
         ri = 1
-        if not s_exception and emi > 0:
+        if len(all_chain):
             pout = all_chain[:, :, -1, :]
             lnprobout = all_lnprob[:, :, -1]
             lnlikeout = all_lnlike[:, :, -1]
         else:
-            pout = all_chain
-            lnprobout = all_lnprob
-            lnlikeout = all_lnlike
+            pout = p
+            lnprobout = lnprob
+            lnlikeout = lnlike
 
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
