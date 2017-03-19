@@ -129,6 +129,7 @@ class Printer(object):
                fitter,
                desc='',
                scores='',
+               accepts='',
                progress='',
                acor=None,
                fracking=False,
@@ -141,10 +142,15 @@ class Printer(object):
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Fracking' if fracking else 'Best'
-            scorestring += ' scores: [ ' + ', '.join([
-                pretty_num(max(x))
-                if not np.isnan(max(x)) and np.isfinite(max(x)) else 'NaN'
+            scorestring = 'Fracking scores' if fracking else 'Score range'
+            scorestring += ': [ ' + ', '.join([
+                '…'.join([
+                    pretty_num(min(x))
+                    if not np.isnan(min(x)) and np.isfinite(min(x))
+                    else 'NaN',
+                    pretty_num(max(x))
+                    if not np.isnan(max(x)) and np.isfinite(max(x))
+                    else 'NaN']) if len(x) > 1 else pretty_num(x[0])
                 for x in scores
             ]) + ' ]'
             outarr.append(scorestring)

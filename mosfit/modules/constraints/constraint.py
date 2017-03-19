@@ -13,4 +13,4 @@ class Constraint(Module):
     def process(self, **kwargs):
         """Process module."""
         self._score_modifier = 0.0
-        return OrderedDict(['score_modifier', self._score_modifier])
+        return OrderedDict([('score_modifier', self._score_modifier)])
