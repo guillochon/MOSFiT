@@ -142,9 +142,9 @@ class Printer(object):
         if desc:
             outarr.append(desc)
         if isinstance(scores, list):
-            scorestring = 'Fracking scores' if fracking else 'Score range'
+            scorestring = 'Fracking scores' if fracking else 'Score ranges'
             scorestring += ': [ ' + ', '.join([
-                '…'.join([
+                ' … '.join([
                     pretty_num(min(x))
                     if not np.isnan(min(x)) and np.isfinite(min(x))
                     else 'NaN',
@@ -157,6 +157,14 @@ class Printer(object):
             if not fracking:
                 scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
                 outarr.append(scorestring)
+        if isinstance(accepts, list):
+            scorestring = 'Acceptance fractions: [ '
+            scorestring += ', '.join([
+                (self.bcolors.WARNING if x < 0.05 else '') +
+                '{:.0%}'.format(x) + (self.bcolors.ENDC if x < 0.05 else '')
+                for x in accepts
+            ]) + ' ]'
+            outarr.append(scorestring)
         if isinstance(progress, list):
             if progress[1]:
                 progressstring = 'Progress: [ {}/{} ]'.format(*progress)

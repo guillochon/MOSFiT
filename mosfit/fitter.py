@@ -624,6 +624,16 @@ class Fitter(object):
                     emim1 = emi - 1
                     messages = []
 
+                    # Record then reset sampler proposal/acceptance counts.
+                    accepts = list(
+                        np.mean(sampler.nprop_accepted / sampler.nprop,
+                                axis=1))
+                    sampler.nprop = np.zeros(
+                        (sampler.ntemps, sampler.nwalkers), dtype=np.float)
+                    sampler.nprop_accepted = np.zeros(
+                        (sampler.ntemps, sampler.nwalkers),
+                        dtype=np.float)
+
                     # First, redraw any walkers with scores significantly
                     # worse than their peers (only during burn-in).
                     if emim1 <= self._burn_in:
@@ -711,6 +721,7 @@ class Fitter(object):
                         self,
                         desc='Fracking' if frack_now else 'Walking',
                         scores=scores,
+                        accepts=accepts,
                         progress=[emi, None if
                                   run_until_converged else iterations],
                         acor=acor,
