@@ -161,8 +161,10 @@ class Printer(object):
         if isinstance(accepts, list):
             scorestring = 'Acceptance fractions: [ '
             scorestring += ', '.join([
-                (self.bcolors.WARNING if x < 0.05 else '') +
-                '{:.0%}'.format(x) + (self.bcolors.ENDC if x < 0.05 else '')
+                (self.bcolors.FAIL if x < 0.01 else
+                 (self.bcolors.WARNING if x < 0.1 else
+                  self.bcolors.OKGREEN)) +
+                '{:.0%}'.format(x) + self.bcolors.ENDC
                 for x in accepts
             ]) + ' ]'
             outarr.append(scorestring)
