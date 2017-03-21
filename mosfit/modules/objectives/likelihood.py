@@ -33,8 +33,9 @@ class Likelihood(Module):
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
-            (x - y if not u or (x < y and not isnan(x)) else 0.0) if a else
-            (x - fd if not u or (x > fd and not isnan(x)) else 0.0)
+            (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0) if a
+            else
+            (abs(x - fd) if not u or (x > fd and not isnan(x)) else 0.0)
             for x, y, fd, u, o, a in zip(
                 self._model_observations, self._mags, self._fds,
                 self._upper_limits, self._observed, self._are_mags) if o

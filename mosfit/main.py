@@ -412,12 +412,20 @@ def main():
                     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
                 print(logo)
-            print(prt.colorify('### !mM!gO!rS!yFi!bT!e -- Version {} ({}) ###')
-                  .format(__version__, mosfit_hash).center(width + 32))
+            name_str = (
+                '### !mM!e!gO!e!rS!e!yFi!e!bT!e '
+                '-- Version {} ({}) ###')
+            col_name_str = prt.colorify(name_str)
+            cnlen = len(
+                repr(col_name_str)) - len(name_str) - name_str.count('!')
+            print(prt.colorify(col_name_str).format(
+                __version__, mosfit_hash).center(width + cnlen))
             print('Authored by James Guillochon & Matt Nicholl'.center(width))
             print('Released under the MIT license'.center(width))
-            print(prt.colorify('!u!chttps://github.com/guillochon/MOSFiT!e\n')
-                  .center(width + 15))
+            url_str = '!u!chttps://github.com/guillochon/MOSFiT!e'
+            col_url_str = prt.colorify(url_str)
+            culen = len(repr(col_url_str)) - len(url_str) - url_str.count('!')
+            print((col_url_str + '\n').center(width + culen))
 
         # Get/set upload token
         upload_token = ''
