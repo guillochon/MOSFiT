@@ -31,6 +31,23 @@ class Likelihood(Module):
                 return {'value': LIKELIHOOD_FLOOR}
         self._score_modifier = kwargs.get('score_modifier', 0.0)
 
+        # Get band variances
+        self._variance = kwargs.get('variance', 0.0)
+
+        if len(self._variance_bands):
+            self._band_vs = np.array([
+                self._band_v_vars.get(i, self._variance) if
+                isinstance(i, string_types)
+                else (i[0] * self._band_v_vars.get(i[1][0], self._variance) +
+                      (1.0 - i[0]) * self._band_v_vars.get(
+                          i[1][0], self._variance))
+                for i in self._o_variance_bands])
+        else:
+            self._band_vs = np.full(
+                len(self._all_band_indices), self._variance)
+
+        self._o_band_vs = self._band_vs[self._observed]
+
         # Calculate (model - obs) residuals.
         residuals = np.array([
             (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0) if a
@@ -190,27 +207,13 @@ class Likelihood(Module):
         # Wavelength deltas (radial distance) for covariance matrix.
         self._o_waves = self._all_band_avgs[self._observed]
 
-        # Get band variances
-        self._variance = kwargs.get('variance', 0.0)
-
-        band_vs = OrderedDict()
+        self._band_v_vars = OrderedDict()
         for key in kwargs:
             if key.startswith('variance-band-'):
-                band_vs[key.split('-')[-1]] = kwargs[key]
+                self._band_v_vars[key.split('-')[-1]] = kwargs[key]
 
         if len(self._variance_bands):
-            var_bands = [
+            self._o_variance_bands = [
                 self._variance_bands[i] for i in self._all_band_indices]
-
-            self._band_vs = np.array([
-                band_vs.get(i, self._variance) if isinstance(i, string_types)
-                else (i[0] * band_vs.get(i[1][0], self._variance) +
-                      (1.0 - i[0]) * band_vs.get(i[1][0], self._variance))
-                for i in var_bands])
-        else:
-            self._band_vs = np.full(
-                len(self._all_band_indices), self._variance)
-
-        self._o_band_vs = self._band_vs[self._observed]
 
         self._preprocessed = True

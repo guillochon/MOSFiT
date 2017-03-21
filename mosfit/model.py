@@ -311,11 +311,12 @@ class Model(object):
         my_choice = np.random.choice(range(3))
         # my_choice = 0
         my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
-        opt_dict = {'disp': False}
+        opt_dict = {'disp': False, 'approx_grad': True}
         if my_method in ['TNC', 'SLSQP']:
-            opt_dict['maxiter'] = 100
+            opt_dict['maxiter'] = 200
         elif my_method == 'L-BFGS-B':
             opt_dict['maxfun'] = 5000
+            opt_dict['maxls'] = 50
         # bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
         bounds = list(
             zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
