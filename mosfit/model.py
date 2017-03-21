@@ -305,7 +305,7 @@ class Model(object):
         Uses a randomly-selected global or local minimization method.
         """
         x = np.array(arg[0])
-        step = 0.2
+        step = 1.0
         seed = arg[1]
         np.random.seed(seed)
         my_choice = np.random.choice(range(3))
@@ -325,7 +325,6 @@ class Model(object):
             x,
             method=my_method,
             bounds=bounds,
-            tol=1.0e-3,
             options=opt_dict)
 
         # bounds = list(
