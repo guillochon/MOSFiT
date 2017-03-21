@@ -58,12 +58,13 @@ class LOSExtinction(SED):
 
     def preprocess(self, **kwargs):
         """Preprocess module."""
-        if not self._preprocessed:
-            self._ebv = kwargs['ebv']
-            self._av_mw = self.MW_RV * self._ebv
-            # Pre-calculate LOS dust from MW for all bands
-            self._mw_extinct = np.zeros_like(self._sample_wavelengths)
-            for si, sw in enumerate(self._sample_wavelengths):
-                self._mw_extinct[si] = odonnell94(self._sample_wavelengths[si],
-                                                  self._av_mw, self.MW_RV)
+        if self._preprocessed:
+            return
+        self._ebv = kwargs['ebv']
+        self._av_mw = self.MW_RV * self._ebv
+        # Pre-calculate LOS dust from MW for all bands
+        self._mw_extinct = np.zeros_like(self._sample_wavelengths)
+        for si, sw in enumerate(self._sample_wavelengths):
+            self._mw_extinct[si] = odonnell94(self._sample_wavelengths[si],
+                                              self._av_mw, self.MW_RV)
         self._preprocessed = True

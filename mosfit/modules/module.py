@@ -22,7 +22,6 @@ class Module(object):
             self._printer = Printer()
         else:
             self._printer = printer
-        self._printer = printer
 
     def __repr__(self):
         """Return a string representation of self."""

@@ -28,8 +28,8 @@ class PowerLaw(Parameter):
     def lnprior_pdf(self, x):
         """Evaluate natural log of probability density function."""
         value = self.value(x)
-        return np.log(((value - self._miv) / (self._mav - self._miv))
-                      ** self._alpha)
+        return np.log(((value - self._miv) / (self._mav - self._miv)) **
+                      self._alpha)
 
     def prior_cdf(self, u):
         """Evaluate cumulative density function."""
