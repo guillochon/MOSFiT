@@ -699,30 +699,41 @@ class Fitter(object):
                     if asize >= 0:
                         acorc = max(1, min(10, int(np.floor(
                             0.5 * emi / low))))
-                        acort = -1.0
-                        aa = 1
+                        aacort = -1.0
+                        aa = 0
+                        ams = self._burn_in
                         cur_chain = (np.concatenate(
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
                             sampler.chain[:, :, :li, :])
-                        for a in range(1, acorc):
-                            try:
-                                acorts = sampler.get_autocorr_time(
-                                    chain=cur_chain, low=low, c=a,
-                                    min_step=self._burn_in)
-                                acort = max([
-                                    max(x)
-                                    for x in acorts
-                                ])
-                            except AutocorrError:
+                        for bdenom in [2 ** x for x in range(0, 5)]:
+                            for a in range(1, acorc):
+                                ms = emi - round(
+                                    float(emi - self._burn_in) / bdenom)
+                                if ms >= emi - low:
+                                    break
+                                try:
+                                    acorts = sampler.get_autocorr_time(
+                                        chain=cur_chain, low=low, c=a,
+                                        min_step=ms, fast=True)
+                                    acort = max([
+                                        max(x)
+                                        for x in acorts
+                                    ])
+                                except AutocorrError:
+                                    break
+                                else:
+                                    if a > aa:
+                                        aa = a
+                                        aacort = acort
+                                        ams = ms
+                            if aa == acorc:
                                 break
-                            else:
-                                aa = a
-                        acor = [acort, aa]
+                        acor = [aacort, aa, ams]
 
                         if (run_until_converged and
-                            aa == acorc and acort > 0.0 and
-                                run_until_converged * acort < emi -
+                            aa == acorc and aacort > 0.0 and
+                                run_until_converged * aacort < emi -
                                 self._burn_in):
                             self._printer.wrapped('Convergence criteria met!')
                             converged = True
@@ -920,9 +931,9 @@ class Fitter(object):
 
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
-        if acor and acort > 0:
-            actc = int(np.ceil(acort))
-            for i in range(1, np.int(float(emi - self._burn_in) / actc)):
+        if acor and aacort > 0:
+            actc = int(np.ceil(aacort))
+            for i in range(1, np.int(float(emi - ams) / actc)):
                 pout = np.concatenate(
                     (all_chain[:, :, -i * actc, :], pout), axis=1)
                 lnprobout = np.concatenate(

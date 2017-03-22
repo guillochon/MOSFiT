@@ -211,6 +211,7 @@ class Printer(object):
                                   acorcstr) + self.bcolors.ENDC)
             else:
                 acortstr = pretty_num(acor[0], sig=3)
+                acorbstr = pretty_num(acor[2], sig=3)
                 if fitter._travis:
                     col = ''
                 elif acor[1] < 5.0:
@@ -220,8 +221,8 @@ class Printer(object):
                 else:
                     col = self.bcolors.OKGREEN
                 acorstring = col
-                acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
-                                                                      acorcstr)
+                acorstring = acorstring + 'Acor Tau (i > {}): {} ({}x)'.format(
+                    acorbstr, acortstr, acorcstr)
                 acorstring = acorstring + (self.bcolors.ENDC if col else '')
             outarr.append(acorstring)
 

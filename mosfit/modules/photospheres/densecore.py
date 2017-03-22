@@ -6,6 +6,7 @@ from astropy import constants as c
 from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
 
+
 # Important: Only define one ``Module`` class per file.
 
 
@@ -49,9 +50,10 @@ class DenseCore(Photosphere):
 
             # Find location of photosphere in envelope/core
             if tau_e > (2.0 / 3.0):
-                radius_phot = (2.0 * (slope - 1.0) /
-                               (3.0 * self._kappa * rho_core * radius
-                                ** slope)) ** (1.0 / (1.0 - slope))
+                radius_phot = (
+                    2.0 * (slope - 1.0) /
+                    (3.0 * self._kappa * rho_core * radius ** slope)) ** (
+                        1.0 / (1.0 - slope))
             else:
                 radius_phot = slope * radius / (slope - 1.0) - 2.0 / (
                     3.0 * self._kappa * rho_core)
@@ -59,16 +61,16 @@ class DenseCore(Photosphere):
             # Compute temperature
             # Prevent weird behaviour as R_phot -> 0
             if tau_core > 1.:
-                temperature_phot = (lum / (radius_phot
-                                           ** 2 * self.STEF_CONST)) ** 0.25
+                temperature_phot = (
+                    lum / (radius_phot ** 2 * self.STEF_CONST)) ** 0.25
                 if li > peak and temperature_phot > temperature_last:
                     temperature_phot = temperature_last
-                    radius_phot = (lum / (temperature_phot
-                                          ** 4 * self.STEF_CONST)) ** 0.5
+                    radius_phot = (
+                        lum / (temperature_phot ** 4 * self.STEF_CONST)) ** 0.5
             else:
                 temperature_phot = temperature_last
-                radius_phot = (lum / (temperature_phot
-                                      ** 4 * self.STEF_CONST)) ** 0.5
+                radius_phot = (
+                    lum / (temperature_phot ** 4 * self.STEF_CONST)) ** 0.5
 
             temperature_last = temperature_phot
 
