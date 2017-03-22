@@ -87,6 +87,12 @@
         "class":"parameter",
         "latex":"E_{\\nu}"
     },
+    "tnebular_min":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm neb}"
+    },
     "magnetar":{
         "kind":"engine",
         "inputs":[
@@ -149,11 +155,13 @@
             "lumdist"
         ]
     },
-    "magnetar_constraints":{
+    "slsn_constraints":{
         "kind":"constraint",
         "inputs":[
             "mejecta",
             "vejecta",
+            "kappa",
+            "tnebular_min",
             "Pspin",
             "Mns",
             "diffusion",
@@ -173,7 +181,7 @@
             "photometry",
             "default_upper_limit_error",
             "default_no_error_bar_error",
-            "magnetar_constraints"
+            "slsn_constraints"
         ],
         "requests":{
             "average_wavelengths": "photometry",
