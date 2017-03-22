@@ -34,7 +34,15 @@ class Likelihood(Module):
         # Get band variances
         self._variance = kwargs.get('variance', 0.0)
 
-        if len(self._variance_bands):
+        self._band_v_vars = OrderedDict()
+        for key in kwargs:
+            if key.startswith('variance-band-'):
+                self._band_v_vars[key.split('-')[-1]] = kwargs[key]
+
+        if self._variance_bands:
+            self._o_variance_bands = [
+                self._variance_bands[i] for i in self._all_band_indices]
+
             self._band_vs = np.array([
                 self._band_v_vars.get(i, self._variance) if
                 isinstance(i, string_types)
@@ -71,9 +79,7 @@ class Likelihood(Module):
         is_diag = False
         if (kwargs.get('codeltatime', -1) >= 0 or
                 kwargs.get('codeltalambda', -1) >= 0):
-            kmat = np.array([
-                [vi * vj for vi in self._o_band_vs] for vj in self._o_band_vs
-            ])
+            kmat = np.outer(self._o_band_vs, self._o_band_vs)
         else:
             # Shortcut when matrix is diagonal.
             is_diag = True
@@ -107,8 +113,8 @@ class Likelihood(Module):
             # full_size = np.count_nonzero(kmat)
 
             # Remove small covariance terms
-            min_cov = self.MIN_COV_TERM * np.max(kmat)
-            kmat[kmat <= min_cov] = 0.0
+            # min_cov = self.MIN_COV_TERM * np.max(kmat)
+            # kmat[kmat <= min_cov] = 0.0
 
             # print("Sparse frac: {:.2%}".format(
             #     float(full_size - np.count_nonzero(kmat)) / full_size))
@@ -206,14 +212,5 @@ class Likelihood(Module):
         self._o_times = self._times[self._observed]
         # Wavelength deltas (radial distance) for covariance matrix.
         self._o_waves = self._all_band_avgs[self._observed]
-
-        self._band_v_vars = OrderedDict()
-        for key in kwargs:
-            if key.startswith('variance-band-'):
-                self._band_v_vars[key.split('-')[-1]] = kwargs[key]
-
-        if len(self._variance_bands):
-            self._o_variance_bands = [
-                self._variance_bands[i] for i in self._all_band_indices]
 
         self._preprocessed = True
