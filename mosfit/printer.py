@@ -153,6 +153,7 @@ class Printer(object):
                accepts='',
                progress='',
                acor=None,
+               psrf=None,
                fracking=False,
                messages=[]):
         """Print status message showing state of fitting process."""
@@ -211,10 +212,8 @@ class Printer(object):
                                   acorcstr) + self.bcolors.ENDC)
             else:
                 acortstr = pretty_num(acor[0], sig=3)
-                acorbstr = pretty_num(acor[2], sig=3)
-                if fitter._travis:
-                    col = ''
-                elif acor[1] < 5.0:
+                acorbstr = str(int(acor[2]))
+                if acor[1] < 5.0:
                     col = self.bcolors.FAIL
                 elif acor[1] < 10.0:
                     col = self.bcolors.WARNING
@@ -225,6 +224,20 @@ class Printer(object):
                     acorbstr, acortstr, acorcstr)
                 acorstring = acorstring + (self.bcolors.ENDC if col else '')
             outarr.append(acorstring)
+        if psrf is not None and psrf[0] != np.inf:
+            psrfstr = pretty_num(psrf[0], sig=3)
+            psrfbstr = str(int(psrf[1]))
+            if psrf[0] > 2.0:
+                col = self.bcolors.FAIL
+            elif psrf[0] > 1.2:
+                col = self.bcolors.WARNING
+            else:
+                col = self.bcolors.OKGREEN
+            psrfstring = col
+            psrfstring = psrfstring + 'PSRF (i > {}): {}'.format(
+                psrfbstr, psrfstr)
+            psrfstring = psrfstring + (self.bcolors.ENDC if col else '')
+            outarr.append(psrfstring)
 
         if not isinstance(messages, list):
             raise ValueError('`messages` must be list!')

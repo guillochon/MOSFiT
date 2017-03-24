@@ -612,6 +612,9 @@ class Fitter(object):
         emi = 0
         tft = 0.0  # Total fracking time
         acor = None
+        aacort = -1
+        aa = 0
+        psrf = np.inf
         s_exception = None
         all_chain = []
 
@@ -694,11 +697,11 @@ class Fitter(object):
                                     redraw_count / (nwalkers * ntemps),
                                     redraw_count - bad_redraws, redraw_count))
 
+                    # Calculate the autocorrelation time.
                     low = 10
                     asize = 0.5 * (emim1 - self._burn_in) / low
                     if asize >= 0:
-                        acorc = max(1, min(10, int(np.floor(
-                            0.5 * emi / low))))
+                        acorc = max(1, min(5, int(np.floor(0.5 * emi / low))))
                         aacort = -1.0
                         aa = 0
                         ams = self._burn_in
@@ -731,11 +734,30 @@ class Fitter(object):
                                 break
                         acor = [aacort, aa, ams]
 
-                        if (run_until_converged and
-                            aa == acorc and aacort > 0.0 and
-                                run_until_converged * aacort < emi -
-                                self._burn_in):
-                            self._printer.wrapped('Convergence criteria met!')
+                    # Calculate the PSRF (Gelman-Rubin statistic).
+                    if li > 1 and emi > self._burn_in:
+                        cur_chain = (np.concatenate(
+                            (all_chain, sampler.chain[:, :, :li, :]),
+                            axis=2) if len(all_chain) else
+                            sampler.chain[:, :, :li, :])
+                        vws = np.zeros((ntemps, ndim))
+                        for ti in range(ntemps):
+                            for xi in range(ndim):
+                                vchain = cur_chain[ti, :, self._burn_in:, xi]
+                                m = len(vchain)
+                                n = len(vchain[0])
+                                mom = np.mean(np.mean(vchain, axis=1))
+                                b = n / float(m - 1) * np.sum(
+                                    (np.mean(vchain, axis=1) - mom) ** 2)
+                                w = np.mean(np.var(vchain, axis=1))
+                                v = float(n - 1) / n * w + \
+                                    float(m + 1) / (m * n) * b
+                                vws[ti][xi] = np.sqrt(v / w)
+                        psrf = np.max(vws)
+
+                        if run_until_converged and psrf < 1.1:
+                            self._printer.wrapped(
+                                'Convergence criterion met!')
                             converged = True
                             break
 
@@ -761,6 +783,7 @@ class Fitter(object):
                         progress=[emi, None if
                                   run_until_converged else iterations],
                         acor=acor,
+                        psrf=[psrf, self._burn_in],
                         messages=messages)
 
                     if s_exception:
@@ -918,6 +941,9 @@ class Fitter(object):
                     upload_this = False
 
         modelnum = entry.add_model(**modeldict)
+
+        # with open('all_chain.json', 'w') as f:
+        #     json.dump(all_chain.tolist(), f)
 
         ri = 1
         if len(all_chain):
