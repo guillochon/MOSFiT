@@ -709,29 +709,25 @@ class Fitter(object):
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
                             sampler.chain[:, :, :li, :])
-                        for bdenom in [2 ** x for x in range(0, 5)]:
-                            for a in range(1, acorc):
-                                ms = emi - round(
-                                    float(emi - self._burn_in) / bdenom)
-                                if ms >= emi - low:
-                                    break
-                                try:
-                                    acorts = sampler.get_autocorr_time(
-                                        chain=cur_chain, low=low, c=a,
-                                        min_step=ms, fast=True)
-                                    acort = max([
-                                        max(x)
-                                        for x in acorts
-                                    ])
-                                except AutocorrError:
-                                    break
-                                else:
-                                    if a > aa:
-                                        aa = a
-                                        aacort = acort
-                                        ams = ms
-                            if aa == acorc:
+                        for a in range(1, acorc):
+                            ms = self._burn_in
+                            if ms >= emi - low:
                                 break
+                            try:
+                                acorts = sampler.get_autocorr_time(
+                                    chain=cur_chain, low=low, c=a,
+                                    min_step=ms, fast=True)
+                                acort = max([
+                                    max(x)
+                                    for x in acorts
+                                ])
+                            except AutocorrError:
+                                break
+                            else:
+                                if a > aa:
+                                    aa = a
+                                    aacort = acort
+                                    ams = ms
                         acor = [aacort, aa, ams]
 
                     # Calculate the PSRF (Gelman-Rubin statistic).
