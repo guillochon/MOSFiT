@@ -735,7 +735,7 @@ class Fitter(object):
                         acor = [aacort, aa, ams]
 
                     # Calculate the PSRF (Gelman-Rubin statistic).
-                    if li > 1 and emi > self._burn_in:
+                    if li > 1 and emi > self._burn_in + 1:
                         cur_chain = (np.concatenate(
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
