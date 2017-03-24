@@ -777,7 +777,8 @@ class Fitter(object):
                     scores = [np.array(x) for x in lnprob]
                     prt.status(
                         self,
-                        desc='Fracking' if frack_now else 'Walking',
+                        desc='Fracking' if frack_now else
+                        ('Burning' if emi < self._burn_in else 'Walking'),
                         scores=scores,
                         accepts=accepts,
                         progress=[emi, None if

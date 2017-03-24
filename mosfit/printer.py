@@ -39,6 +39,7 @@ class Printer(object):
         UNDERLINE = '\033[4m'
         CYAN = '\033[96m'
         MAGENTA = '\033[1;35m'
+        ORANGE = '\033[38;5;214m'
 
         codes = {
             '!e': ENDC,
@@ -162,7 +163,11 @@ class Printer(object):
 
         outarr = [fitter._event_name]
         if desc:
-            outarr.append(desc)
+            if desc == 'Burning':
+                descstr = self.bcolors.ORANGE + desc + self.bcolors.ENDC
+            else:
+                descstr = desc
+            outarr.append(descstr)
         if isinstance(scores, list):
             scorestring = 'Fracking scores' if fracking else 'Score ranges'
             scorestring += ': [ ' + ', '.join([
