@@ -438,7 +438,8 @@ class Fitter(object):
                         self._model._call_stack[task].get(
                             'class', '') == param):
                     fixed_parameters.append(task)
-                    if fi < len(user_fixed_parameters) - 1:
+                    if fi < len(user_fixed_parameters) - 1 and is_number(
+                            user_fixed_parameters[fi + 1]):
                         value = float(user_fixed_parameters[fi + 1])
                         if value not in self._model._call_stack:
                             self._model._call_stack[task]['value'] = value
