@@ -168,6 +168,8 @@ class Likelihood(Module):
             enumerate(self._all_band_indices)])
 
         # Magnitudes first
+        # Note: Upper limits (censored data) currently treated as a
+        # half-Gaussian, this is very approximate and can be improved upon.
         self._e_u_mags = [
             kwargs['default_upper_limit_error']
             if (e == '' and eu == '' and self._upper_limits[i]) else
@@ -176,7 +178,8 @@ class Likelihood(Module):
             for i, (e, eu) in enumerate(zip(self._e_mags, self._e_u_mags))
         ]
         self._e_l_mags = [
-            0.0 if self._upper_limits[i] else
+            kwargs['default_upper_limit_error']
+            if (e == '' and el == '' and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
              if (e == '' and el == '') else (e if el == '' else el))
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
