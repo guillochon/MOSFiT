@@ -2,9 +2,11 @@
 from collections import OrderedDict
 from math import pi
 
+import numexpr as ne
 import numpy as np
 from astropy import constants as c
 from astropy import units as u
+
 from mosfit.constants import ANG_CGS, FOUR_PI
 from mosfit.modules.seds.sed import SED
 
@@ -51,8 +53,9 @@ class BlackbodyCutoff(SED):
         zp1 = 1.0 + kwargs['redshift']
         seds = []
         norm_arr = OrderedDict()
+        evaled = False
         for li, lum in enumerate(self._luminosities):
-            radius_phot = self._radius_phot[li]
+            radius_phot2 = self._radius_phot[li] ** 2
             tp = self._temperature_phot[li]
             tp2 = tp * tp
             tp3 = tp2 * tp
@@ -73,13 +76,13 @@ class BlackbodyCutoff(SED):
             absorbed = rest_wavs < cwave_ac
 
             # Blackbody SED
-            sed = (fc * (radius_phot ** 2 / rest_wavs ** 5) / (
+            sed = (fc * (radius_phot2 / rest_wavs ** 5) / (
                 np.exp(xc / rest_wavs / tp) - 1.0))
 
             # Absorbed blackbody: 0% transmission at 0 Angstroms
             # 100% at >3000 Angstroms
             sed[absorbed] = (fc * (
-                radius_phot ** 2 / cwave_ac / rest_wavs[absorbed] ** 4) / (
+                radius_phot2 / cwave_ac / rest_wavs[absorbed] ** 4) / (
                     np.exp(xc / rest_wavs[absorbed] / tp) - 1.0))
 
             sed = np.nan_to_num(sed)
@@ -95,21 +98,22 @@ class BlackbodyCutoff(SED):
                 # luminosity using this (series expansion) integral
                 # of the absorbed blackbody function
                 # wavelength < cutoff:
-                f_blue = (
-                    tp * sum([np.exp(-nxc / (cwave_ac * tp)) * (
-                        nxc ** 2 + 2 * (
-                            nxc * cwave_ac * tp + cwave_ac2 * tp2)) / (
-                                nxc ** 3 * cwave_ac3) for nxc in self._nxcs]))
+                nxcs = self._nxcs
+                if not evaled:
+                    f_blue_red = ne.evaluate(
+                        "sum((exp(-nxcs / (cwave_ac * tp)) * ("
+                        "nxcs ** 2 + 2 * ("
+                        "nxcs * cwave_ac * tp + cwave_ac2 * tp2)) / ("
+                        "nxcs ** 3 * cwave_ac3)) + "
+                        "(6 * tp3 - exp(-nxcs / (cwave_ac * tp)) * ("
+                        "nxcs ** 3 + 3 * nxcs ** 2 * cwave_ac * tp + 6 * ("
+                        "nxcs * cwave_ac2 * tp2 + cwave_ac3 *"
+                        "tp3)) / cwave_ac3) / (nxcs ** 4))"
+                    )
+                else:
+                    f_blue_red = ne.re_evaluate()
 
-                # wavelength > cutoff:
-                f_red = (
-                    sum([tp * (6 * tp3 - np.exp(-nxc / (cwave_ac * tp)) * (
-                        nxc ** 3 + 3 * nxc ** 2 * cwave_ac * tp + 6 * (
-                            nxc * cwave_ac2 * tp2 + cwave_ac3 *
-                            tp3)) / cwave_ac3) / (nxc ** 4)
-                         for nxc in self._nxcs]))
-
-                norm = lum / (fc / ac * radius_phot ** 2 * (f_blue + f_red))
+                norm = lum / (fc / ac * radius_phot2 * tp * f_blue_red)
                 norm_arr[time] = norm
                 # print('calc',norm_arr[time])
 
