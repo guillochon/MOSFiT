@@ -330,6 +330,17 @@ def get_parser():
               "retained."))
 
     parser.add_argument(
+        '--gibbs',
+        '-g',
+        dest='gibbs',
+        default=False,
+        action='store_true',
+        help=("Using a Gibbs-sampling variant of emcee. This is not proven "
+              "to preserve detailed balance, however it has much faster "
+              "convergence than the vanilla emcee stretch-move. Use with "
+              "caution."))
+
+    parser.add_argument(
         '--set-upload-token',
         dest='set_upload_token',
         const=True,

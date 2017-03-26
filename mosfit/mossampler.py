@@ -1,10 +1,10 @@
 """Overridden PTSampler with random Gibbs selection."""
 import emcee
 import numpy as np
-from emcee.ptsampler import PTLikePrior
+from emcee.ptsampler import PTLikePrior, PTSampler
 
 
-class MOSSampler(emcee.PTSampler):
+class MOSSampler(PTSampler):
     """Override PTSampler methods."""
 
     def get_autocorr_time(self, min_step=0, chain=[], **kwargs):
@@ -25,8 +25,8 @@ class MOSSampler(emcee.PTSampler):
         return acors
 
     def sample(
-        self, p0, lnprob0=None, lnlike0=None, rstate0=None, iterations=1,
-            thin=1, storechain=True):
+        self, p0, lnprob0=None, lnlike0=None, iterations=1,
+            thin=1, storechain=True, gibbs=False):
         """Advance the chains ``iterations`` steps as a generator.
 
         :param p0:
@@ -38,9 +38,6 @@ class MOSSampler(emcee.PTSampler):
         :param lnlike0: (optional)
             The initial likelihood values for the ensembles.  Shape
             ``(ntemps, nwalkers)``.
-        :param rstate0: (optional)
-            The state of the random number generator.
-            See the :attr:`Sampler.random_state` property for details.
         :param iterations: (optional)
             The number of iterations to preform.
         :param thin: (optional)
@@ -54,8 +51,10 @@ class MOSSampler(emcee.PTSampler):
         * ``lnprob`` the current posterior values for the walkers.
         * ``lnlike`` the current likelihood values for the walkers.
         """
-        # See comments in EnsembleSampler.sample(). Fails silently.
-        self.random_state = rstate0
+        if not gibbs:
+            for n in super(MOSSampler, self).sample(
+                    p0, lnprob0, lnlike0, iterations, thin, storechain):
+                yield n
 
         p = np.copy(np.array(p0))
 

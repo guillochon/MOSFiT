@@ -218,9 +218,9 @@ class Printer(object):
             else:
                 acortstr = pretty_num(acor[0], sig=3)
                 acorbstr = str(int(acor[2]))
-                if acor[1] < 5.0:
+                if acor[1] < 2.0:
                     col = self.bcolors.FAIL
-                elif acor[1] < 10.0:
+                elif acor[1] < 5.0:
                     col = self.bcolors.WARNING
                 else:
                     col = self.bcolors.OKGREEN
@@ -230,7 +230,7 @@ class Printer(object):
                 acorstring = acorstring + (self.bcolors.ENDC if col else '')
             outarr.append(acorstring)
         if psrf is not None and psrf[0] != np.inf:
-            psrfstr = pretty_num(psrf[0], sig=3)
+            psrfstr = pretty_num(psrf[0], sig=4)
             psrfbstr = str(int(psrf[1]))
             if psrf[0] > 2.0:
                 col = self.bcolors.FAIL

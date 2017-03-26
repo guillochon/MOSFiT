@@ -85,6 +85,7 @@ class Fitter(object):
                    wrap_length=100,
                    travis=False,
                    post_burn=500,
+                   gibbs=False,
                    smooth_times=-1,
                    extrapolate_time=0.0,
                    limit_fitting_mjds=False,
@@ -352,6 +353,7 @@ class Fitter(object):
                             fracking=fracking,
                             frack_step=frack_step,
                             post_burn=post_burn,
+                            gibbs=gibbs,
                             pool=pool,
                             suffix=suffix,
                             write=write,
@@ -514,6 +516,7 @@ class Fitter(object):
                  num_temps=1,
                  fracking=True,
                  post_burn=500,
+                 gibbs=False,
                  pool='',
                  suffix='',
                  write=False,
@@ -620,7 +623,7 @@ class Fitter(object):
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
-                            sampler.sample(p, iterations=ic)):
+                            sampler.sample(p, iterations=ic, gibbs=gibbs)):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
@@ -696,7 +699,7 @@ class Fitter(object):
                             try:
                                 acorts = sampler.get_autocorr_time(
                                     chain=cur_chain, low=low, c=a,
-                                    min_step=ms, fast=True)
+                                    min_step=ms, fast=False)
                                 acort = max([
                                     max(x)
                                     for x in acorts
