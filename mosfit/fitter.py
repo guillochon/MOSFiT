@@ -836,7 +836,8 @@ class Fitter(object):
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
-            self._printer.wrapped('Ctrl + C pressed, halting...', error=True)
+            self._printer.wrapped(
+                '\b\bCtrl + C pressed, halting...', error=True)
             s_exception = sys.exc_info()
         except Exception:
             raise
