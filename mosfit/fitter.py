@@ -13,10 +13,10 @@ from copy import deepcopy
 from difflib import get_close_matches
 
 import dropbox
-import emcee
 import numpy as np
 import scipy
 from emcee.autocorr import AutocorrError
+from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
@@ -34,27 +34,6 @@ from astrocats.catalog.realization import REALIZATION
 from .model import Model
 
 warnings.filterwarnings("ignore")
-
-
-class MOSSampler(emcee.PTSampler):
-    """Override PTSampler methods."""
-
-    def get_autocorr_time(self, min_step=0, chain=[], **kwargs):
-        """Return a matrix of autocorrelation lengths.
-
-        Returns a matrix of autocorrelation lengths for each
-        parameter in each temperature of shape ``(Ntemps, Ndim)``.
-        Any arguments will be passed to :func:`autocorr.integrate_time`.
-        """
-        acors = np.zeros((self.ntemps, self.dim))
-
-        for i in range(self.ntemps):
-            if len(chain):
-                x = np.mean(chain[i, :, min_step:, :], axis=0)
-            else:
-                x = np.mean(self._chain[i, :, min_step:, :], axis=0)
-            acors[i, :] = emcee.autocorr.integrated_time(x, **kwargs)
-        return acors
 
 
 def draw_walker(test=True):
@@ -732,7 +711,7 @@ class Fitter(object):
                         acor = [aacort, aa, ams]
 
                     # Calculate the PSRF (Gelman-Rubin statistic).
-                    if li > 1 and emi > self._burn_in + 1:
+                    if li > 1 and emi > self._burn_in + 2:
                         cur_chain = (np.concatenate(
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
@@ -751,6 +730,8 @@ class Fitter(object):
                                     float(m + 1) / (m * n) * b
                                 vws[ti][xi] = np.sqrt(v / w)
                         psrf = np.max(vws)
+                        if np.isnan(psrf):
+                            psrf = np.inf
 
                         if run_until_converged and psrf < 1.1:
                             self._printer.wrapped(
