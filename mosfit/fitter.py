@@ -63,6 +63,8 @@ def frack(x):
 class Fitter(object):
     """Fit transient events with the provided model."""
 
+    _MAX_ACORC = 5
+
     def __init__(self):
         """Initialize `Fitter`."""
         pass
@@ -609,6 +611,10 @@ class Fitter(object):
             iter_arr = [max_chunk if xi < iter_chunks - 1 else
                         iterations - max_chunk * (iter_chunks - 1)
                         for xi, x in enumerate(range(iter_chunks))]
+            # Make sure a chunk separation is located at self._burn_in
+            chunk_is = sorted(set(
+                np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
+            iter_arr = np.diff(chunk_is)
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
@@ -623,7 +629,9 @@ class Fitter(object):
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
-                            sampler.sample(p, iterations=ic, gibbs=gibbs)):
+                            sampler.sample(
+                                p, iterations=ic, gibbs=gibbs if
+                                emi >= self._burn_in else True)):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
@@ -684,7 +692,9 @@ class Fitter(object):
                     low = 10
                     asize = 0.5 * (emim1 - self._burn_in) / low
                     if asize >= 0:
-                        acorc = max(1, min(5, int(np.floor(0.5 * emi / low))))
+                        acorc = max(
+                            1, min(self._MAX_ACORC,
+                                   int(np.floor(0.5 * emi / low))))
                         aacort = -1.0
                         aa = 0
                         ams = self._burn_in
@@ -940,7 +950,7 @@ class Fitter(object):
 
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
-        if acor and aacort > 0:
+        if acor and aacort > 0 and aa == self._MAX_ACORC:
             actc = int(np.ceil(aacort))
             for i in range(1, np.int(float(emi - ams) / actc)):
                 pout = np.concatenate(
