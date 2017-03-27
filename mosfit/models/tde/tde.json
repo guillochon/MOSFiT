@@ -12,7 +12,8 @@
         "kind":"parameter",
         "value":1.0e18,
         "class":"parameter",
-        "latex":"n_{\\rm H,host}"
+        "latex":"n_{\\rm H,host}",
+        "derived_keys":"avhost"
     },
     "texplosion":{
         "kind":"parameter",
@@ -44,6 +45,15 @@
         "class":"parameter",
         "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
     },
+    "viscous":{
+        "kind":"transform",
+        "inputs":[
+            "fallback",
+            "kappa",
+            "texplosion",
+            "Tviscous"
+        ]
+    },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
@@ -74,6 +84,18 @@
         "class":"parameter",
         "latex":"M_{star} (M_{odot})"
     },
+    "Rph0":{
+        "kind":"parameter",
+        "value": 0.17,
+        "class":"parameter",
+        "latex": "log(R_{ph0})"
+    },
+    "lphoto":{
+        "kind": "parameter",
+        "value": 2.7,
+        "class": "parameter",
+        "latex": "photosphere exponent 'l' "
+    },
     "lumdist":{
         "kind":"parameter",
         "value":10.0,
@@ -91,22 +113,14 @@
             "texplosion"
         ]
     },
-    "viscous":{
-        "kind":"transform",
-        "inputs":[
-            "fallback",
-            "kappa",
-            "texplosion",
-            "Tviscous"
-        ]
-    },
-    "densecore":{
+    "tde_photosphere":{
         "kind":"photosphere",
         "inputs":[
-            "texplosion",
-            "viscous",
-            "mejecta",
-            "vejecta"
+            "bhmass",
+            "starmass",
+            "lphoto",
+            "Rph0",
+			"viscous"
         ]
     },
     "blackbody":{
@@ -114,9 +128,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore",
-            "temperaturephot",
-            "radiusphot"
+            "tde_photosphere"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -127,6 +139,7 @@
         "inputs":[
             "blackbody",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{
