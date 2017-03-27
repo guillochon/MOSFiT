@@ -2,7 +2,7 @@
 # 2/9/17
 # has early time extrapolation
 # and does gamma interpolation
- 
+
 
 from math import isnan
 
@@ -28,8 +28,8 @@ class Fallback(Engine):
     def __init__(self,**kwargs):
         # call super version of init
 
-        super(Fallback, self).__init__(**kwargs) 
-        
+        super(Fallback, self).__init__(**kwargs)
+
         self.testnum = 0
         # load dmde info
 
@@ -43,7 +43,7 @@ class Fallback(Engine):
 
         self._gammas = ['4-3','5-3']
 
-        # dictionaries with gamma's as keys.    
+        # dictionaries with gamma's as keys.
         self._beta_slope = {self._gammas[0]:[], self._gammas[1]:[]}
         self._beta_yinter = {self._gammas[0]:[], self._gammas[1]:[]}
         self._energy = {self._gammas[0]:[], self._gammas[1]:[]}
@@ -52,36 +52,36 @@ class Fallback(Engine):
         for g in self._gammas:
             #print ('entered')
             dmdedir = os.path.dirname(__file__)[:-15] + 'models/tde/data/' + g + '/' #'../../models/tde/data/'
-           
+
             #dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
 
             #--------- GET SIMULATION BETAS -----------------
 
             # hardcode in the simulation betas for gamma = 4-3 for now
             sim_beta_files = os.listdir(dmdedir)
-            
+
             #sim_beta_new = {g:[float(b[:-4]) for b in sim_beta_files]}
             self._sim_beta[g].extend([float(b[:-4]) for b in sim_beta_files]) #{self._sim_beta.items() + sim_beta_new.items()} #[0.600, 0.650, 0.700, 0.750, 0.800, 0.850, 0.900, 1.000, 1.100,  1.200, 1.300, 1.400, 1.500, 1.600, 1.700, 1.800, 1.850, 1.900, 2.000, 2.500, 3.000, 3.500, 4.000]
 
-            
+
             #-- CREATE INTERPOLATION FUNCTIONS; FIND SLOPES & YINTERs -------
 
             # these three lists, in addition to 'sim_beta', are the lists that will hold dmde info to be accessed after init is run
- 
 
-           # need to pad with extra zeros for dmde files from astrocrash 
+
+           # need to pad with extra zeros for dmde files from astrocrash
             #e_lo, dmde_lo = np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[0])+'.dat') # format requires 3 digits after decimal point
             e_lo, dmde_lo = np.loadtxt(dmdedir+sim_beta_files[0]) # energy and dmde in cgs units
             #e_lo, dmde_lo = np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[0])+'.dat')
             for i in range(1,len(self._sim_beta[g])): # bc calculating slope and yintercepts BETWEEN each simulation beta
-        
+
                 e_hi, dmde_hi= np.loadtxt(dmdedir+sim_beta_files[i]) #np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
 
 
                 # these two if statements needed bc of how interpolation is done
                 # used for ~ 1/3 of data, higher beta have higher spread in e, and this 'mostly' maps out to larger e ranges in sims
                 # e is monotonically increasing, with most negative (most bound) first
-                if min(e_lo) < min(e_hi): 
+                if min(e_lo) < min(e_hi):
                     #print ('min(e_lo) < min(e_hi)','gamma:', g, 'beta high:', self._sim_beta[g][i])
                     dmde_lo = dmde_lo[e_lo > min(e_hi)] # match new e_lo array sliced below
                     e_lo = e_lo[e_lo > min(e_hi)] # cut off first e values up to where e_lo within range of e_hi
@@ -95,23 +95,23 @@ class Fallback(Engine):
                 # dmde.append(dmde_lo) # save to access later in process function --> don't need, can just use interpolations but might not be exact for betas = simulation betas
 
                 # smoothed flash file format
-                
+
                 # Interpolate  e array so that we can create same energy steps for lo and hi arrays.
                 # since using e_lo array, only need to interpolate hi arrays.
                 # (using e_lo array bc it is w/in the energy range of e_hi array)
 
                 # note that x array for CubicSpline needs to be monotonically increasing
                 funchi = interp1d(e_hi, dmde_hi)
-                
-                #funchi = CubicSpline(np.flipud(e_hi), np.flipud(dmde_hi)) 
-                
+
+                #funchi = CubicSpline(np.flipud(e_hi), np.flipud(dmde_hi))
+
                 # get dmde_hi at values of e_lo so I can interpolate in beta
                 dmde_hi_new = funchi(e_lo)
                 #dmde_hi_new = np.flipud(funchi(np.flipud(e_lo)))
 
                 # get slope for linear interpolation (in beta)
                 self._beta_slope[g].append((dmde_hi_new - dmde_lo)/(self._sim_beta[g][i]-self._sim_beta[g][i-1]))
-                
+
                 # get y intercept for linear interpolation (in beta)
                 yinterlo = dmde_lo - self._beta_slope[g][-1]*self._sim_beta[g][i-1]
                 yinterhi = dmde_hi_new - self._beta_slope[g][-1]*self._sim_beta[g][i]
@@ -121,7 +121,7 @@ class Fallback(Engine):
                 e_lo, dmde_lo = e_hi, dmde_hi
 
     def process(self, **kwargs):
-       
+
         beta_interp=True
         beta_outside_range=False
 
@@ -135,11 +135,11 @@ class Fallback(Engine):
         # b = 0 --> min disruption, b = 1 --> full disruption, b = 2 --> max beta of sims
         self._b = kwargs['b'] # change beta to this in parameters.json and tde.json
 
-        if 0 <= self._b < 1 : 
+        if 0 <= self._b < 1 :
             # 0.6 + (1.85 - 0.6)*b --> 0.6 is min disruption beta43, 1.85 is full disruption beta43
             beta43 = 0.6 + 1.25*self._b
             # 0.5 + (0.9 - 0.5)*b --> 0.5 is min disruption beta53, 0.9 is full disruption beta53
-            beta53 = 0.5 + 0.4*self._b 
+            beta53 = 0.5 + 0.4*self._b
 
             self._beta = {'4-3': beta43, '5-3': beta53}
 
@@ -148,12 +148,12 @@ class Fallback(Engine):
             beta53 = 0.9 + 1.6*(self._b - 1)
             self._beta = {'4-3': beta43, '5-3': beta53}
 
-        else: 
+        else:
             print ('b outside range, bmin = 0; bmax = 2; b =', self._b)
             beta_outside_range = True
         #self._beta = kwargs['beta']
-       
-        
+
+
 
         # GET GAMMA VALUE
 
@@ -174,10 +174,10 @@ class Fallback(Engine):
             gfrac =  (kwargs['starmass'] - 15.)/(22. - 15.)
 
 
-        timedict = {} # will hold time arrays for each g in gammas 
+        timedict = {} # will hold time arrays for each g in gammas
         dmdtdict = {} # will hold dmdt arrays for each g in gammas
 
-        for g in gammas:          
+        for g in gammas:
             # find simulation betas to interpolate between
             for i in range(len(self._sim_beta[g])):
                 if self._beta[g]==self._sim_beta[g][i]: # don't need to interpolate, already have dmde and t for this beta
@@ -188,7 +188,7 @@ class Fallback(Engine):
 
                     #print ('exists simulation beta equal to user beta, no beta interpolation necessary, calculating dmdt...')
                     break
-                if self._beta[g]<self._sim_beta[g][i]: 
+                if self._beta[g]<self._sim_beta[g][i]:
                     interp_index_high=i
                     interp_index_low=i-1
                     break
@@ -209,7 +209,7 @@ class Fallback(Engine):
                     else: print ('more than the first value of (the beta interpolated) dmde is negative')
 
                 #----------- CONVERT dm/de --> dm/dt --------------
- 
+
 
                 #if beta_interp == True:
 
@@ -222,10 +222,10 @@ class Fallback(Engine):
                 dmdebound = np.array(dmde[self._energy[g][interp_index_low]<0])
 
 
-                if min(dmdebound)<0: 
+                if min(dmdebound)<0:
 
                     print ('beta, negative dmdebound', self._beta[g], dmdebound[dmdebound<0])
-                    
+
                 # calculate de/dt, time and dm/dt arrays
                 dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in erg/s
 
@@ -233,8 +233,8 @@ class Fallback(Engine):
                 #time = time/(24*3600) # time in days
 
                 dmdt = dmdebound*dedt # in cgs
-                
-                
+
+
                 # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
                 # new dmdt(t[0]) should == min(old dmdt)
                 # use power law to fit : dmdt = b*t^xi
@@ -258,12 +258,12 @@ class Fallback(Engine):
                     while (index1 < 8):  # p should not be larger than 0.3
                         p += 0.1
                         index1 = int(len(prepeakdmdt)*p) #int(ipeak*p)
-                        if p >= 0.3: 
+                        if p >= 0.3:
                             #print ('enter')
                             break
 
 
-                    while (index1-start < 5): # ensure extrapolation will include at least 5 pts 
+                    while (index1-start < 5): # ensure extrapolation will include at least 5 pts
                         start -=1
                         if start == 0: break
 
@@ -272,7 +272,7 @@ class Fallback(Engine):
                     else: index2 = int(len(prepeakdmdt)*0.5) #int(ipeak*0.5)
 
                     #print ('ipeak, p, start, index1, index2', ipeak, p, start, index1, index2)
-                    
+
                     t1 = prepeaktimes[start:index1]
                     d1 = prepeakdmdt[start:index1]
 
@@ -312,37 +312,37 @@ class Fallback(Engine):
         if gamma_interp == True:
 
             np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g4-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+gammas[0]+'b'+str(self._b)+'.txt',
-            (timedict['4-3'], kwargs['efficiency']*dmdtdict['4-3']*c.c.cgs.value*c.c.cgs.value )) 
+            (timedict['4-3'], kwargs['efficiency']*dmdtdict['4-3']*c.c.cgs.value*c.c.cgs.value ))
             np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g5-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
-            (timedict['5-3'], kwargs['efficiency']*dmdtdict['5-3']*c.c.cgs.value*c.c.cgs.value )) 
+            (timedict['5-3'], kwargs['efficiency']*dmdtdict['5-3']*c.c.cgs.value*c.c.cgs.value ))
         '''
         #else: np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gammas[0])+'b'+str(self._b)+'.txt',
         # ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
         # ----------------------------------------
-                
+
         # ---------------- GAMMA INTERPOLATION -------------------
 
         if gamma_interp == True:
 
-            
+
 
             # find indexes of dmdt peaks
-            ipeak43 = np.argmax(dmdtdict['4-3']) 
+            ipeak43 = np.argmax(dmdtdict['4-3'])
             ipeak53 = np.argmax(dmdtdict['5-3'])
 
             tpeak43 = timedict['4-3'][ipeak43]
             tpeak53 = timedict['5-3'][ipeak53]
 
-            
-            # linearly interpolate both time arrays 
+
+            # linearly interpolate both time arrays
             # Note that we expect tpeak53 < tpeak43
-            if tpeak53 < tpeak43: 
+            if tpeak53 < tpeak43:
                 glo = '4-3'
                 ghi = '5-3'
                 timedict['4-3'] = timedict['4-3'] + (tpeak53 - tpeak43)*gfrac # assuming gfrac = 0 for gamma = 4/3, gfrac = 1 for gamma = 5/3
                 timedict['5-3'] = timedict['5-3'] - (tpeak53 - tpeak43)*(1-gfrac)
 
-            else: 
+            else:
                 glo = '5-3'
                 ghi = '4-3'
                 timedict['4-3'] = timedict['4-3'] - (tpeak43 - tpeak53)*gfrac # assuming gfrac = 0 for gamma = 4/3, gfrac = 1 for gamma = 5/3
@@ -366,7 +366,7 @@ class Fallback(Engine):
                 if timedict[glo][-1] < timedict[ghi][-1]: # gamma hi data more spread out at late times
                     # cut off part of ghi array with time > max(glo time array)
                     dmdtdict[ghi] = dmdtdict[ghi][timedict[ghi] < timedict[glo][-1]]
-                    timedict[ghi] = timedict[ghi][timedict[ghi] < timedict[glo][-1]]     
+                    timedict[ghi] = timedict[ghi][timedict[ghi] < timedict[glo][-1]]
 
 
             # now ginterp should be set to the gamma with a time array with a larger range (in both early and late times)
@@ -389,8 +389,8 @@ class Fallback(Engine):
         if gamma_interp == True:
 
             np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g4-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gfrac)+'b'+str(self._b)+'.txt',
-            (time, kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value )) 
-            
+            (time, kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
+
         '''
         # ----------- SCALE dm/dt TO BH & STAR SIZE --------------
 
@@ -400,36 +400,36 @@ class Fallback(Engine):
             print ('in fallback, dense_times NOT in kwargs')
             self._times = kwargs['rest_times']
 
-        # bh mass for dmdt's in astrocrash is 1e6 solar masses 
+        # bh mass for dmdt's in astrocrash is 1e6 solar masses
         # dmdt ~ Mh^(-1/2)
         self._bhmass = kwargs['bhmass']*Msolar # right now kwargs bhmass is in solar masses, want in cgs
         # star mass for dmdts in astrocrash is 1 solar mass
         self._starmass = kwargs['starmass']*Msolar
-        
+
         dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
         time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass)
         tnew = time/(3600 * 24) # time is now in days to match self._times
-                
+
 
 
         # try aligning time of simulation peak with parameter tpeak
-        #self._tpeak = kwargs['tpeak'] # tpeak in days  
+        #self._tpeak = kwargs['tpeak'] # tpeak in days
         #tpeaksim = tnew[np.argmax(dmdt)]
         #tnew = tnew - (tpeaksim - self._tpeak)
         #print ('self._tpeak =', self._tpeak, '; tpeaksim =', tpeaksim)
         #print ('self._times: ', self._times)
         #print ('tnew (sim times): ', tnew)
 
-        # try aligning time = 0 of self._times with  tnew[0] --> first time in 
+        # try aligning time = 0 of self._times with  tnew[0] --> first time in
         # sim data (after doing early time extrapolation)
 
         #index0 = len(np.array(self._times)[np.array(self._times) < 0])
         #tnew = tnew - (tnew[0] - self._times[index0])
 
-        # try aligning first fallback time of simulation 
+        # try aligning first fallback time of simulation
         # (whatever first time is after early t extrapolation) with parameter texplosion
-        self.rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close 
+        self.rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close
         # to texplosion, using this bc it's what's used in transform.py)
         tnew = tnew - (tnew[0] - self.rest_t_explosion)
 
@@ -451,18 +451,18 @@ class Fallback(Engine):
         #timeinterpfunc = CubicSpline(tnew, dmdt)
         timeinterpfunc = interp1d(tnew, dmdt)
 
-    
+
         #lengthpretimes = len(np.ones(len(self._times))[self._times < tnew[0]]) #len(self._times[self._times < tnew[0]])
         lengthpretimes = len(np.where(self._times < tnew[0])[0])
         #lengthposttimes = len(np.ones(len(self._times))[self._times > tnew[-1]]) #len(self._times[self._times > tnew[0]])
-        lengthposttimes = len(np.where(self._times > tnew[-1])[0]) 
+        lengthposttimes = len(np.where(self._times > tnew[-1])[0])
 
         # this removes all extrapolation by setting dmdtnew = 0 outside of bounds of tnew
         dmdt1 = np.zeros(lengthpretimes)
         dmdt3 = np.zeros(lengthposttimes)
         dmdt2 = timeinterpfunc(self._times[lengthpretimes:len(self._times)-lengthposttimes])
         dmdtnew = np.append(dmdt1,dmdt2)
-        dmdtnew = np.append(dmdtnew, dmdt3) 
+        dmdtnew = np.append(dmdtnew, dmdt3)
         #timeinterpfunc(self._times[lengthprepeak:len(self._times)-lengthpostpeak]))
         #dmdtnew = np.concatenate(dmdtnew , np.zeros(lengthpostpeak) )
 
@@ -474,12 +474,12 @@ class Fallback(Engine):
         #if min(self._times) < min(time):
            # dmdtnew = dmdtnew[self._]
 
-        # this assumes t is decreasing 
+        # this assumes t is decreasing
         #dmdtnew = np.flipud(timeinterp(self._times))
 
         # Can uncomment following line to save files for testing
         #np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
-        
+
         self._efficiency = kwargs['efficiency']
         luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value # expected in cgs so ergs/s
 
@@ -489,4 +489,4 @@ class Fallback(Engine):
         #self.testnum += 1
         # ----------------------------------------
 
-        return {'kappagamma': kwargs['kappa'], 'luminosities': luminosities}
+        return {'kappagamma': kwargs['kappa'], 'dense_luminosities': luminosities}
