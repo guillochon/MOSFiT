@@ -571,11 +571,14 @@ class Fitter(object):
 
         for i, pt in enumerate(p0):
             dwscores = []
-            while len(p0[i]) < nwalkers:
+            while len(p0[i]) <= nwalkers:
                 prt.status(
                     self,
                     desc='Drawing initial walkers',
-                    progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
+                    progress=[
+                        i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
+                if len(p0[i]) == nwalkers:
+                    break
 
                 if pool.size == 0:
                     p, score = draw_walker()
@@ -705,25 +708,25 @@ class Fitter(object):
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
                             sampler.chain[:, :, :li, :])
-                        for a in range(1, acorc):
+                        for a in range(acorc, 1, -1):
                             ms = self._burn_in
                             if ms >= emi - low:
                                 break
                             try:
                                 acorts = sampler.get_autocorr_time(
                                     chain=cur_chain, low=low, c=a,
-                                    min_step=ms, fast=False)
+                                    min_step=ms, fast=True)
                                 acort = max([
                                     max(x)
                                     for x in acorts
                                 ])
                             except AutocorrError:
-                                break
+                                continue
                             else:
-                                if a > aa:
-                                    aa = a
-                                    aacort = acort
-                                    ams = ms
+                                aa = a
+                                aacort = acort
+                                ams = ms
+                                break
                         acor = [aacort, aa, ams]
 
                     # Calculate the PSRF (Gelman-Rubin statistic).

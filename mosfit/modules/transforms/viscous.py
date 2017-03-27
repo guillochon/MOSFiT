@@ -28,9 +28,9 @@ class Viscous(Transform):
         lum_func = interp1d(self._dense_times_since_exp,
                             self._dense_luminosities)
         timesteps = self.N_INT_TIMES
-        min_te = min(self._times_since_exp)
+        min_te = min(self._dense_times_since_exp)
 
-        for j, te in enumerate(self._times_since_exp):
+        for j, te in enumerate(self._dense_times_since_exp):
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue
@@ -43,6 +43,7 @@ class Viscous(Transform):
                 continue
 
             if self.logsteps:
+                min_te = 1.0e-4
                 int_times = np.logspace(
                     np.log10(min_te), np.log10(te), num=self.N_INT_TIMES)
                 if int_times[0] < min_te:
@@ -75,4 +76,4 @@ class Viscous(Transform):
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
 
-        return {'luminosities': new_lum}
+        return {'dense_luminosities': new_lum}
