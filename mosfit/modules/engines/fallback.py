@@ -14,6 +14,8 @@ import os
 
 from scipy.interpolate import CubicSpline
 
+from scipy.interpolate import interp1d
+
 from mosfit.modules.engines.engine import Engine
 
 CLASS_NAME = 'Fallback'
@@ -28,6 +30,7 @@ class Fallback(Engine):
 
         super(Fallback, self).__init__(**kwargs) 
         
+        self.testnum = 0
         # load dmde info
 
         #------ DIRECTORY PARAMETERS -> need to change to variable names used in mosfit, then won't have to set any variables here
@@ -98,7 +101,7 @@ class Fallback(Engine):
                 # (using e_lo array bc it is w/in the energy range of e_hi array)
 
                 # note that x array for CubicSpline needs to be monotonically increasing
-                funchi = CubicSpline(e_hi, dmde_hi)
+                funchi = interp1d(e_hi, dmde_hi)
                 
                 #funchi = CubicSpline(np.flipud(e_hi), np.flipud(dmde_hi)) 
                 
@@ -231,14 +234,14 @@ class Fallback(Engine):
 
                 dmdt = dmdebound*dedt # in cgs
                 
-
+                
                 # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
                 # new dmdt(t[0]) should == min(old dmdt)
                 # use power law to fit : dmdt = b*t^xi
 
                 # calculate floor dmdt and t to extrapolate down to this value for early times
-                dfloor = np.min(dmdt)
-
+                dfloor = np.min(dmdt) # needed later in code, not just in extrapolate to early times
+                '''
                 if dmdt[0] >= dfloor*1.01: # not within 1% of floor, extrapolate
 
                     ipeak = np.argmax(dmdt) # index of peak
@@ -299,11 +302,25 @@ class Fallback(Engine):
 
                     time = np.concatenate((textp,time[start+int(indexext) + 1:]))
                     dmdt = np.concatenate((dextp,dmdt[start+int(indexext) + 1:]))
-
+                '''
                 timedict[g] = time
                 dmdtdict[g] = dmdt
 
-            # ---------------- GAMMA INTERPOLATION -------------------
+
+        # ----------------TESTING ----------------
+        '''
+        if gamma_interp == True:
+
+            np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g4-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+gammas[0]+'b'+str(self._b)+'.txt',
+            (timedict['4-3'], kwargs['efficiency']*dmdtdict['4-3']*c.c.cgs.value*c.c.cgs.value )) 
+            np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g5-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
+            (timedict['5-3'], kwargs['efficiency']*dmdtdict['5-3']*c.c.cgs.value*c.c.cgs.value )) 
+        '''
+        #else: np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gammas[0])+'b'+str(self._b)+'.txt',
+        # ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
+        # ----------------------------------------
+                
+        # ---------------- GAMMA INTERPOLATION -------------------
 
         if gamma_interp == True:
 
@@ -317,7 +334,7 @@ class Fallback(Engine):
             tpeak53 = timedict['5-3'][ipeak53]
 
             
-            # shift 'higher' time array so it matches lower one for interpolation
+            # linearly interpolate both time arrays 
             # Note that we expect tpeak53 < tpeak43
             if tpeak53 < tpeak43: 
                 glo = '4-3'
@@ -357,7 +374,7 @@ class Fallback(Engine):
 
             # Interpolate dmdt array corresponding to larger time range gamma to match times of smaller time range gamma
 
-            timeinterpfunc = CubicSpline(timedict[ginterp], dmdtdict[ginterp])
+            timeinterpfunc = interp1d(timedict[ginterp], dmdtdict[ginterp])
             dmdtinterp = timeinterpfunc(timedict[gnointerp])
             time = timedict[gnointerp]
 
@@ -367,11 +384,20 @@ class Fallback(Engine):
             else: # ginterp == '4-3'
                 dmdt = dmdtdict['5-3'] + (dmdtinterp - dmdtdict['5-3'])*(1. - gfrac)
 
+        # ----------------TESTING ----------------
+        '''
+        if gamma_interp == True:
+
+            np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g4-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gfrac)+'b'+str(self._b)+'.txt',
+            (time, kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value )) 
+            
+        '''
         # ----------- SCALE dm/dt TO BH & STAR SIZE --------------
 
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times'] # time in days
         else:
+            print ('in fallback, dense_times NOT in kwargs')
             self._times = kwargs['rest_times']
 
         # bh mass for dmdt's in astrocrash is 1e6 solar masses 
@@ -403,21 +429,46 @@ class Fallback(Engine):
 
         # try aligning first fallback time of simulation 
         # (whatever first time is after early t extrapolation) with parameter texplosion
-        self._texplosion = kwargs['texplosion'] # texplosion in days  
-        tnew = tnew - (tnew[0] - self._texplosion)
+        self.rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close 
+        # to texplosion, using this bc it's what's used in transform.py)
+        tnew = tnew - (tnew[0] - self.rest_t_explosion)
+
+        # try aligning peak luminosity/dmdt with 'texplosion' parameter
+
+        #tpeakindex = np.argmax(dmdt)
+
+        #tnew = tnew - (tnew[tpeakindex] - self.rest_t_explosion)
 
 
-        # this assumes t is increasing
-        timeinterpfunc = CubicSpline(tnew, dmdt)
+        # ----------------TESTING ----------------
+        #if gamma_interp == True:
+        #    np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gfrac)+'b'+str(self._b)+'.txt',
+        #    ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value )) # set time = 0 when explosion goes off
+        #else: np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gammas[0])+'b'+str(self._b)+'.txt',
+        # ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
+        # ----------------------------------------
 
+        #timeinterpfunc = CubicSpline(tnew, dmdt)
+        timeinterpfunc = interp1d(tnew, dmdt)
 
-        # this assumes t is decreasing 
-        #timeinterp = CubicSpline(np.flipud(time), np.flipud(dmdt)) 
+    
+        #lengthpretimes = len(np.ones(len(self._times))[self._times < tnew[0]]) #len(self._times[self._times < tnew[0]])
+        lengthpretimes = len(np.where(self._times < tnew[0])[0])
+        #lengthposttimes = len(np.ones(len(self._times))[self._times > tnew[-1]]) #len(self._times[self._times > tnew[0]])
+        lengthposttimes = len(np.where(self._times > tnew[-1])[0]) 
 
-        # this assumes t is increasing
-        dmdtnew = timeinterpfunc(self._times)
+        # this removes all extrapolation by setting dmdtnew = 0 outside of bounds of tnew
+        dmdt1 = np.zeros(lengthpretimes)
+        dmdt3 = np.zeros(lengthposttimes)
+        dmdt2 = timeinterpfunc(self._times[lengthpretimes:len(self._times)-lengthposttimes])
+        dmdtnew = np.append(dmdt1,dmdt2)
+        dmdtnew = np.append(dmdtnew, dmdt3) 
+        #timeinterpfunc(self._times[lengthprepeak:len(self._times)-lengthpostpeak]))
+        #dmdtnew = np.concatenate(dmdtnew , np.zeros(lengthpostpeak) )
 
-        dmdtnew[dmdtnew < dfloor] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
+        #dmdtnew[ self._times < min(tnew) ] = 0 # try setting early time extrapolated data to zero
+
+        dmdtnew[dmdtnew < 0] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
 
 
         #if min(self._times) < min(time):
@@ -431,5 +482,11 @@ class Fallback(Engine):
         
         self._efficiency = kwargs['efficiency']
         luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value # expected in cgs so ergs/s
+
+        # ----------------TESTING ----------------
+        #np.savetxt('viscoustests/noearlytimeextrap/endfallback/times+lums'+'{:03d}'.format(self.testnum)+'.txt',
+        # ((self._times-self.rest_t_explosion), luminosities)) # set time = 0 when explosion goes off
+        #self.testnum += 1
+        # ----------------------------------------
 
         return {'kappagamma': kwargs['kappa'], 'luminosities': luminosities}

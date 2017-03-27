@@ -20,12 +20,6 @@
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
-    "alpha":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"\\alpha"
-    },
     "b":{
         "kind":"parameter",
         "value":1.0,
@@ -49,12 +43,6 @@
         "value":1.0,
         "class":"parameter",
         "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
-    },
-    "lumscale":{
-        "kind":"parameter",
-        "value":1.0e44,
-        "class":"parameter",
-        "latex":"\\L_{\\rm scale}"
     },
     "kappa":{
         "kind":"parameter",
@@ -100,7 +88,6 @@
             "b",
             "efficiency",
             "tpeak",
-            "lumscale",
             "texplosion"
         ]
     },
@@ -109,10 +96,7 @@
         "inputs":[
             "fallback",
             "kappa",
-            "kappagamma",
-            "mejecta",
             "texplosion",
-            "vejecta",
             "Tviscous"
         ]
     },
@@ -120,7 +104,9 @@
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "viscous"
+            "viscous",
+            "mejecta",
+            "vejecta"
         ]
     },
     "blackbody":{

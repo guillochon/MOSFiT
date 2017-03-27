@@ -4,10 +4,6 @@
         "max_value":1.0e23,
         "log":true
     },
-    "alpha":{
-        "min_value":0.0,
-        "max_value":10.0
-    },
     "b":{
         "min_value":0.0,
         "max_value":2.0
@@ -19,7 +15,7 @@
     },
     "starmass":{
         "min_value":0.1,
-        "max_value":100.0,
+        "max_value":25.0,
         "log":true
     },
     "efficiency":{
@@ -34,11 +30,6 @@
     "Tviscous":{
         "min_value":1e-3,
         "max_value":1e3,
-        "log":true
-    },
-    "lumscale":{
-        "min_value":1.0e38,
-        "max_value":1.0e48,
         "log":true
     },
     "texplosion":{
