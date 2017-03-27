@@ -1,0 +1,143 @@
+{
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1.0e18,
+        "class":"parameter",
+        "latex":"n_{\\rm H,host}"
+    },
+    "texplosion":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+    },
+    "b":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"b\\ (scaled\\ \\beta)"
+    },
+    "efficiency":{
+        "kind":"parameter",
+        "value":0.05,
+        "class":"parameter",
+        "latex":"\\epsilon\\ (efficiency)"
+    },
+    "tpeak":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm peak}"
+    },
+    "Tviscous":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
+    },
+    "kappa":{
+        "kind":"parameter",
+        "value":0.2,
+        "class":"parameter",
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "mejecta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
+    },
+    "vejecta":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "bhmass":{
+        "kind":"parameter",
+        "value":1.0e6,
+        "class":"parameter",
+        "latex":"M_{h} (M_{odot})"
+    },
+    "starmass":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{star} (M_{odot})"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":10.0,
+        "class":"parameter"
+    },
+    "fallback":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",
+            "bhmass",
+            "starmass",
+            "b",
+            "efficiency",
+            "tpeak",
+            "texplosion"
+        ]
+    },
+    "viscous":{
+        "kind":"transform",
+        "inputs":[
+            "fallback",
+            "kappa",
+            "texplosion",
+            "Tviscous"
+        ]
+    },
+    "densecore":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "viscous",
+            "mejecta",
+            "vejecta"
+        ]
+    },
+    "blackbody":{
+        "kind":"sed",
+        "inputs":[
+            "texplosion",
+            "redshift",
+            "densecore",
+            "temperaturephot",
+            "radiusphot"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody",
+            "nhhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "photometry":{
+        "kind":"observable",
+        "inputs":[
+            "losextinction",
+            "lumdist"
+        ]
+    }
+}
