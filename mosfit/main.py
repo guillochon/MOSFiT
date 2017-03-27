@@ -341,6 +341,14 @@ def get_parser():
               "caution."))
 
     parser.add_argument(
+        '--save-full-chain',
+        '-c',
+        dest='save_full_chain',
+        default=False,
+        action='store_true',
+        help=("Save the full chain for each model fit."))
+
+    parser.add_argument(
         '--set-upload-token',
         dest='set_upload_token',
         const=True,

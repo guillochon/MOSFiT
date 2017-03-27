@@ -104,6 +104,7 @@ class Fitter(object):
                    variance_for_each=[],
                    user_fixed_parameters=[],
                    run_until_converged=False,
+                   save_full_chain=False,
                    draw_above_likelihood=False,
                    maximum_walltime=False,
                    start_time=False,
@@ -362,7 +363,8 @@ class Fitter(object):
                             upload=upload,
                             upload_token=upload_token,
                             check_upload_quality=check_upload_quality,
-                            run_until_converged=run_until_converged)
+                            run_until_converged=run_until_converged,
+                            save_full_chain=save_full_chain)
                         entries[ei][mi] = deepcopy(entry)
                         ps[ei][mi] = deepcopy(p)
                         lnprobs[ei][mi] = deepcopy(lnprob)
@@ -525,7 +527,8 @@ class Fitter(object):
                  upload=False,
                  upload_token='',
                  check_upload_quality=True,
-                 run_until_converged=False):
+                 run_until_converged=False,
+                 save_full_chain=False):
         """Fit the data for a given event.
 
         Fitting performed using a combination of emcee and fracking.
@@ -938,9 +941,6 @@ class Fitter(object):
 
         modelnum = entry.add_model(**modeldict)
 
-        # with open('all_chain.json', 'w') as f:
-        #     json.dump(all_chain.tolist(), f)
-
         ri = 1
         if len(all_chain):
             pout = all_chain[:, :, -1, :]
@@ -1049,6 +1049,7 @@ class Fitter(object):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
         if write:
+            prt.wrapped('Writing model output...')
             with io.open(
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                     'w') as flast, io.open(os.path.join(
@@ -1058,6 +1059,20 @@ class Fitter(object):
                         '.json'), 'w') as feven:
                 entabbed_json_dump(oentry, flast, separators=(',', ':'))
                 entabbed_json_dump(oentry, feven, separators=(',', ':'))
+
+            if save_full_chain:
+                prt.wrapped('Writing full chain...')
+                with io.open(
+                    os.path.join(model.MODEL_OUTPUT_DIR,
+                                 'chain.json'), 'w') as flast, io.open(
+                        os.path.join(model.MODEL_OUTPUT_DIR,
+                                     self._event_name + '_chain' + (
+                                         ('_' + suffix) if suffix else '') +
+                                     '.json'), 'w') as feven:
+                    entabbed_json_dump(all_chain.tolist(),
+                                       flast, separators=(',', ':'))
+                    entabbed_json_dump(all_chain.tolist(),
+                                       feven, separators=(',', ':'))
 
         if upload_this:
             uentry.sanitize()
