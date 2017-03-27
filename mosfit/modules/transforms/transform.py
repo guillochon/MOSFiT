@@ -1,16 +1,14 @@
+"""Definitions for the `Transform` class."""
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'Transform'
+# Important: Only define one ``Module`` class per file.
 
 
 class Transform(Module):
-    """Parent class for transforms.
-    """
-
-    def process(self, **kwargs):
-        return {}
+    """Parent class for transforms."""
 
     def set_times_lums(self, **kwargs):
+        """Set `dense_*` and `*_since_exp` times/luminosities keys."""
         self._times = kwargs['rest_times']
         self._rest_t_explosion = kwargs['resttexplosion']
         if 'dense_times' in kwargs:

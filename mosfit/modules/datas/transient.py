@@ -1,23 +1,27 @@
+"""Definitions for the `Transient` class."""
+from collections import OrderedDict
+
 import inflect
 import numpy as np
-
 from mosfit.modules.module import Module
 from mosfit.utils import is_number, listify
 
-CLASS_NAME = 'Transient'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class Transient(Module):
-    """Structure to store transient data.
-    """
+    """Structure to store transient data."""
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Transient, self).__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
         self._data_determined_parameters = []
         self._inflect = inflect.engine()
 
     def process(self, **kwargs):
+        """Process module."""
         return self._data
 
     def set_data(self,
@@ -33,8 +37,9 @@ class Transient(Module):
                  band_systems=[],
                  band_instruments=[],
                  band_bandsets=[]):
+        """Set transient data."""
         self._all_data = all_data
-        self._data = {}
+        self._data = OrderedDict()
         if not self._all_data:
             return
         name = list(self._all_data.keys())[0]
@@ -69,7 +74,7 @@ class Transient(Module):
                             is_number(y) and not np.isnan(float(y))
                             for y in entry[x]
                         ])) or not is_number(entry[x]) or
-                                        np.isnan(float(entry[x])))
+                        np.isnan(float(entry[x])))
                         for x in num_subkeys
                 ]):
                     continue
@@ -109,7 +114,8 @@ class Transient(Module):
                         continue
 
                     if (('magnitude' in entry) != ('band' in entry) or
-                        ('fluxdensity' in entry) != ('frequency' in entry)):
+                            ('fluxdensity' in entry) !=
+                            ('frequency' in entry)):
                         continue
 
                 for x in subkeys:
@@ -126,7 +132,7 @@ class Transient(Module):
             print('No fittable data in `{}`!'.format(name))
             return False
 
-        for key in self._data.copy():
+        for key in list(self._data.keys()):
             if isinstance(self._data[key], list):
                 if not any(is_number(x) for x in self._data[key]):
                     continue
@@ -213,4 +219,5 @@ class Transient(Module):
         return True
 
     def get_data_determined_parameters(self):
+        """Return list of parameters determined by data."""
         return self._data_determined_parameters

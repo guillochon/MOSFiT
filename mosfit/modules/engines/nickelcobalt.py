@@ -1,14 +1,16 @@
+"""Definitions for the `NickelCobalt` class."""
 from math import isnan
 
 import numpy as np
+
 from mosfit.modules.engines.engine import Engine
 
-CLASS_NAME = 'NickelCobalt'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class NickelCobalt(Engine):
-    """Nickel/Cobalt decay engine
-    """
+    """Nickel/Cobalt decay engine."""
 
     NI56_LUM = 6.45e43
     CO56_LUM = 1.45e43
@@ -16,6 +18,7 @@ class NickelCobalt(Engine):
     CO56_LIFE = 111.3
 
     def process(self, **kwargs):
+        """Process module."""
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:

@@ -1,26 +1,31 @@
+"""Definitions for the `Photometry` class."""
 import csv
 import json
 import os
 import shutil
 from collections import OrderedDict
+from copy import deepcopy
 
 import numpy as np
+from astropy import units as u
 from astropy.io.votable import parse as voparse
-
-from mosfit.constants import AB_OFFSET, FOUR_PI, MAG_FAC, MPC_CGS
+from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import get_url_file_handle, listify, print_inline, syst_syns
+from mosfit.utils import get_url_file_handle, listify, syst_syns
 
-CLASS_NAME = 'Photometry'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class Photometry(Module):
-    """Band-pass filters.
-    """
+    """Band-pass filters."""
+
+    FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
+    ANG_CGS = u.Angstrom.cgs.scale
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(Photometry, self).__init__(**kwargs)
-        self._preprocessed = False
         self._bands = []
 
         bands = kwargs.get('bands', '')
@@ -52,8 +57,8 @@ class Photometry(Module):
                 for bnd in rule.get('filters', []):
                     if band == bnd or band == '':
                         for perm in sysinstperms:
-                            new_band = rule['filters'][bnd].copy()
-                            new_band.update(perm.copy())
+                            new_band = deepcopy(rule['filters'][bnd])
+                            new_band.update(deepcopy(perm))
                             new_band['name'] = bnd
                             band_list.append(new_band)
 
@@ -72,7 +77,7 @@ class Photometry(Module):
         self._band_offsets = [0.0] * self._n_bands
 
         if self._pool.is_master():
-            vo_tabs = {}
+            vo_tabs = OrderedDict()
 
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
@@ -102,8 +107,8 @@ class Photometry(Module):
                                     '/svo/theory/fps3/'
                                     'fps.php?PhotCalID=' + svopath,
                                     timeout=10)
-                            except:
-                                print_inline(
+                            except Exception:
+                                self._printer.inline(
                                     'Warning: Could not download SVO filter '
                                     '(are you online?), using cached filter.')
                             else:
@@ -176,13 +181,16 @@ class Photometry(Module):
                 map(list, zip(*rows)))
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = np.trapz(self._transmissions[i],
-                                                 self._band_wavelengths[i])
+            self._filter_integrals[i] = self.FLUX_STD * np.trapz(
+                np.array(self._transmissions[i]) /
+                np.array(self._band_wavelengths[i]) ** 2,
+                self._band_wavelengths[i])
             self._average_wavelengths[i] = np.trapz([
                 x * y
                 for x, y in zip(self._transmissions[i], self._band_wavelengths[
                     i])
-            ], self._band_wavelengths[i]) / self._filter_integrals[i]
+            ], self._band_wavelengths[i]) / np.trapz(self._transmissions[i],
+                                                     self._band_wavelengths[i])
 
             if 'offset' in band:
                 self._band_offsets[i] = band['offset']
@@ -190,6 +198,7 @@ class Photometry(Module):
                 self._band_offsets[i] = zps[-1]
 
     def find_band_index(self, band, instrument='', bandset='', system=''):
+        """Find the index corresponding to the provided band information."""
         for i in range(4):
             for bi, bnd in enumerate(self._unique_bands):
                 if (i == 0 and band == bnd['name'] and
@@ -215,14 +224,16 @@ class Photometry(Module):
                                                          instrument, system))
 
     def process(self, **kwargs):
+        """Process module."""
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS)**2
+        self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
         self._systems = kwargs['systems']
         self._instruments = kwargs['instruments']
         self._bandsets = kwargs['bandsets']
+        self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
@@ -239,26 +250,69 @@ class Photometry(Module):
                 eff_fluxes[li] = np.trapz(
                     yvals, dx=dx) / self._filter_integrals[bi]
             else:
-                eff_fluxes[li] = kwargs['seds'][li][0]
+                eff_fluxes[li] = kwargs['seds'][li][0] / self.ANG_CGS * (
+                    C_CGS / (self._frequencies[li] ** 2))
         nbs = np.array(self._band_indices) < 0
         ybs = np.array(self._band_indices) >= 0
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
         return {'model_observations': observations}
 
-    def band_names(self):
+    def average_wavelengths(self, indices=None):
+        """Return average wavelengths for specified band indices."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._average_wavelengths) if i in indices]
+        return self._average_wavelengths
+
+    def band_names(self, indices=None):
+        """Return the list of unique band names."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._band_names) if i in indices]
         return self._band_names
 
     def abmag(self, eff_fluxes, offsets):
+        """Convert fluxes into AB magnitude."""
         mags = np.full(len(eff_fluxes), np.inf)
         mags[eff_fluxes !=
-             0.0] = AB_OFFSET - offsets[eff_fluxes != 0.0] - MAG_FAC * (
+             0.0] = - offsets[eff_fluxes != 0.0] - MAG_FAC * (
                  np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
         return mags
 
+    def set_variance_bands(self, band_pairs):
+        """Set band (or pair of bands) that variance will be anchored to."""
+        self._variance_bands = []
+        for i, wave in enumerate(self._average_wavelengths):
+            match_found = False
+            for pwave, band in band_pairs:
+                if wave == pwave:
+                    self._variance_bands.append(band)
+                    match_found = True
+                    break
+            if not match_found:
+                for bpi, (pwave, band) in enumerate(band_pairs):
+                    if wave < pwave:
+                        if bpi > 0:
+                            frac = ((wave - band_pairs[bpi - 1][0]) /
+                                    (pwave - band_pairs[bpi - 1][0]))
+                            self._variance_bands.append(
+                                [frac, [x[1] for x in
+                                        band_pairs[bpi - 1:bpi + 1]]])
+                        else:
+                            self._variance_bands.append(band)
+                        break
+                    if bpi == len(band_pairs) - 1:
+                        self._variance_bands.append(band)
+
     def send_request(self, request):
+        """Send requests to other modules."""
         if request == 'photometry':
             return self
         elif request == 'band_wave_ranges':
             return list(map(list, zip(*[self._min_waves, self._max_waves])))
+        elif request == 'average_wavelengths':
+            return self._average_wavelengths
+        elif request == 'variance_bands':
+            return getattr(self, '_variance_bands', [])
         return []

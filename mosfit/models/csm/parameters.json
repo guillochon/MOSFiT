@@ -8,6 +8,11 @@
         "min_value":-500.0,
         "max_value":500.0
     },
+    "temperature":{
+        "min_value":1.0,
+        "max_value":10000,
+        "log":true
+    },
     "n":{
         "value":12.0
     },
@@ -40,6 +45,16 @@
     "variance":{
         "min_value":1.0e-5,
         "max_value":1.0e1,
+        "log":true
+    },
+    "codeltatime":{
+        "min_value":1.0e-3,
+        "max_value":1.0e3,
+        "log":true
+    },
+    "codeltalambda":{
+        "min_value":1.0e-1,
+        "max_value":1.0e6,
         "log":true
     }
 }

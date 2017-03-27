@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-import datetime
+"""Definitions for `Fitter` class."""
 import io
 import json
 import os
@@ -12,21 +12,24 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
+import dropbox
 import numpy as np
+import scipy
+from emcee.autocorr import AutocorrError
+from mosfit.mossampler import MOSSampler
+from mosfit.printer import Printer
+from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
+                          entabbed_json_dumps, flux_density_unit,
+                          frequency_unit, get_model_hash, get_url_file_handle,
+                          is_number, listify, pretty_num)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
-import emcee
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
-from emcee.autocorr import AutocorrError
-from mosfit.__init__ import __version__
-from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
-                          flux_density_unit, frequency_unit, get_model_hash,
-                          get_url_file_handle, is_number, pretty_num,
-                          print_inline, print_wrapped, prompt)
-from schwimmbad import MPIPool, SerialPool
 
 from .model import Model
 
@@ -34,30 +37,36 @@ warnings.filterwarnings("ignore")
 
 
 def draw_walker(test=True):
+    """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test)
+    return model.draw_walker(test)  # noqa: F821
 
 
 def likelihood(x):
+    """Return a likelihood score using the global model variable."""
     global model
-    return model.likelihood(x)
+    return model.likelihood(x)  # noqa: F821
 
 
 def prior(x):
+    """Return a prior score using the global model variable."""
     global model
-    return model.prior(x)
+    return model.prior(x)  # noqa: F821
 
 
 def frack(x):
+    """Frack at the specified parameter combination."""
     global model
-    return model.frack(x)
+    return model.frack(x)  # noqa: F821
 
 
-class Fitter():
-    """Fit transient events with the provided model.
-    """
+class Fitter(object):
+    """Fit transient events with the provided model."""
+
+    _MAX_ACORC = 5
 
     def __init__(self):
+        """Initialize `Fitter`."""
         pass
 
     def fit_events(self,
@@ -71,13 +80,14 @@ class Fitter():
                    band_bandsets=[],
                    iterations=1000,
                    num_walkers=50,
-                   num_temps=2,
-                   parameter_paths=[],
+                   num_temps=1,
+                   parameter_paths=[''],
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
                    travis=False,
                    post_burn=500,
+                   gibbs=False,
                    smooth_times=-1,
                    extrapolate_time=0.0,
                    limit_fitting_mjds=False,
@@ -86,21 +96,60 @@ class Fitter():
                    suffix='',
                    offline=False,
                    upload=False,
+                   write=False,
+                   quiet=False,
                    upload_token='',
                    check_upload_quality=False,
+                   printer=None,
+                   variance_for_each=[],
+                   user_fixed_parameters=[],
+                   run_until_converged=False,
+                   save_full_chain=False,
+                   draw_above_likelihood=False,
+                   maximum_walltime=False,
+                   start_time=False,
                    **kwargs):
+        """Fit a list of events with a list of models."""
+        if start_time is False:
+            start_time = time.time()
+        self._start_time = start_time
+        self._maximum_walltime = maximum_walltime
+
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
         self._wrap_length = wrap_length
+        self._draw_above_likelihood = draw_above_likelihood
+
+        if not printer:
+            self._printer = Printer(wrap_length=wrap_length, quiet=quiet)
+        else:
+            self._printer = printer
+
+        prt = self._printer
+
+        event_list = listify(events)
+        model_list = listify(models)
+
+        if not len(event_list) and not len(model_list):
+            self._printer.wrapped(
+                'No events or models specified, initializing and then '
+                'exiting.', warning=True)
+
+        entries = [[None for y in range(len(model_list))] for
+                   x in range(len(event_list))]
+        ps = [[None for y in range(len(model_list))] for
+              x in range(len(event_list))]
+        lnprobs = [[None for y in range(len(model_list))] for
+                   x in range(len(event_list))]
 
         self._event_name = 'Batch'
-        for event in events:
+        for ei, event in enumerate(event_list):
             self._event_name = ''
             self._event_path = ''
             if event:
                 try:
                     pool = MPIPool()
-                except:
+                except Exception:
                     pool = SerialPool()
                 if pool.is_master():
                     path = ''
@@ -114,22 +163,20 @@ class Fitter():
                         names_path = os.path.join(dir_path, 'cache',
                                                   'names.min.json')
                         input_name = event.replace('.json', '')
-                        print_wrapped(
+                        prt.wrapped(
                             'Event `{}` interpreted as supernova '
                             'name, downloading list of supernova '
-                            'aliases...'.format(input_name),
-                            wrap_length=self._wrap_length)
+                            'aliases...'.format(input_name))
                         if not offline:
                             try:
                                 response = get_url_file_handle(
                                     'https://sne.space/astrocats/astrocats/'
                                     'supernovae/output/names.min.json',
                                     timeout=10)
-                            except:
-                                print_wrapped(
+                            except Exception:
+                                prt.wrapped(
                                     'Warning: Could not download SN names ('
-                                    'are you online?), using cached list.',
-                                    wrap_length=self._wrap_length)
+                                    'are you online?), using cached list.')
                                 raise
                             else:
                                 with open(names_path, 'wb') as f:
@@ -139,9 +186,12 @@ class Fitter():
                                 names = json.load(
                                     f, object_pairs_hook=OrderedDict)
                         else:
-                            print('Error: Could not read list of SN names!')
+                            self._printer.wrapped(
+                                'Warning: Could not read list of SN names!',
+                                warning=True)
                             if offline:
-                                print('Try omitting the `--offline` flag.')
+                                self._printer.wrapped(
+                                    'Try omitting the `--offline` flag.')
                             raise RuntimeError
 
                         if event in names:
@@ -156,68 +206,66 @@ class Fitter():
                             namekeys = []
                             for name in names:
                                 namekeys.extend(names[name])
-                            matches = set(
-                                get_close_matches(
-                                    event, namekeys, n=5, cutoff=0.8))
+                            namekeys = list(sorted(set(namekeys)))
+                            matches = get_close_matches(
+                                event, namekeys, n=5, cutoff=0.8)
                             # matches = []
                             if len(matches) < 5 and is_number(event[0]):
-                                print_wrapped(
+                                prt.wrapped(
                                     'Could not find event, performing '
-                                    'extended name search...',
-                                    wrap_length=self._wrap_length)
+                                    'extended name search...')
                                 snprefixes = set(('SN19', 'SN20'))
                                 for name in names:
                                     ind = re.search("\d", name)
                                     if ind and ind.start() > 0:
                                         snprefixes.add(name[:ind.start()])
-                                snprefixes = list(snprefixes)
+                                snprefixes = list(sorted(snprefixes))
                                 for prefix in snprefixes:
                                     testname = prefix + event
                                     new_matches = get_close_matches(
                                         testname, namekeys, cutoff=0.95, n=1)
-                                    if len(new_matches):
-                                        matches.add(new_matches[0])
+                                    if (len(new_matches) and
+                                            new_matches[0] not in matches):
+                                        matches.append(new_matches[0])
                                     if len(matches) == 5:
                                         break
                             if len(matches):
                                 if travis:
-                                    response = list(matches)[0]
+                                    response = matches[0]
                                 else:
-                                    response = prompt(
+                                    response = prt.prompt(
                                         'No exact match to given event '
                                         'found. Did you mean one of the '
                                         'following events?',
                                         kind='select',
-                                        options=list(matches))
+                                        options=matches)
                                 if response:
                                     for name in names:
                                         if response in names[name]:
                                             self._event_name = name
                                             break
                         if not self._event_name:
-                            print_wrapped('Could not find event by that name, '
-                                          'skipping!', self._wrap_length)
+                            prt.wrapped(
+                                'Could not find event by that name, skipping!')
                             continue
                         urlname = self._event_name + '.json'
                         name_path = os.path.join(dir_path, 'cache', urlname)
 
                         if not offline:
-                            print_wrapped(
+                            prt.wrapped(
                                 'Found event by primary name `{}` in the OSC, '
-                                'downloading data...'.format(self._event_name),
-                                wrap_length=self._wrap_length)
+                                'downloading data...'.format(self._event_name))
                             try:
                                 response = get_url_file_handle(
                                     'https://sne.space/astrocats/astrocats/'
                                     'supernovae/output/json/' + urlname,
                                     timeout=10)
-                            except:
-                                print_wrapped(
+                            except Exception:
+                                prt.wrapped(
                                     'Warning: Could not download data for '
                                     ' `{}`, '
                                     'will attempt to use cached data.'.format(
-                                        self._event_name),
-                                    wrap_length=self._wrap_length)
+                                        self._event_name))
                             else:
                                 with open(name_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -226,15 +274,15 @@ class Fitter():
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
-                        print_wrapped('Event file:', self._wrap_length)
-                        print_wrapped('  ' + path, self._wrap_length)
+                        prt.wrapped('Event file:')
+                        prt.wrapped('  ' + path)
                     else:
-                        print_wrapped(
+                        prt.wrapped(
                             'Error: Could not find data for `{}` locally or '
-                            'on the OSC.'.format(self._event_name),
-                            self._wrap_length)
+                            'on the OSC.'.format(self._event_name))
                         if offline:
-                            print('Try omitting the `--offline` flag.')
+                            prt.wrapped(
+                                'Try omitting the `--offline` flag.')
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
@@ -252,20 +300,22 @@ class Fitter():
                 if pool.is_master():
                     pool.close()
 
-            for mod_name in models:
+            for mi, mod_name in enumerate(model_list):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
-                    except:
+                    except Exception:
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
+                        fitter=self,
                         pool=pool)
 
                     if not event:
-                        print('No event specified, generating dummy data.')
+                        self._printer.wrapped(
+                            'No event specified, generating dummy data.')
                         self._event_name = mod_name
                         gen_args = {
                             'name': mod_name,
@@ -293,10 +343,12 @@ class Fitter():
                         band_systems=band_systems,
                         band_instruments=band_instruments,
                         band_bandsets=band_bandsets,
+                        variance_for_each=variance_for_each,
+                        user_fixed_parameters=user_fixed_parameters,
                         pool=pool)
 
                     if success:
-                        self.fit_data(
+                        entry, p, lnprob = self.fit_data(
                             event_name=self._event_name,
                             iterations=iterations,
                             num_walkers=num_walkers,
@@ -304,14 +356,23 @@ class Fitter():
                             fracking=fracking,
                             frack_step=frack_step,
                             post_burn=post_burn,
+                            gibbs=gibbs,
                             pool=pool,
                             suffix=suffix,
+                            write=write,
                             upload=upload,
                             upload_token=upload_token,
-                            check_upload_quality=check_upload_quality)
+                            check_upload_quality=check_upload_quality,
+                            run_until_converged=run_until_converged,
+                            save_full_chain=save_full_chain)
+                        entries[ei][mi] = deepcopy(entry)
+                        ps[ei][mi] = deepcopy(p)
+                        lnprobs[ei][mi] = deepcopy(lnprob)
 
                     if pool.is_master():
                         pool.close()
+
+        return (entries, ps, lnprobs)
 
     def load_data(self,
                   data,
@@ -328,10 +389,11 @@ class Fitter():
                   band_systems=[],
                   band_instruments=[],
                   band_bandsets=[],
+                  variance_for_each=[],
+                  user_fixed_parameters=[],
                   pool=''):
-        """Fit the data for a given event with this model using a combination
-        of emcee and fracking.
-        """
+        """Load the data for the specified event."""
+        prt = self._printer
         fixed_parameters = []
         for task in self._model._call_stack:
             cur_task = self._model._call_stack[task]
@@ -355,21 +417,61 @@ class Fitter():
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
 
+            # Fix user-specified parameters.
+            for fi, param in enumerate(user_fixed_parameters):
+                if (task == param or
+                        self._model._call_stack[task].get(
+                            'class', '') == param):
+                    fixed_parameters.append(task)
+                    if fi < len(user_fixed_parameters) - 1 and is_number(
+                            user_fixed_parameters[fi + 1]):
+                        value = float(user_fixed_parameters[fi + 1])
+                        if value not in self._model._call_stack:
+                            self._model._call_stack[task]['value'] = value
+                    if 'min_value' in self._model._call_stack[task]:
+                        del self._model._call_stack[task]['min_value']
+                    if 'max_value' in self._model._call_stack[task]:
+                        del self._model._call_stack[task]['max_value']
+                    self._model._modules[task].fix_value(
+                        self._model._call_stack[task]['value'])
+
         self._model.determine_free_parameters(fixed_parameters)
 
         self._model.exchange_requests()
 
-        # Run through once to set all inits
-        outputs = self._model.run_stack(
-            [0.0 for x in range(self._model._num_free_parameters)],
-            root='output')
+        # Run through once to set all inits.
+        for root in ['output', 'objective']:
+            outputs = self._model.run_stack(
+                [0.0 for x in range(self._model._num_free_parameters)],
+                root=root)
+
+        # Create any data-dependent free parameters.
+        self._model.create_data_dependent_free_parameters(
+            variance_for_each, outputs)
+
+        # Determine free parameters again as above may have changed them.
+        self._model.determine_free_parameters(fixed_parameters)
+
+        self._model.determine_number_of_measurements()
+
+        self._model.exchange_requests()
+
+        # Reset modules
+        for task in self._model._call_stack:
+            self._model._modules[task].reset_preprocessed()
+
+        # Run through inits once more.
+        for root in ['output', 'objective']:
+            outputs = self._model.run_stack(
+                [0.0 for x in range(self._model._num_free_parameters)],
+                root=root)
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            print_wrapped('Bands being used for current transient:',
-                          self._wrap_length)
+            prt.wrapped('Bands being used for current transient:')
             bis = list(
-                filter(lambda a: a != -1, set(outputs['all_band_indices'])))
+                filter(lambda a: a != -1,
+                       sorted(set(outputs['all_band_indices']))))
             ois = []
             for bi in bis:
                 ois.append(
@@ -392,18 +494,20 @@ class Fitter():
                 ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
                 .ljust(band_len) + ' [' + ', '.join(
                     list(
-                        filter(None, ('Bandset: ' + s[1] if s[
-                            1] else '', 'System: ' + s[0] if s[0] else '',
-                                      'AB offset: ' + pretty_num(s[3]))))) +
+                        filter(None, (
+                            'Bandset: ' + s[1] if s[1] else '',
+                            'System: ' + s[0] if s[0] else '',
+                            'AB offset: ' + pretty_num(s[3]))))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
-            print('\n'.join(filterrows))
+            self._printer.prt('\n'.join(filterrows))
 
         self._event_name = event_name
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
         self._fracking = fracking
+        self._post_burn = post_burn
         self._burn_in = max(iterations - post_burn, 0)
 
         return True
@@ -413,201 +517,373 @@ class Fitter():
                  iterations=2000,
                  frack_step=20,
                  num_walkers=50,
-                 num_temps=2,
+                 num_temps=1,
                  fracking=True,
                  post_burn=500,
+                 gibbs=False,
                  pool='',
                  suffix='',
+                 write=False,
                  upload=False,
                  upload_token='',
-                 check_upload_quality=True):
-        """Fit the data for a given event with this model using a combination
-        of emcee and fracking.
-        """
+                 check_upload_quality=True,
+                 run_until_converged=False,
+                 save_full_chain=False):
+        """Fit the data for a given event.
 
+        Fitting performed using a combination of emcee and fracking.
+        """
+        from mosfit.__init__ import __version__
         global model
         model = self._model
+        prt = self._printer
 
         upload_this = upload and iterations > 0
 
         if not pool.is_master():
             try:
                 pool.wait()
-            except KeyboardInterrupt:
+            except (KeyboardInterrupt, SystemExit):
                 pass
-            return
+            return (None, None, None)
 
         ntemps, ndim, nwalkers = (num_temps, model._num_free_parameters,
                                   num_walkers)
 
         test_walker = iterations > 0
         lnprob = None
+        lnlike = None
         pool_size = max(pool.size, 1)
+        # Derived so only half a walker redrawn with Gaussian distribution.
+        redraw_mult = 1.0 * np.sqrt(
+            2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        print('{} dimensions in problem.\n\n'.format(ndim))
+        self._printer.prt(
+            '{} measurements, {} free parameters.'.format(
+                model._num_measurements, ndim))
+        if model._num_measurements <= ndim:
+            self._printer.wrapped(
+                'Warning: Number of free parameters exceeds number of '
+                'measurements. Please treat results with caution.',
+                warning=True)
+        self._printer.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
+            dwscores = []
             while len(p0[i]) < nwalkers:
-                self.print_status(
+                prt.status(
+                    self,
                     desc='Drawing initial walkers',
                     progress=[i * nwalkers + len(p0[i]), nwalkers * ntemps])
 
-                nmap = nwalkers - len(p0[i])
-                p0[i].extend(pool.map(draw_walker, [test_walker] * nmap))
+                if pool.size == 0:
+                    p, score = draw_walker()
+                    p0[i].append(p)
+                    dwscores.append(score)
+                else:
+                    nmap = nwalkers - len(p0[i])
+                    dws = pool.map(draw_walker, [test_walker] * nmap)
+                    p0[i].extend([x[0] for x in dws])
+                    dwscores.extend([x[1] for x in dws])
 
-        sampler = emcee.PTSampler(
+                if self._draw_above_likelihood is not False:
+                    self._draw_above_likelihood = np.mean(dwscores)
+
+        sampler = MOSSampler(
             ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
 
-        print_inline('Initial draws completed!')
-        print('\n\n')
+        prt.inline('Initial draws completed!')
+        self._printer.prt('\n\n')
         p = list(p0)
+
+        emi = 0
+        tft = 0.0  # Total fracking time
+        acor = None
+        aacort = -1
+        aa = 0
+        psrf = np.inf
+        s_exception = None
+        all_chain = []
 
         try:
             st = time.time()
-            tft = 0.0  # Total fracking time
+
+            max_chunk = 1000
+            iter_chunks = int(np.ceil(float(iterations) / max_chunk))
+            iter_arr = [max_chunk if xi < iter_chunks - 1 else
+                        iterations - max_chunk * (iter_chunks - 1)
+                        for xi, x in enumerate(range(iter_chunks))]
+            # Make sure a chunk separation is located at self._burn_in
+            chunk_is = sorted(set(
+                np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
+            iter_arr = np.diff(chunk_is)
 
             # The argument of the for loop runs emcee, after each iteration of
             # emcee the contents of the for loop are executed.
-            for emi, (p, lnprob, lnlike
-                      ) in enumerate(sampler.sample(
-                          p, iterations=iterations)):
-                emi1 = emi + 1
-                messages = []
-
-                # First, redraw any walkers with scores significantly worse
-                # than their peers.
-                maxmedstd = [(np.max(x + y), np.mean(x + y), np.median(x + y),
-                              np.var(x + y)) for x, y in zip(lnprob, lnlike)]
-                redraw_count = 0
-                bad_redraws = 0
-                for ti, tprob in enumerate(lnprob):
-                    for wi, wprob in enumerate(tprob):
-                        tot_score = wprob + lnlike[ti][wi]
-                        if (tot_score <= maxmedstd[ti][1] - 2.0 *
-                                maxmedstd[ti][3] or tot_score <=
-                            (maxmedstd[ti][0] - 2.0 *
-                             (maxmedstd[ti][0] - maxmedstd[ti][2])) or
-                                np.isnan(tot_score)):
-                            redraw_count = redraw_count + 1
-                            dxx = np.random.normal(scale=0.001, size=ndim)
-                            tar_x = np.array(p[np.random.randint(ntemps)][
-                                np.random.randint(nwalkers)])
-                            new_x = np.clip(tar_x + dxx, 0.0, 1.0)
-                            new_prob = likelihood(new_x)
-                            new_like = prior(new_x)
-                            if (new_prob + new_like > tot_score or
-                                    np.isnan(tot_score)):
-                                p[ti][wi] = new_x
-                                lnprob[ti][wi] = new_prob
-                                lnlike[ti][wi] = new_like
-                            else:
-                                bad_redraws = bad_redraws + 1
-                if redraw_count > 0:
-                    messages.append('{:.1%} redraw, {}/{} success'.format(
-                        redraw_count / (nwalkers * ntemps), redraw_count -
-                        bad_redraws, redraw_count))
-                low = 10
-                asize = 0.1 * 0.5 * emi
-                acorc = max(1, min(10, int(np.floor(asize / low))))
-                acort = -1.0
-                aa = 1
-                for a in range(acorc, 0, -1):
-                    try:
-                        acort = max([
-                            max(x)
-                            for x in sampler.get_autocorr_time(
-                                low=low, c=a)
-                        ])
-                    except AutocorrError as e:
-                        continue
-                    else:
-                        aa = a
+            converged = False
+            exceeded_walltime = False
+            ici = 0
+            while run_until_converged or ici < len(iter_arr):
+                ic = max_chunk if run_until_converged else iter_arr[ici]
+                if exceeded_walltime:
+                    break
+                if run_until_converged and converged:
+                    break
+                for li, (
+                        p, lnprob, lnlike) in enumerate(
+                            sampler.sample(
+                                p, iterations=ic, gibbs=gibbs if
+                                emi >= self._burn_in else True)):
+                    if (self._maximum_walltime is not False and
+                            time.time() - self._start_time >
+                            self._maximum_walltime):
+                        self._printer.wrapped(
+                            'Walltime exceeded, exiting...', warning=True)
+                        exceeded_walltime = True
                         break
-                acor = [acort, aa]
-                self._emcee_est_t = float(time.time() - st - tft) / emi1 * (
-                    iterations - emi1) + tft / emi1 * max(0, self._burn_in -
-                                                          emi1)
+                    emi = emi + 1
+                    emim1 = emi - 1
+                    messages = []
 
-                # Perform fracking if we are still in the burn in phase and
-                # iteration count is a multiple of the frack step.
-                frack_now = (fracking and emi1 <= self._burn_in and
-                             emi1 % frack_step == 0)
+                    # Record then reset sampler proposal/acceptance counts.
+                    accepts = list(
+                        np.mean(sampler.nprop_accepted / sampler.nprop,
+                                axis=1))
+                    sampler.nprop = np.zeros(
+                        (sampler.ntemps, sampler.nwalkers), dtype=np.float)
+                    sampler.nprop_accepted = np.zeros(
+                        (sampler.ntemps, sampler.nwalkers),
+                        dtype=np.float)
 
-                scores = [
-                    np.array(x) + np.array(y) for x, y in zip(lnprob, lnlike)
-                ]
-                self.print_status(
-                    desc='Fracking' if frack_now else 'Walking',
-                    scores=scores,
-                    progress=[emi1, iterations],
-                    acor=acor,
-                    messages=messages)
+                    # First, redraw any walkers with scores significantly
+                    # worse than their peers (only during burn-in).
+                    if emim1 <= self._burn_in:
+                        pmedian = [np.median(x) for x in lnprob]
+                        pmead = [np.mean([abs(y - pmedian) for y in x])
+                                 for x in lnprob]
+                        redraw_count = 0
+                        bad_redraws = 0
+                        for ti, tprob in enumerate(lnprob):
+                            for wi, wprob in enumerate(tprob):
+                                if (wprob <= pmedian[ti] -
+                                    max(redraw_mult * pmead[ti],
+                                        float(nwalkers)) or
+                                        np.isnan(wprob)):
+                                    redraw_count = redraw_count + 1
+                                    dxx = np.random.normal(
+                                        scale=0.01, size=ndim)
+                                    tar_x = np.array(
+                                        p[np.random.randint(ntemps)][
+                                            np.random.randint(nwalkers)])
+                                    new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                    new_like = likelihood(new_x)
+                                    new_prob = new_like + prior(new_x)
+                                    if new_prob > wprob or np.isnan(wprob):
+                                        p[ti][wi] = new_x
+                                        lnlike[ti][wi] = new_like
+                                        lnprob[ti][wi] = new_prob
+                                    else:
+                                        bad_redraws = bad_redraws + 1
+                        if redraw_count > 0:
+                            messages.append(
+                                '{:.0%} redraw, {}/{} success'.format(
+                                    redraw_count / (nwalkers * ntemps),
+                                    redraw_count - bad_redraws, redraw_count))
 
-                if not frack_now:
-                    continue
+                    # Calculate the autocorrelation time.
+                    low = 10
+                    asize = 0.5 * (emim1 - self._burn_in) / low
+                    if asize >= 0:
+                        acorc = max(
+                            1, min(self._MAX_ACORC,
+                                   int(np.floor(0.5 * emi / low))))
+                        aacort = -1.0
+                        aa = 0
+                        ams = self._burn_in
+                        cur_chain = (np.concatenate(
+                            (all_chain, sampler.chain[:, :, :li, :]),
+                            axis=2) if len(all_chain) else
+                            sampler.chain[:, :, :li, :])
+                        for a in range(1, acorc):
+                            ms = self._burn_in
+                            if ms >= emi - low:
+                                break
+                            try:
+                                acorts = sampler.get_autocorr_time(
+                                    chain=cur_chain, low=low, c=a,
+                                    min_step=ms, fast=False)
+                                acort = max([
+                                    max(x)
+                                    for x in acorts
+                                ])
+                            except AutocorrError:
+                                break
+                            else:
+                                if a > aa:
+                                    aa = a
+                                    aacort = acort
+                                    ams = ms
+                        acor = [aacort, aa, ams]
 
-                # Fracking starts here
-                sft = time.time()
-                ijperms = [[x, y] for x in range(ntemps)
-                           for y in range(nwalkers)]
-                ijprobs = np.array([
-                    1.0
-                    # lnprob[x][y]
-                    for x in range(ntemps) for y in range(nwalkers)
-                ])
-                ijprobs -= max(ijprobs)
-                ijprobs = [np.exp(0.1 * x) for x in ijprobs]
-                ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
-                nonzeros = len([x for x in ijprobs if x > 0.0])
-                selijs = [
-                    ijperms[x]
-                    for x in np.random.choice(
-                        range(len(ijperms)),
-                        pool_size,
-                        p=ijprobs,
-                        replace=(pool_size > nonzeros))
-                ]
+                    # Calculate the PSRF (Gelman-Rubin statistic).
+                    if li > 1 and emi > self._burn_in + 2:
+                        cur_chain = (np.concatenate(
+                            (all_chain, sampler.chain[:, :, :li, :]),
+                            axis=2) if len(all_chain) else
+                            sampler.chain[:, :, :li, :])
+                        vws = np.zeros((ntemps, ndim))
+                        for ti in range(ntemps):
+                            for xi in range(ndim):
+                                vchain = cur_chain[ti, :, self._burn_in:, xi]
+                                m = len(vchain)
+                                n = len(vchain[0])
+                                mom = np.mean(np.mean(vchain, axis=1))
+                                b = n / float(m - 1) * np.sum(
+                                    (np.mean(vchain, axis=1) - mom) ** 2)
+                                w = np.mean(np.var(vchain, axis=1))
+                                v = float(n - 1) / n * w + \
+                                    float(m + 1) / (m * n) * b
+                                vws[ti][xi] = np.sqrt(v / w)
+                        psrf = np.max(vws)
+                        if np.isnan(psrf):
+                            psrf = np.inf
 
-                bhwalkers = [p[i][j] for i, j in selijs]
+                        if run_until_converged and psrf < 1.1:
+                            self._printer.wrapped(
+                                'Convergence criterion met!')
+                            converged = True
+                            break
 
-                seeds = [
-                    int(round(time.time() * 1000.0)) % 4294900000 + x
-                    for x in range(len(bhwalkers))
-                ]
-                frack_args = list(zip(bhwalkers, seeds))
-                bhs = list(pool.map(frack, frack_args))
-                for bhi, bh in enumerate(bhs):
-                    (wi, ti) = tuple(selijs[bhi])
-                    if -bh.fun > lnprob[wi][ti] + lnlike[wi][ti]:
-                        p[wi][ti] = bh.x
-                        lnprob[wi][ti] = likelihood(bh.x)
-                        lnlike[wi][ti] = prior(bh.x)
-                scores = [[-x.fun for x in bhs]]
-                self.print_status(
-                    desc='Fracking Results',
-                    scores=scores,
-                    progress=[emi1, iterations])
-                tft = tft + time.time() - sft
-        except KeyboardInterrupt:
+                    if run_until_converged:
+                        self._emcee_est_t = -1.0
+                    else:
+                        self._emcee_est_t = float(
+                            time.time() - st - tft) / emi * (
+                            iterations - emi) + tft / emi * max(
+                                0, self._burn_in - emi)
+
+                    # Perform fracking if we are still in the burn in phase
+                    # and iteration count is a multiple of the frack step.
+                    frack_now = (fracking and emi <= self._burn_in and
+                                 emi % frack_step == 0)
+
+                    scores = [np.array(x) for x in lnprob]
+                    prt.status(
+                        self,
+                        desc='Fracking' if frack_now else
+                        ('Burning' if emi < self._burn_in else 'Walking'),
+                        scores=scores,
+                        accepts=accepts,
+                        progress=[emi, None if
+                                  run_until_converged else iterations],
+                        acor=acor,
+                        psrf=[psrf, self._burn_in],
+                        messages=messages)
+
+                    if s_exception:
+                        break
+
+                    if not frack_now:
+                        continue
+
+                    # Fracking starts here
+                    sft = time.time()
+                    ijperms = [[x, y] for x in range(ntemps)
+                               for y in range(nwalkers)]
+                    ijprobs = np.array([
+                        1.0
+                        # lnprob[x][y]
+                        for x in range(ntemps) for y in range(nwalkers)
+                    ])
+                    ijprobs -= max(ijprobs)
+                    ijprobs = [np.exp(0.1 * x) for x in ijprobs]
+                    ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
+                    nonzeros = len([x for x in ijprobs if x > 0.0])
+                    selijs = [
+                        ijperms[x]
+                        for x in np.random.choice(
+                            range(len(ijperms)),
+                            pool_size,
+                            p=ijprobs,
+                            replace=(pool_size > nonzeros))
+                    ]
+
+                    bhwalkers = [p[i][j] for i, j in selijs]
+
+                    seeds = [
+                        int(round(time.time() * 1000.0)) % 4294900000 + x
+                        for x in range(len(bhwalkers))
+                    ]
+                    frack_args = list(zip(bhwalkers, seeds))
+                    bhs = list(pool.map(frack, frack_args))
+                    for bhi, bh in enumerate(bhs):
+                        (wi, ti) = tuple(selijs[bhi])
+                        if -bh.fun > lnprob[wi][ti]:
+                            p[wi][ti] = bh.x
+                            like = likelihood(bh.x)
+                            lnprob[wi][ti] = like + prior(bh.x)
+                            lnlike[wi][ti] = like
+                    scores = [[-x.fun for x in bhs]]
+                    prt.status(
+                        self,
+                        desc='Fracking Results',
+                        scores=scores,
+                        fracking=True,
+                        progress=[emi, None if
+                                  run_until_converged else iterations])
+                    tft = tft + time.time() - sft
+                    if s_exception:
+                        break
+
+                if ici == 0:
+                    all_chain = sampler.chain
+                    all_lnprob = sampler.lnprobability
+                    all_lnlike = sampler.lnlikelihood
+                else:
+                    all_chain = np.concatenate(
+                        (all_chain, sampler.chain), axis=2)
+                    all_lnprob = np.concatenate(
+                        (all_lnprob, sampler.lnprobability), axis=2)
+                    all_lnlike = np.concatenate(
+                        (all_lnlike, sampler.lnlikelihood), axis=2)
+
+                sampler.reset()
+                ici = ici + 1
+
+        except (KeyboardInterrupt, SystemExit):
+            self._printer.wrapped(
+                '\b\bCtrl + C pressed, halting...', error=True)
+            s_exception = sys.exc_info()
+        except Exception:
+            raise
+
+        if s_exception:
             pool.close()
-            print(self._wrap_length)
-            if (not prompt(
+            if (not prt.prompt(
                     'You have interrupted the Monte Carlo. Do you wish to '
                     'save the incomplete run to disk? Previous results will '
                     'be overwritten.', self._wrap_length)):
                 sys.exit()
-        except:
-            raise
 
-        print_wrapped('Saving output to disk...', self._wrap_length)
+        if write:
+            prt.wrapped('Saving output to disk...')
+
         if self._event_path:
             entry = Entry.init_from_file(
                 catalog=None,
                 name=self._event_name,
                 path=self._event_path,
                 merge=False,
-                pop_schema=False)
+                pop_schema=False,
+                ignore_keys=[ENTRY.MODELS],
+                compare_to_existing=False)
+            new_photometry = []
+            for photo in entry.get(ENTRY.PHOTOMETRY, []):
+                if PHOTOMETRY.REALIZATION not in photo:
+                    new_photometry.append(photo)
+            if len(new_photometry):
+                entry[ENTRY.PHOTOMETRY] = new_photometry
         else:
             entry = Entry(name=self._event_name)
 
@@ -624,7 +900,7 @@ class Fitter():
         source = entry.add_source(name='MOSFiT paper')
         model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
-            task_copy = model._call_stack[task].copy()
+            task_copy = deepcopy(model._call_stack[task])
             if (task_copy['kind'] == 'parameter' and
                     task in model._parameter_json):
                 task_copy.update(model._parameter_json[task])
@@ -640,11 +916,15 @@ class Fitter():
                 QUANTITY.VALUE: str(WAIC),
                 QUANTITY.KIND: 'WAIC'
             }
-            modeldict[MODEL.CONVERGENCE] = {
-                QUANTITY.VALUE: str(aa),
-                QUANTITY.KIND: 'autocorrelationtimes'
-            }
-            modeldict[MODEL.STEPS] = str(emi1)
+            if acor and aacort > 0:
+                actc = int(np.ceil(aacort))
+                acortimes = '<' if aa < self._MAX_ACORC else ''
+                acortimes += str(np.int(float(emi - ams) / actc))
+                modeldict[MODEL.CONVERGENCE] = {
+                    QUANTITY.VALUE: str(acortimes),
+                    QUANTITY.KIND: 'autocorrelationtimes'
+                }
+            modeldict[MODEL.STEPS] = str(emi)
 
         if upload:
             umodeldict = deepcopy(modeldict)
@@ -654,54 +934,79 @@ class Fitter():
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
                 if WAIC < 0.0:
-                    print_wrapped(
+                    prt.wrapped(
                         'WAIC score `{}` below 0.0, not uploading this fit.'.
-                        format(pretty_num(WAIC)),
-                        wrap_length=self._wrap_length)
+                        format(pretty_num(WAIC)))
                     upload_this = False
 
         modelnum = entry.add_model(**modeldict)
 
         ri = 1
-        for xi, x in enumerate(p):
-            for yi, y in enumerate(p[xi]):
-                output = model.run_stack(y, root='output')
-                for i in range(len(output['times'])):
-                    if not np.isfinite(output['model_observations'][i]):
-                        continue
-                    photodict = {
-                        PHOTOMETRY.TIME:
-                        output['times'][i] + output['min_times'],
-                        PHOTOMETRY.MODEL: modelnum,
-                        PHOTOMETRY.SOURCE: source,
-                        PHOTOMETRY.REALIZATION: str(ri)
-                    }
-                    if output['observation_types'][i] == 'magnitude':
-                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
-                        photodict[PHOTOMETRY.MAGNITUDE] = output[
-                            'model_observations'][i]
-                    if output['observation_types'][i] == 'fluxdensity':
-                        photodict[PHOTOMETRY.FREQUENCY] = output[
-                            'frequencies'][i] * frequency_unit('GHz')
-                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                            'model_observations'][i] * flux_density_unit('µJy')
-                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
-                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                    if output['systems'][i]:
-                        photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                    if output['bandsets'][i]:
-                        photodict[PHOTOMETRY.BAND_SET] = output['bandsets'][i]
-                    if output['instruments'][i]:
-                        photodict[PHOTOMETRY.INSTRUMENT] = output[
-                            'instruments'][i]
-                    entry.add_photometry(
-                        compare_to_existing=False, **photodict)
+        if len(all_chain):
+            pout = all_chain[:, :, -1, :]
+            lnprobout = all_lnprob[:, :, -1]
+            lnlikeout = all_lnlike[:, :, -1]
+        else:
+            pout = p
+            lnprobout = lnprob
+            lnlikeout = lnlike
 
-                    if upload_this:
-                        uphotodict = deepcopy(photodict)
-                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                        uentry.add_photometry(
-                            compare_to_existing=False, **uphotodict)
+        # Here, we append to the vector of walkers from the full chain based
+        # upon the value of acort (the autocorrelation timescale).
+        if acor and aacort > 0 and aa == self._MAX_ACORC:
+            actc = int(np.ceil(aacort))
+            for i in range(1, np.int(float(emi - ams) / actc)):
+                pout = np.concatenate(
+                    (all_chain[:, :, -i * actc, :], pout), axis=1)
+                lnprobout = np.concatenate(
+                    (all_lnprob[:, :, -i * actc], lnprobout), axis=1)
+                lnlikeout = np.concatenate(
+                    (all_lnlike[:, :, -i * actc], lnlikeout), axis=1)
+        for xi, x in enumerate(pout):
+            for yi, y in enumerate(pout[xi]):
+                # Only produce LCs for end walker state.
+                if yi <= nwalkers:
+                    output = model.run_stack(y, root='output')
+                    for i in range(len(output['times'])):
+                        if not np.isfinite(output['model_observations'][i]):
+                            continue
+                        photodict = {
+                            PHOTOMETRY.TIME:
+                            output['times'][i] + output['min_times'],
+                            PHOTOMETRY.MODEL: modelnum,
+                            PHOTOMETRY.SOURCE: source,
+                            PHOTOMETRY.REALIZATION: str(ri)
+                        }
+                        if output['observation_types'][i] == 'magnitude':
+                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                            photodict[PHOTOMETRY.MAGNITUDE] = output[
+                                'model_observations'][i]
+                        if output['observation_types'][i] == 'fluxdensity':
+                            photodict[PHOTOMETRY.FREQUENCY] = output[
+                                'frequencies'][i] * frequency_unit('GHz')
+                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                                'model_observations'][
+                                    i] * flux_density_unit('µJy')
+                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['systems'][i]:
+                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                        if output['bandsets'][i]:
+                            photodict[PHOTOMETRY.BAND_SET] = output[
+                                'bandsets'][i]
+                        if output['instruments'][i]:
+                            photodict[PHOTOMETRY.INSTRUMENT] = output[
+                                'instruments'][i]
+                        entry.add_photometry(
+                            compare_to_existing=False, **photodict)
+
+                        if upload_this:
+                            uphotodict = deepcopy(photodict)
+                            uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                            uentry.add_photometry(
+                                compare_to_existing=False, **uphotodict)
+                else:
+                    output = model.run_stack(y, root='objective')
 
                 parameters = OrderedDict()
                 derived_keys = set()
@@ -728,9 +1033,8 @@ class Fitter():
                     parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprob is not None and lnlike is not None:
-                    realdict[REALIZATION.SCORE] = str(lnprob[xi][yi] + lnprob[
-                        xi][yi])
+                if lnprobout is not None:
+                    realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
@@ -744,21 +1048,37 @@ class Fitter():
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
-        with io.open(
-                os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                'w') as flast, io.open(
-                    os.path.join(model.MODEL_OUTPUT_DIR, self._event_name + (
-                        ('_' + suffix)
-                        if suffix else '') + '.json'), 'w') as feven:
-            entabbed_json_dump(oentry, flast, separators=(',', ':'))
-            entabbed_json_dump(oentry, feven, separators=(',', ':'))
+        if write:
+            prt.wrapped('Writing model output...')
+            with io.open(
+                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                    'w') as flast, io.open(os.path.join(
+                        model.MODEL_OUTPUT_DIR,
+                        self._event_name + (
+                            ('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
+                entabbed_json_dump(oentry, flast, separators=(',', ':'))
+                entabbed_json_dump(oentry, feven, separators=(',', ':'))
+
+            if save_full_chain:
+                prt.wrapped('Writing full chain...')
+                with io.open(
+                    os.path.join(model.MODEL_OUTPUT_DIR,
+                                 'chain.json'), 'w') as flast, io.open(
+                        os.path.join(model.MODEL_OUTPUT_DIR,
+                                     self._event_name + '_chain' + (
+                                         ('_' + suffix) if suffix else '') +
+                                     '.json'), 'w') as feven:
+                    entabbed_json_dump(all_chain.tolist(),
+                                       flast, separators=(',', ':'))
+                    entabbed_json_dump(all_chain.tolist(),
+                                       feven, separators=(',', ':'))
 
         if upload_this:
             uentry.sanitize()
-            print_wrapped('Uploading fit...', wrap_length=self._wrap_length)
-            print_wrapped(
-                'Data hash: ' + entryhash + ', model hash: ' + modelhash,
-                wrap_length=self._wrap_length)
+            prt.wrapped('Uploading fit...')
+            prt.wrapped(
+                'Data hash: ' + entryhash + ', model hash: ' + modelhash)
             upath = '/' + '_'.join(
                 [self._event_name, entryhash, modelhash]) + '.json'
             ouentry = {self._event_name: uentry._ordered(uentry)}
@@ -769,15 +1089,15 @@ class Fitter():
                     upayload.encode(),
                     upath,
                     mode=dropbox.files.WriteMode.overwrite)
-                print_wrapped(
-                    'Uploading complete!', wrap_length=self._wrap_length)
-            except:
-                if travis:
+                prt.wrapped(
+                    'Uploading complete!')
+            except Exception:
+                if self._travis:
                     pass
                 else:
                     raise
 
-        return (p, lnprob)
+        return (entry, pout, lnprobout)
 
     def generate_dummy_data(self,
                             name,
@@ -787,18 +1107,19 @@ class Fitter():
                             band_systems=[],
                             band_instruments=[],
                             band_bandsets=[]):
+        """Generate simulated data based on priors."""
         time_list = np.linspace(0.0, max_time, plot_points)
         band_list_all = ['V'] if len(band_list) == 0 else band_list
         times = np.repeat(time_list, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
-        if isinstance(band_systems, str):
+        if isinstance(band_systems, string_types):
             band_systems = [band_systems for x in range(len(band_list_all))]
-        if isinstance(band_instruments, str):
+        if isinstance(band_instruments, string_types):
             band_instruments = [
                 band_instruments for x in range(len(band_list_all))
             ]
-        if isinstance(band_bandsets, str):
+        if isinstance(band_bandsets, string_types):
             band_bandsets = [band_bandsets for x in range(len(band_list_all))]
         if len(band_systems) < len(band_list_all):
             rep_val = '' if len(band_systems) == 0 else band_systems[-1]
@@ -845,94 +1166,3 @@ class Fitter():
             data[name]['photometry'].append(photodict)
 
         return data
-
-    def print_status(self,
-                     desc='',
-                     scores='',
-                     progress='',
-                     acor='',
-                     messages=[]):
-        """Prints a status message showing the current state of the fitting
-        process.
-        """
-
-        class bcolors:
-            HEADER = '\033[95m'
-            OKBLUE = '\033[94m'
-            OKGREEN = '\033[92m'
-            WARNING = '\033[93m'
-            FAIL = '\033[91m'
-            ENDC = '\033[0m'
-            BOLD = '\033[1m'
-            UNDERLINE = '\033[4m'
-
-        outarr = [self._event_name]
-        if desc:
-            outarr.append(desc)
-        if isinstance(scores, list):
-            scorestring = 'Best scores: [ ' + ', '.join([
-                pretty_num(max(x))
-                if not np.isnan(max(x)) and np.isfinite(max(x)) else 'NaN'
-                for x in scores
-            ]) + ' ]'
-            outarr.append(scorestring)
-            scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
-            outarr.append(scorestring)
-        if isinstance(progress, list):
-            progressstring = 'Progress: [ {}/{} ]'.format(*progress)
-            outarr.append(progressstring)
-        if self._emcee_est_t + self._bh_est_t > 0.0:
-            if self._bh_est_t > 0.0 or not self._fracking:
-                tott = self._emcee_est_t + self._bh_est_t
-            else:
-                tott = 2.0 * self._emcee_est_t
-            timestring = self.get_timestring(tott)
-            outarr.append(timestring)
-        if isinstance(acor, list):
-            acorcstr = pretty_num(acor[1], sig=3)
-            if acor[0] <= 0.0:
-                acorstring = (bcolors.FAIL +
-                              'Chain too short for acor ({})'.format(acorcstr)
-                              + bcolors.ENDC)
-            else:
-                acortstr = pretty_num(acor[0], sig=3)
-                if self._travis:
-                    col = ''
-                elif acor[1] < 5.0:
-                    col = bcolors.FAIL
-                elif acor[1] < 10.0:
-                    col = bcolors.WARNING
-                else:
-                    col = bcolors.OKGREEN
-                acorstring = col
-                acorstring = acorstring + 'Acor Tau: {} ({}x)'.format(acortstr,
-                                                                      acorcstr)
-                acorstring = acorstring + (bcolors.ENDC if col else '')
-            outarr.append(acorstring)
-
-        if not isinstance(messages, list):
-            raise ValueError('`messages` must be list!')
-        outarr.extend(messages)
-
-        line = ''
-        lines = ''
-        li = 0
-        for i, item in enumerate(outarr):
-            oldline = line
-            line = line + (' | ' if li > 0 else '') + item
-            li = li + 1
-            if len(line) > self._wrap_length:
-                li = 1
-                lines = lines + '\n' + oldline
-                line = item
-
-        lines = lines + '\n' + line
-
-        print_inline(lines, new_line=self._travis)
-
-    def get_timestring(self, t):
-        """Return a string showing the estimated remaining time based upon
-        elapsed times for emcee and fracking.
-        """
-        td = str(datetime.timedelta(seconds=int(round(t))))
-        return ('Estimated time left: [ ' + td + ' ]')

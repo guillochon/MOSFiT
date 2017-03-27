@@ -1,18 +1,23 @@
+"""Definitions for the `LightCurve` class."""
+from collections import OrderedDict
+
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'LightCurve'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class LightCurve(Module):
-    """Output a light curve to disk.
-    """
+    """Output a light curve to disk."""
 
     def __init__(self, **kwargs):
+        """Initialize module."""
         super(LightCurve, self).__init__(**kwargs)
         self._n_times = kwargs.get('ntimes', 0)
 
     def process(self, **kwargs):
-        output = {}
+        """Process module."""
+        output = OrderedDict()
         for key in [
                 'magnitudes', 'e_magnitudes', 'model_observations',
                 'all_bands', 'all_systems', 'all_instruments', 'all_bandsets',

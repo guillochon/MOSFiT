@@ -75,6 +75,24 @@
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cutoff}"
+    },
+    "neutrino_energy":{
+        "kind":"parameter",
+        "value":1.0e51,
+        "class":"parameter",
+        "latex":"E_{\\nu}"
+    },
+    "tnebular_min":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm neb}"
+    },
     "magnetar":{
         "kind":"engine",
         "inputs":[
@@ -106,22 +124,13 @@
             "temperature"
         ]
     },
-    "blackbody":{
+    "blackbody_cutoff":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
             "temperature_floor",
-            "radiusphot"
-        ],
-        "requests":{
-            "band_wave_ranges": "photometry"
-        }
-    },
-    "cutoff":{
-        "kind":"sed",
-        "inputs":[
-            "blackbody"
+            "cutoff_wavelength"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -130,8 +139,9 @@
     "losextinction":{
         "kind":"sed",
         "inputs":[
-            "cutoff",
+            "blackbody_cutoff",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{
@@ -144,5 +154,38 @@
             "losextinction",
             "lumdist"
         ]
+    },
+    "slsn_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "mejecta",
+            "vejecta",
+            "kappa",
+            "tnebular_min",
+            "Pspin",
+            "Mns",
+            "diffusion",
+            "texplosion",
+            "redshift",
+            "alltimes",
+            "neutrino_energy"
+        ]
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error",
+            "slsn_constraints"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        }
     }
 }

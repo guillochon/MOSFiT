@@ -1,37 +1,52 @@
+"""Definitions for the `Model` class."""
 import importlib
+import inspect
 import json
 import logging
 import os
 from collections import OrderedDict
+from copy import deepcopy
+from difflib import get_close_matches
 from math import isnan
 
 import numpy as np
+# from bayes_opt import BayesianOptimization
+from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
+from mosfit.modules.module import Module
+from mosfit.printer import Printer
+from mosfit.utils import listify
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
 
-# from bayes_opt import BayesianOptimization
-from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.utils import listify, print_wrapped
 
-
-class Model:
-    """Define a semi-analytical model to fit transients with.
-    """
+class Model(object):
+    """Define a semi-analytical model to fit transients with."""
 
     MODEL_OUTPUT_DIR = 'products'
+    MIN_WAVE_FRAC_DIFF = 0.1
 
-    class outClass(object):
-        pass
+    # class outClass(object):
+    #     pass
 
     def __init__(self,
                  parameter_path='parameters.json',
                  model='default',
                  wrap_length=100,
-                 pool=None):
+                 pool=None,
+                 fitter=None):
+        """Initialize `Model` object."""
         self._model_name = model
         self._pool = pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
+        self._fitter = fitter
+
+        if self._fitter:
+            self._printer = self._fitter._printer
+        else:
+            self._printer = Printer(pool=pool, wrap_length=wrap_length)
+
+        prt = self._printer
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -92,12 +107,12 @@ class Model:
             raise ValueError('Could not find parameter file!')
 
         if self._is_master:
-            print_wrapped('Basic model file:', wrap_length)
-            print_wrapped('  ' + basic_model_path, wrap_length)
-            print_wrapped('Model file:', wrap_length)
-            print_wrapped('  ' + model_path, wrap_length)
-            print_wrapped('Parameter file:', wrap_length)
-            print_wrapped('  ' + pp + '\n', wrap_length)
+            prt.wrapped('Basic model file:', wrap_length)
+            prt.wrapped('  ' + basic_model_path, wrap_length)
+            prt.wrapped('Model file:', wrap_length)
+            prt.wrapped('  ' + model_path, wrap_length)
+            prt.wrapped('Parameter file:', wrap_length)
+            prt.wrapped('  ' + pp + '\n', wrap_length)
 
         with open(pp, 'r') as f:
             self._parameter_json = json.load(f, object_pairs_hook=OrderedDict)
@@ -116,11 +131,11 @@ class Model:
         unsorted_call_stack = OrderedDict()
         self._max_depth_all = -1
         for tag in self._model:
-            cur_model = self._model[tag]
+            model_tag = self._model[tag]
             roots = []
-            if cur_model['kind'] in root_kinds:
+            if model_tag['kind'] in root_kinds:
                 max_depth = 0
-                roots = [cur_model['kind']]
+                roots = [model_tag['kind']]
             else:
                 max_depth = -1
                 for tag2 in self._trees:
@@ -131,8 +146,8 @@ class Model:
                         max_depth = depth
                     if depth > self._max_depth_all:
                         self._max_depth_all = depth
-            roots = list(set(roots))
-            new_entry = cur_model.copy()
+            roots = list(sorted(set(roots)))
+            new_entry = deepcopy(model_tag)
             new_entry['roots'] = roots
             if 'children' in new_entry:
                 del (new_entry['children'])
@@ -150,40 +165,114 @@ class Model:
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
+            mod_name = cur_task.get('class', task)
             if cur_task[
                     'kind'] == 'parameter' and task in self._parameter_json:
                 cur_task.update(self._parameter_json[task])
-            class_name = cur_task.get('class', task)
-            mod = importlib.import_module(
-                '.' + 'modules.' + cur_task['kind'] + 's.' + class_name,
-                package='mosfit')
-            mod_class = getattr(mod, mod.CLASS_NAME)
-            self._modules[task] = mod_class(name=task, pool=pool, **cur_task)
-            if class_name == 'photometry':
+            self._modules[task] = self._load_task_module(task)
+            if mod_name == 'photometry':
                 self._bands = self._modules[task].band_names()
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
-            # class_name = cur_task.get('class', task)
+            # mod_name = cur_task.get('class', task)
             # mod_path = os.path.join('modules', cur_task['kind'] + 's',
-            #                         class_name + '.py')
+            #                         mod_name + '.py')
             # if not os.path.isfile(mod_path):
             #     mod_path = os.path.join(self._dir_path, 'modules',
             #                             cur_task['kind'] + 's',
-            #                             class_name + '.py')
+            #                             mod_name + '.py')
             # mod_name = ('mosfit.modules.' + cur_task['kind'] + 's.' +
-            # class_name)
+            # mod_name)
             # mod = importlib.machinery.SourceFileLoader(mod_name,
             #                                            mod_path).load_module()
-            # mod_class = getattr(mod, mod.CLASS_NAME)
+            # mod_class = getattr(mod, class_name)
             # if (cur_task['kind'] == 'parameter' and task in
             #         self._parameter_json):
             #     cur_task.update(self._parameter_json[task])
             # self._modules[task] = mod_class(name=task, **cur_task)
-            # if class_name == 'photometry':
+            # if mod_name == 'photometry':
             #     self._bands = self._modules[task].band_names()
 
+    def _load_task_module(self, task, call_stack=None):
+        if not call_stack:
+            call_stack = self._call_stack
+        cur_task = call_stack[task]
+        mod_name = cur_task.get('class', task).lower()
+        mod = importlib.import_module(
+            '.' + 'modules.' + cur_task['kind'].lower() + 's.' + mod_name,
+            package='mosfit')
+        class_name = [
+            x[0] for x in
+            inspect.getmembers(mod, inspect.isclass)
+            if issubclass(x[1], Module) and
+            x[1].__module__ == mod.__name__][0]
+        mod_class = getattr(mod, class_name)
+        return mod_class(
+            name=task, pool=self._pool, printer=self._printer, **cur_task)
+
+    def create_data_dependent_free_parameters(
+            self, variance_for_each=[], output={}):
+        """Create free parameters that depend on loaded data."""
+        unique_band_indices = list(
+            sorted(set(output.get('all_band_indices', []))))
+        needs_general_variance = any(
+            np.array(output.get('all_band_indices', [])) < 0)
+
+        new_call_stack = OrderedDict()
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if (cur_task.get('class', '') == 'variance' and
+                    'band' in listify(variance_for_each)):
+                # Find photometry in call stack.
+                for ptask in self._call_stack:
+                    if ptask == 'photometry':
+                        awaves = self._modules[ptask].average_wavelengths(
+                            unique_band_indices)
+                        abands = self._modules[ptask].band_names(
+                            unique_band_indices)
+                        band_pairs = list(sorted(zip(awaves, abands)))
+                        break
+                owav = 0.0
+                variance_bands = []
+                for bi, (awav, band) in enumerate(band_pairs):
+                    wave_frac_diff = abs(awav - owav) / (awav + owav)
+                    if wave_frac_diff < self.MIN_WAVE_FRAC_DIFF:
+                        continue
+                    new_task_name = '-'.join([task, 'band', band])
+                    new_task = deepcopy(cur_task)
+                    new_call_stack[new_task_name] = new_task
+                    if 'latex' in new_task:
+                        new_task['latex'] += '_{\\rm ' + band + '}'
+                    new_call_stack[new_task_name] = new_task
+                    self._modules[new_task_name] = self._load_task_module(
+                        new_task_name, call_stack=new_call_stack)
+                    owav = awav
+                    variance_bands.append([awav, band])
+                if needs_general_variance:
+                    new_call_stack[task] = deepcopy(cur_task)
+                self._printer.wrapped(
+                    'Anchoring variances for the following filters '
+                    '(interpolating variances for the rest): ' +
+                    (', '.join([x[1] for x in variance_bands])),
+                    master_only=True)
+                self._modules[ptask].set_variance_bands(variance_bands)
+            else:
+                new_call_stack[task] = deepcopy(cur_task)
+        self._call_stack = new_call_stack
+
+    def determine_number_of_measurements(self):
+        """Estimate the number of measurements."""
+        self._num_measurements = 0
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if cur_task['kind'] == 'data':
+                self._num_measurements += len(
+                    self._modules[task]._data['times'])
+
     def determine_free_parameters(self, extra_fixed_parameters):
+        """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
+        self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if (task not in extra_fixed_parameters and
@@ -191,34 +280,43 @@ class Model:
                     'min_value' in cur_task and 'max_value' in cur_task and
                     cur_task['min_value'] != cur_task['max_value']):
                 self._free_parameters.append(task)
+                if cur_task.get('class', '') == 'variance':
+                    self._num_variances += 1
         self._num_free_parameters = len(self._free_parameters)
 
     def exchange_requests(self):
+        """Exchange requests between modules."""
         for task in reversed(self._call_stack):
             cur_task = self._call_stack[task]
             if 'requests' in cur_task:
                 requests = OrderedDict()
                 reqs = cur_task['requests']
                 for req in reqs:
+                    if reqs[req] not in self._modules:
+                        raise RuntimeError(
+                            'Request cannot be satisfied because module '
+                            '`{}` could not be found.'.format(reqs[req]))
                     requests[req] = self._modules[reqs[req]].send_request(req)
                 self._modules[task].receive_requests(**requests)
 
     def frack(self, arg):
-        """Perform fracking upon a single walker, using a local minimization
-        method.
+        """Perform fracking upon a single walker.
+
+        Uses a randomly-selected global or local minimization method.
         """
         x = np.array(arg[0])
-        step = 0.2
+        step = 1.0
         seed = arg[1]
         np.random.seed(seed)
         my_choice = np.random.choice(range(3))
         # my_choice = 0
         my_method = ['L-BFGS-B', 'TNC', 'SLSQP'][my_choice]
-        opt_dict = {'disp': False}
+        opt_dict = {'disp': False, 'approx_grad': True}
         if my_method in ['TNC', 'SLSQP']:
-            opt_dict['maxiter'] = 100
+            opt_dict['maxiter'] = 200
         elif my_method == 'L-BFGS-B':
             opt_dict['maxfun'] = 5000
+            opt_dict['maxls'] = 50
         # bounds = [(0.0, 1.0) for y in range(self._num_free_parameters)]
         bounds = list(
             zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
@@ -228,7 +326,6 @@ class Model:
             x,
             method=my_method,
             bounds=bounds,
-            tol=1.0e-3,
             options=opt_dict)
 
         # bounds = list(
@@ -266,19 +363,33 @@ class Model:
         return bh
 
     def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
-        """Construct call trees for each root.
-        """
+        """Construct call trees for each root."""
+        leaf = kinds if len(kinds) else name
+        if depth > 100:
+            raise RuntimeError(
+                'Error: Tree depth greater than 100, suggests a recursive '
+                'input loop in `{}`.'.format(leaf))
         for tag in d:
-            entry = d[tag].copy()
+            entry = deepcopy(d[tag])
             new_roots = roots
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 if entry['kind'] in kinds:
                     new_roots.append(entry['kind'])
-                entry['roots'] = list(set(new_roots))
+                entry['roots'] = list(sorted(set(new_roots)))
                 trees[tag] = entry
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
+                    if inp not in d:
+                        suggests = get_close_matches(inp, d, n=1, cutoff=0.8)
+                        warn_str = (
+                            'Module `{}` for input to `{}` '
+                            'not found!'.format(inp, leaf))
+                        if len(suggests):
+                            warn_str += (
+                                ' Did you perhaps mean `{}`?'.
+                                format(suggests[0]))
+                        raise RuntimeError(warn_str)
                     children = OrderedDict()
                     self.construct_trees(
                         d,
@@ -290,7 +401,9 @@ class Model:
                     trees[tag]['children'].update(children)
 
     def draw_walker(self, test=True):
-        """Draw a walker randomly from the full range of all parameters, reject
+        """Draw a walker randomly.
+
+        Draw a walker randomly from the full range of all parameters, reject
         walkers that return invalid scores.
         """
         p = None
@@ -303,15 +416,17 @@ class Model:
             ]
             if not test:
                 p = draw
+                score = None
                 break
             score = self.likelihood(draw)
-            if not isnan(score) and np.isfinite(score):
+            if (not isnan(score) and np.isfinite(score) and
+                (not isinstance(self._fitter._draw_above_likelihood, float) or
+                 score > self._fitter._draw_above_likelihood)):
                 p = draw
-        return p
+        return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):
-        """Return the maximum depth a given task is found in a tree.
-        """
+        """Return the maximum depth a given task is found in a tree."""
         for child in parent.get('children', []):
             if child == tag:
                 new_max = parent['children'][child]['depth']
@@ -325,14 +440,12 @@ class Model:
         return max_depth
 
     def likelihood(self, x):
-        """Return score related to maximum likelihood.
-        """
+        """Return score related to maximum likelihood."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
     def prior(self, x):
-        """Return score related to paramater priors.
-        """
+        """Return score related to paramater priors."""
         prior = 0.0
         for pi, par in enumerate(self._free_parameters):
             lprior = self._modules[par].lnprior_pdf(x[pi])
@@ -340,6 +453,7 @@ class Model:
         return prior
 
     def boprob(self, **kwargs):
+        """Score for `BayesianOptimization`."""
         x = []
         for key in sorted(kwargs):
             x.append(kwargs[key])
@@ -350,15 +464,16 @@ class Model:
         return l
 
     def fprob(self, x):
-        """Return score for fracking.
-        """
+        """Return score for fracking."""
         l = -(self.likelihood(x) + self.prior(x))
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l
 
     def run_stack(self, x, root='objective'):
-        """Run a stack of modules as defined in the model definition file. Only
+        """Run module stack.
+
+        Run a stack of modules as defined in the model definition file. Only
         run functions that match the specified root.
         """
         inputs = OrderedDict()
@@ -371,13 +486,20 @@ class Model:
                 continue
             if cur_task['depth'] != cur_depth:
                 inputs = outputs
-            inputs.update({'root': root})
+            inputs.update(OrderedDict([('root', root)]))
             cur_depth = cur_task['depth']
             if task in self._free_parameters:
-                inputs.update({'fraction': x[pos]})
+                inputs.update(OrderedDict([('fraction', x[pos])]))
                 inputs.setdefault('fractions', []).append(x[pos])
                 pos = pos + 1
-            new_outs = self._modules[task].process(**inputs)
+            try:
+                new_outs = self._modules[task].process(**inputs)
+                if not isinstance(new_outs, OrderedDict):
+                    new_outs = OrderedDict(sorted(new_outs.items()))
+            except Exception:
+                self._printer.wrapped(
+                    "Failed to execute module `{}`\'s process().".format(task))
+                raise
             outputs.update(new_outs)
 
             if cur_task['kind'] == root:

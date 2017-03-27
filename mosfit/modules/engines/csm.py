@@ -1,6 +1,7 @@
 from math import isnan
 
 import numpy as np
+from mosfit.constants import AU_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
 from scipy import interpolate
 
@@ -10,37 +11,44 @@ CLASS_NAME = 'CSM'
 class CSM(Engine):
     """CSM energy injection.
 
-        input luminosity calculation from http://adsabs.harvard.edu/abs/2012ApJ...746..121C
+        input luminosity calculation based on http://adsabs.harvard.edu/abs/2012ApJ...746..121C
         with coefficients from http://adsabs.harvard.edu/abs/1982ApJ...258..790C
 
+        There are two major changes in the input luminosity from Chatzopoulos, Wheeler & Vinko (2012):
+        1. ti is set to a small number, rather than the time it takes the ejecta to reach the csm shell
+        2. you can fit/choose an efficiency factor between KE and luminosity
+
     """
+
+    REFERENCES = ['2012ApJ...746..121C']
 
     def process(self, **kwargs):
         self._s = kwargs['s']
         self._delta = kwargs['delta']  # [0,3)
         self._n = kwargs['n']  # [6,10]
         self._kappa = kwargs['kappa']
-        self._R0 = kwargs['r0'] * 1.496e13  # AU to cm
-        self._mejecta = kwargs['mejecta'] * 1.9884e33  # Msol to grms
-        self._mcsm = kwargs['mcsm'] * 1.9884e33
+        self._R0 = kwargs['r0'] * AU_CGS  # AU to cm
+        self._mejecta = kwargs['mejecta'] * M_SUN_CGS  # Msol to grms
+        self._mcsm = kwargs['mcsm'] * M_SUN_CGS
         self._rho = kwargs['rho']
         self._vph = kwargs['vejecta'] * 1.e5
         self._Esn = 3. * self._vph**2 * self._mejecta / 10.
         self._rest_t_explosion = kwargs['resttexplosion']
+        self._efficiency = kwargs['efficiency']
 
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times']
         else:
             self._times = kwargs['rest_times']
 
+        # g**n is scaling parameter for ejecta density profile
         self._g_n = (1.0 / (4.0 * np.pi * (self._n - self._delta)) * (
             2.0 * (5.0 - self._delta) * (self._n - 5.0) * self._Esn)**(
                 (self._n - 3.) / 2.0) / (
                     (3.0 - self._delta) * (self._n - 3.0) * self._mejecta)**(
-                        (self._n - 5.0) / 2.0)
-                     )  # g**n is scaling parameter for ejecta density profile
+                        (self._n - 5.0) / 2.0))
 
-        self._ti = self._R0 / self._vph
+        self._ti = 1.0  # set ti to small number
 
         if self._s == 0:
             ns = [6, 7, 8, 9, 10, 12, 14]
@@ -62,43 +70,50 @@ class CSM(Engine):
         self._Br = Br_func(self._n)
         self._A = A_func(self._n)
 
-        # scaling constant for CSM density profile
+        # scaling constant for CSM density profile.
         self._q = self._rho * self._R0**self._s
 
+        # outer radius of CSM shell.
         self._Rcsm = (
             ((3.0 - self._s) /
-             (4.0 * np.pi * self._q) * self._mcsm + self._R0**(3.0 - self._s))
-            **(1.0 / (3.0 - self._s)))  # outer radius of CSM shell
+             (4.0 * np.pi * self._q) * self._mcsm + self._R0 ** (
+                 3.0 - self._s)) ** (1.0 / (3.0 - self._s)))
 
+        # radius of photosphere (should be within CSM).
         self._Rph = abs(
             (-2.0 * (1.0 - self._s) /
-             (3.0 * self._kappa * self._q) + self._Rcsm**(1.0 - self._s))**
+             (3.0 * self._kappa * self._q) + self._Rcsm**(1.0 - self._s)) **
             (1.0 /
-             (1.0 - self._s)))  # radius of photosphere (should be within CSM)
+             (1.0 - self._s)))
 
+        # mass of the optically thick CSM (tau > 2/3).
         self._Mcsm_th = 4.0 * np.pi * self._q / (3.0 - self._s) * (
-            self._Rph**(3.0 - self._s) - self._R0**
-            (3.0 - self._s))  # mass of the optically thick CSM (tau > 2/3)
+            self._Rph**(3.0 - self._s) - self._R0 **
+            (3.0 - self._s))
 
+        # time at which shock breaks out of optically thick CSM - forward shock
+        # power input then terminates.
         self._t_FS = (
             abs((3.0 - self._s) * self._q**(
-                (3.0 - self._n) / (self._n - self._s)) * (self._A * self._g_n)
-                **((self._s - 3.0) / (self._n - self._s)) /
+                (3.0 - self._n) / (self._n - self._s)) * (
+                    self._A * self._g_n) ** ((self._s - 3.0) / (
+                        self._n - self._s)) /
                 (4.0 * np.pi * self._Bf**(3.0 - self._s)))**(
                     (self._n - self._s) / (
-                        (self._n - 3.0) * (3.0 - self._s))) * (self._Mcsm_th)
-            **((self._n - self._s) / ((self._n - 3.0) * (3.0 - self._s)))
-        )  # time at which shock breaks out of optically thick CSM - forward shock power input then terminates
+                        (self._n - 3.0) * (3.0 - self._s))) * (
+                            self._Mcsm_th) ** (
+                                (self._n - self._s) / (
+                                    (self._n - 3.0) * (3.0 - self._s))))
 
+        # time at which reverse shock sweeps up all ejecta - reverse shock
+        # power input then terminates.
         self._t_RS = (
-            self._vph / (self._Br * (self._A * self._g_n / self._q)
-                         **(1.0 / (self._n - self._s))) *
+            self._vph / (self._Br * (self._A * self._g_n / self._q) ** (
+                1.0 / (self._n - self._s))) *
             (1.0 - (3.0 - self._n) * self._mejecta /
-             (4.0 * np.pi * self._vph**
-              (3.0 - self._n) * self._g_n))**(1.0 / (3.0 - self._n))
-        )**((self._n - self._s) / (
-            self._s - 3.0
-        ))  # time at which reverse shock sweeps up all ejecta - reverse shock power input then terminates
+             (4.0 * np.pi * self._vph **
+              (3.0 - self._n) * self._g_n))**(1.0 / (3.0 - self._n))) ** (
+                  (self._n - self._s) / (self._s - 3.0))
 
         ts = [
             np.inf
@@ -107,23 +122,24 @@ class CSM(Engine):
         ]
 
         luminosities = [
-            2.0 * np.pi / (self._n - self._s)**3 * self._g_n**(
+            self._efficiency * (2.0 * np.pi / (
+                self._n - self._s) ** 3 * self._g_n ** (
                 (5.0 - self._s) / (self._n - self._s)) * self._q**(
                     (self._n - 5.0) /
                     (self._n - self._s)) * (self._n - 3.0)**2 *
-            (self._n - 5.0) * self._Bf**(5.0 - self._s) * self._A**(
+                (self._n - 5.0) * self._Bf**(5.0 - self._s) * self._A**(
                 (5.0 - self._s) /
-                (self._n - self._s)) * (t * 86400. + self._ti)**(
+                (self._n - self._s)) * (t * DAY_CGS + self._ti)**(
                     (2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.) /
                     (self._n - self._s)) * (
-                        (self._t_FS - t * 86400.) > 0) + 2.0 * np.pi *
-            (self._A * self._g_n / self._q)**(
+                        (self._t_FS - t * DAY_CGS) > 0) + 2.0 * np.pi *
+                (self._A * self._g_n / self._q)**(
                 (5.0 - self._n) /
                 (self._n - self._s)) * self._Br**(5.0 - self._n) * self._g_n *
-            ((3.0 - self._s) /
-             (self._n - self._s))**3 * (t * 86400. + self._ti)**(
-                 (2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.0) /
-                 (self._n - self._s)) * ((self._t_RS - t * 86400.) > 0)
+                ((3.0 - self._s) /
+                 (self._n - self._s))**3 * (t * DAY_CGS + self._ti)**(
+                (2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.0) /
+                (self._n - self._s)) * ((self._t_RS - t * DAY_CGS) > 0))
             for t in ts
         ]
 

@@ -104,9 +104,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore",
-            "temperaturephot",
-            "radiusphot"
+            "densecore"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -117,6 +115,7 @@
         "inputs":[
             "blackbody",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{

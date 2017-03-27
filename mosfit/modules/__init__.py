@@ -1,4 +1,5 @@
 from .arrays import *
+from .constraints import *
 from .datas import *
 from .energetics import *
 from .engines import *
@@ -13,6 +14,7 @@ from .transforms import *
 
 __all__ = ['Module']
 __all__.extend(arrays.__all__)
+__all__.extend(constraints.__all__)
 __all__.extend(datas.__all__)
 __all__.extend(energetics.__all__)
 __all__.extend(engines.__all__)

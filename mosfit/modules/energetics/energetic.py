@@ -1,11 +1,9 @@
+"""Definitions for the `Energetic` class."""
 from mosfit.modules.module import Module
 
-CLASS_NAME = 'Energetic'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class Energetic(Module):
-    """Template class for energy/velocity conversions.
-    """
-
-    def process(self, **kwargs):
-        return {}
+    """Template class for energy/velocity conversions."""

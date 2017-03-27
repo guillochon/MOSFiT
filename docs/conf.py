@@ -1,4 +1,5 @@
-#!/usr/bin/env python3
+"""Documentation configuration script."""
+# !/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # MOSFiT documentation build configuration file, created by
@@ -18,11 +19,21 @@
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
+import re
 import sys
-sys.path.insert(0, os.path.abspath('..'))
 
-from mosfit import __version__
 import sphinx_rtd_theme
+
+sys.path.append(os.path.abspath('.'))
+sys.path.append(os.path.abspath('..'))
+sys.path.append(os.path.join(os.path.dirname(__name__), '..'))
+
+dir_path = os.path.dirname(os.path.realpath(__file__))
+init_string = open(os.path.join(dir_path, '..', 'mosfit',
+                                '__init__.py')).read()
+VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(VERS, init_string, re.M)
+__version__ = mo.group(1)
 
 # -- General configuration ------------------------------------------------
 
@@ -35,7 +46,8 @@ import sphinx_rtd_theme
 # ones.
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
-    'sphinx_automodapi.automodapi', 'sphinx_automodapi.smart_resolver'
+    'sphinx_automodapi.automodapi', 'sphinx_automodapi.smart_resolver',
+    'sphinx.ext.coverage', 'sphinxcontrib.autoprogram', 'numpydoc.numpydoc'
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -78,6 +90,8 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = 'sphinx'
+
+numpydoc_show_class_members = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = False

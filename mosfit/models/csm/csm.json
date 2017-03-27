@@ -41,7 +41,7 @@
     },
     "r0":{
         "kind":"parameter",
-        "value":2.0,
+        "value":60.0,
         "class":"parameter",
         "latex":"R_{0}"
     },
@@ -53,17 +53,11 @@
     },
     "kappa":{
         "kind":"parameter",
-        "value":0.33,
+        "value":0.34,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-    "kappagamma":{
-        "kind":"parameter",
-        "value":10.0,
-        "class":"parameter",
-        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
-    },
-   "rho":{
+    "rho":{
         "kind":"parameter",
         "value":1.0e-12,
         "class":"parameter",
@@ -81,15 +75,22 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
+    "efficiency":{
+        "kind":"parameter",
+        "value":0.5,
+        "class":"parameter",
+        "latex":"\\epsilon"
+    },
     "temperature":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":100.0,
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
     "csm":{
         "kind":"engine",
         "inputs":[
+            "csmconstraints",
             "transient",
             "n",
             "s",
@@ -101,6 +102,7 @@
             "vejecta",
             "texplosion",
             "kappa",
+            "efficiency",
             "densetimes"
         ]
     },
@@ -131,19 +133,32 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor",
-            "temperaturephot",
-            "radiusphot"
+            "temperature_floor"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
         }
+    },
+    "csmconstraints":{
+        "kind":"constraint",
+        "inputs":[
+            "n",
+            "s",
+            "delta",
+            "r0",
+            "mejecta",
+            "mcsm",
+            "rho",
+            "vejecta",
+            "kappa"
+        ]
     },
     "losextinction":{
         "kind":"sed",
         "inputs":[
             "blackbody",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{

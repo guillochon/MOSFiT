@@ -90,9 +90,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor",
-            "temperaturephot",
-            "radiusphot"
+            "temperature_floor"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -103,6 +101,7 @@
         "inputs":[
             "blackbody",
             "nhhost",
+            "rvhost",
             "ebv"
         ],
         "requests":{
