@@ -108,6 +108,7 @@ class Fitter(object):
                    draw_above_likelihood=False,
                    maximum_walltime=False,
                    start_time=False,
+                   print_trees=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -311,7 +312,8 @@ class Fitter(object):
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
                         fitter=self,
-                        pool=pool)
+                        pool=pool,
+                        print_trees=print_trees)
 
                     if not event:
                         self._printer.wrapped(

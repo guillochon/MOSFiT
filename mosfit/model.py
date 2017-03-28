@@ -33,13 +33,15 @@ class Model(object):
                  model='default',
                  wrap_length=100,
                  pool=None,
-                 fitter=None):
+                 fitter=None,
+                 print_trees=False):
         """Initialize `Model` object."""
         self._model_name = model
         self._pool = pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
         self._fitter = fitter
+        self._print_trees = print_trees
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -126,7 +128,13 @@ class Model(object):
         root_kinds = ['output', 'objective']
 
         self._trees = OrderedDict()
-        self.construct_trees(self._model, self._trees, kinds=root_kinds)
+        self._simple_trees = OrderedDict()
+        self.construct_trees(
+            self._model, self._trees, self._simple_trees, kinds=root_kinds)
+
+        if self._print_trees:
+            self._printer.wrapped('Dependency trees:\n')
+            self._printer.tree(self._simple_trees)
 
         unsorted_call_stack = OrderedDict()
         self._max_depth_all = -1
@@ -370,7 +378,8 @@ class Model(object):
         # m.migrad()
         return bh
 
-    def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
+    def construct_trees(
+            self, d, trees, simple, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root."""
         leaf = kinds if len(kinds) else name
         if depth > 100:
@@ -386,6 +395,7 @@ class Model(object):
                     new_roots.append(entry['kind'])
                 entry['roots'] = list(sorted(set(new_roots)))
                 trees[tag] = entry
+                simple[tag] = OrderedDict()
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
                     if inp not in d:
@@ -399,14 +409,17 @@ class Model(object):
                                 format(suggests[0]))
                         raise RuntimeError(warn_str)
                     children = OrderedDict()
+                    simple_children = OrderedDict()
                     self.construct_trees(
                         d,
                         children,
+                        simple_children,
                         name=inp,
                         roots=new_roots,
                         depth=depth + 1)
                     trees[tag].setdefault('children', OrderedDict())
                     trees[tag]['children'].update(children)
+                    simple[tag].update(simple_children)
 
     def draw_walker(self, test=True):
         """Draw a walker randomly.

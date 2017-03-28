@@ -349,6 +349,13 @@ def get_parser():
         help=("Save the full chain for each model fit."))
 
     parser.add_argument(
+        '--print-trees',
+        dest='print_trees',
+        default=False,
+        action='store_true',
+        help=("Print the full dependency trees of each model."))
+
+    parser.add_argument(
         '--set-upload-token',
         dest='set_upload_token',
         const=True,
