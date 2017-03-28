@@ -18,17 +18,6 @@ class SED(Module):
         super(SED, self).__init__(**kwargs)
         self._sample_wavelengths = []
 
-    def process(self, **kwargs):
-        """Process module."""
-        if 'luminosities' not in kwargs:
-            if 'dense_luminosities' in kwargs:
-                kwargs['luminosities'] = kwargs['dense_luminosities'][
-                    kwargs['dense_indices']]
-            else:
-                raise RuntimeError(
-                    'Expecting `dense_luminosities` to exist before calling '
-                    'SED module.')
-
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
         self._sample_wavelengths = requests.get('sample_wavelengths', [])

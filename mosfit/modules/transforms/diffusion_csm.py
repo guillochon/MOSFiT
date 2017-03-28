@@ -70,4 +70,4 @@ class DiffusionCSM(Transform):
             lum_val = np.trapz(int_arg, dx=dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
-        return {self.output_key('luminosities'): new_lum}
+        return {'dense_luminosities': new_lum}

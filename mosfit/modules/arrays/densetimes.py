@@ -43,6 +43,6 @@ class DenseTimes(Array):
                     ] + self._rest_times)))
         else:
             outputs['dense_times'] = self._rest_times
-        outputs['dense_indices'] = np.searchsorted(outputs['dense_times'],
-                                                   self._rest_times)
+        outputs['dense_indices'] = np.searchsorted(
+            outputs['dense_times'], self._rest_times)
         return outputs

@@ -607,7 +607,7 @@ class Fitter(object):
         aa = 0
         psrf = np.inf
         s_exception = None
-        all_chain = []
+        all_chain = np.array([])
 
         try:
             st = time.time()
@@ -708,6 +708,8 @@ class Fitter(object):
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
                             sampler.chain[:, :, :li, :])
+                        if not len(all_chain):
+                            all_chain = cur_chain
                         for a in range(acorc, 1, -1):
                             ms = self._burn_in
                             if ms >= emi - low:

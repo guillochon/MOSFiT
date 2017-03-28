@@ -18,7 +18,7 @@ class LOSExtinction(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        super(LOSExtinction, self).process(**kwargs)
+        kwargs = self.prepare_input('luminosities', **kwargs)
         self.preprocess(**kwargs)
         zp1 = 1.0 + kwargs['redshift']
         self._seds = kwargs['seds']
