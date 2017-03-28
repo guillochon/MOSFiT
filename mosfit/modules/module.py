@@ -63,7 +63,8 @@ class Module(object):
         if key not in kwargs:
             if 'dense_' + key in kwargs:
                 kwargs[key] = np.take(
-                    kwargs['dense_' + key], kwargs['dense_indices'])
+                    np.array(kwargs['dense_' + key]),
+                    np.array(kwargs['dense_indices']))
             else:
                 raise RuntimeError(
                     'Expecting `dense_` version of key to exist before '
