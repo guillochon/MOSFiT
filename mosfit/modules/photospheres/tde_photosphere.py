@@ -48,11 +48,11 @@ class tde_photosphere(Photosphere):
         a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
              self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
         
-        rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
-        rphotmax = 2*rp + 2*a_p
+        #rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
+        rphotmax = 2 * a_p #2*rp + 2*a_p
 
         #r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
-        rphotmin = 2*rp #r_isco
+        rphotmin = r_isco #2*rp #r_isco
 
         rphot = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
         # the luminosity is zero)
