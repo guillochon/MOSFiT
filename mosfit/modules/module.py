@@ -58,6 +58,12 @@ class Module(object):
         """Return any bibcodes associated with the present ``Module``."""
         return []
 
+    def output_key(self, key):
+        """Manipulate output keys conditionally."""
+        if self._provide_dense:
+            return 'dense_' + key
+        return key
+
     def prepare_input(self, key, **kwargs):
         """Prepare keys conditionally."""
         if key not in kwargs:
