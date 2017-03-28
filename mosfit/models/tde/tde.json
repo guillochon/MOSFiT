@@ -57,6 +57,12 @@
         "class":"parameter",
         "latex":"M_{star} (M_{odot})"
     },
+    "Rstar":{
+        "kind":"parameter",
+        "value": 1.0,
+        "class": "parameter",
+        "latex":"R_{star} (R_{odot})"
+    },
     "Rph0":{
         "kind":"parameter",
         "value": 0.17,

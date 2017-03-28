@@ -128,8 +128,10 @@ class Fallback(Engine):
        # change this so I get variables from mosfit
         G = c.G.cgs.value # 6.67259e-8 cm3 g-1 s-2
         Msolar = c.M_sun.cgs.value #1.989e33 grams
+        Rsolar = c.R_sun.cgs.value
         Mhbase = 1.0e6*Msolar # this is the generic size of bh used in astrocrash sim
         Mstarbase = Msolar
+        Rstarbase = Rsolar
 
         # this is not beta, but rather a way to map beta_4-3 --> beta_5-3
         # b = 0 --> min disruption, b = 1 --> full disruption, b = 2 --> max beta of sims
@@ -392,7 +394,7 @@ class Fallback(Engine):
             (time, kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
 
         '''
-        # ----------- SCALE dm/dt TO BH & STAR SIZE --------------
+        # ----------- SCALE dm/dt TO BH & STAR MASS & STAR RADIUS --------------
 
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times'] # time in days
@@ -406,26 +408,13 @@ class Fallback(Engine):
         # star mass for dmdts in astrocrash is 1 solar mass
         self._starmass = kwargs['starmass']*Msolar
 
-        dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0
+        self._Rstar = kwargs['Rstar']*Rsolar
+
+        dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0 * (Rstarbase/self._Rstar)**1.5
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
-        time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass)
+        time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass) * (self._Rstar/Rstarbase)**1.5
         tnew = time/(3600 * 24) # time is now in days to match self._times
 
-
-
-        # try aligning time of simulation peak with parameter tpeak
-        #self._tpeak = kwargs['tpeak'] # tpeak in days
-        #tpeaksim = tnew[np.argmax(dmdt)]
-        #tnew = tnew - (tpeaksim - self._tpeak)
-        #print ('self._tpeak =', self._tpeak, '; tpeaksim =', tpeaksim)
-        #print ('self._times: ', self._times)
-        #print ('tnew (sim times): ', tnew)
-
-        # try aligning time = 0 of self._times with  tnew[0] --> first time in
-        # sim data (after doing early time extrapolation)
-
-        #index0 = len(np.array(self._times)[np.array(self._times) < 0])
-        #tnew = tnew - (tnew[0] - self._times[index0])
 
         # try aligning first fallback time of simulation
         # (whatever first time is after early t extrapolation) with parameter texplosion
@@ -451,10 +440,7 @@ class Fallback(Engine):
         #timeinterpfunc = CubicSpline(tnew, dmdt)
         timeinterpfunc = interp1d(tnew, dmdt)
 
-
-        #lengthpretimes = len(np.ones(len(self._times))[self._times < tnew[0]]) #len(self._times[self._times < tnew[0]])
         lengthpretimes = len(np.where(self._times < tnew[0])[0])
-        #lengthposttimes = len(np.ones(len(self._times))[self._times > tnew[-1]]) #len(self._times[self._times > tnew[0]])
         lengthposttimes = len(np.where(self._times > tnew[-1])[0])
 
         # this removes all extrapolation by setting dmdtnew = 0 outside of bounds of tnew
@@ -463,19 +449,9 @@ class Fallback(Engine):
         dmdt2 = timeinterpfunc(self._times[lengthpretimes:len(self._times)-lengthposttimes])
         dmdtnew = np.append(dmdt1,dmdt2)
         dmdtnew = np.append(dmdtnew, dmdt3)
-        #timeinterpfunc(self._times[lengthprepeak:len(self._times)-lengthpostpeak]))
-        #dmdtnew = np.concatenate(dmdtnew , np.zeros(lengthpostpeak) )
-
-        #dmdtnew[ self._times < min(tnew) ] = 0 # try setting early time extrapolated data to zero
 
         dmdtnew[dmdtnew < 0] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
 
-
-        #if min(self._times) < min(time):
-           # dmdtnew = dmdtnew[self._]
-
-        # this assumes t is decreasing
-        #dmdtnew = np.flipud(timeinterp(self._times))
 
         # Can uncomment following line to save files for testing
         #np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
