@@ -196,7 +196,9 @@ class Model(object):
         # Look forward to see which modules want dense arrays.
         for task in self._call_stack:
             for ftask in self._call_stack:
-                if (self._call_stack[ftask]['depth'] <
+                # BUG: The fact that this is <= suggests that one module
+                # depends on another at the same depth. This shouldn't happen.
+                if (self._call_stack[ftask]['depth'] <=
                         self._call_stack[task]['depth'] and
                         self._modules[ftask]._wants_dense):
                     self._modules[task]._provide_dense = True
