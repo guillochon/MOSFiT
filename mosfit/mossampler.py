@@ -130,8 +130,10 @@ class MOSSampler(PTSampler):
         * ``lnlike`` the current likelihood values for the walkers.
         """
         if not gibbs:
-            super(MOSSampler, self).sample(
-                p0, lnprob0, lnlike0, iterations, thin, storechain)
+            for n in super(MOSSampler, self).sample(
+                    p0, lnprob0, lnlike0, iterations, thin, storechain):
+                yield n
+            return
 
         p = np.copy(np.array(p0))
 
