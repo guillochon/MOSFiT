@@ -84,12 +84,12 @@ def entabbed_json_dumps(string, **kwargs):
             separators=kwargs['separators'],
             ensure_ascii=False)
         return
-    newstr = json.dumps(
+    newstr = unicode(json.dumps(  # noqa: F821
         string,
         indent=4,
         separators=kwargs['separators'],
         ensure_ascii=False,
-        encoding='utf8')
+        encoding='utf8'))
     newstr = re.sub(
         '\n +',
         lambda match: '\n' + '\t' * (len(match.group().strip('\n')) / 4),
