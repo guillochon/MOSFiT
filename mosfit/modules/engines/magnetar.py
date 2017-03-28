@@ -15,10 +15,7 @@ class Magnetar(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        if 'dense_times' in kwargs:
-            self._times = kwargs['dense_times']
-        else:
-            self._times = kwargs['rest_times']
+        self._times = kwargs['dense_times']
         self._Pspin = kwargs['Pspin']
         self._Bfield = kwargs['Bfield']
         self._Mns = kwargs['Mns']
@@ -48,4 +45,4 @@ class Magnetar(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {'luminosities': luminosities}
+        return {'dense_luminosities': luminosities}

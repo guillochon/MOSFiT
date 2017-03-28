@@ -14,10 +14,7 @@ class ExpPow(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        if 'dense_times' in kwargs:
-            self._times = kwargs['dense_times']
-        else:
-            self._times = kwargs['rest_times']
+        self._times = kwargs['dense_times']
         self._alpha = kwargs['alpha']
         self._beta = kwargs['beta']
         self._t_peak = kwargs['tpeak']
@@ -39,4 +36,5 @@ class ExpPow(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {'kappagamma': kwargs['kappa'], 'luminosities': luminosities}
+        return {'kappagamma': kwargs['kappa'],
+                'dense_luminosities': luminosities}

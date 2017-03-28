@@ -193,6 +193,14 @@ class Model(object):
             # if mod_name == 'photometry':
             #     self._bands = self._modules[task].band_names()
 
+        # Look forward to see which modules want dense arrays.
+        for task in self._call_stack:
+            for ftask in self._call_stack:
+                if ((self._call_stack[ftask]['depth'] <
+                        self._call_stack[task]['depth']) and
+                        self._modules[ftask]._wants_dense):
+                    self._modules[ftask]._provide_dense = True
+
     def _load_task_module(self, task, call_stack=None):
         if not call_stack:
             call_stack = self._call_stack

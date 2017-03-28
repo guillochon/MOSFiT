@@ -35,6 +35,7 @@ class BlackbodyCutoff(SED):
 
     def process(self, **kwargs):
         """Process module."""
+        kwargs = self.prepare_input('luminosities', **kwargs)
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
@@ -42,7 +43,7 @@ class BlackbodyCutoff(SED):
         self._radius_phot = kwargs['radiusphot']
         self._temperature_phot = kwargs['temperaturephot']
         self._cutoff_wavelength = kwargs['cutoff_wavelength']
-        self._times = kwargs['all_times']
+        self._times = kwargs['rest_times']
         xc = self.X_CONST
         fc = self.FLUX_CONST
         cc = self.C_CONST

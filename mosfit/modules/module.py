@@ -2,6 +2,7 @@
 import json
 from collections import OrderedDict
 
+import numpy as np
 from mosfit.printer import Printer
 
 
@@ -18,6 +19,8 @@ class Module(object):
         self._log = False
         self._pool = pool
         self._preprocessed = False
+        self._wants_dense = False
+        self._provide_dense = False
         if not printer:
             self._printer = Printer()
         else:
@@ -54,3 +57,16 @@ class Module(object):
     def get_bibcode(self):
         """Return any bibcodes associated with the present ``Module``."""
         return []
+
+    def prepare_input(self, key, **kwargs):
+        """Prepare keys conditionally."""
+        if key not in kwargs:
+            if 'dense_' + key in kwargs:
+                kwargs[key] = np.take(
+                    np.array(kwargs['dense_' + key]),
+                    np.array(kwargs['dense_indices']))
+            else:
+                raise RuntimeError(
+                    'Expecting `dense_` version of key to exist before '
+                    'calling `{}` module.'.format())
+        return kwargs

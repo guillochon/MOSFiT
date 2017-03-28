@@ -7,7 +7,12 @@ from mosfit.modules.module import Module
 class Transform(Module):
     """Parent class for transforms."""
 
-    def set_times_lums(self, **kwargs):
+    def __init__(self, **kwargs):
+        """Initialize module."""
+        super(Transform, self).__init__(**kwargs)
+        self._wants_dense = True
+
+    def process(self, **kwargs):
         """Set `dense_*` and `*_since_exp` times/luminosities keys."""
         self._times = kwargs['rest_times']
         self._rest_t_explosion = kwargs['resttexplosion']
@@ -21,3 +26,7 @@ class Transform(Module):
                                  for x in self._times]
         self._dense_times_since_exp = [(x - self._rest_t_explosion)
                                        for x in self._dense_times]
+        if self._provide_dense:
+            self._times_to_process = self._dense_times_since_exp
+        else:
+            self._times_to_process = self._times_since_exp

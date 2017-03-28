@@ -20,6 +20,7 @@ class TemperatureFloor(Photosphere):
 
     def process(self, **kwargs):
         """Process module."""
+        kwargs = self.prepare_input('luminosities', **kwargs)
         self._rest_t_explosion = kwargs['resttexplosion']
         self._times = kwargs['rest_times']
         self._luminosities = kwargs['luminosities']

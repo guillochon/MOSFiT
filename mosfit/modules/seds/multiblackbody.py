@@ -21,6 +21,7 @@ class MultiBlackbody(SED):
     def process(self, **kwargs):
         """Process module."""
         raise RuntimeError('`MultiBlackbody` is not yet functional.')
+        kwargs = self.prepare_input('luminosities', **kwargs)
         self._luminosities = kwargs['luminosities']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']

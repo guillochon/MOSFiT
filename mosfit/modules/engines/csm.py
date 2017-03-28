@@ -35,11 +35,7 @@ class CSM(Engine):
         self._Esn = 3. * self._vph**2 * self._mejecta / 10.
         self._rest_t_explosion = kwargs['resttexplosion']
         self._efficiency = kwargs['efficiency']
-
-        if 'dense_times' in kwargs:
-            self._times = kwargs['dense_times']
-        else:
-            self._times = kwargs['rest_times']
+        self._times = kwargs['dense_times']
 
         # g**n is scaling parameter for ejecta density profile
         self._g_n = (1.0 / (4.0 * np.pi * (self._n - self._delta)) * (
@@ -145,7 +141,7 @@ class CSM(Engine):
 
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
-        old_luminosities = kwargs.get('luminosities', None)
+        old_luminosities = kwargs.get('dense_luminosities', None)
 
         if old_luminosities is not None:
             luminosities = [
@@ -155,4 +151,4 @@ class CSM(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {'luminosities': luminosities}
+        return {'dense_luminosities': luminosities}

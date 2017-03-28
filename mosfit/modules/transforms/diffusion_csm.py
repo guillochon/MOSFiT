@@ -18,7 +18,7 @@ class DiffusionCSM(Transform):
 
     def process(self, **kwargs):
         """Process module."""
-        self.set_times_lums(**kwargs)
+        super(DiffusionCSM, self).process(**kwargs)
         self._kappa = kwargs['kappa']
         self._mass = kwargs['mcsm'] * M_SUN_CGS
         self._R0 = kwargs['r0'] * 1.496e13  # AU to cm
@@ -43,7 +43,7 @@ class DiffusionCSM(Transform):
         evaled = False
         lum_cache = OrderedDict()
         min_te = min(self._dense_times_since_exp)
-        for te in self._times_since_exp:
+        for te in self._times_to_process:
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue
@@ -70,4 +70,4 @@ class DiffusionCSM(Transform):
             lum_val = np.trapz(int_arg, dx=dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
-        return {'luminosities': new_lum}
+        return {'dense_luminosities': new_lum}

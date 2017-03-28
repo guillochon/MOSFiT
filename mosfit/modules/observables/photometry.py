@@ -225,6 +225,7 @@ class Photometry(Module):
 
     def process(self, **kwargs):
         """Process module."""
+        kwargs = self.prepare_input('luminosities', **kwargs)
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
