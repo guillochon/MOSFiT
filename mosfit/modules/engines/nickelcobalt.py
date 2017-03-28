@@ -46,4 +46,4 @@ class NickelCobalt(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {'dense_luminosities': luminosities}
+        return {self.output_key('luminosities'): luminosities}
