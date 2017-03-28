@@ -19,7 +19,7 @@ class tde_photosphere(Photosphere):
         self._times = np.array(kwargs['rest_times']) #np.array(kwargs['dense_times']) #kwargs['rest_times']
         self._densetimes = kwargs['dense_times']
 
-        self._kappagamma = kwargs['kappagamma']
+        #self._kappagamma = kwargs['kappagamma']
         self._Mh = kwargs['bhmass']
         self._Mstar = kwargs['starmass']
         self._l = kwargs['lphoto']

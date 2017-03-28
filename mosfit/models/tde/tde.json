@@ -45,33 +45,6 @@
         "class":"parameter",
         "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
     },
-    "viscous":{
-        "kind":"transform",
-        "inputs":[
-            "fallback",
-            "kappa",
-            "texplosion",
-            "Tviscous"
-        ]
-    },
-    "kappa":{
-        "kind":"parameter",
-        "value":0.2,
-        "class":"parameter",
-        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
-    },
-    "mejecta":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"M_{\\rm ej}\\,(M_\\odot)"
-    },
-    "vejecta":{
-        "kind":"parameter",
-        "value":1.0e4,
-        "class":"parameter",
-        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
-    },
     "bhmass":{
         "kind":"parameter",
         "value":1.0e6,
@@ -111,6 +84,15 @@
             "efficiency",
             "tpeak",
             "texplosion"
+        ]
+    },
+    "viscous":{
+        "kind":"transform",
+        "inputs":[
+            "fallback",
+            "kappa",
+            "texplosion",
+            "Tviscous"
         ]
     },
     "tde_photosphere":{
