@@ -204,7 +204,7 @@ class MOSSampler(PTSampler):
                     js = np.random.randint(0, high=self.nwalkers // 2,
                                            size=self.nwalkers // 2)
                     yrange = np.arange(self.nwalkers // 2).reshape(-1, 1)
-                    qs[k, :, :] = psample[k, js, :]
+                    qs[k, :, :] = psample[k, :, :]
                     qs[k, yrange,
                        thawed] = psample[
                         k, js.reshape(-1, 1), thawed] + zs[k, :].reshape(
