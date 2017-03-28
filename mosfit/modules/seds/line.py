@@ -9,6 +9,7 @@ class Line(SED):
 
     def process(self, **kwargs):
         """Process module."""
+        super(Line, self).process(**kwargs)
         self._seds = kwargs['seds']
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']

@@ -32,7 +32,7 @@ class DenseTimes(Array):
         outputs = OrderedDict()
         max_times = max(self._rest_times)
         if max_times > self._t_explosion:
-            outputs['dense_times'] = list(
+            outputs['dense_times'] = np.array(
                 sorted(
                     set([0.0] + [
                         x + self._t_explosion
@@ -43,4 +43,6 @@ class DenseTimes(Array):
                     ] + self._rest_times)))
         else:
             outputs['dense_times'] = self._rest_times
+        outputs['dense_indices'] = np.searchsorted(outputs['dense_times'],
+                                                   self._rest_times)
         return outputs

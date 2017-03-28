@@ -18,6 +18,8 @@ class Module(object):
         self._log = False
         self._pool = pool
         self._preprocessed = False
+        self._wants_dense = False
+        self._provide_dense = False
         if not printer:
             self._printer = Printer()
         else:
@@ -54,3 +56,9 @@ class Module(object):
     def get_bibcode(self):
         """Return any bibcodes associated with the present ``Module``."""
         return []
+
+    def output_key(self, key):
+        """Manipulate output keys conditionally."""
+        if self._provide_dense:
+            return 'dense_' + key
+        return key

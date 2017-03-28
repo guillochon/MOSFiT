@@ -14,6 +14,11 @@ class SLSNConstraints(Constraint):
     2. Ejecta remain optically thick to thermal photons for at least 100d
     """
 
+    def __init__(self, **kwargs):
+        """Initialize module."""
+        super(SLSNConstraints, self).__init__(**kwargs)
+        self._wants_dense = True
+
     def process(self, **kwargs):
         """Process module. Add constraints below."""
         self._score_modifier = 0.0
@@ -22,9 +27,9 @@ class SLSNConstraints(Constraint):
         self._mejecta = kwargs['mejecta'] * M_SUN_CGS
         self._vejecta = kwargs['vejecta'] * KM_CGS
         self._kappa = kwargs['kappa']
-        self._times = kwargs['all_times']
+        self._times = kwargs['dense_times']
         self._t_explosion = kwargs['texplosion']
-        self._lums = kwargs['luminosities']
+        self._lums = kwargs['dense_luminosities']
         self._redshift = kwargs['redshift']
         self._neutrino_energy = kwargs['neutrino_energy']
         self._t_neb_min = kwargs['tnebular_min']

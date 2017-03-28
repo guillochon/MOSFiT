@@ -22,10 +22,7 @@ class RProcess(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        if 'dense_times' in kwargs:
-            self._times = kwargs['dense_times']
-        else:
-            self._times = kwargs['rest_times']
+        self._times = kwargs['dense_times']
         self._mass = kwargs['mejecta'] * self.M_sun
         self._rest_texplosion = kwargs['resttexplosion']
 
@@ -43,7 +40,7 @@ class RProcess(Engine):
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
         # Add on to any existing luminosity
-        old_luminosities = kwargs.get('luminosities', None)
+        old_luminosities = kwargs.get('dense_luminosities', None)
         if old_luminosities is not None:
             luminosities = [
                 x + y for x, y in zip(old_luminosities, luminosities)
@@ -52,4 +49,4 @@ class RProcess(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {'luminosities': luminosities}
+        return {self.output_key('luminosities'): luminosities}

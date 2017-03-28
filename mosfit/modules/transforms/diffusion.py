@@ -19,7 +19,7 @@ class Diffusion(Transform):
 
     def process(self, **kwargs):
         """Process module."""
-        self.set_times_lums(**kwargs)
+        super(Diffusion, self).process(**kwargs)
         self._kappa = kwargs['kappa']
         self._kappa_gamma = kwargs['kappagamma']
         self._m_ejecta = kwargs['mejecta']
@@ -35,7 +35,7 @@ class Diffusion(Transform):
         evaled = False
         lum_cache = OrderedDict()
         min_te = min(self._dense_times_since_exp)
-        for te in self._times_since_exp:
+        for te in self._times_to_process:
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue
@@ -67,4 +67,4 @@ class Diffusion(Transform):
             lum_val = np.trapz(int_arg, dx=dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
-        return {'luminosities': new_lum}
+        return {self.output_key('luminosities'): new_lum}
