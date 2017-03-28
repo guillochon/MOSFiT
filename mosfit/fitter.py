@@ -583,7 +583,7 @@ class Fitter(object):
                     break
 
                 if pool.size == 0:
-                    p, score = draw_walker()
+                    p, score = draw_walker(test_walker)
                     p0[i].append(p)
                     dwscores.append(score)
                 else:
