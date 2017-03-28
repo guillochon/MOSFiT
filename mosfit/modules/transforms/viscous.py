@@ -16,7 +16,8 @@ class Viscous(Transform):
 
     def process(self, **kwargs):
         """Process module."""
-        self.set_times_lums(**kwargs)
+        super(Viscous, self).process(**kwargs)
+
         ipeak = np.argmax(self._dense_luminosities)
         tpeak = self._dense_times_since_exp[ipeak]
         Tvisc = kwargs['Tviscous'] * tpeak
@@ -24,13 +25,12 @@ class Viscous(Transform):
         new_lum = []
         evaled = False
         lum_cache = {}
-        # , fill_value = 'extrapolate')
         lum_func = interp1d(self._dense_times_since_exp,
                             self._dense_luminosities)
         timesteps = self.N_INT_TIMES
         min_te = min(self._dense_times_since_exp)
 
-        for j, te in enumerate(self._dense_times_since_exp):
+        for j, te in enumerate(self._times_to_process):
             if te <= 0.0:
                 new_lum.append(0.0)
                 continue

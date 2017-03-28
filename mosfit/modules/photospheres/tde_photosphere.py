@@ -16,23 +16,20 @@ class tde_photosphere(Photosphere):
     RAD_CONST = KM_CGS * DAY_CGS
 
     def process(self, **kwargs):
+        kwargs = self.prepare_input('luminosities', **kwargs)
         self._times = np.array(kwargs['rest_times']) #np.array(kwargs['dense_times']) #kwargs['rest_times']
-        self._densetimes = kwargs['dense_times']
 
         #self._kappagamma = kwargs['kappagamma']
         self._Mh = kwargs['bhmass']
         self._Mstar = kwargs['starmass']
         self._l = kwargs['lphoto']
         self._Rph_0 = 10.0**(kwargs['Rph0']) # parameter is varied in logspace, kwargs['Rph_0'] = log10(Rph0)
-        self._dense_luminosities = np.array(kwargs['dense_luminosities'])
+        self._luminosities = np.array(kwargs['luminosities'])
         #self._beta = kwargs['beta'] # getting beta at this point in process is more complicated than expected bc
         # it can be a beta for a 4/3 - 5/3 combination. Can easily get 'b' -- scaled constant that is linearly related to beta
         # but beta itself is not well defined. -- what does this mean exactly? beta = rt/rp
         #self._Rstar = 1 # placeholder
 
-        lum_func = interp1d(self._densetimes, self._dense_luminosities)
-
-        self._luminosities = lum_func(self._times)
 
         # Assume solar metallicity for now
         kappa_t = 0.2*(1 + 0.74) # thompson opacity using solar metallicity
@@ -64,4 +61,4 @@ class tde_photosphere(Photosphere):
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
-        return {'radiusphot': rphot, 'temperaturephot': Tphot, 'luminosities': self._luminosities} # return sparse luminosities here
+        return {'radiusphot': rphot, 'temperaturephot': Tphot} # return sparse luminosities here
