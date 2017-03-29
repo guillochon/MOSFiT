@@ -1,7 +1,6 @@
 """Definitions for the `Transient` class."""
 from collections import OrderedDict
 
-import inflect
 import numpy as np
 from mosfit.modules.module import Module
 from mosfit.utils import is_number, listify
@@ -18,7 +17,6 @@ class Transient(Module):
         super(Transient, self).__init__(**kwargs)
         self._keys = kwargs.get('keys', '')
         self._data_determined_parameters = []
-        self._inflect = inflect.engine()
 
     def process(self, **kwargs):
         """Process module."""
@@ -124,7 +122,7 @@ class Transient(Module):
                         self._data[key] = entry.get(x, falseval)
                     else:
                         self._data.setdefault(
-                            self._inflect.plural(x),
+                            self._model._inflect.plural(x),
                             []).append(entry.get(x, falseval))
 
         if 'times' not in self._data or ('magnitudes' not in self._data and

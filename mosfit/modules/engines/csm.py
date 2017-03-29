@@ -141,7 +141,7 @@ class CSM(Engine):
 
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
-        old_luminosities = kwargs.get('dense_luminosities', None)
+        old_luminosities = kwargs.get(self.key('dense_luminosities'), None)
 
         if old_luminosities is not None:
             luminosities = [

@@ -24,8 +24,9 @@ class Blackbody(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input('luminosities', **kwargs)
-        self._luminosities = kwargs['luminosities']
+        lum_key = self.key('luminosities')
+        kwargs = self.prepare_input(lum_key, **kwargs)
+        self._luminosities = kwargs[lum_key]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']

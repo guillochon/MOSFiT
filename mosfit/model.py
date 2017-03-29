@@ -9,6 +9,7 @@ from copy import deepcopy
 from difflib import get_close_matches
 from math import isnan
 
+import inflect
 import numpy as np
 # from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
@@ -42,6 +43,7 @@ class Model(object):
         self._wrap_length = wrap_length
         self._fitter = fitter
         self._print_trees = print_trees
+        self._inflect = inflect.engine()
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -180,6 +182,7 @@ class Model(object):
             self._modules[task] = self._load_task_module(task)
             if mod_name == 'photometry':
                 self._bands = self._modules[task].band_names()
+            self._modules[task].set_attributes(cur_task)
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
             # mod_name = cur_task.get('class', task)
@@ -215,7 +218,8 @@ class Model(object):
         cur_task = call_stack[task]
         mod_name = cur_task.get('class', task).lower()
         mod = importlib.import_module(
-            '.' + 'modules.' + cur_task['kind'].lower() + 's.' + mod_name,
+            '.' + 'modules.' + self._inflect.plural(
+                cur_task['kind'].lower()) + '.' + mod_name,
             package='mosfit')
         class_name = [
             x[0] for x in
@@ -224,7 +228,7 @@ class Model(object):
             x[1].__module__ == mod.__name__][0]
         mod_class = getattr(mod, class_name)
         return mod_class(
-            name=task, pool=self._pool, printer=self._printer, **cur_task)
+            name=task, model=self, **cur_task)
 
     def create_data_dependent_free_parameters(
             self, variance_for_each=[], output={}):
@@ -460,6 +464,14 @@ class Model(object):
                     max_depth = new_max
         return max_depth
 
+    def pool(self):
+        """Return processing pool."""
+        return self._pool
+
+    def printer(self):
+        """Return printer."""
+        return self._printer
+
     def likelihood(self, x):
         """Return score related to maximum likelihood."""
         outputs = self.run_stack(x, root='objective')
@@ -522,6 +534,10 @@ class Model(object):
                     "Failed to execute module `{}`\'s process().".format(task))
                 raise
             outputs.update(new_outs)
+            if '_delete_keys' in outputs:
+                for key in outputs['_delete_keys']:
+                    del(outputs[key])
+                del(outputs['_delete_keys'])
 
             if cur_task['kind'] == root:
                 return outputs

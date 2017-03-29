@@ -131,6 +131,8 @@ class Fitter(object):
         event_list = listify(events)
         model_list = listify(models)
 
+        event_list = [x.replace('‑', '-') for x in event_list]
+
         self._catalogs = {
             'OSC': ('https://sne.space/astrocats/astrocats/'
                     'supernovae/output'),
