@@ -131,6 +131,13 @@ class Fitter(object):
         event_list = listify(events)
         model_list = listify(models)
 
+        self._catalogs = {
+            'OSC': ('https://sne.space/astrocats/astrocats/'
+                    'supernovae/output'),
+            'OTC': ('https://tde.space/astrocats/astrocats/'
+                    'tidaldisruptions/output')
+        }
+
         if not len(event_list) and not len(model_list):
             self._printer.wrapped(
                 'No events or models specified, initializing and then '
@@ -144,6 +151,7 @@ class Fitter(object):
                    x in range(len(event_list))]
 
         self._event_name = 'Batch'
+        self._event_catalog = ''
         for ei, event in enumerate(event_list):
             self._event_name = ''
             self._event_path = ''
@@ -159,92 +167,115 @@ class Fitter(object):
                         path = event
                         self._event_name = event.replace('.json',
                                                          '').split('/')[-1]
+
                     # If not (or the file doesn't exist), download from OSC
                     if not path or not os.path.exists(path):
-                        names_path = os.path.join(dir_path, 'cache',
-                                                  'names.min.json')
+                        names_paths = [
+                            os.path.join(dir_path, 'cache', x +
+                                         '.names.min.json') for x in
+                            self._catalogs]
                         input_name = event.replace('.json', '')
                         prt.wrapped(
-                            'Event `{}` interpreted as supernova '
-                            'name, downloading list of supernova '
+                            'Event `{}` interpreted as transient '
+                            'name, downloading lists of transient '
                             'aliases...'.format(input_name))
                         if not offline:
-                            try:
-                                response = get_url_file_handle(
-                                    'https://sne.space/astrocats/astrocats/'
-                                    'supernovae/output/names.min.json',
-                                    timeout=10)
-                            except Exception:
-                                prt.wrapped(
-                                    'Warning: Could not download SN names ('
-                                    'are you online?), using cached list.')
-                                raise
-                            else:
-                                with open(names_path, 'wb') as f:
-                                    shutil.copyfileobj(response, f)
-                        if os.path.exists(names_path):
-                            with open(names_path, 'r') as f:
-                                names = json.load(
-                                    f, object_pairs_hook=OrderedDict)
-                        else:
-                            self._printer.wrapped(
-                                'Warning: Could not read list of SN names!',
-                                warning=True)
-                            if offline:
-                                self._printer.wrapped(
-                                    'Try omitting the `--offline` flag.')
-                            raise RuntimeError
-
-                        if event in names:
-                            self._event_name = event
-                        else:
-                            for name in names:
-                                if (event in names[name] or
-                                        'SN' + event in names[name]):
-                                    self._event_name = name
-                                    break
-                        if not self._event_name:
-                            namekeys = []
-                            for name in names:
-                                namekeys.extend(names[name])
-                            namekeys = list(sorted(set(namekeys)))
-                            matches = get_close_matches(
-                                event, namekeys, n=5, cutoff=0.8)
-                            # matches = []
-                            if len(matches) < 5 and is_number(event[0]):
-                                prt.wrapped(
-                                    'Could not find event, performing '
-                                    'extended name search...')
-                                snprefixes = set(('SN19', 'SN20'))
-                                for name in names:
-                                    ind = re.search("\d", name)
-                                    if ind and ind.start() > 0:
-                                        snprefixes.add(name[:ind.start()])
-                                snprefixes = list(sorted(snprefixes))
-                                for prefix in snprefixes:
-                                    testname = prefix + event
-                                    new_matches = get_close_matches(
-                                        testname, namekeys, cutoff=0.95, n=1)
-                                    if (len(new_matches) and
-                                            new_matches[0] not in matches):
-                                        matches.append(new_matches[0])
-                                    if len(matches) == 5:
-                                        break
-                            if len(matches):
-                                if travis:
-                                    response = matches[0]
+                            for ci, catalog in enumerate(self._catalogs):
+                                try:
+                                    response = get_url_file_handle(
+                                        self._catalogs[catalog] +
+                                        '/names.min.json',
+                                        timeout=10)
+                                except Exception:
+                                    prt.wrapped(
+                                        'Warning: Could not download {} '
+                                        'names (are you online?), using '
+                                        'cached list.'.format(catalog))
+                                    raise
                                 else:
-                                    response = prt.prompt(
-                                        'No exact match to given event '
-                                        'found. Did you mean one of the '
-                                        'following events?',
-                                        kind='select',
-                                        options=matches)
-                                if response:
-                                    for name in names:
-                                        if response in names[name]:
-                                            self._event_name = name
+                                    with open(names_paths[ci], 'wb') as f:
+                                        shutil.copyfileobj(response, f)
+                        names = OrderedDict()
+                        for ci, catalog in enumerate(self._catalogs):
+                            if os.path.exists(names_paths[ci]):
+                                with open(names_paths[ci], 'r') as f:
+                                    names[catalog] = json.load(
+                                        f, object_pairs_hook=OrderedDict)
+                            else:
+                                self._printer.wrapped(
+                                    'Warning: Could not read list of {} '
+                                    'names!'.format(catalog), warning=True)
+                                if offline:
+                                    self._printer.wrapped(
+                                        'Try omitting the `--offline` flag.')
+                                raise RuntimeError
+
+                            if event in names[catalog]:
+                                self._event_name = event
+                                self._event_catalog = catalog
+                            else:
+                                for name in names[catalog]:
+                                    if (event in names[catalog][name] or
+                                            'SN' + event in
+                                            names[catalog][name]):
+                                        self._event_name = name
+                                        self._event_catalog = catalog
+                                        break
+
+                        if not self._event_name:
+                            for ci, catalog in enumerate(self._catalogs):
+                                namekeys = []
+                                for name in names[catalog]:
+                                    namekeys.extend(names[catalog][name])
+                                namekeys = list(sorted(set(namekeys)))
+                                matches = get_close_matches(
+                                    event, namekeys, n=5, cutoff=0.8)
+                                # matches = []
+                                if len(matches) < 5 and is_number(event[0]):
+                                    prt.wrapped(
+                                        'Could not find event, performing '
+                                        'extended name search...')
+                                    snprefixes = set(('SN19', 'SN20'))
+                                    for name in names[catalog]:
+                                        ind = re.search("\d", name)
+                                        if ind and ind.start() > 0:
+                                            snprefixes.add(name[:ind.start()])
+                                    snprefixes = list(sorted(snprefixes))
+                                    for prefix in snprefixes:
+                                        testname = prefix + event
+                                        new_matches = get_close_matches(
+                                            testname, namekeys, cutoff=0.95,
+                                            n=1)
+                                        if (len(new_matches) and
+                                                new_matches[0] not in matches):
+                                            matches.append(new_matches[0])
+                                        if len(matches) == 5:
                                             break
+                                if len(matches):
+                                    if travis:
+                                        response = matches[0]
+                                    else:
+                                        response = prt.prompt(
+                                            'No exact match to given '
+                                            'transient '
+                                            'found. Did you mean one of the '
+                                            'following transients?',
+                                            kind='select',
+                                            options=matches,
+                                            none_string=(
+                                                'None of the above, ' +
+                                                ('skip this event.' if
+                                                 ci == len(self._catalogs) - 1
+                                                 else
+                                                 'try the next catalog.')))
+                                    if response:
+                                        for name in names[catalog]:
+                                            if response in names[
+                                                    catalog][name]:
+                                                self._event_name = name
+                                                self._event_catalog = catalog
+                                                break
+
                         if not self._event_name:
                             prt.wrapped(
                                 'Could not find event by that name, skipping!')
@@ -254,12 +285,13 @@ class Fitter(object):
 
                         if not offline:
                             prt.wrapped(
-                                'Found event by primary name `{}` in the OSC, '
-                                'downloading data...'.format(self._event_name))
+                                'Found event by primary name `{}` in the {}, '
+                                'downloading data...'.format(
+                                    self._event_name, self._event_catalog))
                             try:
                                 response = get_url_file_handle(
-                                    'https://sne.space/astrocats/astrocats/'
-                                    'supernovae/output/json/' + urlname,
+                                    self._catalogs[self._event_catalog] +
+                                    '/json/' + urlname,
                                     timeout=10)
                             except Exception:
                                 prt.wrapped(
@@ -280,7 +312,9 @@ class Fitter(object):
                     else:
                         prt.wrapped(
                             'Error: Could not find data for `{}` locally or '
-                            'on the OSC.'.format(self._event_name))
+                            'in the {}.'.format(
+                                self._event_name,
+                                '/'.join(self._catalogs.keys())))
                         if offline:
                             prt.wrapped(
                                 'Try omitting the `--offline` flag.')

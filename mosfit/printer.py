@@ -108,7 +108,9 @@ class Printer(object):
         if error or warning:
             sys.stdout.write(self.bcolors.ENDC)
 
-    def prompt(self, text, wrap_length=None, kind='bool', options=None):
+    def prompt(self, text, wrap_length=None, kind='bool',
+               none_string='None of the above.',
+               options=None):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -122,7 +124,7 @@ class Printer(object):
                 ' ' + str(i + 1) + '.  ' + options[i] for i in range(
                     len(options))
             ] + [
-                '[n]. None of the above, skip this event.\n'
+                '[n]. ' + none_string + '\n'
                 'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
                     len(options)) + '/[n]):'
             ])
