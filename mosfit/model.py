@@ -11,13 +11,16 @@ from math import isnan
 
 import inflect
 import numpy as np
-# from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.printer import Printer
 from mosfit.utils import listify
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
+
+from astrocats.catalog.quantity import QUANTITY
+# from bayes_opt import BayesianOptimization
+from astrocats.supernovae.supernova import SUPERNOVA
 
 
 class Model(object):
@@ -31,7 +34,8 @@ class Model(object):
 
     def __init__(self,
                  parameter_path='parameters.json',
-                 model='default',
+                 model='',
+                 data={},
                  wrap_length=100,
                  pool=None,
                  fitter=None,
@@ -53,6 +57,42 @@ class Model(object):
         prt = self._printer
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        # Load suggested model associations for transient types.
+        if os.path.isfile(os.path.join('models', 'types.json')):
+            types_path = os.path.join('models', 'types.json')
+        else:
+            types_path = os.path.join(self._dir_path, 'models',
+                                      'types.json')
+        with open(types_path, 'r') as f:
+            model_types = json.load(f, object_pairs_hook=OrderedDict)
+
+        if not self._model_name:
+            try:
+                claimed_type = list(data.values())[0][
+                    SUPERNOVA.CLAIMED_TYPE][0][QUANTITY.VALUE]
+            except Exception:
+                self._printer.wrapped(
+                    'No model specified and no claimed type for specified '
+                    'transient.', warning=True)
+            else:
+                type_options = model_types.get(claimed_type, [])
+                if not type_options:
+                    self._printer.wrapped(
+                        'No model available that matches the given '
+                        'transient\'s claimed type.', warning=True)
+                else:
+                    self._model_name = self._printer.prompt(
+                        'No model specified. Based on this transient\'s '
+                        'claimed type of `{}`, the following models are '
+                        'suggested for fitting this transient:'
+                        .format(claimed_type),
+                        kind='select',
+                        options=type_options,
+                        none_string='None of the above, skip this transient.')
+
+        if not self._model_name:
+            return
 
         # Load the basic model file.
         if os.path.isfile(os.path.join('models', 'model.json')):

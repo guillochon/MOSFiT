@@ -70,7 +70,7 @@ class Fitter(object):
         pass
 
     def fit_events(self,
-                   events=[''],
+                   events=[],
                    models=[],
                    plot_points='',
                    max_time='',
@@ -131,6 +131,9 @@ class Fitter(object):
         event_list = listify(events)
         model_list = listify(models)
 
+        if len(model_list) and not len(event_list):
+            event_list = ['']
+
         event_list = [x.replace('‑', '-') for x in event_list]
 
         self._catalogs = {
@@ -145,12 +148,11 @@ class Fitter(object):
                 'No events or models specified, initializing and then '
                 'exiting.', warning=True)
 
-        entries = [[None for y in range(len(model_list))] for
-                   x in range(len(event_list))]
-        ps = [[None for y in range(len(model_list))] for
-              x in range(len(event_list))]
-        lnprobs = [[None for y in range(len(model_list))] for
-                   x in range(len(event_list))]
+        entries = [[] for x in range(len(event_list))]
+        ps = [[] for x in range(len(event_list))]
+        lnprobs = [[] for x in range(len(event_list))]
+
+        data = {}
 
         self._event_name = 'Batch'
         self._event_catalog = ''
@@ -337,7 +339,16 @@ class Fitter(object):
                 if pool.is_master():
                     pool.close()
 
-            for mi, mod_name in enumerate(model_list):
+            if model_list:
+                lmodel_list = model_list
+            else:
+                lmodel_list = ['']
+
+            entries[ei] = [None for y in range(len(lmodel_list))]
+            ps[ei] = [None for y in range(len(lmodel_list))]
+            lnprobs[ei] = [None for y in range(len(lmodel_list))]
+
+            for mi, mod_name in enumerate(lmodel_list):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
@@ -345,11 +356,19 @@ class Fitter(object):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
+                        data=data,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
                         fitter=self,
                         pool=pool,
                         print_trees=print_trees)
+
+                    if not self._model._model_name:
+                        self._printer.wrapped(
+                            'Skipping `{}`, no models available to fit the '
+                            'transient.'.format(self._event_name),
+                            warning=True)
+                        continue
 
                     if not event:
                         self._printer.wrapped(
