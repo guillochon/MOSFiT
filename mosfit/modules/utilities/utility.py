@@ -5,7 +5,7 @@ from mosfit.modules.module import Module
 
 
 class Utility(Module):
-    """Template class for photosphere Modules."""
+    """Template class for utility Modules."""
 
     def process(self, **kwargs):
         """Process module."""
