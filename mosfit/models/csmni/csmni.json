@@ -185,10 +185,7 @@
             "texplosion",
             "total_luminosity",
             "temperature"
-        ],
-        "replacements":{
-            "luminosities": "csm_luminosities"
-        }
+        ]
     },
     "blackbody":{
         "kind":"sed",
