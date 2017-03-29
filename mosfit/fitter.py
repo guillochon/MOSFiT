@@ -667,7 +667,7 @@ class Fitter(object):
                 ic = max_chunk if run_until_converged else iter_arr[ici]
                 if exceeded_walltime:
                     break
-                if run_until_converged and converged:
+                if run_until_converged and converged and emi > iterations:
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
