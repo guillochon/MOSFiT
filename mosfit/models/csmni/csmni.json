@@ -166,6 +166,7 @@
     },
     "total_luminosity":{
         "kind":"utility",
+        "operator":"+",
         "operands":[
             "csm_luminosities",
             "nico_luminosities"
