@@ -81,14 +81,18 @@ class Model(object):
                         'No model available that matches the given '
                         'transient\'s claimed type.', warning=True)
                 else:
-                    self._model_name = self._printer.prompt(
-                        'No model specified. Based on this transient\'s '
-                        'claimed type of `{}`, the following models are '
-                        'suggested for fitting this transient:'
-                        .format(claimed_type),
-                        kind='select',
-                        options=type_options,
-                        none_string='None of the above, skip this transient.')
+                    if fitter._travis:
+                        self._model_name = type_options[0]
+                    else:
+                        self._model_name = self._printer.prompt(
+                            'No model specified. Based on this transient\'s '
+                            'claimed type of `{}`, the following models are '
+                            'suggested for fitting this transient:'
+                            .format(claimed_type),
+                            kind='select',
+                            options=type_options,
+                            none_string=('None of the above, skip this '
+                                         'transient.'))
 
         if not self._model_name:
             return

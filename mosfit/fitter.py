@@ -623,6 +623,15 @@ class Fitter(object):
                 'Warning: Number of free parameters exceeds number of '
                 'measurements. Please treat results with caution.',
                 warning=True)
+        if nwalkers < 10 * ndim:
+            self._printer.wrapped(
+                'Warning: While emcee accepts a number of walkers that is '
+                'twice the number of dimensions or greater, simple tests '
+                'with toy problems show poor convergence with this minimum. '
+                'We suggest using at least 10x the number of dimensions '
+                '(`-N {}` suggested for this fit), and preferably more, if '
+                'feasible.'.format(10 * ndim),
+                warning=True)
         self._printer.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
