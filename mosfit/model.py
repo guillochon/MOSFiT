@@ -20,7 +20,6 @@ from scipy.optimize import minimize
 
 from astrocats.catalog.quantity import QUANTITY
 # from bayes_opt import BayesianOptimization
-from astrocats.supernovae.supernova import SUPERNOVA
 
 
 class Model(object):
@@ -70,7 +69,7 @@ class Model(object):
         if not self._model_name:
             try:
                 claimed_type = list(data.values())[0][
-                    SUPERNOVA.CLAIMED_TYPE][0][QUANTITY.VALUE]
+                    'claimedtype'][0][QUANTITY.VALUE]
             except Exception:
                 self._printer.wrapped(
                     'No model specified and no claimed type for specified '
