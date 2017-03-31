@@ -86,7 +86,8 @@ class Fitter(object):
                    frack_step=50,
                    wrap_length=100,
                    travis=False,
-                   post_burn=500,
+                   burn=None,
+                   post_burn=None,
                    gibbs=False,
                    smooth_times=-1,
                    extrapolate_time=0.0,
@@ -390,6 +391,7 @@ class Fitter(object):
                         event_name=self._event_name,
                         iterations=iterations,
                         fracking=fracking,
+                        burn=burn,
                         post_burn=post_burn,
                         smooth_times=smooth_times,
                         extrapolate_time=extrapolate_time,
@@ -412,7 +414,6 @@ class Fitter(object):
                             num_temps=num_temps,
                             fracking=fracking,
                             frack_step=frack_step,
-                            post_burn=post_burn,
                             gibbs=gibbs,
                             pool=pool,
                             suffix=suffix,
@@ -436,7 +437,8 @@ class Fitter(object):
                   event_name='',
                   iterations=2000,
                   fracking=True,
-                  post_burn=500,
+                  burn=None,
+                  post_burn=None,
                   smooth_times=-1,
                   extrapolate_time=0.0,
                   limit_fitting_mjds=False,
@@ -564,8 +566,15 @@ class Fitter(object):
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
         self._fracking = fracking
-        self._post_burn = post_burn
-        self._burn_in = max(iterations - post_burn, 0)
+        if burn is not None:
+            self._burn_in = burn
+            self._post_burn = max(iterations - burn, 0)
+        elif post_burn is not None:
+            self._post_burn = post_burn
+            self._burn_in = max(iterations - post_burn, 0)
+        else:
+            self._burn_in = int(np.round(iterations / 2))
+            self._post_burn = max(iterations - self._burn_in, 0)
 
         return True
 
@@ -576,7 +585,6 @@ class Fitter(object):
                  num_walkers=50,
                  num_temps=1,
                  fracking=True,
-                 post_burn=500,
                  gibbs=False,
                  pool='',
                  suffix='',
@@ -783,7 +791,7 @@ class Fitter(object):
                             try:
                                 acorts = sampler.get_autocorr_time(
                                     chain=cur_chain, low=low, c=a,
-                                    min_step=ms, fast=True)
+                                    min_step=ms, max_walkers=5, fast=True)
                                 acort = max([
                                     max(x)
                                     for x in acorts
@@ -836,7 +844,8 @@ class Fitter(object):
 
                     # Perform fracking if we are still in the burn in phase
                     # and iteration count is a multiple of the frack step.
-                    frack_now = (fracking and emi <= self._burn_in and
+                    frack_now = (fracking and frack_step != 0 and
+                                 emi <= self._burn_in and
                                  emi % frack_step == 0)
 
                     scores = [np.array(x) for x in lnprob]

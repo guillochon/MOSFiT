@@ -8,6 +8,8 @@ import time
 from operator import attrgetter
 from unicodedata import normalize
 
+import numpy as np
+
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
@@ -273,11 +275,23 @@ def get_parser():
               "burn-in phase of the fitting process."))
 
     parser.add_argument(
+        '--burn',
+        '-b',
+        dest='burn',
+        type=int,
+        help=("Burn in the chains for this many iterations. During burn-in, "
+              "global optimization (\"fracking\"), replacement, and a "
+              "Gibbs variant of emcee are used to speed convergence. "
+              "However, as none of these methods preserve detailed "
+              "balance, the posteriors obtained during the burn-in phase "
+              "are very approximate. No convergence information will be "
+              "displayed during burn-in."))
+
+    parser.add_argument(
         '--post-burn',
         '-p',
         dest='post_burn',
         type=int,
-        default=500,
         help=("Run emcee this many more iterations after the burn-in phase. "
               "The burn-in phase will thus be run for (i - p) iterations, "
               "where i is the total number of iterations set with `-i` and "
@@ -423,6 +437,12 @@ def main():
             args.iterations = 0
         else:
             args.iterations = 1000
+
+    if not args.burn and not args.post_burn:
+        args.burn = int(np.floor(args.iterations / 2))
+
+    if args.frack_step == 0:
+        args.fracking = False
 
     if is_master():
         # Get hash of ourselves

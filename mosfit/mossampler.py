@@ -1,4 +1,4 @@
-"""Overridden PTSampler with random Gibbs selection."""
+"""Overridden PTSampler with random Gibbs selection, more-reliable acor."""
 import numpy as np
 from emcee.autocorr import AutocorrError, function
 from emcee.ptsampler import PTLikePrior, PTSampler
@@ -8,7 +8,7 @@ class MOSSampler(PTSampler):
     """Override PTSampler methods."""
 
     def get_autocorr_time(
-            self, min_step=0, max_walkers=20, chain=[], **kwargs):
+            self, min_step=0, max_walkers=-1, chain=[], **kwargs):
         """Return a matrix of autocorrelation lengths.
 
         Returns a matrix of autocorrelation lengths for each
@@ -36,6 +36,7 @@ class MOSSampler(PTSampler):
         This estimate uses the iterative procedure described on page 16 of
         `Sokal's notes <http://www.stat.unc.edu/faculty/cji/Sokal.pdf>`_ to
         determine a reasonable window size.
+
         Args:
             x: The time series. If multidimensional, set the time axis using
                 the ``axis`` keyword argument and the function will be
@@ -54,15 +55,18 @@ class MOSSampler(PTSampler):
                 first axis if not specified.
             fast (Optional[bool]): If ``True``, only use the first ``2^n`` (for
                 the largest power) entries for efficiency. (default: False)
+
         Returns:
             float or array: An estimate of the integrated autocorrelation time
                 of the time series ``x`` computed along the axis ``axis``.
             Optional[int]: The final window size that was used. Only returned
                 if ``full_output`` is ``True``.
+
         Raises
             AutocorrError: If the autocorrelation time can't be reliably
                 estimated from the chain. This normally means that the chain
                 is too short.
+
         """
         size = 0.5 * x.shape[axis]
         if int(c * low) >= size:

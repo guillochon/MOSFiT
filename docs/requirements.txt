@@ -1,3 +1,4 @@
+astropy
 numpydoc
 sphinx_automodapi
 sphinxcontrib-autoprogram
