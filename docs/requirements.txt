@@ -2,5 +2,6 @@ astropy
 dropbox
 emcee
 numpydoc
+schwimmbad
 sphinx_automodapi
 sphinxcontrib-autoprogram
