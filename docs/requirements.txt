@@ -1,5 +1,6 @@
 astropy
 dropbox
+emcee
 numpydoc
 sphinx_automodapi
 sphinxcontrib-autoprogram
