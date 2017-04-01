@@ -22,8 +22,10 @@ class Diffusion(Transform):
         super(Diffusion, self).process(**kwargs)
         self._kappa = kwargs['kappa']
         self._kappa_gamma = kwargs['kappagamma']
-        self._m_ejecta = kwargs['mejecta']
+        self._m_ejecta = kwargs[self.key('mejecta')]#kwargs['mejecta']
         self._v_ejecta = kwargs['vejecta']
+
+
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
                                  self._m_ejecta / self._v_ejecta) / DAY_CGS
         self._trap_coeff = (
