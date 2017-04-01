@@ -20,11 +20,10 @@ class Diffusion(Transform):
     def process(self, **kwargs):
         """Process module."""
         super(Diffusion, self).process(**kwargs)
-        self._kappa = kwargs['kappa']
-        self._kappa_gamma = kwargs['kappagamma']
+        self._kappa = kwargs[self.key('kappa')]
+        self._kappa_gamma = kwargs[self.key('kappagamma')]
         self._m_ejecta = kwargs[self.key('mejecta')]
-        self._v_ejecta = kwargs['vejecta']
-
+        self._v_ejecta = kwargs[self.key('vejecta')]
 
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
                                  self._m_ejecta / self._v_ejecta) / DAY_CGS
@@ -69,4 +68,5 @@ class Diffusion(Transform):
             lum_val = np.trapz(int_arg, dx=dt)
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
-        return {self.output_key('luminosities'): new_lum}
+
+        return {self.dense_key('luminosities'): new_lum}

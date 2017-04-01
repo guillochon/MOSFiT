@@ -28,13 +28,13 @@ class Synchrotron(SED):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
-        self._radius_source = kwargs['radiussource']
-        self._nu_max = kwargs['numax']
-        self._p = kwargs['p']
-        self._f0 = kwargs['f0']
+        self._radius_source = kwargs[self.key('radiussource')]
+        self._nu_max = kwargs[self.key('numax')]
+        self._p = kwargs[self.key('p')]
+        self._f0 = kwargs[self.key('f0')]
         cc = self.C_CONST
         ac = self.ANG_CGS
-        zp1 = 1.0 + kwargs['redshift']
+        zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
@@ -52,10 +52,10 @@ class Synchrotron(SED):
             # Below is not scaled properly, just proof of concept
             fmax = self._f0 * self._radius_source ** 2 * self._nu_max ** 2.5
             sed = [
-                self._f0 * self._radius_source ** 2 * (x / self._nu_max)
-                ** 2.5 * ac / cc * x ** 2 if x < self._nu_max
-                else fmax * (x / self._nu_max) ** (-(self._p - 1.0) / 2.0)
-                * ac / cc * x ** 2 for x in rest_freqs
+                self._f0 * self._radius_source ** 2 * (x / self._nu_max) **
+                2.5 * ac / cc * x ** 2 if x < self._nu_max
+                else fmax * (x / self._nu_max) ** (-(self._p - 1.0) / 2.0) *
+                ac / cc * x ** 2 for x in rest_freqs
             ]
 
             sed = np.nan_to_num(sed)

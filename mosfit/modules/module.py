@@ -66,7 +66,7 @@ class Module(object):
         """Return any bibcodes associated with the present ``Module``."""
         return []
 
-    def output_key(self, key):
+    def dense_key(self, key):
         """Manipulate output keys conditionally."""
         new_key = self.key(key)
         if self._provide_dense and not key.startswith('dense_'):

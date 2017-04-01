@@ -19,13 +19,13 @@ class LightCurve(Output):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(LightCurve, self).__init__(**kwargs)
-        self._output_keys = self._lc_keys
+        self._dense_keys = self._lc_keys
         self._n_times = kwargs.get('ntimes', 0)
 
     def process(self, **kwargs):
         """Process module."""
         output = OrderedDict()
-        for key in self._output_keys:
+        for key in self._dense_keys:
             if key == 'all_band_indices':
                 output['observation_types'] = [
                     'magnitude' if x >= 0 else 'fluxdensity'

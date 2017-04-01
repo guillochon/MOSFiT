@@ -1,3 +1,4 @@
+"""Definitions for the `CSM` class."""
 from math import isnan
 
 import numpy as np
@@ -5,24 +6,29 @@ from mosfit.constants import AU_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
 from scipy import interpolate
 
-CLASS_NAME = 'CSM'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class CSM(Engine):
     """CSM energy injection.
 
-        input luminosity calculation based on http://adsabs.harvard.edu/abs/2012ApJ...746..121C
-        with coefficients from http://adsabs.harvard.edu/abs/1982ApJ...258..790C
+    input luminosity calculation based on
+    http://adsabs.harvard.edu/abs/2012ApJ...746..121C
+    with coefficients from
+    http://adsabs.harvard.edu/abs/1982ApJ...258..790C
 
-        There are two major changes in the input luminosity from Chatzopoulos, Wheeler & Vinko (2012):
-        1. ti is set to a small number, rather than the time it takes the ejecta to reach the csm shell
-        2. you can fit/choose an efficiency factor between KE and luminosity
-
+    There are two major changes in the input luminosity from Chatzopoulos,
+    Wheeler & Vinko (2012):
+    1. ti is set to a small number, rather than the time it takes the
+    ejecta to reach the csm shell
+    2. you can fit/choose an efficiency factor between KE and luminosity
     """
 
     REFERENCES = ['2012ApJ...746..121C']
 
     def process(self, **kwargs):
+        """Process module."""
         self._s = kwargs['s']
         self._delta = kwargs['delta']  # [0,3)
         self._n = kwargs['n']  # [6,10]
@@ -151,4 +157,5 @@ class CSM(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {self.output_key('luminosities'): luminosities,self.key('mcsmth'): self._Mcsm_th/M_SUN_CGS}
+        return {self.dense_key('luminosities'): luminosities,
+                self.key('mcsmth'): self._Mcsm_th / M_SUN_CGS}

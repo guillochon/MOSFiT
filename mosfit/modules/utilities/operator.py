@@ -34,4 +34,4 @@ class Operator(Utility):
         result = kwargs[ops[0]]
         for op in ops[1:]:
             result = self._op(result, kwargs[op])
-        return {self.output_key(self._result): result}
+        return {self.dense_key(self._result): result}
