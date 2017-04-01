@@ -42,9 +42,9 @@
         "max_value":30.0,
         "log":true
     },
-    "vejecta":{
-        "min_value":1.0e3,
-        "max_value":1.0e5,
+    "kinetic_energy":{
+        "min_value":1.0,
+        "max_value":10,
         "log":true
     },
     "rho":{

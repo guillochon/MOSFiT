@@ -83,9 +83,9 @@ class CSM(Engine):
              (1.0 - self._s)))
 
         # mass of the optically thick CSM (tau > 2/3).
-        self._Mcsm_th = 4.0 * np.pi * self._q / (3.0 - self._s) * (
+        self._Mcsm_th = np.abs(4.0 * np.pi * self._q / (3.0 - self._s) * (
             self._Rph**(3.0 - self._s) - self._R0 **
-            (3.0 - self._s))
+            (3.0 - self._s)))
 
         # time at which shock breaks out of optically thick CSM - forward shock
         # power input then terminates.
@@ -151,4 +151,4 @@ class CSM(Engine):
         # Add on to any existing luminosity
         luminosities = self.add_to_existing_lums(luminosities)
 
-        return {self.output_key('luminosities'): luminosities}
+        return {self.output_key('luminosities'): luminosities,self.key('mcsmth'): self._Mcsm_th/M_SUN_CGS}
