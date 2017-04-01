@@ -18,12 +18,12 @@ class LOSExtinction(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input('luminosities', **kwargs)
+        kwargs = self.prepare_input(self.get('luminosities'), **kwargs)
         self.preprocess(**kwargs)
-        zp1 = 1.0 + kwargs['redshift']
-        self._seds = kwargs['seds']
-        self._nh_host = kwargs['nhhost']
-        self._rv_host = kwargs['rvhost']
+        zp1 = 1.0 + kwargs[self.get('redshift')]
+        self._seds = kwargs[self.get('seds')]
+        self._nh_host = kwargs[self.get('nhhost')]
+        self._rv_host = kwargs[self.get('rvhost')]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
@@ -53,15 +53,15 @@ class LOSExtinction(SED):
 
         return {
             'sample_wavelengths': self._sample_wavelengths,
-            'seds': self._seds,
-            'avhost': av_host
+            self.get('seds'): self._seds,
+            self.get('avhost'): av_host
         }
 
     def preprocess(self, **kwargs):
         """Preprocess module."""
         if self._preprocessed:
             return
-        self._ebv = kwargs['ebv']
+        self._ebv = kwargs[self.get('ebv')]
         self._av_mw = self.MW_RV * self._ebv
         # Pre-calculate LOS dust from MW for all bands
         self._mw_extinct = np.zeros_like(self._sample_wavelengths)

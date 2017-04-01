@@ -21,13 +21,13 @@ class TemperatureFloor(Photosphere):
     def process(self, **kwargs):
         """Process module."""
         kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
-        self._rest_t_explosion = kwargs['resttexplosion']
-        self._times = kwargs['rest_times']
+        self._rest_t_explosion = kwargs[self.get('resttexplosion')]
+        self._times = kwargs[self.get('rest_times')]
         self._luminosities = kwargs[self.key('luminosities')]
-        self._temperature = kwargs['temperature']
-        self._v_ejecta = kwargs['vejecta']
-        self._m_ejecta = kwargs['mejecta']
-        self._kappa = kwargs['kappa']
+        self._temperature = kwargs[self.get('temperature')]
+        self._v_ejecta = kwargs[self.get('vejecta')]
+        self._m_ejecta = kwargs[self.get('mejecta')]
+        self._kappa = kwargs[self.get('kappa')]
         self._radius2 = [(self.RAD_CONST *
                           self._v_ejecta * (x - self._rest_t_explosion)) ** 2
                          for x in self._times]
@@ -51,4 +51,5 @@ class TemperatureFloor(Photosphere):
 
             Tphot.append(temperature)
 
-        return {'radiusphot': rphot, 'temperaturephot': Tphot}
+        return {self.get('radiusphot'): rphot,
+                self.get('temperaturephot'): Tphot}

@@ -22,13 +22,13 @@ class DenseCore(Photosphere):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input('luminosities', **kwargs)
-        self._rest_t_explosion = kwargs['resttexplosion']
-        self._times = kwargs['rest_times']
-        self._luminosities = kwargs['luminosities']
-        self._v_ejecta = kwargs['vejecta']
-        self._m_ejecta = kwargs['mejecta']
-        self._kappa = kwargs['kappa']
+        kwargs = self.prepare_input(self.get('luminosities'), **kwargs)
+        self._rest_t_explosion = kwargs[self.get('resttexplosion')]
+        self._times = kwargs[self.get('rest_times')]
+        self._luminosities = kwargs[self.get('luminosities')]
+        self._v_ejecta = kwargs[self.get('vejecta')]
+        self._m_ejecta = kwargs[self.get('mejecta')]
+        self._kappa = kwargs[self.get('kappa')]
         slope = self.PL_ENV
         peak = np.argmax(np.array(self._luminosities))
         rphot = []
@@ -81,4 +81,5 @@ class DenseCore(Photosphere):
 
         Tphot[0] = Tphot[1]
 
-        return {'radiusphot': rphot, 'temperaturephot': Tphot}
+        return {self.get('radiusphot'): rphot,
+                self.get('temperaturephot'): Tphot}

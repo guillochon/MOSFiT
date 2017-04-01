@@ -21,15 +21,15 @@ class MagnetarConstraints(Constraint):
     def process(self, **kwargs):
         """Process module. Add constraints below."""
         self._score_modifier = 0.0
-        self._Pspin = kwargs['Pspin']
-        self._Mns = kwargs['Mns']
-        self._mejecta = kwargs['mejecta'] * M_SUN_CGS
-        self._vejecta = kwargs['vejecta'] * KM_CGS
-        self._times = kwargs['dense_times']
-        self._t_explosion = kwargs['texplosion']
-        self._lums = kwargs['dense_luminosities']
-        self._redshift = kwargs['redshift']
-        self._neutrino_energy = kwargs['neutrino_energy']
+        self._Pspin = kwargs[self.key('Pspin')]
+        self._Mns = kwargs[self.key('Mns')]
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS
+        self._vejecta = kwargs[self.key('vejecta')] * KM_CGS
+        self._times = kwargs[self.key('dense_times')]
+        self._t_explosion = kwargs[self.key('texplosion')]
+        self._lums = kwargs[self.key('dense_luminosities')]
+        self._redshift = kwargs[self.key('redshift')]
+        self._neutrino_energy = kwargs[self.key('neutrino_energy')]
 
         # Magnetar rotational energy
         self._Ep = 2.6e52 * (self._Mns / 1.4) ** (3. /
@@ -59,4 +59,4 @@ class MagnetarConstraints(Constraint):
                 self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
                     2 * self._neutrino_energy ** 2)
 
-        return {'score_modifier': self._score_modifier}
+        return {self.key('score_modifier'): self._score_modifier}

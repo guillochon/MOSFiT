@@ -20,15 +20,15 @@ class CSMConstraints(Constraint):
         """Process module. Add constraints below."""
         self._score_modifier = 0.0
 
-        self._n = kwargs['n']
-        self._delta = kwargs['delta']
-        self._mejecta = kwargs['mejecta'] * M_SUN_CGS
-        self._vejecta = kwargs['vejecta'] * KM_CGS
-        self._kappa = kwargs['kappa']
-        self._rho = kwargs['rho']
-        self._r0 = kwargs['r0'] * 1.496e13  # AU to cm
-        self._s = kwargs['s']
-        self._mcsm = kwargs['mcsm'] * M_SUN_CGS
+        self._n = kwargs[self.key('n')]
+        self._delta = kwargs[self.key('delta')]
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS
+        self._vejecta = kwargs[self.key('vejecta')] * KM_CGS
+        self._kappa = kwargs[self.key('kappa')]
+        self._rho = kwargs[self.key('rho')]
+        self._r0 = kwargs[self.key('r0')] * 1.496e13  # AU to cm
+        self._s = kwargs[self.key('s')]
+        self._mcsm = kwargs[self.key('mcsm')] * M_SUN_CGS
         self._Esn = 3. * self._vejecta ** 2 * self._mejecta / 10.
 
         if self._s == 0:
@@ -75,4 +75,4 @@ class CSMConstraints(Constraint):
         # Constraint 2: td < ts
         if (self._ts < self._td):
             self._score_modifier += LIKELIHOOD_FLOOR
-        return {'score_modifier': self._score_modifier}
+        return {self.key('score_modifier'): self._score_modifier}

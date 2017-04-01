@@ -29,19 +29,19 @@ class CSM(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        self._s = kwargs['s']
-        self._delta = kwargs['delta']  # [0,3)
-        self._n = kwargs['n']  # [6,10]
-        self._kappa = kwargs['kappa']
-        self._R0 = kwargs['r0'] * AU_CGS  # AU to cm
-        self._mejecta = kwargs['mejecta'] * M_SUN_CGS  # Msol to grms
-        self._mcsm = kwargs['mcsm'] * M_SUN_CGS
-        self._rho = kwargs['rho']
-        self._vph = kwargs['vejecta'] * 1.e5
+        self._s = kwargs[self.key('s')]
+        self._delta = kwargs[self.key('delta')]  # [0,3)
+        self._n = kwargs[self.key('n')]  # [6,10]
+        self._kappa = kwargs[self.key('kappa')]
+        self._R0 = kwargs[self.key('r0')] * AU_CGS  # AU to cm
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS  # Msol to grms
+        self._mcsm = kwargs[self.key('mcsm')] * M_SUN_CGS
+        self._rho = kwargs[self.key('rho')]
+        self._vph = kwargs[self.key('vejecta')] * 1.e5
         self._Esn = 3. * self._vph**2 * self._mejecta / 10.
-        self._rest_t_explosion = kwargs['resttexplosion']
-        self._efficiency = kwargs['efficiency']
-        self._times = kwargs['dense_times']
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
+        self._efficiency = kwargs[self.key('efficiency')]
+        self._times = kwargs[self.key('dense_times')]
 
         # g**n is scaling parameter for ejecta density profile
         self._g_n = (1.0 / (4.0 * np.pi * (self._n - self._delta)) * (
@@ -146,16 +146,6 @@ class CSM(Engine):
         ]
 
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
-
-        old_luminosities = kwargs.get(self.key('dense_luminosities'), None)
-
-        if old_luminosities is not None:
-            luminosities = [
-                x + y for x, y in zip(old_luminosities, luminosities)
-            ]
-
-        # Add on to any existing luminosity
-        luminosities = self.add_to_existing_lums(luminosities)
 
         return {self.dense_key('luminosities'): luminosities,
                 self.key('mcsmth'): self._Mcsm_th / M_SUN_CGS}

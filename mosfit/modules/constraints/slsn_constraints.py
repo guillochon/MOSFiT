@@ -22,17 +22,17 @@ class SLSNConstraints(Constraint):
     def process(self, **kwargs):
         """Process module. Add constraints below."""
         self._score_modifier = 0.0
-        self._Pspin = kwargs['Pspin']
-        self._Mns = kwargs['Mns']
-        self._mejecta = kwargs['mejecta'] * M_SUN_CGS
-        self._vejecta = kwargs['vejecta'] * KM_CGS
-        self._kappa = kwargs['kappa']
-        self._times = kwargs['dense_times']
-        self._t_explosion = kwargs['texplosion']
-        self._lums = kwargs['dense_luminosities']
-        self._redshift = kwargs['redshift']
-        self._neutrino_energy = kwargs['neutrino_energy']
-        self._t_neb_min = kwargs['tnebular_min']
+        self._Pspin = kwargs[self.key('Pspin')]
+        self._Mns = kwargs[self.key('Mns')]
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS
+        self._vejecta = kwargs[self.key('vejecta')] * KM_CGS
+        self._kappa = kwargs[self.key('kappa')]
+        self._times = kwargs[self.key('dense_times')]
+        self._t_explosion = kwargs[self.key('texplosion')]
+        self._lums = kwargs[self.key('dense_luminosities')]
+        self._redshift = kwargs[self.key('redshift')]
+        self._neutrino_energy = kwargs[self.key('neutrino_energy')]
+        self._t_neb_min = kwargs[self.key('tnebular_min')]
 
         # Magnetar rotational energy
         self._Ep = 2.6e52 * (self._Mns / 1.4) ** (3. /
@@ -63,15 +63,13 @@ class SLSNConstraints(Constraint):
                     2 * self._neutrino_energy ** 2)
 
         # Time from explosion at which optical depth in ejecta reaches tau=1
-        t_nebular = np.sqrt(3 * self._kappa * self._mejecta / (4 * np.pi *
-                            self._vejecta**2)) / DAY_CGS
+        t_nebular = np.sqrt(3 * self._kappa * self._mejecta / (
+            4 * np.pi * self._vejecta ** 2)) / DAY_CGS
 
         # Penalty if t_nebular<observed t_nebular (scaled so that penalty ~100
         # at t_obs-t_neb=50)
         if t_nebular < self._t_neb_min:
             self._score_modifier += -((self._t_neb_min -
-                                        t_nebular)**2 / (2. * 3.5**2))
+                                       t_nebular)**2 / (2. * 3.5 ** 2))
 
-        # print(self._Ek,self._Ep - E_rad + self._neutrino_energy,t_nebular,self._score_modifier)
-
-        return {'score_modifier': self._score_modifier}
+        return {self.key('score_modifier'): self._score_modifier}

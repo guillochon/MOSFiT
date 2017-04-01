@@ -29,10 +29,10 @@ class Likelihood(Module):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
-        self._score_modifier = kwargs.get('score_modifier', 0.0)
+        self._score_modifier = kwargs.get(self.key('score_modifier'), 0.0)
 
         # Get band variances
-        self._variance = kwargs.get('variance', 0.0)
+        self._variance = kwargs.get(self.key('variance'), 0.0)
 
         self._band_v_vars = OrderedDict()
         for key in kwargs:
@@ -77,8 +77,8 @@ class Likelihood(Module):
         ]
 
         is_diag = False
-        if (kwargs.get('codeltatime', -1) >= 0 or
-                kwargs.get('codeltalambda', -1) >= 0):
+        if (kwargs.get(self.key('codeltatime'), -1) >= 0 or
+                kwargs.get(self.key('codeltalambda'), -1) >= 0):
             kmat = np.outer(self._o_band_vs, self._o_band_vs)
         else:
             # Shortcut when matrix is diagonal.
@@ -90,18 +90,20 @@ class Likelihood(Module):
         if not is_diag:
             kn = len(self._o_times)
 
-            if kwargs.get('codeltatime', -1) >= 0:
+            if kwargs.get(self.key('codeltatime'), -1) >= 0:
                 kmat *= np.array([
                     [1.0 if i == j else np.exp(
-                        -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
+                        -0.5 * ((ti - tj) / kwargs[self.key(
+                            'codeltatime')]) ** 2) for
                      i, ti in enumerate(self._o_times)] for
                     j, tj in enumerate(self._o_times)
                 ])
 
-            if kwargs.get('codeltalambda', -1) >= 0:
+            if kwargs.get(self.key('codeltalambda'), -1) >= 0:
                 kmat *= np.array([
                     [1.0 if i == j else np.exp(
-                        -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
+                        -0.5 * ((li - lj) / kwargs[self.key(
+                            'codeltalambda')]) ** 2) for
                      i, li in enumerate(self._o_waves)] for
                     j, lj in enumerate(self._o_waves)
                 ])

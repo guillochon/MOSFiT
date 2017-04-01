@@ -9,13 +9,13 @@ class Line(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input('luminosities', **kwargs)
-        self._seds = kwargs['seds']
+        kwargs = self.prepare_input(self.get('luminosities'), **kwargs)
+        self._seds = kwargs[self.get('seds')]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._sample_wavelengths = kwargs['sample_wavelengths']
-        self._luminosities = kwargs['luminosities']
-        zp1 = 1.0 + kwargs['redshift']
+        self._luminosities = kwargs[self.get('luminosities')]
+        zp1 = 1.0 + kwargs[self.get('redshift')]
 
         seds = []
         for li, lum in enumerate(self._luminosities):
@@ -31,4 +31,5 @@ class Line(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        return {'sample_wavelengths': self._sample_wavelengths, 'seds': seds}
+        return {'sample_wavelengths': self._sample_wavelengths,
+                self.get('seds'): seds}

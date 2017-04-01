@@ -3,7 +3,7 @@ from collections import OrderedDict
 
 import numexpr as ne
 import numpy as np
-from mosfit.constants import C_CGS, DAY_CGS, M_SUN_CGS
+from mosfit.constants import C_CGS, DAY_CGS, M_SUN_CGS, AU_CGS
 from mosfit.modules.transforms.transform import Transform
 
 
@@ -19,22 +19,21 @@ class DiffusionCSM(Transform):
     def process(self, **kwargs):
         """Process module."""
         super(DiffusionCSM, self).process(**kwargs)
-        self._kappa = kwargs['kappa']
-        self._mass = kwargs['mcsm'] * M_SUN_CGS
-        self._R0 = kwargs['r0'] * 1.496e13  # AU to cm
-        self._s = kwargs['s']
-        self._rho = kwargs['rho']
+        self._kappa = kwargs[self.get('kappa')]
+        self._mass = kwargs[self.get('mcsm')] * M_SUN_CGS
+        self._R0 = kwargs[self.get('r0')] * AU_CGS  # AU to cm
+        self._s = kwargs[self.get('s')]
+        self._rho = kwargs[self.get('rho')]
         # scaling constant for CSM density profile
         self._q = self._rho * self._R0 ** self._s
         # outer radius of CSM shell
         self._Rcsm = (
-            (3.0 - self._s) / (4.0 * np.pi * self._q) * self._mass + self._R0
-            ** (3.0 - self._s)) ** (1.0 / (3.0 - self._s))
+            (3.0 - self._s) / (4.0 * np.pi * self._q) * self._mass +
+            self._R0 ** (3.0 - self._s)) ** (1.0 / (3.0 - self._s))
         # radius of photosphere (should be within CSM)
         self._Rph = abs(
             (-2.0 * (1.0 - self._s) / (3.0 * self._kappa * self._q) +
-             self._Rcsm ** (1.0 - self._s))
-            ** (1.0 / (1.0 - self._s)))
+             self._Rcsm ** (1.0 - self._s)) ** (1.0 / (1.0 - self._s)))
         self._tau_diff = (
             self._kappa * self._mass) / (13.8 * C_CGS * self._Rph) / DAY_CGS
 

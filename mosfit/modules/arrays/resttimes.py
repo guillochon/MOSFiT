@@ -13,12 +13,12 @@ class RestTimes(Array):
     def process(self, **kwargs):
         """Process module."""
         self._times = kwargs['all_times']
-        self._t_explosion = kwargs['texplosion']
+        self._t_explosion = kwargs[self.key('texplosion')]
 
         outputs = OrderedDict()
         outputs['rest_times'] = [
             x / (1.0 + kwargs['redshift']) for x in self._times
         ]
-        outputs['resttexplosion'] = self._t_explosion / (
-            1.0 + kwargs['redshift'])
+        outputs[self.key('resttexplosion')] = self._t_explosion / (
+            1.0 + kwargs[self.key('redshift')])
         return outputs
