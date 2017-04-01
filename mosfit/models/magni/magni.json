@@ -88,7 +88,10 @@
             "mejecta",
             "fnickel",
             "texplosion"
-        ]
+        ],
+        "replacements":{
+            "luminosities": "nico_luminosities"
+        }
     },
     "magnetar":{
         "kind":"engine",
@@ -99,14 +102,31 @@
             "Bfield",
             "Mns",
             "thetaPB",
-            "texplosion",
-            "nickelcobalt"
-        ]
+            "texplosion"
+        ],
+        "replacements":{
+            "luminosities": "mag_luminosities"
+        }
+    },
+    "total_luminosity":{
+        "kind":"utility",
+        "operator":"+",
+        "operands":[
+            "mag_luminosities",
+            "nico_luminosities"
+        ],
+        "inputs":[
+            "nickelcobalt",
+            "magnetar"
+        ],
+        "result":"luminosities",
+        "wants_dense":true,
+        "class":"operator"
     },
     "diffusion":{
         "kind":"transform",
         "inputs":[
-            "magnetar",
+            "total_luminosity",
             "kappa",
             "kappagamma",
             "mejecta",
