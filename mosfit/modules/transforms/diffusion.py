@@ -22,7 +22,7 @@ class Diffusion(Transform):
         super(Diffusion, self).process(**kwargs)
         self._kappa = kwargs['kappa']
         self._kappa_gamma = kwargs['kappagamma']
-        self._m_ejecta = kwargs[self.key('mejecta')]#kwargs['mejecta']
+        self._m_ejecta = kwargs[self.key('mejecta')]
         self._v_ejecta = kwargs['vejecta']
 
 
