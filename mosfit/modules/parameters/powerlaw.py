@@ -13,7 +13,7 @@ class PowerLaw(Parameter):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(PowerLaw, self).__init__(**kwargs)
-        self._alpha = kwargs.get(self.get('alpha'), None)
+        self._alpha = kwargs.get(self.key('alpha'), None)
         if self._log:
             self._miv = np.exp(self._min_value)
             self._mav = np.exp(self._max_value)

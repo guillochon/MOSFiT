@@ -35,14 +35,14 @@ class BlackbodyCutoff(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input(self.get('luminosities'), **kwargs)
-        self._luminosities = kwargs[self.get('luminosities')]
+        kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
+        self._luminosities = kwargs[self.key('luminosities')]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
-        self._radius_phot = kwargs[self.get('radiusphot')]
-        self._temperature_phot = kwargs[self.get('temperaturephot')]
-        self._cutoff_wavelength = kwargs[self.get('cutoff_wavelength')]
+        self._radius_phot = kwargs[self.key('radiusphot')]
+        self._temperature_phot = kwargs[self.key('temperaturephot')]
+        self._cutoff_wavelength = kwargs[self.key('cutoff_wavelength')]
         self._times = kwargs['rest_times']
         xc = self.X_CONST
         fc = self.FLUX_CONST
@@ -51,7 +51,7 @@ class BlackbodyCutoff(SED):
         cwave_ac = self._cutoff_wavelength * ac
         cwave_ac2 = cwave_ac * cwave_ac
         cwave_ac3 = cwave_ac2 * cwave_ac
-        zp1 = 1.0 + kwargs[self.get('redshift')]
+        zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         norm_arr = OrderedDict()
         evaled = False
@@ -126,4 +126,4 @@ class BlackbodyCutoff(SED):
         seds = self.add_to_existing_seds(seds, **kwargs)
 
         return {'sample_wavelengths': self._sample_wavelengths,
-                self.get('seds'): seds}
+                self.key('seds'): seds}

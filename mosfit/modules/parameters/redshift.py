@@ -18,7 +18,7 @@ class Redshift(Parameter):
             if self._name in kwargs:
                 return {}
 
-            self._lum_dist = kwargs.get(self.get('lumdist'), None)
+            self._lum_dist = kwargs.get(self.key('lumdist'), None)
             if not self._value and self._lum_dist:
                 value = z_at_value(cosmo.luminosity_distance,
                                    self._lum_dist * un.Mpc)

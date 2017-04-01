@@ -21,16 +21,16 @@ class MultiBlackbody(SED):
     def process(self, **kwargs):
         """Process module."""
         raise RuntimeError('`MultiBlackbody` is not yet functional.')
-        kwargs = self.prepare_input(self.get('luminosities'), **kwargs)
-        self._luminosities = kwargs[self.get('luminosities')]
+        kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
+        self._luminosities = kwargs[self.key('luminosities')]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._areas = kwargs[self.get('areas')]
-        self._temperature_phots = kwargs[self.get('temperaturephots')]
+        self._areas = kwargs[self.key('areas')]
+        self._temperature_phots = kwargs[self.key('temperaturephots')]
         xc = self.X_CONST
         fc = self.FLUX_CONST
         temperature_phot = self._temperature_phot
-        zp1 = 1.0 + kwargs[self.get('redshift')]
+        zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         for li, lum in enumerate(self._luminosities):
             cur_band = self._bands[li]
@@ -54,4 +54,4 @@ class MultiBlackbody(SED):
         seds = self.add_to_existing_seds(seds, **kwargs)
 
         return {'sample_wavelengths': self._sample_wavelengths,
-                self.get('seds'): seds}
+                self.key('seds'): seds}

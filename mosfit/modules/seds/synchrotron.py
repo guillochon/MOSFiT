@@ -23,18 +23,18 @@ class Synchrotron(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input(self.get('luminosities'), **kwargs)
-        self._luminosities = kwargs[self.get('luminosities')]
+        kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
+        self._luminosities = kwargs[self.key('luminosities')]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
-        self._radius_source = kwargs[self.key(self.get('radiussource'))]
-        self._nu_max = kwargs[self.key(self.get('numax'))]
-        self._p = kwargs[self.key(self.get('p'))]
-        self._f0 = kwargs[self.key(self.get('f0'))]
+        self._radius_source = kwargs[self.key(self.key('radiussource'))]
+        self._nu_max = kwargs[self.key(self.key('numax'))]
+        self._p = kwargs[self.key(self.key('p'))]
+        self._f0 = kwargs[self.key(self.key('f0'))]
         cc = self.C_CONST
         ac = self.ANG_CGS
-        zp1 = 1.0 + kwargs[self.key(self.get('redshift'))]
+        zp1 = 1.0 + kwargs[self.key(self.key('redshift'))]
         seds = []
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
@@ -65,4 +65,4 @@ class Synchrotron(SED):
         seds = self.add_to_existing_seds(seds, **kwargs)
 
         return {'sample_wavelengths': self._sample_wavelengths,
-                self.get('seds'): seds}
+                self.key('seds'): seds}

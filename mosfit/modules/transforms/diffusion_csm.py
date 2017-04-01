@@ -19,11 +19,11 @@ class DiffusionCSM(Transform):
     def process(self, **kwargs):
         """Process module."""
         super(DiffusionCSM, self).process(**kwargs)
-        self._kappa = kwargs[self.get('kappa')]
-        self._mass = kwargs[self.get('mcsm')] * M_SUN_CGS
-        self._R0 = kwargs[self.get('r0')] * AU_CGS  # AU to cm
-        self._s = kwargs[self.get('s')]
-        self._rho = kwargs[self.get('rho')]
+        self._kappa = kwargs[self.key('kappa')]
+        self._mass = kwargs[self.key('mcsm')] * M_SUN_CGS
+        self._R0 = kwargs[self.key('r0')] * AU_CGS  # AU to cm
+        self._s = kwargs[self.key('s')]
+        self._rho = kwargs[self.key('rho')]
         # scaling constant for CSM density profile
         self._q = self._rho * self._R0 ** self._s
         # outer radius of CSM shell
