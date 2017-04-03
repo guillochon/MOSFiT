@@ -13,7 +13,7 @@ from mosfit.modules.transforms.transform import Transform
 class DiffusionCSM(Transform):
     """Photon diffusion transform for CSM model."""
 
-    N_INT_TIMES = 200
+    N_INT_TIMES = 1000
     MIN_EXP_ARG = 50.0
 
     def process(self, **kwargs):
