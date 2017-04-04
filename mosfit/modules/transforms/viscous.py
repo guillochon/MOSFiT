@@ -13,7 +13,7 @@ class Viscous(Transform):
     logsteps = True
     N_INT_TIMES = 1000
     testnum = 0
-
+    TESTING = False
     def process(self, **kwargs):
         """Process module."""
         super(Viscous, self).process(**kwargs)
@@ -75,5 +75,13 @@ class Viscous(Transform):
 
             lum_cache[te] = lum_val
             new_lum.append(lum_val)
+
+        # ----------------TESTING ----------------
+        if self.TESTING == True:
+            np.savetxt('test_dir/test_viscous/endviscous/time+dmdt'+'{:03d}'.format(self.testnum)+'.txt',
+                        (self._times_to_process, new_lum)) # set time = 0 when explosion goes off
+            self.testnum += 1
+    
+        # ----------------------------------------
 
         return {'dense_luminosities': new_lum}

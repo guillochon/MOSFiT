@@ -30,7 +30,36 @@ class Fallback(Engine):
 
         super(Fallback, self).__init__(**kwargs)
 
-        self.testnum = 0
+
+        G = c.G.cgs.value # 6.67259e-8 cm3 g-1 s-2
+        Msolar = c.M_sun.cgs.value #1.989e33 grams
+        Rsolar = c.R_sun.cgs.value
+        Mhbase = 1.0e6*Msolar # this is the generic size of bh used in astrocrash sim
+        Mstarbase = Msolar
+        Rstarbase = Rsolar
+
+        self.TESTING = False
+        ##### FOR TESTING ######
+        if self.TESTING == True:
+            self.testnum = 0
+            filestodelete = os.listdir('test_dir/test_fallback/pregammainterp/g5-3')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/pregammainterp/g5-3/'+f)
+            filestodelete = os.listdir('test_dir/test_fallback/pregammainterp/g4-3')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/pregammainterp/g4-3/'+f)
+            filestodelete = os.listdir('test_dir/test_fallback/postgammainterp')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/postgammainterp/' + f)
+            filestodelete = os.listdir('test_dir/test_fallback/endfallback')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/endfallback/' + f)   
+            filestodelete = os.listdir('test_dir/test_viscous/endviscous')
+            for f in filestodelete:
+                os.remove('test_dir/test_viscous/endviscous/' + f) 
+             
+             
+        #########################
         # load dmde info
 
         #------ DIRECTORY PARAMETERS -> need to change to variable names used in mosfit, then won't have to set any variables here
@@ -46,11 +75,13 @@ class Fallback(Engine):
         # dictionaries with gamma's as keys.
         self._beta_slope = {self._gammas[0]:[], self._gammas[1]:[]}
         self._beta_yinter = {self._gammas[0]:[], self._gammas[1]:[]}
-        self._energy = {self._gammas[0]:[], self._gammas[1]:[]}
         self._sim_beta = {self._gammas[0]:[], self._gammas[1]:[]}
+        self._mapped_time = {self._gammas[0]:[], self._gammas[1]:[]}
+        self._premaptime = {self._gammas[0]:[], self._gammas[1]:[]} # for converting back from mapped time to actual times and doing interpolation in actual time
+        self._premapdmdt = {self._gammas[0]:[], self._gammas[1]:[]} 
 
         for g in self._gammas:
-            #print ('entered')
+            
             dmdedir = os.path.dirname(__file__)[:-15] + 'models/tde/data/' + g + '/' #'../../models/tde/data/'
 
             #dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
@@ -65,60 +96,103 @@ class Fallback(Engine):
 
 
             #-- CREATE INTERPOLATION FUNCTIONS; FIND SLOPES & YINTERs -------
+            
+            time = {}
+            dmdt = {}
+            ipeak = {}
+            mapped_time = {}
+            # get dmdt and t for the lowest beta value
+            e, d = np.loadtxt(dmdedir+sim_beta_files[0]) # energy and dmde in cgs units
+            # only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
+            ebound = e[e<0]# cuts off part of array with positive e (unbound)
+            dmdebound = d[e<0]
 
-            # these three lists, in addition to 'sim_beta', are the lists that will hold dmde info to be accessed after init is run
+            if min(dmdebound)<0: # shouldn't happen, just a check 
 
+                print ('beta, gamma, negative dmde bound:', self._sim_beta[g], g, dmdebound[dmdebound<0])
 
-           # need to pad with extra zeros for dmde files from astrocrash
-            #e_lo, dmde_lo = np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[0])+'.dat') # format requires 3 digits after decimal point
-            e_lo, dmde_lo = np.loadtxt(dmdedir+sim_beta_files[0]) # energy and dmde in cgs units
-            #e_lo, dmde_lo = np.loadtxt(dmdedir+'dmde'+str(self._sim_beta[0])+'.dat')
-            for i in range(1,len(self._sim_beta[g])): # bc calculating slope and yintercepts BETWEEN each simulation beta
+            # calculate de/dt, time and dm/dt arrays
+            dedt = np.log10((1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase))  # in log(erg/s)
+            time['lo'] = np.log10((2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0))   # in log(seconds)
+            dmdt['lo'] = np.log10(dmdebound*dedt) # in log(g/s) 
 
-                e_hi, dmde_hi= np.loadtxt(dmdedir+sim_beta_files[i]) #np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
+            ipeak['lo'] = np.argmax(dmdt['lo'])
+            # split time['lo'] & dmdt['lo'] into pre-peak and post-peak array
+            time['lo'] = np.array([time['lo'][:ipeak['lo']], time['lo'][ipeak['lo']:]]) # peak is in second array       
+            dmdt['lo'] = np.array([dmdt['lo'][:ipeak['lo']], dmdt['lo'][ipeak['lo']:]]) # peak is in second array
+            
+            self._premaptime[g].append(np.copy(time['lo'])) # will contain time arrays (split into pre peak and post peak times) for each beta value
+            self._premapdmdt[g].append(np.copy(dmdt['lo'])) # will contain time arrays (split into pre peak and post peak dmdts) for each beta value
+            for i in range(1,len(self._sim_beta[g])): # indexing like this bc calculating slope and yintercepts BETWEEN each simulation beta
 
+                e, d = np.loadtxt(dmdedir+sim_beta_files[i]) #np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
+                # only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
+                ebound = e[e<0]# cuts off part of array with positive e (unbound)
+                dmdebound = d[e<0]
 
-                # these two if statements needed bc of how interpolation is done
-                # used for ~ 1/3 of data, higher beta have higher spread in e, and this 'mostly' maps out to larger e ranges in sims
-                # e is monotonically increasing, with most negative (most bound) first
-                if min(e_lo) < min(e_hi):
-                    #print ('min(e_lo) < min(e_hi)','gamma:', g, 'beta high:', self._sim_beta[g][i])
-                    dmde_lo = dmde_lo[e_lo > min(e_hi)] # match new e_lo array sliced below
-                    e_lo = e_lo[e_lo > min(e_hi)] # cut off first e values up to where e_lo within range of e_hi
+                if min(dmdebound)<0: # shouldn't happen, just a check 
+                    print ('beta, gamma, negative dmde bound:', self._sim_beta[g], g, dmdebound[dmdebound<0])
+                
+                # calculate de/dt, time and dm/dt arrays
+                dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in log(erg/s)
+                time['hi'] = np.log10((2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0))   # in log(seconds)
+                dmdt['hi'] = np.log10(dmdebound*dedt) # in log(g/s) 
+               
+                ipeak['hi'] = np.argmax(dmdt['hi'])
+                
+                # split time_hi and dmdt_hi into pre-peak and post-peak array
+                time['hi'] = np.array([time['hi'][:ipeak['hi']], time['hi'][ipeak['hi']:]]) # peak is in second array       
+                dmdt['hi'] = np.array([dmdt['hi'][:ipeak['hi']], dmdt['hi'][ipeak['hi']:]]) # peak is in second array
+                self._premapdmdt[g].append(np.copy(dmdt['hi'])) # will contain time arrays (split into pre peak and post peak dmdts) for each beta value
+                self._premaptime[g].append(np.copy(time['hi'])) # will contain time arrays (split into pre peak and post peak times) for each beta value
 
-                if max(e_lo) > max(e_hi):
-                    #print ('max(e_lo) > max(e_hi)','gamma:', g, 'beta high:', self._sim_beta[g][i])
-                    dmde_lo = dmde_lo[e_lo < max(e_hi)] # match new e_lo array sliced below
-                    e_lo = e_lo[e_lo < max(e_hi)] # cut off last e values up to where e_lo within range of e_hi
+                #print ('length of time[hi] and dmdt[hi] arrays in init:', len(dmdt['hi'][0]), len(time['hi'][0]), len(dmdt['hi'][1]), len(time['hi'][1]))
+                
 
-                self._energy[g].append(e_lo) # save to access later in process function
-                # dmde.append(dmde_lo) # save to access later in process function --> don't need, can just use interpolations but might not be exact for betas = simulation betas
+                mapped_time['hi'] = []
+                mapped_time['lo'] = []
 
-                # smoothed flash file format
+                self._beta_slope[g].append([])
+                self._beta_yinter[g].append([])
+                self._mapped_time[g].append([])
+                for j in [0,1]: # once before peak, once after peak
+                    # choose more densely sampled curve to map times from times to 0-1. 
+                    # less densely sampled curve will be interpolated to match
+                    if len(time['lo'][j]) < len(time['hi'][j]): # hi array more densely sampled 
+                        interp = 'lo'
+                        nointerp = 'hi'
+                    else: 
+                        interp = 'hi'
+                        nointerp = 'lo' # will also catch case where they have the same lengths
+                    # map times from more densely sampled curves (bost pre & post peak, might be from diff. dmdts) 
+                    # to 0 - 1
 
-                # Interpolate  e array so that we can create same energy steps for lo and hi arrays.
-                # since using e_lo array, only need to interpolate hi arrays.
-                # (using e_lo array bc it is w/in the energy range of e_hi array)
+                    mapped_time[nointerp].append( 1./(time[nointerp][j][-1] - time[nointerp][j][0]) * (time[nointerp][j] - time[nointerp][j][0]) )
+                    mapped_time[interp].append( 1./(time[interp][j][-1] - time[interp][j][0]) * (time[interp][j] - time[interp][j][0]) ) 
+                    
+                    # make sure bounds are the same for interp and nointerp  before interpolation
+                    #(they should be 0 and 1 from above, but could be slightly off due to rounding errors in python)
+                    mapped_time[interp][j][0] = 0
+                    mapped_time[interp][j][-1] = 1
+                    mapped_time[nointerp][j][0] = 0
+                    mapped_time[nointerp][j][-1] = 1
+                    
+                    func = interp1d(mapped_time[interp][j], dmdt[interp][j])
+                    
+                    dmdtinterp = func(mapped_time[nointerp][j])
+                   
 
-                # note that x array for CubicSpline needs to be monotonically increasing
-                funchi = interp1d(e_hi, dmde_hi)
+                    if interp == 'hi': slope = (dmdtinterp - dmdt['lo'][j])/(self._sim_beta[g][i]-self._sim_beta[g][i-1])
+                    else: slope = (dmdt['hi'][j] - dmdtinterp)/(self._sim_beta[g][i]-self._sim_beta[g][i-1]) # interp == 'lo'
+                    self._beta_slope[g][-1].append(slope)
 
-                #funchi = CubicSpline(np.flipud(e_hi), np.flipud(dmde_hi))
+                    yinter1 = dmdt[nointerp][j] - self._beta_slope[g][-1][j]*self._sim_beta[g][i-1]
+                    yinter2 = dmdtinterp - self._beta_slope[g][-1][j]*self._sim_beta[g][i]
+                    self._beta_yinter[g][-1].append((yinter1+yinter2)/2.0)
+                    self._mapped_time[g][-1].append(np.array(mapped_time[nointerp][j])) # for passing to process
+           
+                time['lo'], dmdt['lo'] = np.copy(time['hi']), np.copy(dmdt['hi']) 
 
-                # get dmde_hi at values of e_lo so I can interpolate in beta
-                dmde_hi_new = funchi(e_lo)
-                #dmde_hi_new = np.flipud(funchi(np.flipud(e_lo)))
-
-                # get slope for linear interpolation (in beta)
-                self._beta_slope[g].append((dmde_hi_new - dmde_lo)/(self._sim_beta[g][i]-self._sim_beta[g][i-1]))
-
-                # get y intercept for linear interpolation (in beta)
-                yinterlo = dmde_lo - self._beta_slope[g][-1]*self._sim_beta[g][i-1]
-                yinterhi = dmde_hi_new - self._beta_slope[g][-1]*self._sim_beta[g][i]
-
-                self._beta_yinter[g].append((yinterlo+yinterhi)/2.0) # take average of yinterlo and yinterhi to get y intercept used in calculation (note that James just uses yinterlo)
-
-                e_lo, dmde_lo = e_hi, dmde_hi
 
     def process(self, **kwargs):
 
@@ -182,68 +256,61 @@ class Fallback(Engine):
         for g in gammas:
             # find simulation betas to interpolate between
             for i in range(len(self._sim_beta[g])):
-                if self._beta[g]==self._sim_beta[g][i]: # don't need to interpolate, already have dmde and t for this beta
-                    beta_interp=False
-                    if i == len(self._beta_slope[g]): # chosen beta value == highest sim beta value
-                        interp_index_low = i-1      # interpolations only calculated between values, therefore need to use lower interpolation for this to work
-                    else: interp_index_low = i  # so that conversion from dmde --> dmdt works (uses e_lo for conversion)
-
+                if self._beta[g] == self._sim_beta[g][i]: # don't need to interpolate, already have dmdt and t for this beta
+                    beta_interp = False
+                    interp_index_low = i
+    ######### What's going on here??:
+                    # because dmdt isn't passed to this function, just slope and yintercept, will need interp_index_low to recalculate dmdt even if no b interp needed
+                    #if i == len(self._beta_slope[g]): # chosen beta value == highest sim beta value
+                    #    interp_index_low = i-1      # interpolations only calculated between values, therefore need to use lower interpolation for this to work
+                    #else: interp_index_low = i  # so that conversion from dmde --> dmdt works (uses e_lo for conversion)
+                    
                     #print ('exists simulation beta equal to user beta, no beta interpolation necessary, calculating dmdt...')
                     break
-                if self._beta[g]<self._sim_beta[g][i]:
-                    interp_index_high=i
-                    interp_index_low=i-1
+
+                if self._beta[g] < self._sim_beta[g][i]:
+                    interp_index_high = i
+                    interp_index_low = i-1
+                    beta_interp = True
                     break
 
 
-            if beta_outside_range == False:
+            if beta_outside_range == False and beta_interp == True:
                 #----------- LINEAR BETA INTERPOLATION --------------
 
-                # get new dmde
-                dmde = self._beta_yinter[g][interp_index_low] + self._beta_slope[g][interp_index_low]*self._beta[g]
+                # get new dmdts  (2 arrays, before and after peak (peak in 2nd array))
+                # use interp_index_low bc of how slope and yintercept are saved (slope[0] corresponds to between beta[0] and beta[1] etc.)
+                dmdt = np.array([self._beta_yinter[g][interp_index_low][0] + self._beta_slope[g][interp_index_low][0]*self._beta[g], 
+                        self._beta_yinter[g][interp_index_low][1] + self._beta_slope[g][interp_index_low][1]*self._beta[g]])
 
-                # quick fix for one neg. dmde value --> shouldn't be needed bc of lines ~80 - ~90 that cut e_lo array so that this shouldn't happend
-                if len(dmde[dmde<0]) > 0:
-                    if (dmde[0] < 0) and (len(dmde[dmde<0]) == 1):
-                        dmde = dmde[1:]
-                        self._energy[g][interp_index_low] = self._energy[g][interp_index_low][1:]
-                        print ('negative first value of dmde, beta =',self._beta[g])
-                    else: print ('more than the first value of (the beta interpolated) dmde is negative')
+                # map mapped_times back to actual times, requires interpolation in time
+                # first for pre peak times
 
-                #----------- CONVERT dm/de --> dm/dt --------------
-
-
-                #if beta_interp == True:
-
-                # should check that at simulation betas this interpolation gives the simulation dmdes back
-                #if beta_interp == False: # files haven't been loaded yet
-                #   e_lo, dmdenew = np.loadtxt(dmdedir+'dmde'+sim_beta_str[interp_index_low]+'.dat')
-
-                # only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
-                ebound = np.array(self._energy[g][interp_index_low][self._energy[g][interp_index_low]<0]) # cuts off part of array with positive e (unbound)
-                dmdebound = np.array(dmde[self._energy[g][interp_index_low]<0])
-
-
-                if min(dmdebound)<0:
-
-                    print ('beta, negative dmdebound', self._beta[g], dmdebound[dmdebound<0])
-
-                # calculate de/dt, time and dm/dt arrays
-                dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in erg/s
-
-                time = (2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0)   # in seconds
-                #time = time/(24*3600) # time in days
-
-                dmdt = dmdebound*dedt # in cgs
-
-
+                time = []
+                for i in [0,1]:
+                    # interp_index_low indexes beta
+                    #print (len )
+                    time_betalo = (self._mapped_time[g][interp_index_low][i] * 
+                                (self._premaptime[g][interp_index_low][i][-1] - self._premaptime[g][interp_index_low][i][0]) + 
+                                self._premaptime[g][interp_index_low][i][0]) # mapped time between beta low and beta high
+                    time_betahi = (self._mapped_time[g][interp_index_low][i] *
+                                (self._premaptime[g][interp_index_high][i][-1] - self._premaptime[g][interp_index_high][i][0]) +
+                                self._premaptime[g][interp_index_high][i][0])
+                    #print (len(time_betalo), len(time_betahi))
+                    #print (g, interp_index_low, interp_index_high)
+                    #print (self._sim_beta)
+                    time.append(time_betalo + (time_betahi - time_betalo)*(self._beta[g] - 
+                            self._sim_beta[g][interp_index_low])/(self._sim_beta[g][interp_index_high] - self._sim_beta[g][interp_index_low]))
+                time = np.array(time)
+                
                 # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
                 # new dmdt(t[0]) should == min(old dmdt)
                 # use power law to fit : dmdt = b*t^xi
 
                 # calculate floor dmdt and t to extrapolate down to this value for early times
-                dfloor = np.min(dmdt) # needed later in code, not just in extrapolate to early times
                 '''
+                dfloor = np.min(dmdt) 
+                
                 if dmdt[0] >= dfloor*1.01: # not within 1% of floor, extrapolate
 
                     ipeak = np.argmax(dmdt) # index of peak
@@ -308,15 +375,25 @@ class Fallback(Engine):
                 timedict[g] = time
                 dmdtdict[g] = dmdt
 
+            elif beta_outside_range == False and beta_interp == False: 
+                if (len(self._premaptime[g][interp_index_low][0]) != len(self._premapdmdt[g][interp_index_low][0]) or
+                    len(self._premaptime[g][interp_index_low][1]) != len(self._premapdmdt[g][interp_index_low][1]) ): 
+                    print ('length premaptime and premapdmdt in process:',
+                        len(self._premaptime[g][interp_index_low][0]), len(self._premapdmdt[g][interp_index_low][0]),
+                        len(self._premaptime[g][interp_index_low][1]),len(self._premapdmdt[g][interp_index_low][1]) )
+                timedict[g] = np.copy(self._premaptime[g][interp_index_low])
+                dmdtdict[g] = np.copy(self._premapdmdt[g][interp_index_low])
 
         # ----------------TESTING ----------------
+        
         '''
         if gamma_interp == True:
 
-            np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g4-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+gammas[0]+'b'+str(self._b)+'.txt',
-            (timedict['4-3'], kwargs['efficiency']*dmdtdict['4-3']*c.c.cgs.value*c.c.cgs.value ))
-            np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g5-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
-            (timedict['5-3'], kwargs['efficiency']*dmdtdict['5-3']*c.c.cgs.value*c.c.cgs.value ))
+            #print ('beta interp =', beta_interp, len(np.append(timedict['4-3'][0], timedict['4-3'][1])), len(np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
+            np.savetxt('test_dir/test_fallback/pregammainterp/g4-3/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+gammas[0]+'b'+str(self._b)+'.txt',
+            (np.append(timedict['4-3'][0],timedict['4-3'][1]), np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
+            np.savetxt('test_dir/test_fallback/pregammainterp/g5-3/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
+            (np.append(timedict['5-3'][0],timedict['5-3'][1]), np.append(dmdtdict['5-3'][0], dmdtdict['5-3'][1])))
         '''
         #else: np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gammas[0])+'b'+str(self._b)+'.txt',
         # ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
@@ -326,74 +403,71 @@ class Fallback(Engine):
 
         if gamma_interp == True:
 
+            mapped_time = {'4-3': [], '5-3': []}
+
+            time = []
+            dmdt = []
+            for j in [0,1]: # once before peak, once after peak
+                # choose more densely sampled curve to map times from times to 0-1. 
+                # less densely sampled curve will be interpolated to match
+                if len(timedict['4-3'][j]) < len(timedict['5-3'][j]): # gamma = 5/3 array more densely sampled 
+                    interp = '4-3'
+                    nointerp = '5-3'
+                else: 
+                    interp = '5-3'
+                    nointerp = '4-3' # will also catch case where they have the same lengths
+                # map times from more densely sampled curves (bost pre & post peak, might be from diff. dmdts) 
+                # to 0 - 1
+                #mapped_time[nointerp].append(timedict[nointerp][j]/(timedict[nointerp][j][-1] - timedict[nointerp][j][0]) )
+                #mapped_time[interp].append(timedict[interp][j]/(timedict[interp][j][-1] - timedict[interp][j][0])) 
+
+                mapped_time[nointerp].append( 1./(timedict[nointerp][j][-1] - timedict[nointerp][j][0]) * 
+                                            (timedict[nointerp][j] - timedict[nointerp][j][0]) )
+                mapped_time[interp].append( 1./(timedict[interp][j][-1] - timedict[interp][j][0]) * 
+                                        (timedict[interp][j] - timedict[interp][j][0]) ) 
+                # make sure bounds are the same for interp and nointerp  before interpolation
+                #(they should be 0 and 1 from above, but could be slightly off due to rounding errors in python)
+                mapped_time[interp][j][0] = 0
+                mapped_time[interp][j][-1] = 1
+                mapped_time[nointerp][j][0] = 0
+                mapped_time[nointerp][j][-1] = 1
+
+                func = interp1d(mapped_time[interp][j], dmdtdict[interp][j])
+                dmdtdict[interp][j] = func(mapped_time[nointerp][j])
+
+                # recall gfrac = 0 --> gamma = 4/3, gfrac = 1 --> gamma 5/3
+                if interp == '5-3': # then mapped_time = mapped_time[nointerp] = mapped_time['4-3']
+                    time53 = mapped_time['4-3'][j] * (timedict['5-3'][j][-1] - timedict['5-3'][j][0]) + timedict['5-3'][j][0]
+                    time.extend(10**(timedict['4-3'][j] + (time53 - timedict['4-3'][j])*gfrac))
+                else: # interp == '4-3'
+                    time43 = mapped_time['5-3'][j] * (timedict['4-3'][j][-1] - timedict['4-3'][j][0]) + timedict['4-3'][j][0]
+                    time.extend(10**(time43 + (timedict['5-3'][j] - time43) * gfrac)) # convert back from logspace before adding to time array
 
 
-            # find indexes of dmdt peaks
-            ipeak43 = np.argmax(dmdtdict['4-3'])
-            ipeak53 = np.argmax(dmdtdict['5-3'])
-
-            tpeak43 = timedict['4-3'][ipeak43]
-            tpeak53 = timedict['5-3'][ipeak53]
-
-
-            # linearly interpolate both time arrays
-            # Note that we expect tpeak53 < tpeak43
-            if tpeak53 < tpeak43:
-                glo = '4-3'
-                ghi = '5-3'
-                timedict['4-3'] = timedict['4-3'] + (tpeak53 - tpeak43)*gfrac # assuming gfrac = 0 for gamma = 4/3, gfrac = 1 for gamma = 5/3
-                timedict['5-3'] = timedict['5-3'] - (tpeak53 - tpeak43)*(1-gfrac)
-
-            else:
-                glo = '5-3'
-                ghi = '4-3'
-                timedict['4-3'] = timedict['4-3'] - (tpeak43 - tpeak53)*gfrac # assuming gfrac = 0 for gamma = 4/3, gfrac = 1 for gamma = 5/3
-                timedict['4-3'] = timedict['4-3'] + (tpeak43 - tpeak53)*(1-gfrac)
-                # following line not necessary, but if this would be weird so print something for now
-                if tpeak53 == tpeak43: print ('(time of peak for gamma = 4/3) = (time of peak for gamma = 5/3)')
-
-            # gamma = 5/3 should be more spread out in time, but just in case:
-            if timedict[glo][0] > timedict[ghi][0]: # gamma hi data more spread out at early times
-                ginterp = ghi
-                gnointerp = glo
-                if timedict[glo][-1] > timedict[ghi][-1]: # gamma lo data more spread out at late times
-                    # cut off part of glo array with time > max(ghi time array)
-                    dmdtdict[glo] = dmdtdict[glo][timedict[glo] < timedict[ghi][-1]]
-                    timedict[glo] = timedict[glo][timedict[glo] < timedict[ghi][-1]]
-                    #print ('cuts made at late time for gamma interpolation')
-
-            if timedict[ghi][0] > timedict[glo][0]: # gamma lo data more spread out at early times
-                ginterp = glo
-                gnointerp = ghi
-                if timedict[glo][-1] < timedict[ghi][-1]: # gamma hi data more spread out at late times
-                    # cut off part of ghi array with time > max(glo time array)
-                    dmdtdict[ghi] = dmdtdict[ghi][timedict[ghi] < timedict[glo][-1]]
-                    timedict[ghi] = timedict[ghi][timedict[ghi] < timedict[glo][-1]]
-
-
-            # now ginterp should be set to the gamma with a time array with a larger range (in both early and late times)
-            # than the other gamma.
-
-            # Interpolate dmdt array corresponding to larger time range gamma to match times of smaller time range gamma
-
-            timeinterpfunc = interp1d(timedict[ginterp], dmdtdict[ginterp])
-            dmdtinterp = timeinterpfunc(timedict[gnointerp])
-            time = timedict[gnointerp]
-
-            # recall gfrac = 0 --> gamma = 4/3, gfrac = 1 --> gamma 5/3
-            if ginterp == '5-3':
-                dmdt = dmdtdict['4-3'] + (dmdtinterp - dmdtdict['4-3'])*gfrac
-            else: # ginterp == '4-3'
-                dmdt = dmdtdict['5-3'] + (dmdtinterp - dmdtdict['5-3'])*(1. - gfrac)
-
+                # recall gfrac = 0 --> gamma = 4/3, gfrac = 1 --> gamma 5/3 
+                dmdt.extend(10**(dmdtdict['4-3'][j] + (dmdtdict['5-3'][j] - dmdtdict['4-3'][j])*gfrac)) # convert back from logspace before adding to time array
+              
+        else: # gamma_interp == False:
+            # in this case, g will still be g from loop over gammas, 
+            # but there was only one gamma (no interpolation), so g is the correct gamma
+            # note that timedict[g] is a list not an array
+            time = np.concatenate((timedict[g][0], timedict[g][1])) # no longer need a prepeak and postpeak array
+            time = 10**time
+            dmdt = np.concatenate((dmdtdict[g][0], dmdtdict[g][1]))
+            dmdt = 10**dmdt
+        #print ('gamma interp =', gamma_interp, 'beta interp =', beta_interp)
+        #print ('post gamma interp - length time, length dmdt :', len(time), len(dmdt))
+        time = np.array(time)
+        dmdt = np.array(dmdt)
         # ----------------TESTING ----------------
-        '''
-        if gamma_interp == True:
-
-            np.savetxt('viscoustests/noearlytimeextrap/pregammainterp/g4-3/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gfrac)+'b'+str(self._b)+'.txt',
-            (time, kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
-
-        '''
+        if self.TESTING == True:
+            if gamma_interp == True:
+                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:03d}'.format(self.testnum)+'gfrac'+str(gfrac)+'b'+str(self._b)+'.txt',
+                (time, dmdt))
+            else: 
+                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+str(g)+'b'+str(self._b)+'.txt',
+                (time, dmdt))
+        
         # ----------- SCALE dm/dt TO BH & STAR MASS & STAR RADIUS --------------
 
         if 'dense_times' in kwargs:
@@ -410,6 +484,8 @@ class Fallback(Engine):
 
         self._Rstar = kwargs['Rstar']*Rsolar
 
+        #print (type(dmdt))
+        #print (dmdt * np.sqrt(Mhbase/self._bhmass) )
         dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0 * (Rstarbase/self._Rstar)**1.5
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
         time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass) * (self._Rstar/Rstarbase)**1.5
@@ -420,6 +496,7 @@ class Fallback(Engine):
         # (whatever first time is after early t extrapolation) with parameter texplosion
         self.rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close
         # to texplosion, using this bc it's what's used in transform.py)
+       
         tnew = tnew - (tnew[0] - self.rest_t_explosion)
 
         # try aligning peak luminosity/dmdt with 'texplosion' parameter
@@ -438,6 +515,7 @@ class Fallback(Engine):
         # ----------------------------------------
 
         #timeinterpfunc = CubicSpline(tnew, dmdt)
+        #print ('length tnew, length dmdt :',len(tnew), len(dmdt))
         timeinterpfunc = interp1d(tnew, dmdt)
 
         lengthpretimes = len(np.where(self._times < tnew[0])[0])
@@ -447,10 +525,16 @@ class Fallback(Engine):
         dmdt1 = np.zeros(lengthpretimes)
         dmdt3 = np.zeros(lengthposttimes)
         dmdt2 = timeinterpfunc(self._times[lengthpretimes:len(self._times)-lengthposttimes])
+        #print ('length dmdt2', len(dmdt2))
+        #print ('dmdt2', dmdt2)
         dmdtnew = np.append(dmdt1,dmdt2)
         dmdtnew = np.append(dmdtnew, dmdt3)
 
         dmdtnew[dmdtnew < 0] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
+
+        #print ('dmdtnew', dmdtnew)
+        #print (self._times[0], self._times[-1], len(self._times), tnew[0], tnew[-1], len(tnew))
+        #print (lengthpretimes, lengthposttimes)
 
 
         # Can uncomment following line to save files for testing
@@ -460,9 +544,11 @@ class Fallback(Engine):
         luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value # expected in cgs so ergs/s
 
         # ----------------TESTING ----------------
-        #np.savetxt('viscoustests/noearlytimeextrap/endfallback/times+lums'+'{:03d}'.format(self.testnum)+'.txt',
-        # ((self._times-self.rest_t_explosion), luminosities)) # set time = 0 when explosion goes off
-        #self.testnum += 1
+        if self.TESTING == True:
+            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:03d}'.format(self.testnum)+'.txt',
+                        (self._times, dmdtnew)) # set time = 0 when explosion goes off
+            self.testnum += 1
+        
         # ----------------------------------------
 
-        return {'kappagamma': kwargs['kappa'], 'dense_luminosities': luminosities}
+        return {'dense_luminosities': luminosities}

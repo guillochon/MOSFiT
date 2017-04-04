@@ -86,6 +86,7 @@
             "densetimes",
             "bhmass",
             "starmass",
+            "Rstar",
             "b",
             "efficiency",
             "tpeak",
@@ -96,7 +97,6 @@
         "kind":"transform",
         "inputs":[
             "fallback",
-            "kappa",
             "texplosion",
             "Tviscous"
         ]
@@ -106,6 +106,7 @@
         "inputs":[
             "bhmass",
             "starmass",
+            "Rstar",
             "lphoto",
             "Rph0",
 			"viscous"

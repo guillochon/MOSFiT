@@ -28,7 +28,7 @@
     },
     "tpeak":{
         "min_value":0.01,
-        "max_value":100.0,
+        "max_value":200.0,
         "log":true
     },
     "Tviscous":{
@@ -49,7 +49,7 @@
 		"min_value":0.0,
 		"max_value":4.0
 	},
-	"Rpho0":{
+	"Rph0":{
 		"min_value":-4.0,
 		"max_value":4.0
 	}

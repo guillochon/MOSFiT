@@ -16,6 +16,7 @@ class tde_photosphere(Photosphere):
     RAD_CONST = KM_CGS * DAY_CGS
 
     def process(self, **kwargs):
+        #print ('kwargs[dense_luminosities]', kwargs['dense_luminosities'])
         kwargs = self.prepare_input('luminosities', **kwargs)
         self._times = np.array(kwargs['rest_times']) #np.array(kwargs['dense_times']) #kwargs['rest_times']
 
@@ -38,29 +39,41 @@ class tde_photosphere(Photosphere):
         #print (np.where(self._luminosities <= 0),len(self._luminosities))
         ilumzero = len(np.where(self._luminosities <= 0)[0]) # index of first mass accretion
         # semi-major axis of material that accretes at time = tpeak --> shouldn't T be tpeak - tdisruption?
-        a_p =(c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
-             self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
+        
+        #print(self._luminosities)
+        #print (ilumzero, len(self._luminosities))
+
         Ledd = (4 * np.pi * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
-
-
-        # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
-        a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
-             self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
-        
-        #rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
-        rphotmax = 2 * a_p #2*rp + 2*a_p
-
-        #r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
+        r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
         rphotmin = r_isco #2*rp #r_isco
+        #print (ilumzero)
+        if ilumzero == len(self._luminosities): # this will happen if all luminosities are 0
+            print ('all zero luminosities after photosphere')
+            rphot = np.ones(len(self._luminosities))*rphotmin
+            Tphot = np.zeros(len(self._luminosities)) # should I set a Tmin instead?
+        
+        else:
+            a_p =(c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
+                 self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
 
-        rphot = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
-        # the luminosity is zero)
 
-        rphot = np.concatenate((rphot, (self._Rph_0 * a_t * self._luminosities[ilumzero:]/ Ledd)**self._l))
-        rphot[rphot < rphotmin] = rphotmin
-        rphot[rphot > rphotmax] = rphotmax
 
-        Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
+            # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
+            a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
+                 self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
+            
+            #rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
+            rphotmax = 2 * a_p #2*rp + 2*a_p
 
-        return {'radiusphot': rphot, 'temperaturephot': Tphot} # return sparse luminosities here
+
+            rphot = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
+            # the luminosity is zero)
+
+            rphot = np.concatenate((rphot, (self._Rph_0 * a_t * self._luminosities[ilumzero:]/ Ledd)**self._l))
+            rphot[rphot < rphotmin] = rphotmin
+            rphot[rphot > rphotmax] = rphotmax
+
+            Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
+
+        return {'radiusphot': rphot, 'temperaturephot': Tphot} 
