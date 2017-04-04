@@ -84,14 +84,11 @@ class Fallback(Engine):
             
             dmdedir = os.path.dirname(__file__)[:-15] + 'models/tde/data/' + g + '/' #'../../models/tde/data/'
 
-            #dmdedir = '/Users/brennamockler/Dropbox (Personal)/Research/smooth+rebin/mpoly_5-3_4-3_1e6/gkernel35/'
 
             #--------- GET SIMULATION BETAS -----------------
 
-            # hardcode in the simulation betas for gamma = 4-3 for now
             sim_beta_files = os.listdir(dmdedir)
 
-            #sim_beta_new = {g:[float(b[:-4]) for b in sim_beta_files]}
             self._sim_beta[g].extend([float(b[:-4]) for b in sim_beta_files]) #{self._sim_beta.items() + sim_beta_new.items()} #[0.600, 0.650, 0.700, 0.750, 0.800, 0.850, 0.900, 1.000, 1.100,  1.200, 1.300, 1.400, 1.500, 1.600, 1.700, 1.800, 1.850, 1.900, 2.000, 2.500, 3.000, 3.500, 4.000]
 
 
@@ -227,8 +224,6 @@ class Fallback(Engine):
         else:
             print ('b outside range, bmin = 0; bmax = 2; b =', self._b)
             beta_outside_range = True
-        #self._beta = kwargs['beta']
-
 
 
         # GET GAMMA VALUE
@@ -259,13 +254,6 @@ class Fallback(Engine):
                 if self._beta[g] == self._sim_beta[g][i]: # don't need to interpolate, already have dmdt and t for this beta
                     beta_interp = False
                     interp_index_low = i
-    ######### What's going on here??:
-                    # because dmdt isn't passed to this function, just slope and yintercept, will need interp_index_low to recalculate dmdt even if no b interp needed
-                    #if i == len(self._beta_slope[g]): # chosen beta value == highest sim beta value
-                    #    interp_index_low = i-1      # interpolations only calculated between values, therefore need to use lower interpolation for this to work
-                    #else: interp_index_low = i  # so that conversion from dmde --> dmdt works (uses e_lo for conversion)
-                    
-                    #print ('exists simulation beta equal to user beta, no beta interpolation necessary, calculating dmdt...')
                     break
 
                 if self._beta[g] < self._sim_beta[g][i]:
@@ -289,16 +277,14 @@ class Fallback(Engine):
                 time = []
                 for i in [0,1]:
                     # interp_index_low indexes beta
-                    #print (len )
+
                     time_betalo = (self._mapped_time[g][interp_index_low][i] * 
                                 (self._premaptime[g][interp_index_low][i][-1] - self._premaptime[g][interp_index_low][i][0]) + 
                                 self._premaptime[g][interp_index_low][i][0]) # mapped time between beta low and beta high
                     time_betahi = (self._mapped_time[g][interp_index_low][i] *
                                 (self._premaptime[g][interp_index_high][i][-1] - self._premaptime[g][interp_index_high][i][0]) +
                                 self._premaptime[g][interp_index_high][i][0])
-                    #print (len(time_betalo), len(time_betahi))
-                    #print (g, interp_index_low, interp_index_high)
-                    #print (self._sim_beta)
+
                     time.append(time_betalo + (time_betahi - time_betalo)*(self._beta[g] - 
                             self._sim_beta[g][interp_index_low])/(self._sim_beta[g][interp_index_high] - self._sim_beta[g][interp_index_low]))
                 time = np.array(time)
@@ -395,8 +381,6 @@ class Fallback(Engine):
             np.savetxt('test_dir/test_fallback/pregammainterp/g5-3/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
             (np.append(timedict['5-3'][0],timedict['5-3'][1]), np.append(dmdtdict['5-3'][0], dmdtdict['5-3'][1])))
         '''
-        #else: np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gammas[0])+'b'+str(self._b)+'.txt',
-        # ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
         # ----------------------------------------
 
         # ---------------- GAMMA INTERPOLATION -------------------
@@ -418,8 +402,6 @@ class Fallback(Engine):
                     nointerp = '4-3' # will also catch case where they have the same lengths
                 # map times from more densely sampled curves (bost pre & post peak, might be from diff. dmdts) 
                 # to 0 - 1
-                #mapped_time[nointerp].append(timedict[nointerp][j]/(timedict[nointerp][j][-1] - timedict[nointerp][j][0]) )
-                #mapped_time[interp].append(timedict[interp][j]/(timedict[interp][j][-1] - timedict[interp][j][0])) 
 
                 mapped_time[nointerp].append( 1./(timedict[nointerp][j][-1] - timedict[nointerp][j][0]) * 
                                             (timedict[nointerp][j] - timedict[nointerp][j][0]) )
@@ -455,8 +437,7 @@ class Fallback(Engine):
             time = 10**time
             dmdt = np.concatenate((dmdtdict[g][0], dmdtdict[g][1]))
             dmdt = 10**dmdt
-        #print ('gamma interp =', gamma_interp, 'beta interp =', beta_interp)
-        #print ('post gamma interp - length time, length dmdt :', len(time), len(dmdt))
+
         time = np.array(time)
         dmdt = np.array(dmdt)
         # ----------------TESTING ----------------
@@ -484,8 +465,6 @@ class Fallback(Engine):
 
         self._Rstar = kwargs['Rstar']*Rsolar
 
-        #print (type(dmdt))
-        #print (dmdt * np.sqrt(Mhbase/self._bhmass) )
         dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0 * (Rstarbase/self._Rstar)**1.5
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
         time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass) * (self._Rstar/Rstarbase)**1.5
@@ -498,13 +477,6 @@ class Fallback(Engine):
         # to texplosion, using this bc it's what's used in transform.py)
        
         tnew = tnew - (tnew[0] - self.rest_t_explosion)
-
-        # try aligning peak luminosity/dmdt with 'texplosion' parameter
-
-        #tpeakindex = np.argmax(dmdt)
-
-        #tnew = tnew - (tnew[tpeakindex] - self.rest_t_explosion)
-
 
         # ----------------TESTING ----------------
         #if gamma_interp == True:
@@ -525,20 +497,10 @@ class Fallback(Engine):
         dmdt1 = np.zeros(lengthpretimes)
         dmdt3 = np.zeros(lengthposttimes)
         dmdt2 = timeinterpfunc(self._times[lengthpretimes:len(self._times)-lengthposttimes])
-        #print ('length dmdt2', len(dmdt2))
-        #print ('dmdt2', dmdt2)
         dmdtnew = np.append(dmdt1,dmdt2)
         dmdtnew = np.append(dmdtnew, dmdt3)
 
         dmdtnew[dmdtnew < 0] = 0 # set floor for dmdt. At some point maybe fit to time of peak somewhere in here?
-
-        #print ('dmdtnew', dmdtnew)
-        #print (self._times[0], self._times[-1], len(self._times), tnew[0], tnew[-1], len(tnew))
-        #print (lengthpretimes, lengthposttimes)
-
-
-        # Can uncomment following line to save files for testing
-        #np.savetxt('test/files/beta'+'{:.3f}'.format(self._beta)+'mbh'+'{:.0f}'.format(self._bhmass)+'.dat',(time,dmdt),fmt='%1.18e')
 
         self._efficiency = kwargs['efficiency']
         luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value # expected in cgs so ergs/s
