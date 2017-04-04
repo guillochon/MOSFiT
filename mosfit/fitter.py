@@ -70,7 +70,7 @@ class Fitter(object):
         pass
 
     def fit_events(self,
-                   events=[''],
+                   events=[],
                    models=[],
                    plot_points='',
                    max_time='',
@@ -86,7 +86,8 @@ class Fitter(object):
                    frack_step=50,
                    wrap_length=100,
                    travis=False,
-                   post_burn=500,
+                   burn=None,
+                   post_burn=None,
                    gibbs=False,
                    smooth_times=-1,
                    extrapolate_time=0.0,
@@ -108,6 +109,7 @@ class Fitter(object):
                    draw_above_likelihood=False,
                    maximum_walltime=False,
                    start_time=False,
+                   print_trees=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -130,19 +132,31 @@ class Fitter(object):
         event_list = listify(events)
         model_list = listify(models)
 
+        if len(model_list) and not len(event_list):
+            event_list = ['']
+
+        event_list = [x.replace('‑', '-') for x in event_list]
+
+        self._catalogs = {
+            'OSC': ('https://sne.space/astrocats/astrocats/'
+                    'supernovae/output'),
+            'OTC': ('https://tde.space/astrocats/astrocats/'
+                    'tidaldisruptions/output')
+        }
+
         if not len(event_list) and not len(model_list):
             self._printer.wrapped(
                 'No events or models specified, initializing and then '
                 'exiting.', warning=True)
 
-        entries = [[None for y in range(len(model_list))] for
-                   x in range(len(event_list))]
-        ps = [[None for y in range(len(model_list))] for
-              x in range(len(event_list))]
-        lnprobs = [[None for y in range(len(model_list))] for
-                   x in range(len(event_list))]
+        entries = [[] for x in range(len(event_list))]
+        ps = [[] for x in range(len(event_list))]
+        lnprobs = [[] for x in range(len(event_list))]
+
+        data = {}
 
         self._event_name = 'Batch'
+        self._event_catalog = ''
         for ei, event in enumerate(event_list):
             self._event_name = ''
             self._event_path = ''
@@ -158,92 +172,115 @@ class Fitter(object):
                         path = event
                         self._event_name = event.replace('.json',
                                                          '').split('/')[-1]
+
                     # If not (or the file doesn't exist), download from OSC
                     if not path or not os.path.exists(path):
-                        names_path = os.path.join(dir_path, 'cache',
-                                                  'names.min.json')
+                        names_paths = [
+                            os.path.join(dir_path, 'cache', x +
+                                         '.names.min.json') for x in
+                            self._catalogs]
                         input_name = event.replace('.json', '')
                         prt.wrapped(
-                            'Event `{}` interpreted as supernova '
-                            'name, downloading list of supernova '
+                            'Event `{}` interpreted as transient '
+                            'name, downloading lists of transient '
                             'aliases...'.format(input_name))
                         if not offline:
-                            try:
-                                response = get_url_file_handle(
-                                    'https://sne.space/astrocats/astrocats/'
-                                    'supernovae/output/names.min.json',
-                                    timeout=10)
-                            except Exception:
-                                prt.wrapped(
-                                    'Warning: Could not download SN names ('
-                                    'are you online?), using cached list.')
-                                raise
-                            else:
-                                with open(names_path, 'wb') as f:
-                                    shutil.copyfileobj(response, f)
-                        if os.path.exists(names_path):
-                            with open(names_path, 'r') as f:
-                                names = json.load(
-                                    f, object_pairs_hook=OrderedDict)
-                        else:
-                            self._printer.wrapped(
-                                'Warning: Could not read list of SN names!',
-                                warning=True)
-                            if offline:
-                                self._printer.wrapped(
-                                    'Try omitting the `--offline` flag.')
-                            raise RuntimeError
-
-                        if event in names:
-                            self._event_name = event
-                        else:
-                            for name in names:
-                                if (event in names[name] or
-                                        'SN' + event in names[name]):
-                                    self._event_name = name
-                                    break
-                        if not self._event_name:
-                            namekeys = []
-                            for name in names:
-                                namekeys.extend(names[name])
-                            namekeys = list(sorted(set(namekeys)))
-                            matches = get_close_matches(
-                                event, namekeys, n=5, cutoff=0.8)
-                            # matches = []
-                            if len(matches) < 5 and is_number(event[0]):
-                                prt.wrapped(
-                                    'Could not find event, performing '
-                                    'extended name search...')
-                                snprefixes = set(('SN19', 'SN20'))
-                                for name in names:
-                                    ind = re.search("\d", name)
-                                    if ind and ind.start() > 0:
-                                        snprefixes.add(name[:ind.start()])
-                                snprefixes = list(sorted(snprefixes))
-                                for prefix in snprefixes:
-                                    testname = prefix + event
-                                    new_matches = get_close_matches(
-                                        testname, namekeys, cutoff=0.95, n=1)
-                                    if (len(new_matches) and
-                                            new_matches[0] not in matches):
-                                        matches.append(new_matches[0])
-                                    if len(matches) == 5:
-                                        break
-                            if len(matches):
-                                if travis:
-                                    response = matches[0]
+                            for ci, catalog in enumerate(self._catalogs):
+                                try:
+                                    response = get_url_file_handle(
+                                        self._catalogs[catalog] +
+                                        '/names.min.json',
+                                        timeout=10)
+                                except Exception:
+                                    prt.wrapped(
+                                        'Warning: Could not download {} '
+                                        'names (are you online?), using '
+                                        'cached list.'.format(catalog))
+                                    raise
                                 else:
-                                    response = prt.prompt(
-                                        'No exact match to given event '
-                                        'found. Did you mean one of the '
-                                        'following events?',
-                                        kind='select',
-                                        options=matches)
-                                if response:
-                                    for name in names:
-                                        if response in names[name]:
-                                            self._event_name = name
+                                    with open(names_paths[ci], 'wb') as f:
+                                        shutil.copyfileobj(response, f)
+                        names = OrderedDict()
+                        for ci, catalog in enumerate(self._catalogs):
+                            if os.path.exists(names_paths[ci]):
+                                with open(names_paths[ci], 'r') as f:
+                                    names[catalog] = json.load(
+                                        f, object_pairs_hook=OrderedDict)
+                            else:
+                                self._printer.wrapped(
+                                    'Warning: Could not read list of {} '
+                                    'names!'.format(catalog), warning=True)
+                                if offline:
+                                    self._printer.wrapped(
+                                        'Try omitting the `--offline` flag.')
+                                raise RuntimeError
+
+                            if event in names[catalog]:
+                                self._event_name = event
+                                self._event_catalog = catalog
+                            else:
+                                for name in names[catalog]:
+                                    if (event in names[catalog][name] or
+                                            'SN' + event in
+                                            names[catalog][name]):
+                                        self._event_name = name
+                                        self._event_catalog = catalog
+                                        break
+
+                        if not self._event_name:
+                            for ci, catalog in enumerate(self._catalogs):
+                                namekeys = []
+                                for name in names[catalog]:
+                                    namekeys.extend(names[catalog][name])
+                                namekeys = list(sorted(set(namekeys)))
+                                matches = get_close_matches(
+                                    event, namekeys, n=5, cutoff=0.8)
+                                # matches = []
+                                if len(matches) < 5 and is_number(event[0]):
+                                    prt.wrapped(
+                                        'Could not find event, performing '
+                                        'extended name search...')
+                                    snprefixes = set(('SN19', 'SN20'))
+                                    for name in names[catalog]:
+                                        ind = re.search("\d", name)
+                                        if ind and ind.start() > 0:
+                                            snprefixes.add(name[:ind.start()])
+                                    snprefixes = list(sorted(snprefixes))
+                                    for prefix in snprefixes:
+                                        testname = prefix + event
+                                        new_matches = get_close_matches(
+                                            testname, namekeys, cutoff=0.95,
+                                            n=1)
+                                        if (len(new_matches) and
+                                                new_matches[0] not in matches):
+                                            matches.append(new_matches[0])
+                                        if len(matches) == 5:
                                             break
+                                if len(matches):
+                                    if travis:
+                                        response = matches[0]
+                                    else:
+                                        response = prt.prompt(
+                                            'No exact match to given '
+                                            'transient '
+                                            'found. Did you mean one of the '
+                                            'following transients?',
+                                            kind='select',
+                                            options=matches,
+                                            none_string=(
+                                                'None of the above, ' +
+                                                ('skip this event.' if
+                                                 ci == len(self._catalogs) - 1
+                                                 else
+                                                 'try the next catalog.')))
+                                    if response:
+                                        for name in names[catalog]:
+                                            if response in names[
+                                                    catalog][name]:
+                                                self._event_name = name
+                                                self._event_catalog = catalog
+                                                break
+
                         if not self._event_name:
                             prt.wrapped(
                                 'Could not find event by that name, skipping!')
@@ -253,12 +290,13 @@ class Fitter(object):
 
                         if not offline:
                             prt.wrapped(
-                                'Found event by primary name `{}` in the OSC, '
-                                'downloading data...'.format(self._event_name))
+                                'Found event by primary name `{}` in the {}, '
+                                'downloading data...'.format(
+                                    self._event_name, self._event_catalog))
                             try:
                                 response = get_url_file_handle(
-                                    'https://sne.space/astrocats/astrocats/'
-                                    'supernovae/output/json/' + urlname,
+                                    self._catalogs[self._event_catalog] +
+                                    '/json/' + urlname,
                                     timeout=10)
                             except Exception:
                                 prt.wrapped(
@@ -279,7 +317,9 @@ class Fitter(object):
                     else:
                         prt.wrapped(
                             'Error: Could not find data for `{}` locally or '
-                            'on the OSC.'.format(self._event_name))
+                            'in the {}.'.format(
+                                self._event_name,
+                                '/'.join(self._catalogs.keys())))
                         if offline:
                             prt.wrapped(
                                 'Try omitting the `--offline` flag.')
@@ -300,7 +340,16 @@ class Fitter(object):
                 if pool.is_master():
                     pool.close()
 
-            for mi, mod_name in enumerate(model_list):
+            if model_list:
+                lmodel_list = model_list
+            else:
+                lmodel_list = ['']
+
+            entries[ei] = [None for y in range(len(lmodel_list))]
+            ps[ei] = [None for y in range(len(lmodel_list))]
+            lnprobs[ei] = [None for y in range(len(lmodel_list))]
+
+            for mi, mod_name in enumerate(lmodel_list):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
@@ -308,10 +357,19 @@ class Fitter(object):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
+                        data=data,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
                         fitter=self,
-                        pool=pool)
+                        pool=pool,
+                        print_trees=print_trees)
+
+                    if not self._model._model_name:
+                        self._printer.wrapped(
+                            'Skipping `{}`, no models available to fit the '
+                            'transient.'.format(self._event_name),
+                            warning=True)
+                        continue
 
                     if not event:
                         self._printer.wrapped(
@@ -333,6 +391,7 @@ class Fitter(object):
                         event_name=self._event_name,
                         iterations=iterations,
                         fracking=fracking,
+                        burn=burn,
                         post_burn=post_burn,
                         smooth_times=smooth_times,
                         extrapolate_time=extrapolate_time,
@@ -355,7 +414,6 @@ class Fitter(object):
                             num_temps=num_temps,
                             fracking=fracking,
                             frack_step=frack_step,
-                            post_burn=post_burn,
                             gibbs=gibbs,
                             pool=pool,
                             suffix=suffix,
@@ -379,7 +437,8 @@ class Fitter(object):
                   event_name='',
                   iterations=2000,
                   fracking=True,
-                  post_burn=500,
+                  burn=None,
+                  post_burn=None,
                   smooth_times=-1,
                   extrapolate_time=0.0,
                   limit_fitting_mjds=False,
@@ -507,8 +566,15 @@ class Fitter(object):
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
         self._fracking = fracking
-        self._post_burn = post_burn
-        self._burn_in = max(iterations - post_burn, 0)
+        if burn is not None:
+            self._burn_in = burn
+            self._post_burn = max(iterations - burn, 0)
+        elif post_burn is not None:
+            self._post_burn = post_burn
+            self._burn_in = max(iterations - post_burn, 0)
+        else:
+            self._burn_in = int(np.round(iterations / 2))
+            self._post_burn = max(iterations - self._burn_in, 0)
 
         return True
 
@@ -519,7 +585,6 @@ class Fitter(object):
                  num_walkers=50,
                  num_temps=1,
                  fracking=True,
-                 post_burn=500,
                  gibbs=False,
                  pool='',
                  suffix='',
@@ -566,6 +631,15 @@ class Fitter(object):
                 'Warning: Number of free parameters exceeds number of '
                 'measurements. Please treat results with caution.',
                 warning=True)
+        if nwalkers < 10 * ndim:
+            self._printer.wrapped(
+                'Warning: While emcee accepts a number of walkers that is '
+                'twice the number of dimensions or greater, simple tests '
+                'with toy problems show poor convergence with this minimum. '
+                'We suggest using at least 10x the number of dimensions '
+                '(`-N {}` suggested for this fit), and preferably more, if '
+                'feasible.'.format(10 * ndim),
+                warning=True)
         self._printer.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
@@ -581,7 +655,7 @@ class Fitter(object):
                     break
 
                 if pool.size == 0:
-                    p, score = draw_walker()
+                    p, score = draw_walker(test_walker)
                     p0[i].append(p)
                     dwscores.append(score)
                 else:
@@ -631,7 +705,7 @@ class Fitter(object):
                 ic = max_chunk if run_until_converged else iter_arr[ici]
                 if exceeded_walltime:
                     break
-                if run_until_converged and converged:
+                if run_until_converged and converged and emi > iterations:
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
@@ -717,7 +791,7 @@ class Fitter(object):
                             try:
                                 acorts = sampler.get_autocorr_time(
                                     chain=cur_chain, low=low, c=a,
-                                    min_step=ms, fast=True)
+                                    min_step=ms, max_walkers=5, fast=True)
                                 acort = max([
                                     max(x)
                                     for x in acorts
@@ -770,7 +844,8 @@ class Fitter(object):
 
                     # Perform fracking if we are still in the burn in phase
                     # and iteration count is a multiple of the frack step.
-                    frack_now = (fracking and emi <= self._burn_in and
+                    frack_now = (fracking and frack_step != 0 and
+                                 emi <= self._burn_in and
                                  emi % frack_step == 0)
 
                     scores = [np.array(x) for x in lnprob]

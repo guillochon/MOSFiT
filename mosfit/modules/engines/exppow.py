@@ -14,12 +14,12 @@ class ExpPow(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        self._times = kwargs['dense_times']
-        self._alpha = kwargs['alpha']
-        self._beta = kwargs['beta']
-        self._t_peak = kwargs['tpeak']
-        self._lum_scale = kwargs['lumscale']
-        self._rest_t_explosion = kwargs['resttexplosion']
+        self._times = kwargs[self.key('dense_times')]
+        self._alpha = kwargs[self.key('alpha')]
+        self._beta = kwargs[self.key('beta')]
+        self._t_peak = kwargs[self.key('tpeak')]
+        self._lum_scale = kwargs[self.key('lumscale')]
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
 
         ts = [
             np.inf
@@ -28,13 +28,9 @@ class ExpPow(Engine):
         ]
 
         luminosities = [
-            self._lum_scale * (1.0 - np.exp(-t / self._t_peak))
-            ** self._alpha * (t / self._t_peak) ** (-self._beta) for t in ts
+            self._lum_scale * (1.0 - np.exp(-t / self._t_peak)) **
+            self._alpha * (t / self._t_peak) ** (-self._beta) for t in ts
         ]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
-        # Add on to any existing luminosity
-        luminosities = self.add_to_existing_lums(luminosities)
-
-        return {'kappagamma': kwargs['kappa'],
-                'dense_luminosities': luminosities}
+        return {self.dense_key('luminosities'): luminosities}

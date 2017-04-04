@@ -9,14 +9,17 @@ from copy import deepcopy
 from difflib import get_close_matches
 from math import isnan
 
+import inflect
 import numpy as np
-# from bayes_opt import BayesianOptimization
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.printer import Printer
 from mosfit.utils import listify
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
+
+from astrocats.catalog.quantity import QUANTITY
+# from bayes_opt import BayesianOptimization
 
 
 class Model(object):
@@ -30,16 +33,20 @@ class Model(object):
 
     def __init__(self,
                  parameter_path='parameters.json',
-                 model='default',
+                 model='',
+                 data={},
                  wrap_length=100,
                  pool=None,
-                 fitter=None):
+                 fitter=None,
+                 print_trees=False):
         """Initialize `Model` object."""
         self._model_name = model
         self._pool = pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
         self._fitter = fitter
+        self._print_trees = print_trees
+        self._inflect = inflect.engine()
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -49,6 +56,46 @@ class Model(object):
         prt = self._printer
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
+
+        # Load suggested model associations for transient types.
+        if os.path.isfile(os.path.join('models', 'types.json')):
+            types_path = os.path.join('models', 'types.json')
+        else:
+            types_path = os.path.join(self._dir_path, 'models',
+                                      'types.json')
+        with open(types_path, 'r') as f:
+            model_types = json.load(f, object_pairs_hook=OrderedDict)
+
+        if not self._model_name:
+            try:
+                claimed_type = list(data.values())[0][
+                    'claimedtype'][0][QUANTITY.VALUE]
+            except Exception:
+                self._printer.wrapped(
+                    'No model specified and no claimed type for specified '
+                    'transient.', warning=True)
+            else:
+                type_options = model_types.get(claimed_type, [])
+                if not type_options:
+                    self._printer.wrapped(
+                        'No model available that matches the given '
+                        'transient\'s claimed type.', warning=True)
+                else:
+                    if fitter._travis:
+                        self._model_name = type_options[0]
+                    else:
+                        self._model_name = self._printer.prompt(
+                            'No model specified. Based on this transient\'s '
+                            'claimed type of `{}`, the following models are '
+                            'suggested for fitting this transient:'
+                            .format(claimed_type),
+                            kind='select',
+                            options=type_options,
+                            none_string=('None of the above, skip this '
+                                         'transient.'))
+
+        if not self._model_name:
+            return
 
         # Load the basic model file.
         if os.path.isfile(os.path.join('models', 'model.json')):
@@ -126,7 +173,13 @@ class Model(object):
         root_kinds = ['output', 'objective']
 
         self._trees = OrderedDict()
-        self.construct_trees(self._model, self._trees, kinds=root_kinds)
+        self._simple_trees = OrderedDict()
+        self.construct_trees(
+            self._model, self._trees, self._simple_trees, kinds=root_kinds)
+
+        if self._print_trees:
+            self._printer.wrapped('Dependency trees:\n')
+            self._printer.tree(self._simple_trees)
 
         unsorted_call_stack = OrderedDict()
         self._max_depth_all = -1
@@ -172,6 +225,7 @@ class Model(object):
             self._modules[task] = self._load_task_module(task)
             if mod_name == 'photometry':
                 self._bands = self._modules[task].band_names()
+            self._modules[task].set_attributes(cur_task)
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
             # mod_name = cur_task.get('class', task)
@@ -196,8 +250,8 @@ class Model(object):
         # Look forward to see which modules want dense arrays.
         for task in self._call_stack:
             for ftask in self._call_stack:
-                if ((self._call_stack[ftask]['depth'] <
-                        self._call_stack[task]['depth']) and
+                if (task != ftask and self._call_stack[ftask]['depth'] <
+                        self._call_stack[task]['depth'] and
                         self._modules[ftask]._wants_dense):
                     self._modules[ftask]._provide_dense = True
 
@@ -207,7 +261,8 @@ class Model(object):
         cur_task = call_stack[task]
         mod_name = cur_task.get('class', task).lower()
         mod = importlib.import_module(
-            '.' + 'modules.' + cur_task['kind'].lower() + 's.' + mod_name,
+            '.' + 'modules.' + self._inflect.plural(
+                cur_task['kind'].lower()) + '.' + mod_name,
             package='mosfit')
         class_name = [
             x[0] for x in
@@ -216,7 +271,7 @@ class Model(object):
             x[1].__module__ == mod.__name__][0]
         mod_class = getattr(mod, class_name)
         return mod_class(
-            name=task, pool=self._pool, printer=self._printer, **cur_task)
+            name=task, model=self, **cur_task)
 
     def create_data_dependent_free_parameters(
             self, variance_for_each=[], output={}):
@@ -370,7 +425,8 @@ class Model(object):
         # m.migrad()
         return bh
 
-    def construct_trees(self, d, trees, kinds=[], name='', roots=[], depth=0):
+    def construct_trees(
+            self, d, trees, simple, kinds=[], name='', roots=[], depth=0):
         """Construct call trees for each root."""
         leaf = kinds if len(kinds) else name
         if depth > 100:
@@ -386,6 +442,7 @@ class Model(object):
                     new_roots.append(entry['kind'])
                 entry['roots'] = list(sorted(set(new_roots)))
                 trees[tag] = entry
+                simple[tag] = OrderedDict()
                 inputs = listify(entry.get('inputs', []))
                 for inp in inputs:
                     if inp not in d:
@@ -399,14 +456,17 @@ class Model(object):
                                 format(suggests[0]))
                         raise RuntimeError(warn_str)
                     children = OrderedDict()
+                    simple_children = OrderedDict()
                     self.construct_trees(
                         d,
                         children,
+                        simple_children,
                         name=inp,
                         roots=new_roots,
                         depth=depth + 1)
                     trees[tag].setdefault('children', OrderedDict())
                     trees[tag]['children'].update(children)
+                    simple[tag].update(simple_children)
 
     def draw_walker(self, test=True):
         """Draw a walker randomly.
@@ -446,6 +506,14 @@ class Model(object):
                 if new_max > max_depth:
                     max_depth = new_max
         return max_depth
+
+    def pool(self):
+        """Return processing pool."""
+        return self._pool
+
+    def printer(self):
+        """Return printer."""
+        return self._printer
 
     def likelihood(self, x):
         """Return score related to maximum likelihood."""
@@ -509,6 +577,10 @@ class Model(object):
                     "Failed to execute module `{}`\'s process().".format(task))
                 raise
             outputs.update(new_outs)
+            if '_delete_keys' in outputs:
+                for key in outputs['_delete_keys']:
+                    del(outputs[key])
+                del(outputs['_delete_keys'])
 
             if cur_task['kind'] == root:
                 return outputs

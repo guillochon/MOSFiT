@@ -19,9 +19,10 @@ class NickelCobalt(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        self._times = kwargs['dense_times']
-        self._mnickel = kwargs['fnickel'] * kwargs['mejecta']
-        self._rest_t_explosion = kwargs['resttexplosion']
+        self._times = kwargs[self.key('dense_times')]
+        self._mnickel = kwargs[self.key('fnickel')] * kwargs[
+            self.key('mejecta')]
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
 
         # From 1994ApJS...92..527N
         ts = [
@@ -36,14 +37,4 @@ class NickelCobalt(Engine):
         ]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
-        # Add on to any existing luminosity
-        old_luminosities = kwargs.get('dense_luminosities', None)
-        if old_luminosities is not None:
-            luminosities = [
-                x + y for x, y in zip(old_luminosities, luminosities)
-            ]
-
-        # Add on to any existing luminosity
-        luminosities = self.add_to_existing_lums(luminosities)
-
-        return {self.output_key('luminosities'): luminosities}
+        return {self.dense_key('luminosities'): luminosities}

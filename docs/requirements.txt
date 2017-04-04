@@ -1,3 +1,9 @@
+astrocats
+astropy
+dropbox
+emcee
+extinction
 numpydoc
+schwimmbad
 sphinx_automodapi
 sphinxcontrib-autoprogram

@@ -15,13 +15,14 @@ class Transform(Module):
     def process(self, **kwargs):
         """Set `dense_*` and `*_since_exp` times/luminosities keys."""
         self._times = kwargs['rest_times']
-        self._rest_t_explosion = kwargs['resttexplosion']
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         if 'dense_times' in kwargs:
             self._dense_times = kwargs['dense_times']
-            self._dense_luminosities = kwargs['dense_luminosities']
+            self._dense_luminosities = kwargs[self.key('dense_luminosities')]
         elif min(self._times) > self._rest_t_explosion:
             self._dense_times = [self._rest_t_explosion] + self._times
-            self._dense_luminosities = [0.0] + kwargs['dense_luminosities']
+            self._dense_luminosities = [0.0] + kwargs[
+                self.key('dense_luminosities')]
         self._times_since_exp = [(x - self._rest_t_explosion)
                                  for x in self._times]
         self._dense_times_since_exp = [(x - self._rest_t_explosion)

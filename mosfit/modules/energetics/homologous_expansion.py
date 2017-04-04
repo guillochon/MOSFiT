@@ -17,10 +17,10 @@ class HomologousExpansion(Energetic):
 
     def process(self, **kwargs):
         """Process module."""
-        self._energy = kwargs['kinetic_energy']
-        self._m_ejecta = kwargs['mejecta']
+        self._energy = kwargs[self.key('kinetic_energy')]
+        self._m_ejecta = kwargs[self.key('mejecta')]
 
         v_ejecta = np.sqrt(10 * self._energy * FOE /
                            (3 * self._m_ejecta * M_SUN_CGS)) / KM_CGS
 
-        return {'vejecta': v_ejecta}
+        return {self.key('vejecta'): v_ejecta}

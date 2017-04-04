@@ -1,3 +1,4 @@
+"""Definitions for the `CSM` class."""
 from math import isnan
 
 import numpy as np
@@ -5,37 +6,42 @@ from mosfit.constants import AU_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
 from scipy import interpolate
 
-CLASS_NAME = 'CSM'
+
+# Important: Only define one ``Module`` class per file.
 
 
 class CSM(Engine):
     """CSM energy injection.
 
-        input luminosity calculation based on http://adsabs.harvard.edu/abs/2012ApJ...746..121C
-        with coefficients from http://adsabs.harvard.edu/abs/1982ApJ...258..790C
+    input luminosity calculation based on
+    http://adsabs.harvard.edu/abs/2012ApJ...746..121C
+    with coefficients from
+    http://adsabs.harvard.edu/abs/1982ApJ...258..790C
 
-        There are two major changes in the input luminosity from Chatzopoulos, Wheeler & Vinko (2012):
-        1. ti is set to a small number, rather than the time it takes the ejecta to reach the csm shell
-        2. you can fit/choose an efficiency factor between KE and luminosity
-
+    There are two major changes in the input luminosity from Chatzopoulos,
+    Wheeler & Vinko (2012):
+    1. ti is set to a small number, rather than the time it takes the
+    ejecta to reach the csm shell
+    2. you can fit/choose an efficiency factor between KE and luminosity
     """
 
     REFERENCES = ['2012ApJ...746..121C']
 
     def process(self, **kwargs):
-        self._s = kwargs['s']
-        self._delta = kwargs['delta']  # [0,3)
-        self._n = kwargs['n']  # [6,10]
-        self._kappa = kwargs['kappa']
-        self._R0 = kwargs['r0'] * AU_CGS  # AU to cm
-        self._mejecta = kwargs['mejecta'] * M_SUN_CGS  # Msol to grms
-        self._mcsm = kwargs['mcsm'] * M_SUN_CGS
-        self._rho = kwargs['rho']
-        self._vph = kwargs['vejecta'] * 1.e5
+        """Process module."""
+        self._s = kwargs[self.key('s')]
+        self._delta = kwargs[self.key('delta')]  # [0,3)
+        self._n = kwargs[self.key('n')]  # [6,10]
+        self._kappa = kwargs[self.key('kappa')]
+        self._R0 = kwargs[self.key('r0')] * AU_CGS  # AU to cm
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS  # Msol to grms
+        self._mcsm = kwargs[self.key('mcsm')] * M_SUN_CGS
+        self._rho = kwargs[self.key('rho')]
+        self._vph = kwargs[self.key('vejecta')] * 1.e5
         self._Esn = 3. * self._vph**2 * self._mejecta / 10.
-        self._rest_t_explosion = kwargs['resttexplosion']
-        self._efficiency = kwargs['efficiency']
-        self._times = kwargs['dense_times']
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
+        self._efficiency = kwargs[self.key('efficiency')]
+        self._times = kwargs[self.key('dense_times')]
 
         # g**n is scaling parameter for ejecta density profile
         self._g_n = (1.0 / (4.0 * np.pi * (self._n - self._delta)) * (
@@ -83,9 +89,9 @@ class CSM(Engine):
              (1.0 - self._s)))
 
         # mass of the optically thick CSM (tau > 2/3).
-        self._Mcsm_th = 4.0 * np.pi * self._q / (3.0 - self._s) * (
+        self._Mcsm_th = np.abs(4.0 * np.pi * self._q / (3.0 - self._s) * (
             self._Rph**(3.0 - self._s) - self._R0 **
-            (3.0 - self._s))
+            (3.0 - self._s)))
 
         # time at which shock breaks out of optically thick CSM - forward shock
         # power input then terminates.
@@ -141,14 +147,5 @@ class CSM(Engine):
 
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
-        old_luminosities = kwargs.get('dense_luminosities', None)
-
-        if old_luminosities is not None:
-            luminosities = [
-                x + y for x, y in zip(old_luminosities, luminosities)
-            ]
-
-        # Add on to any existing luminosity
-        luminosities = self.add_to_existing_lums(luminosities)
-
-        return {self.output_key('luminosities'): luminosities}
+        return {self.dense_key('luminosities'): luminosities,
+                self.key('mcsmth'): self._Mcsm_th / M_SUN_CGS}

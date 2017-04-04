@@ -3,6 +3,7 @@
 from __future__ import print_function
 
 import datetime
+import json
 import sys
 from builtins import input
 from textwrap import fill
@@ -107,7 +108,9 @@ class Printer(object):
         if error or warning:
             sys.stdout.write(self.bcolors.ENDC)
 
-    def prompt(self, text, wrap_length=None, kind='bool', options=None):
+    def prompt(self, text, wrap_length=None, kind='bool',
+               none_string='None of the above.',
+               options=None):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -121,7 +124,7 @@ class Printer(object):
                 ' ' + str(i + 1) + '.  ' + options[i] for i in range(
                     len(options))
             ] + [
-                '[n]. None of the above, skip this event.\n'
+                '[n]. ' + none_string + '\n'
                 'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
                     len(options)) + '/[n]):'
             ])
@@ -272,3 +275,37 @@ class Printer(object):
         """
         td = str(datetime.timedelta(seconds=int(round(t))))
         return ('Estimated time left: [ ' + td + ' ]')
+
+    def tree(self, my_tree):
+        """Pretty print the module dependency trees for each root."""
+        for root in my_tree:
+            tree_str = json.dumps({root: my_tree[root]},
+                                  indent='─ ',
+                                  separators=('', ''))
+            tree_str = ''.join(
+                c for c in tree_str if c not in ['{', '}', '"'])
+            tree_str = '\n'.join([
+                x.rstrip() for x in tree_str.split('\n') if
+                x.strip('─ ') != ''])
+            tree_str = '\n'.join(
+                [x[::-1].replace('─ ─', '├', 1)[::-1].replace('─', '│') if
+                 x.startswith('─ ─') else x.replace('─ ', '') + ':'
+                 for x in tree_str.split('\n')])
+            lines = ['  ' + x for x in tree_str.split('\n')]
+            ll = len(lines)
+            for li, line in enumerate(lines):
+                if (li < ll - 1 and
+                        lines[li + 1].count('│') < line.count('│')):
+                    lines[li] = line.replace('├', '└')
+            for li, line in enumerate(reversed(lines)):
+                if li == 0:
+                    lines[ll - li - 1] = line.replace(
+                        '│', ' ').replace('├', '└')
+                    continue
+                lines[ll - li - 1] = ''.join([
+                    x if ci > len(lines[ll - li]) - 1 or x not in ['│', '├'] or
+                    lines[ll - li][ci] != ' ' else x.replace(
+                        '│', ' ').replace(
+                            '├', '└') for ci, x in enumerate(line)])
+            tree_str = '\n'.join(lines)
+            print(tree_str)

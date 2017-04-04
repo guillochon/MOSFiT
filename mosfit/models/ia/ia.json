@@ -33,30 +33,6 @@
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
-    "Pspin":{
-        "kind":"parameter",
-        "value":2.0,
-        "class":"parameter",
-        "latex":"P_{\\rm spin}\\,{\\rm (ms)}"
-    },
-    "Bfield":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"B"
-    },
-    "Mns":{
-        "kind":"parameter",
-        "value":2.0,
-        "class":"parameter",
-        "latex":"M_{\\rm NS}\\,(M_\\odot)"
-    },
-    "thetaPB":{
-        "kind":"parameter",
-        "value":0.785398163,
-        "class":"parameter",
-        "latex":"\\theta_{\\rm PB}\\,({\\rm radians})"
-    },
     "kappa":{
         "kind":"parameter",
         "value":0.2,
@@ -81,6 +57,31 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
+    "line_wavelength":{
+        "kind":"parameter",
+        "value":7.5e3,
+        "class":"parameter"
+    },
+    "line_width":{
+        "kind":"parameter",
+        "value":500.0,
+        "class":"parameter"
+    },
+    "line_time":{
+        "kind":"parameter",
+        "value":50.0,
+        "class":"parameter"
+    },
+    "line_duration":{
+        "kind":"parameter",
+        "value":25.0,
+        "class":"parameter"
+    },
+    "line_amplitude":{
+        "kind":"parameter",
+        "value":0.3,
+        "class":"parameter"
+    },
     "nickelcobalt":{
         "kind":"engine",
         "inputs":[
@@ -88,45 +89,12 @@
             "mejecta",
             "fnickel",
             "texplosion"
-        ],
-        "replacements":{
-            "luminosities": "nico_luminosities"
-        }
-    },
-    "magnetar":{
-        "kind":"engine",
-        "inputs":[
-            "transient",
-            "mejecta",
-            "Pspin",
-            "Bfield",
-            "Mns",
-            "thetaPB",
-            "texplosion"
-        ],
-        "replacements":{
-            "luminosities": "mag_luminosities"
-        }
-    },
-    "total_luminosity":{
-        "kind":"utility",
-        "operator":"+",
-        "operands":[
-            "mag_luminosities",
-            "nico_luminosities"
-        ],
-        "inputs":[
-            "nickelcobalt",
-            "magnetar"
-        ],
-        "result":"luminosities",
-        "wants_dense":true,
-        "class":"operator"
+        ]
     },
     "diffusion":{
         "kind":"transform",
         "inputs":[
-            "total_luminosity",
+            "nickelcobalt",
             "kappa",
             "kappagamma",
             "mejecta",
@@ -134,11 +102,12 @@
             "vejecta"
         ]
     },
-    "densecore":{
+    "temperature_floor":{
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion"
+            "diffusion",
+            "temperature"
         ]
     },
     "blackbody":{
@@ -146,7 +115,22 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore"
+            "temperature_floor"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "line":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody",
+            "redshift",
+            "line_wavelength",
+            "line_width",
+            "line_time",
+            "line_duration",
+            "line_amplitude"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -155,7 +139,7 @@
     "losextinction":{
         "kind":"sed",
         "inputs":[
-            "blackbody",
+            "line",
             "nhhost",
             "rvhost",
             "ebv"

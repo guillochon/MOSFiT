@@ -29,10 +29,12 @@ class Likelihood(Module):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
                 return {'value': LIKELIHOOD_FLOOR}
-        self._score_modifier = kwargs.get('score_modifier', 0.0)
+        self._score_modifier = kwargs.get(self.key('score_modifier'), 0.0)
+        self._codeltatime = kwargs.get(self.key('codeltatime'), -1)
+        self._codeltalambda = kwargs.get(self.key('codeltalambda'), -1)
 
         # Get band variances
-        self._variance = kwargs.get('variance', 0.0)
+        self._variance = kwargs.get(self.key('variance'), 0.0)
 
         self._band_v_vars = OrderedDict()
         for key in kwargs:
@@ -77,8 +79,7 @@ class Likelihood(Module):
         ]
 
         is_diag = False
-        if (kwargs.get('codeltatime', -1) >= 0 or
-                kwargs.get('codeltalambda', -1) >= 0):
+        if self._codeltatime >= 0 or self._codeltalambda >= 0:
             kmat = np.outer(self._o_band_vs, self._o_band_vs)
         else:
             # Shortcut when matrix is diagonal.
@@ -90,21 +91,11 @@ class Likelihood(Module):
         if not is_diag:
             kn = len(self._o_times)
 
-            if kwargs.get('codeltatime', -1) >= 0:
-                kmat *= np.array([
-                    [1.0 if i == j else np.exp(
-                        -0.5 * ((ti - tj) / kwargs['codeltatime']) ** 2) for
-                     i, ti in enumerate(self._o_times)] for
-                    j, tj in enumerate(self._o_times)
-                ])
+            if self._codeltatime >= 0:
+                kmat *= np.exp(self._dtmat / self._codeltatime ** 2)
 
-            if kwargs.get('codeltalambda', -1) >= 0:
-                kmat *= np.array([
-                    [1.0 if i == j else np.exp(
-                        -0.5 * ((li - lj) / kwargs['codeltalambda']) ** 2) for
-                     i, li in enumerate(self._o_waves)] for
-                    j, lj in enumerate(self._o_waves)
-                ])
+            if self._codeltalambda >= 0:
+                kmat *= np.exp(self._dlmat / self._codeltalambda ** 2)
 
             # Add observed errors to diagonal
             for i in range(kn):
@@ -215,5 +206,17 @@ class Likelihood(Module):
         self._o_times = self._times[self._observed]
         # Wavelength deltas (radial distance) for covariance matrix.
         self._o_waves = self._all_band_avgs[self._observed]
+
+        self._dtmat = np.array([
+            [0.0 if i == j else -0.5 * (ti - tj) ** 2 for
+             i, ti in enumerate(self._o_times)] for
+            j, tj in enumerate(self._o_times)
+        ])
+
+        self._dlmat = np.array([
+            [0.0 if i == j else -0.5 * (li - lj) ** 2 for
+             i, li in enumerate(self._o_waves)] for
+            j, lj in enumerate(self._o_waves)
+        ])
 
         self._preprocessed = True

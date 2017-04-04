@@ -15,12 +15,12 @@ class Magnetar(Engine):
 
     def process(self, **kwargs):
         """Process module."""
-        self._times = kwargs['dense_times']
-        self._Pspin = kwargs['Pspin']
-        self._Bfield = kwargs['Bfield']
-        self._Mns = kwargs['Mns']
-        self._thetaPB = kwargs['thetaPB']
-        self._rest_t_explosion = kwargs['resttexplosion']
+        self._times = kwargs[self.key('dense_times')]
+        self._Pspin = kwargs[self.key('Pspin')]
+        self._Bfield = kwargs[self.key('Bfield')]
+        self._Mns = kwargs[self.key('Mns')]
+        self._thetaPB = kwargs[self.key('thetaPB')]
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
 
         Ep = 2.6e52 * (self._Mns / 1.4) ** (3. / 2.) * self._Pspin ** (-2)
         # ^ E_rot = 1/2 I (2pi/P)^2, unit = erg
@@ -39,10 +39,7 @@ class Magnetar(Engine):
 
         luminosities = [2 * Ep / tp / (
             1. + 2 * t * DAY_CGS / tp) ** 2 for t in ts]
-        luminosities = [0.0 if isnan(x) else x for x in luminosities]
         # ^ From Ostriker and Gunn 1971 eq 4
+        luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
-        # Add on to any existing luminosity
-        luminosities = self.add_to_existing_lums(luminosities)
-
-        return {self.output_key('luminosities'): luminosities}
+        return {self.dense_key('luminosities'): luminosities}

@@ -27,10 +27,11 @@ class DenseTimes(Array):
     def process(self, **kwargs):
         """Process module."""
         self._rest_times = kwargs['rest_times']
-        self._t_explosion = kwargs['texplosion']
+        self._t_explosion = kwargs[self.key('texplosion')]
 
         outputs = OrderedDict()
         max_times = max(self._rest_times)
+        # NOTE: Need to check this logic.
         if max_times > self._t_explosion:
             outputs['dense_times'] = np.array(
                 sorted(

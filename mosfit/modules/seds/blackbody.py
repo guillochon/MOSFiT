@@ -24,18 +24,19 @@ class Blackbody(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        kwargs = self.prepare_input('luminosities', **kwargs)
-        self._luminosities = kwargs['luminosities']
+        lum_key = self.key('luminosities')
+        kwargs = self.prepare_input(lum_key, **kwargs)
+        self._luminosities = kwargs[lum_key]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._frequencies = kwargs['all_frequencies']
-        self._radius_phot = kwargs['radiusphot']
-        self._temperature_phot = kwargs['temperaturephot']
+        self._radius_phot = kwargs[self.key('radiusphot')]
+        self._temperature_phot = kwargs[self.key('temperaturephot')]
         xc = self.X_CONST
         fc = self.FLUX_CONST
         cc = self.C_CONST
         temperature_phot = self._temperature_phot
-        zp1 = 1.0 + kwargs['redshift']
+        zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         evaled = False
         for li, lum in enumerate(self._luminosities):

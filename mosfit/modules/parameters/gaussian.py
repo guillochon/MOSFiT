@@ -17,8 +17,8 @@ class Gaussian(Parameter):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Gaussian, self).__init__(**kwargs)
-        self._mu = kwargs.get('mu', None)
-        self._sigma = kwargs.get('sigma', None)
+        self._mu = kwargs.get(self.key('mu'), None)
+        self._sigma = kwargs.get(self.key('sigma'), None)
         if self._log:
             self._mu = np.log(self._mu)
             self._sigma = np.log(10.0 ** self._sigma)
