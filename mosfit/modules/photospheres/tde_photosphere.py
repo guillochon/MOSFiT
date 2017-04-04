@@ -49,7 +49,7 @@ class tde_photosphere(Photosphere):
         rphotmin = r_isco #2*rp #r_isco
         #print (ilumzero)
         if ilumzero == len(self._luminosities): # this will happen if all luminosities are 0
-            print ('all zero luminosities after photosphere')
+            print ('all sparse luminosities are zero (happens in photosphere)')
             rphot = np.ones(len(self._luminosities))*rphotmin
             Tphot = np.zeros(len(self._luminosities)) # should I set a Tmin instead?
         

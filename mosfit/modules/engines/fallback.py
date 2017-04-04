@@ -101,7 +101,7 @@ class Fallback(Engine):
             # get dmdt and t for the lowest beta value
             e, d = np.loadtxt(dmdedir+sim_beta_files[0]) # energy and dmde in cgs units
             # only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
-            ebound = e[e<0]# cuts off part of array with positive e (unbound)
+            ebound = e[e<0] # cuts off part of array with positive e (unbound)
             dmdebound = d[e<0]
 
             if min(dmdebound)<0: # shouldn't happen, just a check 
@@ -124,7 +124,7 @@ class Fallback(Engine):
 
                 e, d = np.loadtxt(dmdedir+sim_beta_files[i]) #np.loadtxt(dmdedir+'{:.3f}'.format(self._sim_beta[i])+'.dat') #astrocrash format
                 # only convert dm/de --> dm/dt for mass that is bound to BH (energy < 0)
-                ebound = e[e<0]# cuts off part of array with positive e (unbound)
+                ebound = e[e<0] # cuts off part of array with positive e (unbound)
                 dmdebound = d[e<0]
 
                 if min(dmdebound)<0: # shouldn't happen, just a check 
@@ -142,9 +142,6 @@ class Fallback(Engine):
                 dmdt['hi'] = np.array([dmdt['hi'][:ipeak['hi']], dmdt['hi'][ipeak['hi']:]]) # peak is in second array
                 self._premapdmdt[g].append(np.copy(dmdt['hi'])) # will contain time arrays (split into pre peak and post peak dmdts) for each beta value
                 self._premaptime[g].append(np.copy(time['hi'])) # will contain time arrays (split into pre peak and post peak times) for each beta value
-
-                #print ('length of time[hi] and dmdt[hi] arrays in init:', len(dmdt['hi'][0]), len(time['hi'][0]), len(dmdt['hi'][1]), len(time['hi'][1]))
-                
 
                 mapped_time['hi'] = []
                 mapped_time['lo'] = []
@@ -168,7 +165,7 @@ class Fallback(Engine):
                     mapped_time[interp].append( 1./(time[interp][j][-1] - time[interp][j][0]) * (time[interp][j] - time[interp][j][0]) ) 
                     
                     # make sure bounds are the same for interp and nointerp  before interpolation
-                    #(they should be 0 and 1 from above, but could be slightly off due to rounding errors in python)
+                    # (they should be 0 and 1 from above, but could be slightly off due to rounding errors in python)
                     mapped_time[interp][j][0] = 0
                     mapped_time[interp][j][-1] = 1
                     mapped_time[nointerp][j][0] = 0
@@ -230,7 +227,6 @@ class Fallback(Engine):
 
         gamma_interp = False
 
-        # are first two statements necessary?
         if kwargs['starmass'] <= 0.3 or kwargs['starmass'] >= 22 : gammas = [self._gammas[1]] # gamma = ['5-3']
         elif 1 <= kwargs['starmass'] <= 15 : gammas = [self._gammas[0]] # gamma = ['4-3']
         elif 0.3 < kwargs['starmass'] < 1:  # region going from gamma = 5/3 to gamma = 4/3 as mass increases
