@@ -782,8 +782,6 @@ class Fitter(object):
                             (all_chain, sampler.chain[:, :, :li, :]),
                             axis=2) if len(all_chain) else
                             sampler.chain[:, :, :li, :])
-                        if not len(all_chain):
-                            all_chain = cur_chain
                         for a in range(acorc, 1, -1):
                             ms = self._burn_in
                             if ms >= emi - low:
@@ -918,16 +916,16 @@ class Fitter(object):
                         break
 
                 if ici == 0:
-                    all_chain = sampler.chain
-                    all_lnprob = sampler.lnprobability
-                    all_lnlike = sampler.lnlikelihood
+                    all_chain = sampler.chain[:, :, :li, :]
+                    all_lnprob = sampler.lnprobability[:, :, :li]
+                    all_lnlike = sampler.lnlikelihood[:, :, :li]
                 else:
                     all_chain = np.concatenate(
-                        (all_chain, sampler.chain), axis=2)
+                        (all_chain, sampler.chain[:, :, :li, :]), axis=2)
                     all_lnprob = np.concatenate(
-                        (all_lnprob, sampler.lnprobability), axis=2)
+                        (all_lnprob, sampler.lnprobability[:, :, :li]), axis=2)
                     all_lnlike = np.concatenate(
-                        (all_lnlike, sampler.lnlikelihood), axis=2)
+                        (all_lnlike, sampler.lnlikelihood[:, :, :li]), axis=2)
 
                 sampler.reset()
                 ici = ici + 1
