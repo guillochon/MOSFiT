@@ -331,6 +331,17 @@ def get_parser():
               "greater than this value."))
 
     parser.add_argument(
+        '--maximum-memory',
+        '-M',
+        dest='maximum_memory',
+        type=float,
+        default=np.inf,
+        help=("Maximum memory MOSFiT is allowed to use, in megabytes. The "
+              "memory use is roughly estimated, so it is best to set this "
+              "number at least 1 GB below your system\'s actual memory limit "
+              "per CPU."))
+
+    parser.add_argument(
         '--draw-above-likelihood',
         '-d',
         dest='draw_above_likelihood',

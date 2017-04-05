@@ -15,21 +15,21 @@ from difflib import get_close_matches
 import dropbox
 import numpy as np
 import scipy
+from astrocats.catalog.entry import ENTRY, Entry
+from astrocats.catalog.model import MODEL
+from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.quantity import QUANTITY
+from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
+
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           is_number, listify, pretty_num)
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
-from astrocats.catalog.entry import ENTRY, Entry
-from astrocats.catalog.model import MODEL
-from astrocats.catalog.photometry import PHOTOMETRY
-from astrocats.catalog.quantity import QUANTITY
-from astrocats.catalog.realization import REALIZATION
 
 from .model import Model
 
@@ -110,12 +110,15 @@ class Fitter(object):
                    maximum_walltime=False,
                    start_time=False,
                    print_trees=False,
+                   maximum_memory=np.inf,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
             start_time = time.time()
         self._start_time = start_time
         self._maximum_walltime = maximum_walltime
+        self._maximum_memory = maximum_memory
+        self._debug = False
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._travis = travis
@@ -674,6 +677,7 @@ class Fitter(object):
         self._printer.prt('\n\n')
         p = list(p0)
 
+        sli = 1.0  # Keep track of how many times chain halved
         emi = 0
         tft = 0.0  # Total fracking time
         acor = None
@@ -686,7 +690,7 @@ class Fitter(object):
         try:
             st = time.time()
 
-            max_chunk = 10
+            max_chunk = 1000
             iter_chunks = int(np.ceil(float(iterations) / max_chunk))
             iter_arr = [max_chunk if xi < iter_chunks - 1 else
                         iterations - max_chunk * (iter_chunks - 1)
@@ -702,6 +706,7 @@ class Fitter(object):
             exceeded_walltime = False
             ici = 0
             while run_until_converged or ici < len(iter_arr):
+                slr = int(np.round(sli))
                 ic = max_chunk if run_until_converged else iter_arr[ici]
                 if exceeded_walltime:
                     break
@@ -779,9 +784,9 @@ class Fitter(object):
                         aa = 0
                         ams = self._burn_in
                         cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li + 1, :]),
+                            (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
                             axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li + 1, :])
+                            sampler.chain[:, :, :li + 1:slr, :])
                         for a in range(acorc, 1, -1):
                             ms = self._burn_in
                             if ms >= emi - low:
@@ -789,7 +794,8 @@ class Fitter(object):
                             try:
                                 acorts = sampler.get_autocorr_time(
                                     chain=cur_chain, low=low, c=a,
-                                    min_step=ms, max_walkers=5, fast=True)
+                                    min_step=int(np.round(float(ms) / sli)),
+                                    max_walkers=5, fast=True)
                                 acort = max([
                                     max(x)
                                     for x in acorts
@@ -798,7 +804,7 @@ class Fitter(object):
                                 continue
                             else:
                                 aa = a
-                                aacort = acort
+                                aacort = acort * slr
                                 ams = ms
                                 break
                         acor = [aacort, aa, ams]
@@ -806,9 +812,9 @@ class Fitter(object):
                     # Calculate the PSRF (Gelman-Rubin statistic).
                     if li > 1 and emi > self._burn_in + 2:
                         cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li + 1, :]),
+                            (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
                             axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li + 1, :])
+                            sampler.chain[:, :, :li + 1:slr, :])
                         vws = np.zeros((ntemps, ndim))
                         for ti in range(ntemps):
                             for xi in range(ndim):
@@ -916,18 +922,36 @@ class Fitter(object):
                         break
 
                 if ici == 0:
-                    all_chain = sampler.chain[:, :, :li + 1, :]
-                    all_lnprob = sampler.lnprobability[:, :, :li + 1]
-                    all_lnlike = sampler.lnlikelihood[:, :, :li + 1]
+                    all_chain = sampler.chain[:, :, :li + 1:slr, :]
+                    all_lnprob = sampler.lnprobability[:, :, :li + 1:slr]
+                    all_lnlike = sampler.lnlikelihood[:, :, :li + 1:slr]
                 else:
                     all_chain = np.concatenate(
-                        (all_chain, sampler.chain[:, :, :li + 1, :]), axis=2)
+                        (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
+                        axis=2)
                     all_lnprob = np.concatenate(
-                        (all_lnprob, sampler.lnprobability[:, :, :li + 1]),
+                        (all_lnprob, sampler.lnprobability[:, :, :li + 1:slr]),
                         axis=2)
                     all_lnlike = np.concatenate(
-                        (all_lnlike, sampler.lnlikelihood[:, :, :li + 1]),
+                        (all_lnlike, sampler.lnlikelihood[:, :, :li + 1:slr]),
                         axis=2)
+
+                mem_mb = (all_chain.nbytes + all_lnprob.nbytes +
+                          all_lnlike.nbytes) / (1024. * 1024.)
+
+                if self._debug:
+                    self._printer.wrapped('Memory `{}`'.format(mem_mb))
+
+                if mem_mb > self._maximum_memory:
+                    sfrac = float(
+                        all_lnprob.shape[-1]) / all_lnprob[:, :, ::2].shape[-1]
+                    all_chain = all_chain[:, :, ::2, :]
+                    all_lnprob = all_lnprob[:, :, ::2]
+                    all_lnlike = all_lnlike[:, :, ::2]
+                    sli *= sfrac
+                    if self._debug:
+                        self._printer.wrapped(
+                            'Memory halved, sli: {}'.format(sli))
 
                 sampler.reset()
                 ici = ici + 1
@@ -1035,8 +1059,9 @@ class Fitter(object):
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
         if acor and aacort > 0 and aa == self._MAX_ACORC:
-            actc = int(np.ceil(aacort))
-            for i in range(1, np.int(float(emi - ams) / actc)):
+            actc0 = int(np.ceil(aacort))
+            actc = int(np.ceil(aacort / sli))
+            for i in range(1, np.int(float(emi - ams) / actc0)):
                 pout = np.concatenate(
                     (all_chain[:, :, -i * actc, :], pout), axis=1)
                 lnprobout = np.concatenate(
