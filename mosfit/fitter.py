@@ -828,7 +828,8 @@ class Fitter(object):
                         if np.isnan(psrf):
                             psrf = np.inf
 
-                        if run_until_converged and psrf < 1.1:
+                        if (run_until_converged and psrf < 1.1 and
+                                emi > iterations):
                             self._printer.wrapped(
                                 'Convergence criterion met!')
                             converged = True
