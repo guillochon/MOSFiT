@@ -818,7 +818,9 @@ class Fitter(object):
                         vws = np.zeros((ntemps, ndim))
                         for ti in range(ntemps):
                             for xi in range(ndim):
-                                vchain = cur_chain[ti, :, self._burn_in:, xi]
+                                vchain = cur_chain[
+                                    ti, :, int(np.round(
+                                        self._burn_in / sli)):, xi]
                                 m = len(vchain)
                                 n = len(vchain[0])
                                 mom = np.mean(np.mean(vchain, axis=1))
