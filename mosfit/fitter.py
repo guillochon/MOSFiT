@@ -819,7 +819,7 @@ class Fitter(object):
                         for ti in range(ntemps):
                             for xi in range(ndim):
                                 vchain = cur_chain[
-                                    ti, :, int(np.round(
+                                    ti, :, int(np.floor(
                                         self._burn_in / sli)):, xi]
                                 m = len(vchain)
                                 n = len(vchain[0])
