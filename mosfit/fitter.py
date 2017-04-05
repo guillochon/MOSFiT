@@ -686,7 +686,7 @@ class Fitter(object):
         try:
             st = time.time()
 
-            max_chunk = 1000
+            max_chunk = 10
             iter_chunks = int(np.ceil(float(iterations) / max_chunk))
             iter_arr = [max_chunk if xi < iter_chunks - 1 else
                         iterations - max_chunk * (iter_chunks - 1)
@@ -779,9 +779,9 @@ class Fitter(object):
                         aa = 0
                         ams = self._burn_in
                         cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li, :]),
+                            (all_chain, sampler.chain[:, :, :li + 1, :]),
                             axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li, :])
+                            sampler.chain[:, :, :li + 1, :])
                         for a in range(acorc, 1, -1):
                             ms = self._burn_in
                             if ms >= emi - low:
@@ -806,9 +806,9 @@ class Fitter(object):
                     # Calculate the PSRF (Gelman-Rubin statistic).
                     if li > 1 and emi > self._burn_in + 2:
                         cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li, :]),
+                            (all_chain, sampler.chain[:, :, :li + 1, :]),
                             axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li, :])
+                            sampler.chain[:, :, :li + 1, :])
                         vws = np.zeros((ntemps, ndim))
                         for ti in range(ntemps):
                             for xi in range(ndim):
@@ -916,16 +916,18 @@ class Fitter(object):
                         break
 
                 if ici == 0:
-                    all_chain = sampler.chain[:, :, :li, :]
-                    all_lnprob = sampler.lnprobability[:, :, :li]
-                    all_lnlike = sampler.lnlikelihood[:, :, :li]
+                    all_chain = sampler.chain[:, :, :li + 1, :]
+                    all_lnprob = sampler.lnprobability[:, :, :li + 1]
+                    all_lnlike = sampler.lnlikelihood[:, :, :li + 1]
                 else:
                     all_chain = np.concatenate(
-                        (all_chain, sampler.chain[:, :, :li, :]), axis=2)
+                        (all_chain, sampler.chain[:, :, :li + 1, :]), axis=2)
                     all_lnprob = np.concatenate(
-                        (all_lnprob, sampler.lnprobability[:, :, :li]), axis=2)
+                        (all_lnprob, sampler.lnprobability[:, :, :li + 1]),
+                        axis=2)
                     all_lnlike = np.concatenate(
-                        (all_lnlike, sampler.lnlikelihood[:, :, :li]), axis=2)
+                        (all_lnlike, sampler.lnlikelihood[:, :, :li + 1]),
+                        axis=2)
 
                 sampler.reset()
                 ici = ici + 1
