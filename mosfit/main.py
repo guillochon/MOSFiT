@@ -438,7 +438,7 @@ def main():
         else:
             args.iterations = 1000
 
-    if not args.burn and not args.post_burn:
+    if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))
 
     if args.frack_step == 0:
