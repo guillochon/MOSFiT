@@ -804,7 +804,7 @@ class Fitter(object):
                                 continue
                             else:
                                 aa = a
-                                aacort = acort * slr
+                                aacort = acort * sli
                                 ams = ms
                                 break
                         acor = [aacort, aa, ams]
