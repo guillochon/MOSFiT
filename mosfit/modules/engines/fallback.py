@@ -38,7 +38,7 @@ class Fallback(Engine):
         Mstarbase = Msolar
         Rstarbase = Rsolar
 
-        self.TESTING = False
+        self.TESTING = True
         ##### FOR TESTING ######
         if self.TESTING == True:
             self.testnum = 0
@@ -63,6 +63,12 @@ class Fallback(Engine):
             filestodelete = os.listdir('test_dir/test_fallback/postdmdtscaling')
             for f in filestodelete:
                 os.remove('test_dir/test_fallback/postdmdtscaling/' + f)
+            filestodelete = os.listdir('test_dir/test_fallback/pregammainterp/g4-3')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/pregammainterp/g4-3/' + f)
+            filestodelete = os.listdir('test_dir/test_fallback/pregammainterp/g5-3')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/pregammainterp/g5-3/' + f)
 
               
              
@@ -90,7 +96,7 @@ class Fallback(Engine):
 
         for g in self._gammas:
             
-            dmdedir = os.path.dirname(__file__)[:-15] + 'models/tde/data/' + g + '/' #'../../models/tde/data/'
+            dmdedir = os.path.dirname(__file__)[:-15] + 'models/tde/data/' + g + '/' 
 
 
             #--------- GET SIMULATION BETAS -----------------
@@ -117,7 +123,7 @@ class Fallback(Engine):
                 print ('beta, gamma, negative dmde bound:', self._sim_beta[g], g, dmdebound[dmdebound<0])
 
             # calculate de/dt, time and dm/dt arrays
-            dedt = np.log10((1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase))  # in log(erg/s)
+            dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)  # in log(erg/s)
             time['lo'] = np.log10((2.0*np.pi*G*Mhbase)*(-2.0*ebound)**(-3.0/2.0))   # in log(seconds)
             dmdt['lo'] = np.log10(dmdebound*dedt) # in log(g/s) 
 
@@ -252,6 +258,7 @@ class Fallback(Engine):
         timedict = {} # will hold time arrays for each g in gammas
         dmdtdict = {} # will hold dmdt arrays for each g in gammas
 
+
         for g in gammas:
             # find simulation betas to interpolate between
             for i in range(len(self._sim_beta[g])):
@@ -266,6 +273,15 @@ class Fallback(Engine):
                     beta_interp = True
                     break
 
+            '''
+            if beta_interp == True and self.TESTING == True:
+
+                #print ('beta interp =', beta_interp, len(np.append(timedict['4-3'][0], timedict['4-3'][1])), len(np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
+                np.savetxt('test_dir/test_fallback/prebetainterp/g4-3/time+dmdt'+'{:08d}'.format(self.testnum)+'g'+g+'b'+str(self._b)+'.txt',
+                (np.append(timedict['4-3'][0],timedict['4-3'][1]), np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
+                np.savetxt('test_dir/test_fallback/pregammainterp/g5-3/time+dmdt'+'{:08d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
+                (np.append(timedict['5-3'][0],timedict['5-3'][1]), np.append(dmdtdict['5-3'][0], dmdtdict['5-3'][1])))
+            '''
 
             if beta_outside_range == False and beta_interp == True:
                 #----------- LINEAR BETA INTERPOLATION --------------
@@ -376,15 +392,15 @@ class Fallback(Engine):
 
         # ----------------TESTING ----------------
         
-        '''
-        if gamma_interp == True:
+        
+        if gamma_interp == True and self.TESTING == True:
 
             #print ('beta interp =', beta_interp, len(np.append(timedict['4-3'][0], timedict['4-3'][1])), len(np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
-            np.savetxt('test_dir/test_fallback/pregammainterp/g4-3/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+gammas[0]+'b'+str(self._b)+'.txt',
+            np.savetxt('test_dir/test_fallback/pregammainterp/g4-3/time+dmdt'+'{:08d}'.format(self.testnum)+'g'+gammas[0]+'b'+str(self._b)+'.txt',
             (np.append(timedict['4-3'][0],timedict['4-3'][1]), np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
-            np.savetxt('test_dir/test_fallback/pregammainterp/g5-3/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
+            np.savetxt('test_dir/test_fallback/pregammainterp/g5-3/time+dmdt'+'{:08d}'.format(self.testnum)+'g'+gammas[1]+'b'+str(self._b)+'.txt',
             (np.append(timedict['5-3'][0],timedict['5-3'][1]), np.append(dmdtdict['5-3'][0], dmdtdict['5-3'][1])))
-        '''
+        
         # ----------------------------------------
 
         # ---------------- GAMMA INTERPOLATION -------------------
@@ -447,10 +463,10 @@ class Fallback(Engine):
         # ----------------TESTING ----------------
         if self.TESTING == True:
             if gamma_interp == True:
-                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:06d}'.format(self.testnum)+'gfrac'+str(gfrac)+'b'+str(self._b)+'.txt',
+                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:08d}'.format(self.testnum)+'gfrac'+str(gfrac)+'b'+str(self._b)+'.txt',
                 (time, dmdt))
             else: 
-                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:06d}'.format(self.testnum)+'g'+str(g)+'b'+str(self._b)+'.txt',
+                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:08d}'.format(self.testnum)+'g'+str(g)+'b'+str(self._b)+'.txt',
                 (time, dmdt))
         
         # ----------- SCALE dm/dt TO BH & STAR MASS & STAR RADIUS --------------
@@ -515,7 +531,7 @@ class Fallback(Engine):
         tnew = tnew - (tnew[0] - self._t_explosion)
         
         if self.TESTING == True:
-            np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt'+'{:06d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
+            np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt'+'{:08d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
             (tnew, dmdt))
 
 
@@ -551,7 +567,7 @@ class Fallback(Engine):
 
         # ----------------TESTING ----------------
         if self.TESTING == True:
-            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:06d}'.format(self.testnum)+'.txt',
+            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:08d}'.format(self.testnum)+'.txt',
                         (self._times, dmdtnew)) 
             self.testnum += 1
         
