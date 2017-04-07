@@ -38,7 +38,7 @@ class Fallback(Engine):
         Mstarbase = Msolar
         Rstarbase = Rsolar
 
-        self.TESTING = True
+        self.TESTING = False
         ##### FOR TESTING ######
         if self.TESTING == True:
             self.testnum = 0
