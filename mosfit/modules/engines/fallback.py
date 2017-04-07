@@ -57,6 +57,14 @@ class Fallback(Engine):
             filestodelete = os.listdir('test_dir/test_viscous/endviscous')
             for f in filestodelete:
                 os.remove('test_dir/test_viscous/endviscous/' + f) 
+            filestodelete = os.listdir('test_dir/test_photosphere')
+            for f in filestodelete:
+                os.remove('test_dir/test_photosphere/' + f)
+            filestodelete = os.listdir('test_dir/test_fallback/postdmdtscaling')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/postdmdtscaling/' + f)
+
+              
              
              
         #########################
@@ -197,9 +205,9 @@ class Fallback(Engine):
         G = c.G.cgs.value # 6.67259e-8 cm3 g-1 s-2
         Msolar = c.M_sun.cgs.value #1.989e33 grams
         Rsolar = c.R_sun.cgs.value
-        Mhbase = 1.0e6*Msolar # this is the generic size of bh used in astrocrash sim
-        Mstarbase = Msolar
-        Rstarbase = Rsolar
+        Mhbase = 1.0e6 # in units of Msolar, this is the generic size of bh used in astrocrash sim
+        Mstarbase = 1.0 # in units of Msolar
+        Rstarbase = 1.0 # in units of Rsolar
 
         # this is not beta, but rather a way to map beta_4-3 --> beta_5-3
         # b = 0 --> min disruption, b = 1 --> full disruption, b = 2 --> max beta of sims
@@ -439,13 +447,15 @@ class Fallback(Engine):
         # ----------------TESTING ----------------
         if self.TESTING == True:
             if gamma_interp == True:
-                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:03d}'.format(self.testnum)+'gfrac'+str(gfrac)+'b'+str(self._b)+'.txt',
+                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:06d}'.format(self.testnum)+'gfrac'+str(gfrac)+'b'+str(self._b)+'.txt',
                 (time, dmdt))
             else: 
-                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:03d}'.format(self.testnum)+'g'+str(g)+'b'+str(self._b)+'.txt',
+                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt'+'{:06d}'.format(self.testnum)+'g'+str(g)+'b'+str(self._b)+'.txt',
                 (time, dmdt))
         
         # ----------- SCALE dm/dt TO BH & STAR MASS & STAR RADIUS --------------
+
+        
 
         if 'dense_times' in kwargs:
             self._times = kwargs['dense_times'] # time in days
@@ -455,24 +465,59 @@ class Fallback(Engine):
 
         # bh mass for dmdt's in astrocrash is 1e6 solar masses
         # dmdt ~ Mh^(-1/2)
-        self._bhmass = kwargs['bhmass']*Msolar # right now kwargs bhmass is in solar masses, want in cgs
+        self._bhmass = kwargs['bhmass']  # right now kwargs bhmass is in solar masses, want in cgs
         # star mass for dmdts in astrocrash is 1 solar mass
-        self._starmass = kwargs['starmass']*Msolar
+        self._starmass = kwargs['starmass'] # don't convert to cgs yet, keep in units of Msolar to calculate Rstar
 
-        self._Rstar = kwargs['Rstar']*Rsolar
+        # calculate Rstar from Mstar (using Tout et. al. 1996), assuming solar metalicity 
+        # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
+        Z = 0.0134 # assume solar metallicity
+        log10_Z_02 = np.log10(Z/0.02) # for Z = 0.134, np.log10(Z/0.02) = 0.826074802701
+        
+        # Tout coefficients for calculating Rstar
+        Tout_theta = (1.71535900 + 0.62246212 * log10_Z_02 - 0.92557761 * log10_Z_02**2 -
+                    1.16996966 * log10_Z_02**3 - 0.30631491 * log10_Z_02**4)
+        Tout_l = (6.59778800 - 0.42450044 * log10_Z_02 - 12.13339427 * log10_Z_02**2 - 
+                    10.73509484 * log10_Z_02**3  - 2.51487077 * log10_Z_02**4)
+        Tout_kpa = (10.08855000 - 7.11727086 * log10_Z_02 - 31.67119479 * log10_Z_02**2 - 
+                    24.24848322 * log10_Z_02**3 - 5.33608972 * log10_Z_02**4)
+        Tout_lbda = (1.01249500 + 0.32699690 * log10_Z_02 - 0.00923418 * log10_Z_02**2 - 
+                    0.03876858 * log10_Z_02**3 - 0.00412750 * log10_Z_02**4)
+        Tout_mu = (0.07490166 + 0.02410413 * log10_Z_02 + 0.07233664 * log10_Z_02**2 + 
+                    0.03040467 * log10_Z_02**3 + 0.00197741 * log10_Z_02**4)
+        Tout_nu = 0.01077422 
+        Tout_eps = (3.08223400 + 0.94472050 * log10_Z_02 - 2.15200882 * log10_Z_02**2 - 
+                    2.49219496 * log10_Z_02**3 - 0.63848738 * log10_Z_02**4) 
+        Tout_o = (17.84778000 - 7.45345690 * log10_Z_02 - 48.9606685 * log10_Z_02**2 - 
+                    40.05386135 * log10_Z_02**3 - 9.09331816 * log10_Z_02**4)
+        Tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 + 0.00388783 * log10_Z_02**2 + 
+                    0.00142402 * log10_Z_02**3 - 0.00007671 * log10_Z_02**4) 
+        # caculate Rstar in units of Rsolar
+        Rstar = ((Tout_theta * self._starmass**2.5 + Tout_l * self._starmass**6.5 +
+            Tout_kpa * self._starmass**11 + Tout_lbda * self._starmass**19 +
+            Tout_mu * self._starmass**19.5)/(Tout_nu + Tout_eps * self._starmass**2 +
+            Tout_o * self._starmass**8.5 + self._starmass**18.5 + Tout_pi * self._starmass**19.5))
 
-        dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0 * (Rstarbase/self._Rstar)**1.5
+        dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0 * (Rstarbase/Rstar)**1.5
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
-        time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass) * (self._Rstar/Rstarbase)**1.5
+        time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass) * (Rstar/Rstarbase)**1.5
         tnew = time/(3600 * 24) # time is now in days to match self._times
 
+
+   
 
         # try aligning first fallback time of simulation
         # (whatever first time is after early t extrapolation) with parameter texplosion
         self.rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close
         # to texplosion, using this bc it's what's used in transform.py)
-       
-        tnew = tnew - (tnew[0] - self.rest_t_explosion)
+        self._t_explosion = kwargs['texplosion']
+        #tnew = tnew - (tnew[0] - self.rest_t_explosion)
+        tnew = tnew - (tnew[0] - self._t_explosion)
+        
+        if self.TESTING == True:
+            np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt'+'{:06d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
+            (tnew, dmdt))
+
 
         # ----------------TESTING ----------------
         #if gamma_interp == True:
@@ -481,9 +526,11 @@ class Fallback(Engine):
         #else: np.savetxt('viscoustests/noearlytimeextrap/precutfallback/times+lums'+'{:03d}'.format(self.testnum)+'g'+str(gammas[0])+'b'+str(self._b)+'.txt',
         # ((tnew-self.rest_t_explosion), kwargs['efficiency']*dmdt*c.c.cgs.value*c.c.cgs.value ))
         # ----------------------------------------
-
-        #timeinterpfunc = CubicSpline(tnew, dmdt)
-        #print ('length tnew, length dmdt :',len(tnew), len(dmdt))
+        #self._rest_times = kwargs['rest_times']
+        #tp = tnew[np.argmax(dmdt)]
+        #dp = max(dmdt)
+        #print (self.testnum, 'self._times[0]-[-1] =', self._times[0],'-', self._times[-1], 
+        #    '; tnew[0]-[-1] =', tnew[0],'-', tnew[-1], '; tp =', tp,'; dmdt_p =', dp ) #, self._rest_times[-1], max(self._rest_times))
         timeinterpfunc = interp1d(tnew, dmdt)
 
         lengthpretimes = len(np.where(self._times < tnew[0])[0])
@@ -492,7 +539,8 @@ class Fallback(Engine):
         # this removes all extrapolation by setting dmdtnew = 0 outside of bounds of tnew
         dmdt1 = np.zeros(lengthpretimes)
         dmdt3 = np.zeros(lengthposttimes)
-        dmdt2 = timeinterpfunc(self._times[lengthpretimes:len(self._times)-lengthposttimes])
+        # include len(self._times) instead of just using -lengthposttimes for indexing in case lenghtposttimes == 0
+        dmdt2 = timeinterpfunc(self._times[lengthpretimes : len(self._times) - lengthposttimes]) 
         dmdtnew = np.append(dmdt1,dmdt2)
         dmdtnew = np.append(dmdtnew, dmdt3)
 
@@ -503,10 +551,10 @@ class Fallback(Engine):
 
         # ----------------TESTING ----------------
         if self.TESTING == True:
-            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:03d}'.format(self.testnum)+'.txt',
-                        (self._times, dmdtnew)) # set time = 0 when explosion goes off
+            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:06d}'.format(self.testnum)+'.txt',
+                        (self._times, dmdtnew)) 
             self.testnum += 1
         
         # ----------------------------------------
 
-        return {'dense_luminosities': luminosities}
+        return {'dense_luminosities': luminosities, 'Rstar': Rstar}

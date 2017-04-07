@@ -33,18 +33,6 @@
         "class":"parameter",
         "latex":"\\epsilon\\ (efficiency)"
     },
-    "tpeak":{
-        "kind":"parameter",
-        "value":100.0,
-        "class":"parameter",
-        "latex":"t_{\\rm peak}"
-    },
-    "Tviscous":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
-    },
     "bhmass":{
         "kind":"parameter",
         "value":1.0e6,
@@ -56,12 +44,6 @@
         "value":1.0,
         "class":"parameter",
         "latex":"M_{star} (M_{odot})"
-    },
-    "Rstar":{
-        "kind":"parameter",
-        "value": 1.0,
-        "class": "parameter",
-        "latex":"R_{star} (R_{odot})"
     },
     "Rph0":{
         "kind":"parameter",
@@ -86,10 +68,8 @@
             "densetimes",
             "bhmass",
             "starmass",
-            "Rstar",
             "b",
             "efficiency",
-            "tpeak",
             "texplosion"
         ]
     },
@@ -106,7 +86,6 @@
         "inputs":[
             "bhmass",
             "starmass",
-            "Rstar",
             "lphoto",
             "Rph0",
 			"viscous"

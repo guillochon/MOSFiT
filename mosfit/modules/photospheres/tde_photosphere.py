@@ -14,13 +14,13 @@ class tde_photosphere(Photosphere):
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
+    TESTING = False
+    testnum = 0
 
     def process(self, **kwargs):
-        #print ('kwargs[dense_luminosities]', kwargs['dense_luminosities'])
+        
         kwargs = self.prepare_input('luminosities', **kwargs)
         self._times = np.array(kwargs['rest_times']) #np.array(kwargs['dense_times']) #kwargs['rest_times']
-
-        #self._kappagamma = kwargs['kappagamma']
         self._Mh = kwargs['bhmass']
         self._Mstar = kwargs['starmass']
         self._l = kwargs['lphoto']
@@ -30,26 +30,23 @@ class tde_photosphere(Photosphere):
         # it can be a beta for a 4/3 - 5/3 combination. Can easily get 'b' -- scaled constant that is linearly related to beta
         # but beta itself is not well defined. -- what does this mean exactly? beta = rt/rp
         Rsolar = c.R_sun.cgs.value
-        self._Rstar = kwargs['Rstar']*Rsolar
-
+        self._Rstar = kwargs['Rstar'] * Rsolar 
 
         # Assume solar metallicity for now
-        kappa_t = 0.2*(1 + 0.74) # thompson opacity using solar metallicity
+        kappa_t = 0.2*(1 + 0.74) # thomson opacity using solar metallicity ( 0.2*(1 + X) = mean Thomson opacity)
         tpeak = self._times[np.argmax(self._luminosities)]
-        #print (np.where(self._luminosities <= 0),len(self._luminosities))
+
         ilumzero = len(np.where(self._luminosities <= 0)[0]) # index of first mass accretion
         # semi-major axis of material that accretes at time = tpeak --> shouldn't T be tpeak - tdisruption?
-        
-        #print(self._luminosities)
-        #print (ilumzero, len(self._luminosities))
 
         Ledd = (4 * np.pi * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
+        #rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
         r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
         rphotmin = r_isco #2*rp #r_isco
-        #print (ilumzero)
+       
         if ilumzero == len(self._luminosities): # this will happen if all luminosities are 0
-            print ('all sparse luminosities are zero (happens in photosphere)')
+            #print ('all sparse luminosities are zero (happens in photosphere)')
             rphot = np.ones(len(self._luminosities))*rphotmin
             Tphot = np.zeros(len(self._luminosities)) # should I set a Tmin instead?
         
@@ -63,7 +60,6 @@ class tde_photosphere(Photosphere):
             a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
                  self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
             
-            #rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
             rphotmax = 2 * a_p #2*rp + 2*a_p
 
 
@@ -75,5 +71,13 @@ class tde_photosphere(Photosphere):
             rphot[rphot > rphotmax] = rphotmax
 
             Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
+
+        # ----------------TESTING ----------------
+        if self.TESTING == True:
+            np.savetxt('test_dir/test_photosphere/time+Tphot+rphot'+'{:03d}'.format(self.testnum)+'.txt',
+                        (self._times, Tphot, rphot)) # set time = 0 when explosion goes off
+            self.testnum += 1
+        
+        # ----------------------------------------
 
         return {'radiusphot': rphot, 'temperaturephot': Tphot} 

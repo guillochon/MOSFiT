@@ -18,18 +18,9 @@
         "max_value":25.0,
         "log":true
     },
-    "Rstar":{
-        "min_value": 0.01,
-        "max_value": 100
-    },
     "efficiency":{
         "min_value":0.01,
         "max_value":0.1
-    },
-    "tpeak":{
-        "min_value":0.01,
-        "max_value":100.0,
-        "log":true
     },
     "Tviscous":{
         "min_value":1e-3,
