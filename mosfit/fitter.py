@@ -670,9 +670,6 @@ class Fitter(object):
                 if self._draw_above_likelihood is not False:
                     self._draw_above_likelihood = np.mean(dwscores)
 
-        sampler = MOSSampler(
-            ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
-
         prt.inline('Initial draws completed!')
         self._printer.prt('\n\n')
         p = list(p0)
@@ -687,25 +684,29 @@ class Fitter(object):
         s_exception = None
         all_chain = np.array([])
 
+        max_chunk = 1000
+        iter_chunks = int(np.ceil(float(iterations) / max_chunk))
+        iter_arr = [max_chunk if xi < iter_chunks - 1 else
+                    iterations - max_chunk * (iter_chunks - 1)
+                    for xi, x in enumerate(range(iter_chunks))]
+        # Make sure a chunk separation is located at self._burn_in
+        chunk_is = sorted(set(
+            np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
+        iter_arr = np.diff(chunk_is)
+
+        # The argument of the for loop runs emcee, after each iteration of
+        # emcee the contents of the for loop are executed.
+        converged = False
+        exceeded_walltime = False
+        ici = 0
+
         try:
-            st = time.time()
-
-            max_chunk = 1000
-            iter_chunks = int(np.ceil(float(iterations) / max_chunk))
-            iter_arr = [max_chunk if xi < iter_chunks - 1 else
-                        iterations - max_chunk * (iter_chunks - 1)
-                        for xi, x in enumerate(range(iter_chunks))]
-            # Make sure a chunk separation is located at self._burn_in
-            chunk_is = sorted(set(
-                np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
-            iter_arr = np.diff(chunk_is)
-
-            # The argument of the for loop runs emcee, after each iteration of
-            # emcee the contents of the for loop are executed.
-            converged = False
-            exceeded_walltime = False
-            ici = 0
-            while run_until_converged or ici < len(iter_arr):
+            if iterations > 0:
+                sampler = MOSSampler(
+                    ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
+                st = time.time()
+            while (iterations > 0 and (
+                    run_until_converged or ici < len(iter_arr))):
                 slr = int(np.round(sli))
                 ic = max_chunk if run_until_converged else iter_arr[ici]
                 if exceeded_walltime:
