@@ -33,6 +33,12 @@
         "class":"parameter",
         "latex":"\\epsilon\\ (efficiency)"
     },
+    "Tviscous":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
+    },
     "bhmass":{
         "kind":"parameter",
         "value":1.0e6,
