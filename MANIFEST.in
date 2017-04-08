@@ -1,4 +1,7 @@
 include mosfit/cache/names.min.json
+exclude docs/_build
+exclude docs/api
+global-exclude .DS_Store
 global-include *.txt
 global-include *.md
 global-include *.py
