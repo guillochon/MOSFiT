@@ -22,3 +22,4 @@ else
  if [ "$1" = -c ] echo "travis_fold:start:JUP Testing Jupyter notebooks"
  if [ "$1" = -c ] echo "travis_fold:end:JUP Testing Jupyter notebooks"
  coverage combine
+fi
