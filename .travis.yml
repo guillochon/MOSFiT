@@ -30,24 +30,7 @@ install:
 
 # Run test
 script:
-    - echo "travis_fold:start:FIT Fitting test data"
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2009do --travis -i 1 -f 1 -p 0 -F covariance
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2009do.json --travis -i 1 --no-fracking -m magnetar -T 2 -F covariance
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 100 --no-fracking -m csm -F n 6.0 -W 120 -M 0.2
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e SN2008ar --travis -i 1 --no-fracking -m ia -F covariance
-    - mpirun -np 2 coverage run -p --source=mosfit -m mosfit -e LSQ12dlf --travis -i 2 --no-fracking -m rprocess --variance-for-each band --offline
-    - coverage run -p --source=mosfit -m mosfit -e SN2007bg --travis -i 1 --no-fracking -m ic
-    - coverage run -p --source=mosfit -m mosfit -e 12dlf --travis -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0 -g -c --no-copy-at-launch
-    - coverage run -p --source=mosfit -m mosfit -e 2010kd --travis -i 5 --no-fracking -m csmni --extra-bands u g --extra-instruments LSST -L 55540 55560 --exclude-bands B -s test --quiet -u
-    - echo "travis_fold:end:FIT Fitting test data done"
-    - echo "travis_fold:start:GEN Generating random models"
-    - coverage run -p --source=mosfit -m mosfit --travis -i 0
-    - coverage run -p --source=mosfit -m mosfit -i 0 -m default -P parameters_test.json
-    - coverage run -p test.py
-    - echo "travis_fold:end:GEN Generating random models done"
-    - echo "travis_fold:start:JUP Testing Jupyter notebooks"
-    - echo "travis_fold:end:JUP Testing Jupyter notebooks"
-    - coverage combine
+    - bash test.sh -c
 
 # Run coveralls
 after_success:
