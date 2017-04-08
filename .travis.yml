@@ -24,7 +24,7 @@ before_install:
 install:
     - conda update setuptools
     - conda config --add channels conda-forge
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy jupyter astropy cython emcee extinction inflect mpi4py nbstripout numexpr palettable seaborn six
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib mpi4py scipy jupyter astropy cython emcee inflect mpi4py nbstripout numexpr palettable seaborn six
     - pip install coveralls
     - xargs -L 1 pip install < requirements.txt
     - coverage run -p setup.py install
