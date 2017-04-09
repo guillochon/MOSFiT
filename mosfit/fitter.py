@@ -12,7 +12,6 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
-import dropbox
 import numpy as np
 import scipy
 from astrocats.catalog.entry import ENTRY, Entry
@@ -85,7 +84,7 @@ class Fitter(object):
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
-                   travis=False,
+                   test=False,
                    burn=None,
                    post_burn=None,
                    gibbs=False,
@@ -121,7 +120,7 @@ class Fitter(object):
         self._debug = False
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        self._travis = travis
+        self._test = test
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
 
@@ -260,7 +259,7 @@ class Fitter(object):
                                         if len(matches) == 5:
                                             break
                                 if len(matches):
-                                    if travis:
+                                    if test:
                                         response = matches[0]
                                     else:
                                         response = prt.prompt(
@@ -607,6 +606,19 @@ class Fitter(object):
         prt = self._printer
 
         upload_this = upload and iterations > 0
+
+        if upload:
+            try:
+                import dropbox
+            except ImportError:
+                if self._test:
+                    pass
+                else:
+                    self._printer.wrapped(
+                        'Dropbox python package required for uploads. '
+                        'Install with `pip install dropbox`.', error=True
+                    )
+                    raise
 
         if not pool.is_master():
             try:
@@ -1206,7 +1218,7 @@ class Fitter(object):
                 prt.wrapped(
                     'Uploading complete!')
             except Exception:
-                if self._travis:
+                if self._test:
                     pass
                 else:
                     raise

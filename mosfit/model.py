@@ -81,7 +81,7 @@ class Model(object):
                         'No model available that matches the given '
                         'transient\'s claimed type.', warning=True)
                 else:
-                    if fitter._travis:
+                    if fitter._test:
                         self._model_name = type_options[0]
                     else:
                         self._model_name = self._printer.prompt(

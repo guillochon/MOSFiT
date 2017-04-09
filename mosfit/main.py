@@ -400,8 +400,8 @@ def get_parser():
         help=("Ignore all quality checks when uploading fits."))
 
     parser.add_argument(
-        '--travis',
-        dest='travis',
+        '--test',
+        dest='test',
         default=False,
         action='store_true',
         help=("Alters the printing of output messages such that a new line is "
@@ -533,7 +533,7 @@ def main():
                         upload_token = upload_token[0]
 
         if get_token_from_user:
-            if args.travis:
+            if args.test:
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
