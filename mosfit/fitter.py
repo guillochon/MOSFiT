@@ -683,6 +683,7 @@ class Fitter(object):
         psrf = np.inf
         s_exception = None
         all_chain = np.array([])
+        scores = np.ones(nwalkers) * -np.inf
 
         max_chunk = 1000
         iter_chunks = int(np.ceil(float(iterations) / max_chunk))
