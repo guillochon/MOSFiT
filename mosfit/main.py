@@ -508,7 +508,8 @@ def main():
             else:
                 sys.exit()
 
-        if args.upload and args.num_walkers * args.num_temps > 200:
+        if (args.upload and args.num_walkers and
+                args.num_walkers * args.num_temps > 200):
             response = prt.prompt(
                 'The product of `--num-walkers` and `--num-temps` exceeds '
                 '200, which will disable uploading. Continue '
