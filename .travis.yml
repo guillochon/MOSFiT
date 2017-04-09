@@ -30,7 +30,7 @@ install:
 
 # Run test
 script:
-    - bash test.sh -c
+    - ./test.sh -c
 
 # Run coveralls
 after_success:
