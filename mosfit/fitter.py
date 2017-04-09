@@ -79,7 +79,7 @@ class Fitter(object):
                    band_instruments=[],
                    band_bandsets=[],
                    iterations=1000,
-                   num_walkers=50,
+                   num_walkers=None,
                    num_temps=1,
                    parameter_paths=[''],
                    fracking=True,
@@ -585,7 +585,7 @@ class Fitter(object):
                  event_name='',
                  iterations=2000,
                  frack_step=20,
-                 num_walkers=50,
+                 num_walkers=None,
                  num_temps=1,
                  fracking=True,
                  gibbs=False,
@@ -615,8 +615,12 @@ class Fitter(object):
                 pass
             return (None, None, None)
 
-        ntemps, ndim, nwalkers = (num_temps, model._num_free_parameters,
-                                  num_walkers)
+        ntemps, ndim = (num_temps, model._num_free_parameters)
+
+        if num_walkers:
+            nwalkers = num_walkers
+        else:
+            nwalkers = 2 * ndim
 
         test_walker = iterations > 0
         lnprob = None
