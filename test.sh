@@ -1,4 +1,5 @@
 #! /bin/bash
+set -ev
 if [ "$1" = -c ]; then
     RUNNER="coverage run -p --source=mosfit"
     TRUNNER="coverage run -p"
