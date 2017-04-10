@@ -208,9 +208,11 @@ def get_parser():
         '-N',
         dest='num_walkers',
         type=int,
-        default=50,
-        help=("Number of walkers to use in emcee, must be at least twice the "
-              "total number of free parameters within the model."))
+        default=None,
+        help=("Number of walkers to use in emcee. When fitting, this must be "
+              "set to at least twice the "
+              "total number of free parameters within the model, not "
+              "setting this parameter will set it to this minimum."))
 
     parser.add_argument(
         '--num-temps',
@@ -398,8 +400,8 @@ def get_parser():
         help=("Ignore all quality checks when uploading fits."))
 
     parser.add_argument(
-        '--travis',
-        dest='travis',
+        '--test',
+        dest='test',
         default=False,
         action='store_true',
         help=("Alters the printing of output messages such that a new line is "
@@ -506,7 +508,8 @@ def main():
             else:
                 sys.exit()
 
-        if args.upload and args.num_walkers * args.num_temps > 200:
+        if (args.upload and args.num_walkers and
+                args.num_walkers * args.num_temps > 200):
             response = prt.prompt(
                 'The product of `--num-walkers` and `--num-temps` exceeds '
                 '200, which will disable uploading. Continue '
@@ -530,7 +533,7 @@ def main():
                         upload_token = upload_token[0]
 
         if get_token_from_user:
-            if args.travis:
+            if args.test:
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:

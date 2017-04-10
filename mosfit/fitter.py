@@ -12,7 +12,6 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
-import dropbox
 import numpy as np
 import scipy
 from astrocats.catalog.entry import ENTRY, Entry
@@ -79,13 +78,13 @@ class Fitter(object):
                    band_instruments=[],
                    band_bandsets=[],
                    iterations=1000,
-                   num_walkers=50,
+                   num_walkers=None,
                    num_temps=1,
                    parameter_paths=[''],
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
-                   travis=False,
+                   test=False,
                    burn=None,
                    post_burn=None,
                    gibbs=False,
@@ -121,7 +120,7 @@ class Fitter(object):
         self._debug = False
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        self._travis = travis
+        self._test = test
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
 
@@ -260,7 +259,7 @@ class Fitter(object):
                                         if len(matches) == 5:
                                             break
                                 if len(matches):
-                                    if travis:
+                                    if test:
                                         response = matches[0]
                                     else:
                                         response = prt.prompt(
@@ -585,7 +584,7 @@ class Fitter(object):
                  event_name='',
                  iterations=2000,
                  frack_step=20,
-                 num_walkers=50,
+                 num_walkers=None,
                  num_temps=1,
                  fracking=True,
                  gibbs=False,
@@ -608,6 +607,19 @@ class Fitter(object):
 
         upload_this = upload and iterations > 0
 
+        if upload:
+            try:
+                import dropbox
+            except ImportError:
+                if self._test:
+                    pass
+                else:
+                    self._printer.wrapped(
+                        'Dropbox python package required for uploads. '
+                        'Install with `pip install dropbox`.', error=True
+                    )
+                    raise
+
         if not pool.is_master():
             try:
                 pool.wait()
@@ -615,8 +627,12 @@ class Fitter(object):
                 pass
             return (None, None, None)
 
-        ntemps, ndim, nwalkers = (num_temps, model._num_free_parameters,
-                                  num_walkers)
+        ntemps, ndim = (num_temps, model._num_free_parameters)
+
+        if num_walkers:
+            nwalkers = num_walkers
+        else:
+            nwalkers = 2 * ndim
 
         test_walker = iterations > 0
         lnprob = None
@@ -670,9 +686,6 @@ class Fitter(object):
                 if self._draw_above_likelihood is not False:
                     self._draw_above_likelihood = np.mean(dwscores)
 
-        sampler = MOSSampler(
-            ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
-
         prt.inline('Initial draws completed!')
         self._printer.prt('\n\n')
         p = list(p0)
@@ -686,26 +699,31 @@ class Fitter(object):
         psrf = np.inf
         s_exception = None
         all_chain = np.array([])
+        scores = np.ones((ntemps, nwalkers)) * -np.inf
+
+        max_chunk = 1000
+        iter_chunks = int(np.ceil(float(iterations) / max_chunk))
+        iter_arr = [max_chunk if xi < iter_chunks - 1 else
+                    iterations - max_chunk * (iter_chunks - 1)
+                    for xi, x in enumerate(range(iter_chunks))]
+        # Make sure a chunk separation is located at self._burn_in
+        chunk_is = sorted(set(
+            np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
+        iter_arr = np.diff(chunk_is)
+
+        # The argument of the for loop runs emcee, after each iteration of
+        # emcee the contents of the for loop are executed.
+        converged = False
+        exceeded_walltime = False
+        ici = 0
 
         try:
-            st = time.time()
-
-            max_chunk = 1000
-            iter_chunks = int(np.ceil(float(iterations) / max_chunk))
-            iter_arr = [max_chunk if xi < iter_chunks - 1 else
-                        iterations - max_chunk * (iter_chunks - 1)
-                        for xi, x in enumerate(range(iter_chunks))]
-            # Make sure a chunk separation is located at self._burn_in
-            chunk_is = sorted(set(
-                np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
-            iter_arr = np.diff(chunk_is)
-
-            # The argument of the for loop runs emcee, after each iteration of
-            # emcee the contents of the for loop are executed.
-            converged = False
-            exceeded_walltime = False
-            ici = 0
-            while run_until_converged or ici < len(iter_arr):
+            if iterations > 0:
+                sampler = MOSSampler(
+                    ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
+                st = time.time()
+            while (iterations > 0 and (
+                    run_until_converged or ici < len(iter_arr))):
                 slr = int(np.round(sli))
                 ic = max_chunk if run_until_converged else iter_arr[ici]
                 if exceeded_walltime:
@@ -1200,7 +1218,7 @@ class Fitter(object):
                 prt.wrapped(
                     'Uploading complete!')
             except Exception:
-                if self._travis:
+                if self._test:
                     pass
                 else:
                     raise

@@ -41,7 +41,7 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     version=__version__,  # noqa
-    description=('Maximum likelihood analysis for fitting '
+    description=('Modular software for fitting '
                  'semi-analytical model predictions to observed '
                  'astronomical transient data.'),
     license=__license__,  # noqa

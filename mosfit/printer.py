@@ -265,7 +265,7 @@ class Printer(object):
 
         lines = lines + '\n' + line
 
-        self.inline(lines, new_line=fitter._travis)
+        self.inline(lines, new_line=fitter._test)
 
     def get_timestring(self, t):
         """Return estimated time remaining.
