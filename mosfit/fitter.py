@@ -570,7 +570,7 @@ class Fitter(object):
         self._bh_est_t = 0.0
         self._fracking = fracking
         if burn is not None:
-            self._burn_in = burn
+            self._burn_in = min(burn, iterations)
             self._post_burn = max(iterations - burn, 0)
         elif post_burn is not None:
             self._post_burn = post_burn
