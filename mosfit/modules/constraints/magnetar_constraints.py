@@ -26,7 +26,7 @@ class MagnetarConstraints(Constraint):
         self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS
         self._vejecta = kwargs[self.key('vejecta')] * KM_CGS
         self._times = kwargs[self.key('dense_times')]
-        self._t_explosion = kwargs[self.key('texplosion')]
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         self._lums = kwargs[self.key('dense_luminosities')]
         self._redshift = kwargs[self.key('redshift')]
         self._neutrino_energy = kwargs[self.key('neutrino_energy')]
@@ -36,10 +36,10 @@ class MagnetarConstraints(Constraint):
                                                   2.) * self._Pspin ** (-2)
 
         # Ejecta kinetic energy
-        self._Ek = 0.5 * self._mejecta * self._vejecta**2
+        self._Ek = 0.5 * self._mejecta * self._vejecta ** 2
 
         # Construct array of rest-frame times since explosion
-        norm_times = (self._times - self._t_explosion) / (1.0 + self._redshift)
+        norm_times = self._times - self._rest_t_explosion
 
         # Shift array to get delta_t between observations
         shift_times = norm_times[:-1]
