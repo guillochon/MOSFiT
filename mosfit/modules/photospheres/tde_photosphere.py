@@ -5,7 +5,6 @@ import numpy as np
 from astropy import constants as c
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, C_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
-
 from scipy.interpolate import interp1d
 
 class tde_photosphere(Photosphere):
@@ -59,23 +58,35 @@ class tde_photosphere(Photosphere):
             # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
             a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
                  self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
+            #print ('test #', self.testnum, ':', a_t)
             
-            rphotmax = 2 * a_p #2*rp + 2*a_p
+            rphotmax = 2 * a_t #2*rp + 2*a_t
 
 
-            rphot = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
+            rphot1 = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
             # the luminosity is zero)
 
-            rphot = np.concatenate((rphot, (self._Rph_0 * a_t * self._luminosities[ilumzero:]/ Ledd)**self._l))
-            rphot[rphot < rphotmin] = rphotmin
-            rphot[rphot > rphotmax] = rphotmax
+
+            rphot2 = (self._Rph_0 * a_p * self._luminosities[ilumzero:]/ Ledd)**self._l
+            #print (len(rphot2), len(a_t))
+            rphot2[rphot2 < rphotmin] = rphotmin
+            np.where(rphot2 > rphotmax, rphotmax, rphot2)
+            #print (rphot2, rphotmax)
+            
+            rphot = np.concatenate((rphot1, rphot2))
+            #rphot[rphot < rphotmin] = rphotmin
+            #rphot[rphot > rphotmax] = rphotmax
 
             Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
         # ----------------TESTING ----------------
         if self.TESTING == True:
-            np.savetxt('test_dir/test_photosphere/time+Tphot+rphot'+'{:03d}'.format(self.testnum)+'.txt',
-                        (self._times, Tphot, rphot)) # set time = 0 when explosion goes off
+            #if ilumzero != len(self._luminosities): 
+            np.savetxt('test_dir/test_photosphere/end_photosphere/time+Tphot+rphot'+'{:08d}'.format(self.testnum)+'.txt',
+                            (self._times, Tphot, rphot), header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero)) # set time = 0 when explosion goes off
+            #np.savetxt('test_dir/test_photosphere/end_photosphere/postilumzerotime+Tphot+rphot'+'{:08d}'.format(self.testnum)+'postilumzero.txt',
+            #                (self._times[ilumzero:], Tphot[ilumzero:], rphot[ilumzero:]), header = 'M_h ='+str(self._Mh))
+           
             self.testnum += 1
         
         # ----------------------------------------

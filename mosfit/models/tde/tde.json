@@ -27,17 +27,17 @@
         "class":"parameter",
         "latex":"b\\ (scaled\\ \\beta)"
     },
+    "scaledgamma":{
+        "kind":"parameter",
+        "value": 0.5,
+        "class":"parameter",
+        "latex":"\\rm scaled \\rm gamma"
+    },
     "efficiency":{
         "kind":"parameter",
         "value":0.05,
         "class":"parameter",
         "latex":"\\epsilon\\ (efficiency)"
-    },
-    "Tviscous":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"\\tau_{\\rm viscous}/t_{\\rm peak}"
     },
     "bhmass":{
         "kind":"parameter",
@@ -75,16 +75,9 @@
             "bhmass",
             "starmass",
             "b",
+            "scaledgamma",
             "efficiency",
             "texplosion"
-        ]
-    },
-    "viscous":{
-        "kind":"transform",
-        "inputs":[
-            "fallback",
-            "texplosion",
-            "Tviscous"
         ]
     },
     "tde_photosphere":{
@@ -94,7 +87,7 @@
             "starmass",
             "lphoto",
             "Rph0",
-			"viscous"
+			"fallback"
         ]
     },
     "blackbody":{
