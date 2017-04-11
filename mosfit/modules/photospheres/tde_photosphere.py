@@ -25,6 +25,7 @@ class tde_photosphere(Photosphere):
         self._l = kwargs['lphoto']
         self._Rph_0 = 10.0**(kwargs['Rph0']) # parameter is varied in logspace, kwargs['Rph_0'] = log10(Rph0)
         self._luminosities = np.array(kwargs['luminosities'])
+        self._rest_t_explosion = kwargs['resttexplosion']
         #self._beta = kwargs['beta'] # getting beta at this point in process is more complicated than expected bc
         # it can be a beta for a 4/3 - 5/3 combination. Can easily get 'b' -- scaled constant that is linearly related to beta
         # but beta itself is not well defined. -- what does this mean exactly? beta = rt/rp
@@ -40,7 +41,11 @@ class tde_photosphere(Photosphere):
 
         Ledd = (4 * np.pi * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
-        #rp = (self._Mh/self._Mstar)**(1./3.) * self._Rstar/self._beta
+        self._beta = 1 # set to this for now, eventually need to somehow get from scaled beta 'b'
+        # this should still help with general size of rphotmax
+        rt = (self._Mh / self._Mstar)**(1./3.) * self._Rstar # self._Rstar already in cgs units
+        rp = rt/self._beta
+        
         r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
         rphotmin = r_isco #2*rp #r_isco
        
@@ -51,16 +56,15 @@ class tde_photosphere(Photosphere):
         
         else:
             a_p =(c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
-                 self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
-
+                 self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
 
 
             # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
             a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
-                 self._times[ilumzero]) * DAY_CGS / np.pi)**2)**(1. / 3.)
-            #print ('test #', self.testnum, ':', a_t)
+                 self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
             
-            rphotmax = 2 * a_t #2*rp + 2*a_t
+            
+            rphotmax = rp + 2 * a_t
 
 
             rphot1 = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
