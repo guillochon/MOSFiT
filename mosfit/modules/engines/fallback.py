@@ -537,11 +537,9 @@ class Fallback(Engine):
 
         # try aligning first fallback time of simulation
         # (whatever first time is after early t extrapolation) with parameter texplosion
-        #self.rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close
-        # to texplosion, using this bc it's what's used in transform.py)
-        self._t_explosion = kwargs['texplosion']
-        #tnew = tnew - (tnew[0] - self.rest_t_explosion)
-        tnew = tnew - (tnew[0] - self._t_explosion)
+        self._rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close
+        # bug was fixed in densetimes.py, now uses resttexplosion
+        tnew = tnew - (tnew[0] - self._rest_t_explosion)
         
         if self.TESTING == True:
             np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt'+'{:08d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
