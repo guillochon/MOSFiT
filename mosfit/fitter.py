@@ -12,24 +12,23 @@ from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
 
-import dropbox
 import numpy as np
 import scipy
+from astrocats.catalog.entry import ENTRY, Entry
+from astrocats.catalog.model import MODEL
+from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.quantity import QUANTITY
+from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
+
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           is_number, listify, pretty_num)
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
-from astrocats.catalog.entry import ENTRY, Entry
-from astrocats.catalog.model import MODEL
-from astrocats.catalog.photometry import PHOTOMETRY
-from astrocats.catalog.quantity import QUANTITY
-from astrocats.catalog.realization import REALIZATION
 
 from .model import Model
 
@@ -79,13 +78,13 @@ class Fitter(object):
                    band_instruments=[],
                    band_bandsets=[],
                    iterations=1000,
-                   num_walkers=50,
+                   num_walkers=None,
                    num_temps=1,
                    parameter_paths=[''],
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
-                   travis=False,
+                   test=False,
                    burn=None,
                    post_burn=None,
                    gibbs=False,
@@ -110,15 +109,18 @@ class Fitter(object):
                    maximum_walltime=False,
                    start_time=False,
                    print_trees=False,
+                   maximum_memory=np.inf,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
             start_time = time.time()
         self._start_time = start_time
         self._maximum_walltime = maximum_walltime
+        self._maximum_memory = maximum_memory
+        self._debug = False
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        self._travis = travis
+        self._test = test
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
 
@@ -257,7 +259,7 @@ class Fitter(object):
                                         if len(matches) == 5:
                                             break
                                 if len(matches):
-                                    if travis:
+                                    if test:
                                         response = matches[0]
                                     else:
                                         response = prt.prompt(
@@ -567,7 +569,7 @@ class Fitter(object):
         self._bh_est_t = 0.0
         self._fracking = fracking
         if burn is not None:
-            self._burn_in = burn
+            self._burn_in = min(burn, iterations)
             self._post_burn = max(iterations - burn, 0)
         elif post_burn is not None:
             self._post_burn = post_burn
@@ -582,7 +584,7 @@ class Fitter(object):
                  event_name='',
                  iterations=2000,
                  frack_step=20,
-                 num_walkers=50,
+                 num_walkers=None,
                  num_temps=1,
                  fracking=True,
                  gibbs=False,
@@ -605,6 +607,19 @@ class Fitter(object):
 
         upload_this = upload and iterations > 0
 
+        if upload:
+            try:
+                import dropbox
+            except ImportError:
+                if self._test:
+                    pass
+                else:
+                    self._printer.wrapped(
+                        'Dropbox python package required for uploads. '
+                        'Install with `pip install dropbox`.', error=True
+                    )
+                    raise
+
         if not pool.is_master():
             try:
                 pool.wait()
@@ -612,8 +627,12 @@ class Fitter(object):
                 pass
             return (None, None, None)
 
-        ntemps, ndim, nwalkers = (num_temps, model._num_free_parameters,
-                                  num_walkers)
+        ntemps, ndim = (num_temps, model._num_free_parameters)
+
+        if num_walkers:
+            nwalkers = num_walkers
+        else:
+            nwalkers = 2 * ndim
 
         test_walker = iterations > 0
         lnprob = None
@@ -667,13 +686,11 @@ class Fitter(object):
                 if self._draw_above_likelihood is not False:
                     self._draw_above_likelihood = np.mean(dwscores)
 
-        sampler = MOSSampler(
-            ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
-
         prt.inline('Initial draws completed!')
         self._printer.prt('\n\n')
         p = list(p0)
 
+        sli = 1.0  # Keep track of how many times chain halved
         emi = 0
         tft = 0.0  # Total fracking time
         acor = None
@@ -682,26 +699,32 @@ class Fitter(object):
         psrf = np.inf
         s_exception = None
         all_chain = np.array([])
+        scores = np.ones((ntemps, nwalkers)) * -np.inf
+
+        max_chunk = 1000
+        iter_chunks = int(np.ceil(float(iterations) / max_chunk))
+        iter_arr = [max_chunk if xi < iter_chunks - 1 else
+                    iterations - max_chunk * (iter_chunks - 1)
+                    for xi, x in enumerate(range(iter_chunks))]
+        # Make sure a chunk separation is located at self._burn_in
+        chunk_is = sorted(set(
+            np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
+        iter_arr = np.diff(chunk_is)
+
+        # The argument of the for loop runs emcee, after each iteration of
+        # emcee the contents of the for loop are executed.
+        converged = False
+        exceeded_walltime = False
+        ici = 0
 
         try:
-            st = time.time()
-
-            max_chunk = 1000
-            iter_chunks = int(np.ceil(float(iterations) / max_chunk))
-            iter_arr = [max_chunk if xi < iter_chunks - 1 else
-                        iterations - max_chunk * (iter_chunks - 1)
-                        for xi, x in enumerate(range(iter_chunks))]
-            # Make sure a chunk separation is located at self._burn_in
-            chunk_is = sorted(set(
-                np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
-            iter_arr = np.diff(chunk_is)
-
-            # The argument of the for loop runs emcee, after each iteration of
-            # emcee the contents of the for loop are executed.
-            converged = False
-            exceeded_walltime = False
-            ici = 0
-            while run_until_converged or ici < len(iter_arr):
+            if iterations > 0:
+                sampler = MOSSampler(
+                    ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
+                st = time.time()
+            while (iterations > 0 and (
+                    run_until_converged or ici < len(iter_arr))):
+                slr = int(np.round(sli))
                 ic = max_chunk if run_until_converged else iter_arr[ici]
                 if exceeded_walltime:
                     break
@@ -779,11 +802,9 @@ class Fitter(object):
                         aa = 0
                         ams = self._burn_in
                         cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li, :]),
+                            (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
                             axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li, :])
-                        if not len(all_chain):
-                            all_chain = cur_chain
+                            sampler.chain[:, :, :li + 1:slr, :])
                         for a in range(acorc, 1, -1):
                             ms = self._burn_in
                             if ms >= emi - low:
@@ -791,7 +812,8 @@ class Fitter(object):
                             try:
                                 acorts = sampler.get_autocorr_time(
                                     chain=cur_chain, low=low, c=a,
-                                    min_step=ms, max_walkers=5, fast=True)
+                                    min_step=int(np.round(float(ms) / sli)),
+                                    max_walkers=5, fast=True)
                                 acort = max([
                                     max(x)
                                     for x in acorts
@@ -800,7 +822,7 @@ class Fitter(object):
                                 continue
                             else:
                                 aa = a
-                                aacort = acort
+                                aacort = acort * sli
                                 ams = ms
                                 break
                         acor = [aacort, aa, ams]
@@ -808,13 +830,15 @@ class Fitter(object):
                     # Calculate the PSRF (Gelman-Rubin statistic).
                     if li > 1 and emi > self._burn_in + 2:
                         cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li, :]),
+                            (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
                             axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li, :])
+                            sampler.chain[:, :, :li + 1:slr, :])
                         vws = np.zeros((ntemps, ndim))
                         for ti in range(ntemps):
                             for xi in range(ndim):
-                                vchain = cur_chain[ti, :, self._burn_in:, xi]
+                                vchain = cur_chain[
+                                    ti, :, int(np.floor(
+                                        self._burn_in / sli)):, xi]
                                 m = len(vchain)
                                 n = len(vchain[0])
                                 mom = np.mean(np.mean(vchain, axis=1))
@@ -828,7 +852,8 @@ class Fitter(object):
                         if np.isnan(psrf):
                             psrf = np.inf
 
-                        if run_until_converged and psrf < 1.1:
+                        if (run_until_converged and psrf < 1.1 and
+                                emi > iterations):
                             self._printer.wrapped(
                                 'Convergence criterion met!')
                             converged = True
@@ -917,16 +942,36 @@ class Fitter(object):
                         break
 
                 if ici == 0:
-                    all_chain = sampler.chain
-                    all_lnprob = sampler.lnprobability
-                    all_lnlike = sampler.lnlikelihood
+                    all_chain = sampler.chain[:, :, :li + 1:slr, :]
+                    all_lnprob = sampler.lnprobability[:, :, :li + 1:slr]
+                    all_lnlike = sampler.lnlikelihood[:, :, :li + 1:slr]
                 else:
                     all_chain = np.concatenate(
-                        (all_chain, sampler.chain), axis=2)
+                        (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
+                        axis=2)
                     all_lnprob = np.concatenate(
-                        (all_lnprob, sampler.lnprobability), axis=2)
+                        (all_lnprob, sampler.lnprobability[:, :, :li + 1:slr]),
+                        axis=2)
                     all_lnlike = np.concatenate(
-                        (all_lnlike, sampler.lnlikelihood), axis=2)
+                        (all_lnlike, sampler.lnlikelihood[:, :, :li + 1:slr]),
+                        axis=2)
+
+                mem_mb = (all_chain.nbytes + all_lnprob.nbytes +
+                          all_lnlike.nbytes) / (1024. * 1024.)
+
+                if self._debug:
+                    self._printer.wrapped('Memory `{}`'.format(mem_mb))
+
+                if mem_mb > self._maximum_memory:
+                    sfrac = float(
+                        all_lnprob.shape[-1]) / all_lnprob[:, :, ::2].shape[-1]
+                    all_chain = all_chain[:, :, ::2, :]
+                    all_lnprob = all_lnprob[:, :, ::2]
+                    all_lnlike = all_lnlike[:, :, ::2]
+                    sli *= sfrac
+                    if self._debug:
+                        self._printer.wrapped(
+                            'Memory halved, sli: {}'.format(sli))
 
                 sampler.reset()
                 ici = ici + 1
@@ -1034,8 +1079,9 @@ class Fitter(object):
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
         if acor and aacort > 0 and aa == self._MAX_ACORC:
-            actc = int(np.ceil(aacort))
-            for i in range(1, np.int(float(emi - ams) / actc)):
+            actc0 = int(np.ceil(aacort))
+            actc = int(np.ceil(aacort / sli))
+            for i in range(1, np.int(float(emi - ams) / actc0)):
                 pout = np.concatenate(
                     (all_chain[:, :, -i * actc, :], pout), axis=1)
                 lnprobout = np.concatenate(
@@ -1172,7 +1218,7 @@ class Fitter(object):
                 prt.wrapped(
                     'Uploading complete!')
             except Exception:
-                if self._travis:
+                if self._test:
                     pass
                 else:
                     raise

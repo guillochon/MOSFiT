@@ -4,6 +4,7 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 from mosfit.modules.seds.sed import SED
+from scipy.special import erf
 
 
 # Important: Only define one ``Module`` class per file.
@@ -29,8 +30,8 @@ class Line(SED):
         self._line_time = kwargs[self.key('line_time')]
         self._line_duration = kwargs[self.key('line_duration')]
         self._line_amplitude = kwargs[self.key('line_amplitude')]
-        lw = self._line_wavelength * u.Angstrom.cgs.scale
-        ls = self._line_width * u.Angstrom.cgs.scale
+        lw = self._line_wavelength
+        ls = self._line_width
         cc = self.C_CONST
         zp1 = 1.0 + kwargs[self.key('redshift')]
         amps = [
@@ -49,23 +50,27 @@ class Line(SED):
                     seds.append([0.0])
                 continue
             if bi >= 0:
-                rest_wavs = (self._sample_wavelengths[bi] *
-                             u.Angstrom.cgs.scale / zp1)
+                rest_wavs = self._sample_wavelengths[bi] / zp1
             else:
-                rest_wavs = [cc / (self._frequencies[li] * zp1)]
+                rest_wavs = [cc / (self._frequencies[li] * zp1 /
+                             u.Angstrom.cgs.scale)]
 
-            amp = amps[li]
+            amp = lum * amps[li]
 
             if not evaled:
                 sed = ne.evaluate(
-                    '1.0 + amp * exp(-0.5 * ((rest_wavs - lw) / ls) ** 2)')
+                    'amp * exp(-0.5 * ((rest_wavs - lw) / ls) ** 2)')
                 evaled = True
             else:
                 sed = ne.re_evaluate()
 
             sed = np.nan_to_num(sed)
 
-            seds[li] *= sed
+            norm = (lum + amp / zp1 * np.sqrt(np.pi / 2.0) * (
+                1.0 + erf(lw / (np.sqrt(2.0) * ls)))) / lum
+
+            seds[li] += sed
+            seds[li] /= norm
 
         return {'sample_wavelengths': self._sample_wavelengths,
                 self.key('seds'): seds}

@@ -39,7 +39,7 @@
     },
     "line_width":{
         "min_value":100.0,
-        "max_value":10000.0
+        "max_value":5000.0
     },
     "line_time":{
         "min_value":1.0,
@@ -51,7 +51,7 @@
     },
     "line_amplitude":{
         "min_value":0.0,
-        "max_value":2.0
+        "max_value":1.0
     },
     "variance":{
         "min_value":1.0e-3,

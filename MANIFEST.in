@@ -1,8 +1,20 @@
 include mosfit/cache/names.min.json
+include LICENSE
+exclude docs/_build
+exclude docs/api
+exclude build/
+exclude cache/
+exclude products/
+exclude dist/
+exclude src/
 global-include *.txt
 global-include *.md
 global-include *.py
 global-include .gitkeep
+global-exclude .DS_Store
+global-exclude *.prof
+global-exclude *.swp
+global-exclude *.png
 recursive-include mosfit/jupyter *
 recursive-include mosfit/modules *
 recursive-include mosfit/tests *
