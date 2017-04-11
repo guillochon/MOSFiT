@@ -13,7 +13,7 @@ class tde_photosphere(Photosphere):
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
-    TESTING = False
+    TESTING = True
     testnum = 0
 
     def process(self, **kwargs):
@@ -68,11 +68,11 @@ class tde_photosphere(Photosphere):
 
 
             rphot2 = (self._Rph_0 * a_p * self._luminosities[ilumzero:]/ Ledd)**self._l
-            #print (len(rphot2), len(a_t))
-            rphot2[rphot2 < rphotmin] = rphotmin
+            #print (len(rphot2), len(a_t))            
             np.where(rphot2 > rphotmax, rphotmax, rphot2)
+            rphot2[rphot2 < rphotmin] = rphotmin
             #print (rphot2, rphotmax)
-            
+            if len(rphotmax[rphotmax<rphotmin])>1 : print ('rphotmin > rphotmax at some point', rphotmax[rphotmax<rphotmin] )
             rphot = np.concatenate((rphot1, rphot2))
             #rphot[rphot < rphotmin] = rphotmin
             #rphot[rphot > rphotmax] = rphotmax
