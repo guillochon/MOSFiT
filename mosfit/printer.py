@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import datetime
 import json
+import os
 import sys
 from builtins import input
 from textwrap import fill
@@ -53,16 +54,29 @@ class Printer(object):
             '!c': CYAN
         }
 
-    def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None):
+    def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
+                 language='en'):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._quiet = quiet
         self._pool = pool
         self._fitter = fitter
+        self._language = language
+
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(dir_path, 'strings.json')) as f:
+            strings = json.load(f)
+        self.set_strings(strings)
 
     def set_strings(self, strings):
         """Set pre-defined list of strings."""
-        self._strings = strings
+        self._strings = {}
+        for key in strings:
+            self._strings[key] = self.translate(strings[key])
+
+    def set_language(self, language):
+        """Set language."""
+        self._language = language
 
     def colorify(self, text):
         """Add colors to text."""
@@ -140,7 +154,7 @@ class Printer(object):
 
     def prompt(self, text, wrap_length=None, kind='bool',
                none_string='None of the above.',
-               options=None):
+               options=None, translate=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -163,7 +177,10 @@ class Printer(object):
         else:
             raise ValueError('Unknown prompt kind.')
 
-        prompt_txt = (text + choices).split('\n')
+        textchoices = text + choices
+        if translate:
+            textchoices = self.translate(textchoices)
+        prompt_txt = (textchoices).split('\n')
         for txt in prompt_txt[:-1]:
             ptxt = fill(txt, wl, replace_whitespace=False)
             print(ptxt)
@@ -305,6 +322,17 @@ class Printer(object):
         """
         td = str(datetime.timedelta(seconds=int(round(t))))
         return ('Estimated time left: [ ' + td + ' ]')
+
+    def translate(self, text):
+        """Translate text to another language."""
+        if self._language != 'en':
+            try:
+                from googletrans import Translator
+                translator = Translator()
+                text = translator.translate(text, dest=self._language).text
+            except Exception:
+                pass
+        return text
 
     def tree(self, my_tree):
         """Pretty print the module dependency trees for each root."""

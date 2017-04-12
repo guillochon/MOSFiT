@@ -23,7 +23,6 @@ class Module(object):
         self._wants_dense = False
         self._provide_dense = False
         self._replacements = OrderedDict()
-        self._strings = self._model._strings
         if not model.printer():
             self._printer = Printer()
         else:

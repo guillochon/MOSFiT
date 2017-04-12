@@ -111,6 +111,7 @@ class Fitter(object):
                    print_trees=False,
                    maximum_memory=np.inf,
                    speak=False,
+                   language='en',
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -120,9 +121,6 @@ class Fitter(object):
         self._maximum_memory = maximum_memory
         self._debug = False
         self._speak = speak
-        if speak:
-            from tempfile import TemporaryFile
-            self._sf = TemporaryFile()
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
@@ -130,16 +128,12 @@ class Fitter(object):
         self._draw_above_likelihood = draw_above_likelihood
 
         if not printer:
-            self._printer = Printer(wrap_length=wrap_length, quiet=quiet)
+            self._printer = Printer(wrap_length=wrap_length, quiet=quiet,
+                                    language=language)
         else:
             self._printer = printer
 
         prt = self._printer
-
-        with open(os.path.join(dir_path, 'strings.json')) as f:
-            self._strings = json.load(f)
-
-        prt.set_strings(self._strings)
 
         event_list = listify(events)
         model_list = listify(models)
@@ -587,7 +581,7 @@ class Fitter(object):
         Fitting performed using a combination of emcee and fracking.
         """
         if self._speak:
-            speak(self._sf, 'Fitting ' + event_name)
+            speak('Fitting ' + event_name, self._speak)
         from mosfit.__init__ import __version__
         global model
         model = self._model
@@ -826,6 +820,12 @@ class Fitter(object):
                         psrf = np.max(vws)
                         if np.isnan(psrf):
                             psrf = np.inf
+
+                        if self._speak:
+                            speak('Converged!', self._speak)
+                        prt.message('converged')
+                        converged = True
+                        break
 
                         if (run_until_converged and psrf < 1.1 and
                                 emi > iterations):

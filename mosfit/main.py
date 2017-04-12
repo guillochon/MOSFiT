@@ -420,9 +420,17 @@ def get_parser():
     parser.add_argument(
         '--speak',
         dest='speak',
+        const='en',
         default=False,
-        action='store_true',
+        nargs='?',
         help=("Speak."))
+
+    parser.add_argument(
+        '--language',
+        dest='language',
+        type=str,
+        default='en',
+        help=("Language for output text."))
 
     return parser
 
@@ -436,11 +444,9 @@ def main():
     args = parser.parse_args()
 
     if args.speak:
-        from tempfile import TemporaryFile
-        sf = TemporaryFile()
-        speak(sf, 'Mosfit')
+        speak('Mosfit', args.speak)
 
-    prt = Printer(wrap_length=100, quiet=args.quiet)
+    prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
     args.printer = prt
 
     args.write = True
@@ -577,9 +583,7 @@ def main():
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
-            prt.wrapped(
-                'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).')
+            prt.message('copying')
             fc = False
             if args.force_copy:
                 fc = prt.prompt(

@@ -178,15 +178,19 @@ def is_master():
         return True
 
 
-def speak(sf, text):
+def speak(text, lang='es'):
     """Text to speech. For fun."""
     try:
         from gtts import gTTS
         from pygame import mixer
+        from tempfile import TemporaryFile
+        from googletrans import Translator
 
-        tts = gTTS(text=text, lang='en')
+        translator = Translator()
+        tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
         mixer.init()
 
+        sf = TemporaryFile()
         tts.write_to_fp(sf)
         sf.seek(0)
         mixer.music.load(sf)
