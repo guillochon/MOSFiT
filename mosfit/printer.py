@@ -85,10 +85,13 @@ class Printer(object):
         else:
             text = '< Message not found [' + ''.join(
                 ['{} ' for x in range(len(reps))]).strip() + '] >'
+        text = text.format(*reps)
         if wrapped:
-            self.wrapped(text.format(reps), warning=warning, error=error)
+            self.wrapped(text, warning=warning, error=error)
+        elif inline:
+            self.inline(text, warning=warning, error=error)
         else:
-            self.inline(text.format(reps), warning=warning, error=error)
+            self.prt(text)
 
     def inline(self, x, new_line=False, warning=False, error=False):
         """Print inline, erasing underlying pre-existing text."""

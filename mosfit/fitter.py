@@ -20,15 +20,14 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           is_number, listify, pretty_num)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -627,7 +626,7 @@ class Fitter(object):
             prt.message('too_few_walkers', warning=True)
         if nwalkers < 10 * ndim:
             prt.message('want_more_walkers', [10 * ndim],
-                                  warning=True)
+                        warning=True)
         prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
@@ -707,8 +706,7 @@ class Fitter(object):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
-                        prt.message('exceeded_walltime',
-                                              warning=True)
+                        prt.message('exceeded_walltime', warning=True)
                         exceeded_walltime = True
                         break
                     emi = emi + 1

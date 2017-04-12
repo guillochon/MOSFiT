@@ -72,15 +72,11 @@ class Model(object):
                 claimed_type = list(data.values())[0][
                     'claimedtype'][0][QUANTITY.VALUE]
             except Exception:
-                self._printer.wrapped(
-                    'No model specified and no claimed type for specified '
-                    'transient.', warning=True)
+                prt.message('no_model_type', warning=True)
             else:
                 type_options = model_types.get(claimed_type, [])
                 if not type_options:
-                    self._printer.wrapped(
-                        'No model available that matches the given '
-                        'transient\'s claimed type.', warning=True)
+                    prt.message('no_model_for_type', warning=True)
                 else:
                     if fitter._test:
                         self._model_name = type_options[0]
@@ -155,12 +151,8 @@ class Model(object):
             raise ValueError('Could not find parameter file!')
 
         if self._is_master:
-            prt.wrapped('Basic model file:', wrap_length)
-            prt.wrapped('  ' + basic_model_path, wrap_length)
-            prt.wrapped('Model file:', wrap_length)
-            prt.wrapped('  ' + model_path, wrap_length)
-            prt.wrapped('Parameter file:', wrap_length)
-            prt.wrapped('  ' + pp + '\n', wrap_length)
+            prt.message('files', [basic_model_path, model_path, pp],
+                        wrapped=False)
 
         with open(pp, 'r') as f:
             self._parameter_json = json.load(f, object_pairs_hook=OrderedDict)
