@@ -20,14 +20,15 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
+
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          is_number, listify, pretty_num)
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
+                          is_number, listify, pretty_num, speak)
 
 from .model import Model
 
@@ -109,6 +110,7 @@ class Fitter(object):
                    start_time=False,
                    print_trees=False,
                    maximum_memory=np.inf,
+                   speak=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -117,6 +119,7 @@ class Fitter(object):
         self._maximum_walltime = maximum_walltime
         self._maximum_memory = maximum_memory
         self._debug = False
+        self._speak = speak
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
@@ -580,6 +583,8 @@ class Fitter(object):
 
         Fitting performed using a combination of emcee and fracking.
         """
+        if self._speak:
+            speak('Fitting ' + event_name)
         from mosfit.__init__ import __version__
         global model
         model = self._model
