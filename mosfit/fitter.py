@@ -819,12 +819,6 @@ class Fitter(object):
                         if np.isnan(psrf):
                             psrf = np.inf
 
-                        if self._speak:
-                            speak('Converged!', self._speak)
-                        prt.message('converged')
-                        converged = True
-                        break
-
                         if (run_until_converged and psrf < 1.1 and
                                 emi > iterations):
                             prt.message('converged')
@@ -964,6 +958,8 @@ class Fitter(object):
 
         if write:
             prt.message('saving_output')
+            if self._speak:
+                speak(prt._strings['saving_output'], self._speak)
 
         if self._event_path:
             entry = Entry.init_from_file(
