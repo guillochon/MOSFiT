@@ -47,6 +47,7 @@ class Model(object):
         self._fitter = fitter
         self._print_trees = print_trees
         self._inflect = inflect.engine()
+        self._strings = self._fitter._strings
 
         if self._fitter:
             self._printer = self._fitter._printer

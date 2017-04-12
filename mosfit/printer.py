@@ -53,11 +53,16 @@ class Printer(object):
             '!c': CYAN
         }
 
-    def __init__(self, pool=None, wrap_length=100, quiet=False):
+    def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._quiet = quiet
         self._pool = pool
+        self._fitter = fitter
+
+    def set_strings(self, strings):
+        """Set pre-defined list of strings."""
+        self._strings = strings
 
     def colorify(self, text):
         """Add colors to text."""
@@ -72,6 +77,19 @@ class Printer(object):
             return
         print(text)
 
+    def message(self, name, reps=[], wrapped=True, inline=False,
+                warning=False, error=False):
+        """Print a message from a dictionary of strings."""
+        if name in self._strings:
+            text = self._strings[name]
+        else:
+            text = '< Message not found [' + ''.join(
+                ['{} ' for x in range(len(reps))]).strip() + '] >'
+        if wrapped:
+            self.wrapped(text.format(reps), warning=warning, error=error)
+        else:
+            self.inline(text.format(reps), warning=warning, error=error)
+
     def inline(self, x, new_line=False, warning=False, error=False):
         """Print inline, erasing underlying pre-existing text."""
         if self._quiet:
@@ -79,8 +97,12 @@ class Printer(object):
         lines = x.split('\n')
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
+            if len(lines):
+                lines[0] = 'Warning: ' + lines[0]
         if error:
             sys.stdout.write(self.bcolors.FAIL)
+            if len(lines):
+                lines[0] = 'Error: ' + lines[0]
         if not new_line:
             for line in lines:
                 sys.stdout.write("\033[F")
@@ -102,8 +124,10 @@ class Printer(object):
             return
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
+            text = 'Warning: ' + text
         if error:
             sys.stdout.write(self.bcolors.FAIL)
+            text = 'Error: ' + text
         print(fill(text, wl))
         if error or warning:
             sys.stdout.write(self.bcolors.ENDC)

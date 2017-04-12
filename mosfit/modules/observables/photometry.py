@@ -109,8 +109,7 @@ class Photometry(Module):
                                     timeout=10)
                             except Exception:
                                 self._printer.inline(
-                                    'Warning: Could not download SVO filter '
-                                    '(are you online?), using cached filter.')
+                                    self._strings['cant_dl_svo'], warning=True)
                             else:
                                 with open(xml_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)

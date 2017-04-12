@@ -134,6 +134,8 @@ class Fitter(object):
         with open(os.path.join(dir_path, 'strings.json')) as f:
             self._strings = json.load(f)
 
+        prt.set_strings(self._strings)
+
         event_list = listify(events)
         model_list = listify(models)
 
@@ -150,9 +152,7 @@ class Fitter(object):
         }
 
         if not len(event_list) and not len(model_list):
-            self._printer.wrapped(
-                'No events or models specified, initializing and then '
-                'exiting.', warning=True)
+            prt.message('no_events_models', warning=True)
 
         entries = [[] for x in range(len(event_list))]
         ps = [[] for x in range(len(event_list))]
@@ -185,10 +185,7 @@ class Fitter(object):
                                          '.names.min.json') for x in
                             self._catalogs]
                         input_name = event.replace('.json', '')
-                        prt.wrapped(
-                            'Event `{}` interpreted as transient '
-                            'name, downloading lists of transient '
-                            'aliases...'.format(input_name))
+                        prt.message('dling_aliases', [input_name])
                         if not offline:
                             for ci, catalog in enumerate(self._catalogs):
                                 try:
@@ -197,10 +194,8 @@ class Fitter(object):
                                         '/names.min.json',
                                         timeout=10)
                                 except Exception:
-                                    prt.wrapped(
-                                        'Warning: Could not download {} '
-                                        'names (are you online?), using '
-                                        'cached list.'.format(catalog))
+                                    prt.message('cant_dl_names'
+                                                [catalog], warning=True)
                                     raise
                                 else:
                                     with open(names_paths[ci], 'wb') as f:
@@ -212,12 +207,10 @@ class Fitter(object):
                                     names[catalog] = json.load(
                                         f, object_pairs_hook=OrderedDict)
                             else:
-                                self._printer.wrapped(
-                                    'Warning: Could not read list of {} '
-                                    'names!'.format(catalog), warning=True)
+                                prt.message('cant_read_names', [catalog],
+                                            warning=True)
                                 if offline:
-                                    self._printer.wrapped(
-                                        'Try omitting the `--offline` flag.')
+                                    prt.message('omit_offline')
                                 raise RuntimeError
 
                             if event in names[catalog]:
@@ -242,9 +235,7 @@ class Fitter(object):
                                     event, namekeys, n=5, cutoff=0.8)
                                 # matches = []
                                 if len(matches) < 5 and is_number(event[0]):
-                                    prt.wrapped(
-                                        'Could not find event, performing '
-                                        'extended name search...')
+                                    prt.message('pef_ext_search')
                                     snprefixes = set(('SN19', 'SN20'))
                                     for name in names[catalog]:
                                         ind = re.search("\d", name)
@@ -287,28 +278,22 @@ class Fitter(object):
                                                 break
 
                         if not self._event_name:
-                            prt.wrapped(
-                                'Could not find event by that name, skipping!')
+                            prt.message('no_event_by_name')
                             continue
                         urlname = self._event_name + '.json'
                         name_path = os.path.join(dir_path, 'cache', urlname)
 
                         if not offline:
-                            prt.wrapped(
-                                'Found event by primary name `{}` in the {}, '
-                                'downloading data...'.format(
-                                    self._event_name, self._event_catalog))
+                            prt.message('dling_event', [
+                                self._event_name, self._event_catalog])
                             try:
                                 response = get_url_file_handle(
                                     self._catalogs[self._event_catalog] +
                                     '/json/' + urlname,
                                     timeout=10)
                             except Exception:
-                                prt.wrapped(
-                                    'Warning: Could not download data for '
-                                    ' `{}`, '
-                                    'will attempt to use cached data.'.format(
-                                        self._event_name))
+                                prt.message('cant_dl_event', [
+                                    self._event_name], warning=True)
                             else:
                                 with open(name_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -320,14 +305,10 @@ class Fitter(object):
                         prt.wrapped('Event file:')
                         prt.wrapped('  ' + path)
                     else:
-                        prt.wrapped(
-                            'Error: Could not find data for `{}` locally or '
-                            'in the {}.'.format(
-                                self._event_name,
-                                '/'.join(self._catalogs.keys())))
+                        prt.message('no_data', [
+                            self._event_name, '/'.join(self._catalogs.keys())])
                         if offline:
-                            prt.wrapped(
-                                'Try omitting the `--offline` flag.')
+                            prt.message('omit_offline')
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
@@ -370,15 +351,12 @@ class Fitter(object):
                         print_trees=print_trees)
 
                     if not self._model._model_name:
-                        self._printer.wrapped(
-                            'Skipping `{}`, no models available to fit the '
-                            'transient.'.format(self._event_name),
-                            warning=True)
+                        prt.message('no_models_avail', [
+                            self._event_name], warning=True)
                         continue
 
                     if not event:
-                        self._printer.wrapped(
-                            'No event specified, generating dummy data.')
+                        prt.message('gen_dummy')
                         self._event_name = mod_name
                         gen_args = {
                             'name': mod_name,
@@ -532,7 +510,7 @@ class Fitter(object):
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            prt.wrapped('Bands being used for current transient:')
+            prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
                        sorted(set(outputs['all_band_indices']))))
@@ -565,7 +543,7 @@ class Fitter(object):
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
-            self._printer.prt('\n'.join(filterrows))
+            prt.prt('\n'.join(filterrows))
 
         self._event_name = event_name
         self._emcee_est_t = 0.0
@@ -617,10 +595,7 @@ class Fitter(object):
                 if self._test:
                     pass
                 else:
-                    self._printer.wrapped(
-                        'Dropbox python package required for uploads. '
-                        'Install with `pip install dropbox`.', error=True
-                    )
+                    prt.message('install_db', error=True)
                     raise
 
         if not pool.is_master():
@@ -645,17 +620,15 @@ class Fitter(object):
         redraw_mult = 1.0 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        self._printer.prt(
+        prt.prt(
             '{} measurements, {} free parameters.'.format(
                 model._num_measurements, ndim))
         if model._num_measurements <= ndim:
-            self._printer.wrapped(self._strings['too_few_walkers'],
-                                  warning=True)
+            prt.message('too_few_walkers', warning=True)
         if nwalkers < 10 * ndim:
-            self._printer.wrapped(
-                self._strings['want_more_walkers'].format(10 * ndim),
-                warning=True)
-        self._printer.prt('\n\n')
+            prt.message('want_more_walkers', [10 * ndim],
+                                  warning=True)
+        prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
@@ -683,7 +656,7 @@ class Fitter(object):
                     self._draw_above_likelihood = np.mean(dwscores)
 
         prt.inline('Initial draws completed!')
-        self._printer.prt('\n\n')
+        prt.prt('\n\n')
         p = list(p0)
 
         sli = 1.0  # Keep track of how many times chain halved
@@ -734,8 +707,8 @@ class Fitter(object):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
-                        self._printer.wrapped(
-                            'Walltime exceeded, exiting...', warning=True)
+                        prt.message('exceeded_walltime',
+                                              warning=True)
                         exceeded_walltime = True
                         break
                     emi = emi + 1
@@ -850,8 +823,7 @@ class Fitter(object):
 
                         if (run_until_converged and psrf < 1.1 and
                                 emi > iterations):
-                            self._printer.wrapped(
-                                'Convergence criterion met!')
+                            prt.message('converged')
                             converged = True
                             break
 
@@ -956,7 +928,7 @@ class Fitter(object):
                           all_lnlike.nbytes) / (1024. * 1024.)
 
                 if self._debug:
-                    self._printer.wrapped('Memory `{}`'.format(mem_mb))
+                    prt.wrapped('Memory `{}`'.format(mem_mb))
 
                 if mem_mb > self._maximum_memory:
                     sfrac = float(
@@ -966,15 +938,14 @@ class Fitter(object):
                     all_lnlike = all_lnlike[:, :, ::2]
                     sli *= sfrac
                     if self._debug:
-                        self._printer.wrapped(
+                        prt.wrapped(
                             'Memory halved, sli: {}'.format(sli))
 
                 sampler.reset()
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
-            self._printer.wrapped(
-                '\b\bCtrl + C pressed, halting...', error=True)
+            prt.message('ctrl_c', error=True)
             s_exception = sys.exc_info()
         except Exception:
             raise
@@ -988,7 +959,7 @@ class Fitter(object):
                 sys.exit()
 
         if write:
-            prt.wrapped('Saving output to disk...')
+            prt.message('saving_output')
 
         if self._event_path:
             entry = Entry.init_from_file(
@@ -1055,9 +1026,7 @@ class Fitter(object):
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
                 if WAIC < 0.0:
-                    prt.wrapped(
-                        'WAIC score `{}` below 0.0, not uploading this fit.'.
-                        format(pretty_num(WAIC)))
+                    prt.message('no_ul_waic', [pretty_num(WAIC)])
                     upload_this = False
 
         modelnum = entry.add_model(**modeldict)
@@ -1171,7 +1140,7 @@ class Fitter(object):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
         if write:
-            prt.wrapped('Writing model output...')
+            prt.message('writing_model')
             with io.open(
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                     'w') as flast, io.open(os.path.join(
@@ -1183,7 +1152,7 @@ class Fitter(object):
                 entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
             if save_full_chain:
-                prt.wrapped('Writing full chain...')
+                prt.message('writing_full_chain')
                 with io.open(
                     os.path.join(model.MODEL_OUTPUT_DIR,
                                  'chain.json'), 'w') as flast, io.open(
@@ -1198,9 +1167,7 @@ class Fitter(object):
 
         if upload_this:
             uentry.sanitize()
-            prt.wrapped('Uploading fit...')
-            prt.wrapped(
-                'Data hash: ' + entryhash + ', model hash: ' + modelhash)
+            prt.message('ul_fit', [entryhash, modelhash])
             upath = '/' + '_'.join(
                 [self._event_name, entryhash, modelhash]) + '.json'
             ouentry = {self._event_name: uentry._ordered(uentry)}
@@ -1211,8 +1178,7 @@ class Fitter(object):
                     upayload.encode(),
                     upath,
                     mode=dropbox.files.WriteMode.overwrite)
-                prt.wrapped(
-                    'Uploading complete!')
+                prt.message('ul_complete')
             except Exception:
                 if self._test:
                     pass
