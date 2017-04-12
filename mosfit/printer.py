@@ -78,7 +78,7 @@ class Printer(object):
         print(text)
 
     def message(self, name, reps=[], wrapped=True, inline=False,
-                warning=False, error=False):
+                warning=False, error=False, prefix=True):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -87,24 +87,25 @@ class Printer(object):
                 ['{} ' for x in range(len(reps))]).strip() + '] >'
         text = text.format(*reps)
         if wrapped:
-            self.wrapped(text, warning=warning, error=error)
+            self.wrapped(text, warning=warning, error=error, prefix=prefix)
         elif inline:
-            self.inline(text, warning=warning, error=error)
+            self.inline(text, warning=warning, error=error, prefix=prefix)
         else:
             self.prt(text)
 
-    def inline(self, x, new_line=False, warning=False, error=False):
+    def inline(self, x, new_line=False,
+               warning=False, error=False, prefix=True):
         """Print inline, erasing underlying pre-existing text."""
         if self._quiet:
             return
         lines = x.split('\n')
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
-            if len(lines):
+            if prefix and len(lines):
                 lines[0] = 'Warning: ' + lines[0]
         if error:
             sys.stdout.write(self.bcolors.FAIL)
-            if len(lines):
+            if prefix and len(lines):
                 lines[0] = 'Error: ' + lines[0]
         if not new_line:
             for line in lines:
@@ -115,7 +116,7 @@ class Printer(object):
             sys.stdout.write(self.bcolors.ENDC)
 
     def wrapped(self, text, wrap_length=None, master_only=True, warning=False,
-                error=False):
+                error=False, prefix=True):
         """Print text wrapped to either the specified length or the default."""
         if self._quiet:
             return
@@ -127,10 +128,12 @@ class Printer(object):
             return
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
-            text = 'Warning: ' + text
+            if prefix:
+                text = 'Warning: ' + text
         if error:
             sys.stdout.write(self.bcolors.FAIL)
-            text = 'Error: ' + text
+            if prefix:
+                text = 'Error: ' + text
         print(fill(text, wl))
         if error or warning:
             sys.stdout.write(self.bcolors.ENDC)

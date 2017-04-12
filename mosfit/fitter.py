@@ -943,7 +943,7 @@ class Fitter(object):
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
-            prt.message('ctrl_c', error=True)
+            prt.message('ctrl_c', error=True, prefix=False)
             s_exception = sys.exc_info()
         except Exception:
             raise
