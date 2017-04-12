@@ -120,6 +120,9 @@ class Fitter(object):
         self._maximum_memory = maximum_memory
         self._debug = False
         self._speak = speak
+        if speak:
+            from tempfile import TemporaryFile
+            self._sf = TemporaryFile()
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
@@ -584,7 +587,7 @@ class Fitter(object):
         Fitting performed using a combination of emcee and fracking.
         """
         if self._speak:
-            speak('Fitting ' + event_name)
+            speak(self._sf, 'Fitting ' + event_name)
         from mosfit.__init__ import __version__
         global model
         model = self._model

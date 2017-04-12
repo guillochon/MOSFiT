@@ -178,11 +178,8 @@ def is_master():
         return True
 
 
-def speak(text):
+def speak(sf, text):
     """Text to speech. For fun."""
-    from tempfile import TemporaryFile
-    sf = TemporaryFile()
-
     try:
         from gtts import gTTS
         from pygame import mixer

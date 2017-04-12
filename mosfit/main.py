@@ -436,7 +436,9 @@ def main():
     args = parser.parse_args()
 
     if args.speak:
-        speak('Mosfit')
+        from tempfile import TemporaryFile
+        sf = TemporaryFile()
+        speak(sf, 'Mosfit')
 
     prt = Printer(wrap_length=100, quiet=args.quiet)
     args.printer = prt
