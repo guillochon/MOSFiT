@@ -188,11 +188,12 @@ class Printer(object):
         if kind == 'bool':
             choices = ' (y/[n])'
         elif kind == 'select':
+            selpad = ''.join([' ' for x in str(len(options))])
             choices = '\n' + '\n'.join([
-                ' ' + str(i + 1) + '.  ' + options[i] for i in range(
-                    len(options))
+                ' ' + str(i + 1) + '. ' + selpad[len(str(i + 1)) - 1:] +
+                options[i] for i in range(len(options))
             ] + [
-                '[n]. ' + none_string + '\n'
+                '[n].' + selpad + none_string + '\n' +
                 'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
                     len(options)) + '/[n]):'
             ])

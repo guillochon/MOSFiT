@@ -429,7 +429,9 @@ def get_parser():
         '--language',
         dest='language',
         type=str,
+        const='select',
         default='en',
+        nargs='?',
         help=("Language for output text."))
 
     return parser
@@ -445,6 +447,23 @@ def main():
 
     if args.speak:
         speak('Mosfit', args.speak)
+
+    if args.language != 'en':
+        try:
+            from googletrans.constants import LANGUAGES
+        except Exception:
+            raise RuntimeError(
+                '`--language` requires `googletrans` package, '
+                'install with `pip install googletrans`.')
+
+        if args.language == 'select' or args.language not in LANGUAGES:
+            tprt = Printer(wrap_length=100, quiet=args.quiet, language='en')
+            languages = list(
+                sorted([LANGUAGES[x].title().replace('_', ' ') +
+                        ' (' + x + ')' for x in LANGUAGES]))
+            sel = tprt.prompt(
+                'Select a language:', kind='select', options=languages)
+            args.language = sel.split('(')[-1].strip(')')
 
     prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
     args.printer = prt
