@@ -301,7 +301,7 @@ class Fitter(object):
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
-                        prt.wrapped('Event file:')
+                        prt.message('event_file')
                         prt.wrapped('  ' + path)
                     else:
                         prt.message('no_data', [
@@ -621,9 +621,7 @@ class Fitter(object):
         redraw_mult = 1.0 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        prt.prt(
-            '{} measurements, {} free parameters.'.format(
-                model._num_measurements, ndim))
+        prt.message('nmeas_nfree', [model._num_measurements, ndim])
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
         if nwalkers < 10 * ndim:
@@ -637,7 +635,7 @@ class Fitter(object):
             while len(p0[i]) <= nwalkers:
                 prt.status(
                     self,
-                    desc='Drawing initial walkers',
+                    desc='drawing_walkers',
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
                 if len(p0[i]) == nwalkers:
@@ -850,8 +848,8 @@ class Fitter(object):
                     scores = [np.array(x) for x in lnprob]
                     prt.status(
                         self,
-                        desc='Fracking' if frack_now else
-                        ('Burning' if emi < self._burn_in else 'Walking'),
+                        desc='fracking' if frack_now else
+                        ('burning' if emi < self._burn_in else 'walking'),
                         scores=scores,
                         accepts=accepts,
                         progress=[emi, None if
@@ -906,7 +904,7 @@ class Fitter(object):
                     scores = [[-x.fun for x in bhs]]
                     prt.status(
                         self,
-                        desc='Fracking Results',
+                        desc='fracking_results',
                         scores=scores,
                         fracking=True,
                         progress=[emi, None if

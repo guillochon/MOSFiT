@@ -458,7 +458,7 @@ def main():
         args.extrapolate_time = 100.0
 
     if len(args.band_list) and args.smooth_times == -1:
-        prt.wrapped('Enabling -S as extra bands were defined.')
+        prt.message('enabling_s')
         args.smooth_times = 0
 
     changed_iterations = False
