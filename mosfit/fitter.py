@@ -131,6 +131,9 @@ class Fitter(object):
 
         prt = self._printer
 
+        with open(os.path.join(dir_path, 'strings.json')) as f:
+            self._strings = json.load(f)
+
         event_list = listify(events)
         model_list = listify(models)
 
@@ -646,18 +649,11 @@ class Fitter(object):
             '{} measurements, {} free parameters.'.format(
                 model._num_measurements, ndim))
         if model._num_measurements <= ndim:
-            self._printer.wrapped(
-                'Warning: Number of free parameters exceeds number of '
-                'measurements. Please treat results with caution.',
-                warning=True)
+            self._printer.wrapped(self._strings['too_few_walkers'],
+                                  warning=True)
         if nwalkers < 10 * ndim:
             self._printer.wrapped(
-                'Warning: While emcee accepts a number of walkers that is '
-                'twice the number of dimensions or greater, simple tests '
-                'with toy problems show poor convergence with this minimum. '
-                'We suggest using at least 10x the number of dimensions '
-                '(`-N {}` suggested for this fit), and preferably more, if '
-                'feasible.'.format(10 * ndim),
+                self._strings['want_more_walkers'].format(10 * ndim),
                 warning=True)
         self._printer.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
