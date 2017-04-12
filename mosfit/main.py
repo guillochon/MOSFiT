@@ -13,7 +13,7 @@ import numpy as np
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master
+from mosfit.utils import get_mosfit_hash, is_master, speak
 
 
 class SortingHelpFormatter(argparse.HelpFormatter):
@@ -417,6 +417,13 @@ def get_parser():
         help=("Create a separate `Variance` for each type of observation "
               "specified. Currently `band` is the only valid option."))
 
+    parser.add_argument(
+        '--speak',
+        dest='speak',
+        default=False,
+        action='store_true',
+        help=("Speak."))
+
     return parser
 
 
@@ -427,6 +434,9 @@ def main():
     parser = get_parser()
 
     args = parser.parse_args()
+
+    if args.speak:
+        speak('Mosfit')
 
     prt = Printer(wrap_length=100, quiet=args.quiet)
     args.printer = prt
