@@ -18,7 +18,7 @@
     "fracking_scores": "Fracking scores",
     "gen_dummy": "No event specified, generating dummy data.",
     "install_db": "Dropbox python package required for uploads. Install with `pip install dropbox`.",
-    "enabling_s": "Enabling -S as extra bands were defined.",
+    "enabling_s": "Enabling `-S` as extra bands were defined.",
     "error": "Error",
     "estimated_time": "Estimated time left",
     "event_file": "Event file:",
