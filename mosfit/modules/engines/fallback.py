@@ -71,6 +71,9 @@ class Fallback(Engine):
             filestodelete = os.listdir('test_dir/test_fallback/pregammainterp/g5-3')
             for f in filestodelete:
                 os.remove('test_dir/test_fallback/pregammainterp/g5-3/' + f)
+            filestodelete = os.listdir('test_dir/test_fallback/postLeddcut')
+            for f in filestodelete:
+                os.remove('test_dir/test_fallback/postLeddcut/' + f)
 
               
              
@@ -593,6 +596,8 @@ class Fallback(Engine):
         if self.TESTING == True:
             np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:08d}'.format(self.testnum)+'.txt',
                         (self._times, dmdtnew)) 
+            #np.savetxt('test_dir/test_fallback/postLeddcut/time+lum'+'{:08d}'.format(self.testnum)+'.txt',
+            #            (self._times, luminosities)) 
             self.testnum += 1
         
         # ----------------------------------------

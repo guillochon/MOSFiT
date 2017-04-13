@@ -49,36 +49,36 @@ class tde_photosphere(Photosphere):
         r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
         rphotmin = r_isco #2*rp #r_isco
        
-        if ilumzero == len(self._luminosities): # this will happen if all luminosities are 0
+        #if ilumzero == len(self._luminosities): # this will happen if all luminosities are 0
             #print ('all sparse luminosities are zero (happens in photosphere)')
-            rphot = np.ones(len(self._luminosities))*rphotmin
-            Tphot = np.zeros(len(self._luminosities)) # should I set a Tmin instead?
+        #    rphot = np.ones(len(self._luminosities))*rphotmin
+        #    Tphot = np.zeros(len(self._luminosities)) # should I set a Tmin instead?
         
-        else:
-            a_p =(c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
-                 self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
+        
+        a_p =(c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
+             self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
 
 
-            # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
-            a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times[ilumzero:] -
-                 self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
-            
-            
-            rphotmax = rp + 2 * a_t
+        # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
+        a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times -
+             self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
+        a_t[self._times < self._rest_t_explosion] = 0.0
+        
+        
+        rphotmax = rp + 2 * a_t
 
 
-            rphot1 = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
-            # the luminosity is zero)
+        #rphot1 = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
+        # the luminosity is zero)
 
 
-            # adding rphotmin on to rphot so that there's a soft minimum
-            # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
-            # this means the new max is rphotmax/2
-            rphot2 =  self._Rph_0 * a_p * (self._luminosities[ilumzero:]/ Ledd)**self._l 
-            rphot2 = (rphot2 * rphotmax)/(rphot2 + rphotmax) + rphotmin         
-            rphot = np.concatenate((rphot1, rphot2))
+        # adding rphotmin on to rphot so that there's a soft minimum
+        # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
+        # this means the new max is rphotmax/2
+        rphot =  self._Rph_0 * a_p * (self._luminosities/ Ledd)**self._l 
+        rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin         
 
-            Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
+        Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
         # ----------------TESTING ----------------
         if self.TESTING == True:
