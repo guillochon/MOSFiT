@@ -13,7 +13,7 @@ class tde_photosphere(Photosphere):
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
-    TESTING = True
+    TESTING = False
     testnum = 0
 
     def process(self, **kwargs):
