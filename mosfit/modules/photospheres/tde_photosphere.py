@@ -13,7 +13,7 @@ class tde_photosphere(Photosphere):
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
-    TESTING = False
+    TESTING = True
     testnum = 0
 
     def process(self, **kwargs):
@@ -34,7 +34,7 @@ class tde_photosphere(Photosphere):
 
         # Assume solar metallicity for now
         kappa_t = 0.2*(1 + 0.74) # thomson opacity using solar metallicity ( 0.2*(1 + X) = mean Thomson opacity)
-        tpeak = self._times[np.argmax(self._luminosities)]
+        tpeak = kwargs['tpeak'] #self._times[np.argmax(self._luminosities)] # but what if peak isn't in self._luminsoties after sparsified??
 
         ilumzero = len(np.where(self._luminosities <= 0)[0]) # index of first mass accretion
         # semi-major axis of material that accretes at time = tpeak --> shouldn't T be tpeak - tdisruption?
@@ -72,14 +72,20 @@ class tde_photosphere(Photosphere):
 
 
             rphot2 = (self._Rph_0 * a_p * self._luminosities[ilumzero:]/ Ledd)**self._l
-            #print (len(rphot2), len(a_t))            
-            np.where(rphot2 > rphotmax, rphotmax, rphot2)
-            rphot2[rphot2 < rphotmin] = rphotmin
-            #print (rphot2, rphotmax)
+        
+            #print ('rphotmin =', rphotmin, 'rphotmax = ', rphotmax, 'min(rphot2) = ', min(rphot2), 'max(rphot2) = ', max(rphot2) )           
+            rphot2 = np.where(rphot2 > rphotmax, rphotmax, rphot2)
+            # if rphot < rphotmin, set rphot to rphotmin + rphot (makes still dep. on parameters, should
+            # help with fitting)   
+            if min(rphot2) < 0: print (rphot2)
+            rphot2 = np.where(rphot2 < rphotmin, rphot2 + rphotmin, rphot2) 
+            if len(rphot2[rphot2 < rphotmin]) > 0 : 
+                print (self._times[ilumzero:][rphot2 < rphotmin])
+
+            
             if len(rphotmax[rphotmax<rphotmin])>1 : print ('rphotmin > rphotmax at some point', rphotmax[rphotmax<rphotmin] )
             rphot = np.concatenate((rphot1, rphot2))
-            #rphot[rphot < rphotmin] = rphotmin
-            #rphot[rphot > rphotmax] = rphotmax
+            #print (rphotmin, min(rphot), rphot[0])
 
             Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 

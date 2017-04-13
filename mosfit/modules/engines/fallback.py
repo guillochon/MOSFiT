@@ -18,6 +18,8 @@ from scipy.interpolate import interp1d
 
 from mosfit.modules.engines.engine import Engine
 
+from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS, C_CGS
+
 CLASS_NAME = 'Fallback'
 
 
@@ -38,7 +40,7 @@ class Fallback(Engine):
         Mstarbase = Msolar
         Rstarbase = Rsolar
 
-        self.TESTING = False
+        self.TESTING = True
         ##### FOR TESTING ######
         if self.TESTING == True:
             self.testnum = 0
@@ -494,9 +496,9 @@ class Fallback(Engine):
 
         # bh mass for dmdt's in astrocrash is 1e6 solar masses
         # dmdt ~ Mh^(-1/2)
-        self._bhmass = kwargs['bhmass']  # right now kwargs bhmass is in solar masses, want in cgs
+        self._Mh = kwargs['bhmass']  # right now kwargs bhmass is in solar masses, want in cgs
         # star mass for dmdts in astrocrash is 1 solar mass
-        self._starmass = kwargs['starmass'] # don't convert to cgs yet, keep in units of Msolar to calculate Rstar
+        self._Mstar = kwargs['starmass'] # don't convert to cgs yet, keep in units of Msolar to calculate Rstar
 
         # calculate Rstar from Mstar (using Tout et. al. 1996), assuming solar metalicity 
         # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
@@ -522,14 +524,14 @@ class Fallback(Engine):
         Tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 + 0.00388783 * log10_Z_02**2 + 
                     0.00142402 * log10_Z_02**3 - 0.00007671 * log10_Z_02**4) 
         # caculate Rstar in units of Rsolar
-        Rstar = ((Tout_theta * self._starmass**2.5 + Tout_l * self._starmass**6.5 +
-            Tout_kpa * self._starmass**11 + Tout_lbda * self._starmass**19 +
-            Tout_mu * self._starmass**19.5)/(Tout_nu + Tout_eps * self._starmass**2 +
-            Tout_o * self._starmass**8.5 + self._starmass**18.5 + Tout_pi * self._starmass**19.5))
+        Rstar = ((Tout_theta * self._Mstar**2.5 + Tout_l * self._Mstar**6.5 +
+            Tout_kpa * self._Mstar**11 + Tout_lbda * self._Mstar**19 +
+            Tout_mu * self._Mstar**19.5)/(Tout_nu + Tout_eps * self._Mstar**2 +
+            Tout_o * self._Mstar**8.5 + self._Mstar**18.5 + Tout_pi * self._Mstar**19.5))
 
-        dmdt = dmdt * np.sqrt(Mhbase/self._bhmass) * (self._starmass/Mstarbase)**2.0 * (Rstarbase/Rstar)**1.5
+        dmdt = dmdt * np.sqrt(Mhbase/self._Mh) * (self._Mstar/Mstarbase)**2.0 * (Rstarbase/Rstar)**1.5
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
-        time = time * np.sqrt(self._bhmass/Mhbase) * (Mstarbase/self._starmass) * (Rstar/Rstarbase)**1.5
+        time = time * np.sqrt(self._Mh/Mhbase) * (Mstarbase/self._Mstar) * (Rstar/Rstarbase)**1.5
         tnew = time/(3600 * 24) # time is now in days to match self._times
 
 
@@ -541,6 +543,8 @@ class Fallback(Engine):
         # bug was fixed in densetimes.py, now uses resttexplosion
         tnew = tnew - (tnew[0] - self._rest_t_explosion)
         
+        tpeak = tnew[np.argmax(dmdt)]
+
         if self.TESTING == True:
             np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt'+'{:08d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
             (tnew, dmdt))
@@ -576,6 +580,15 @@ class Fallback(Engine):
         self._efficiency = kwargs['efficiency']
         luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value # expected in cgs so ergs/s
 
+        # -------------- EDDINGTON LUMINOSITY CUT -------------------
+        # Assume solar metallicity for now
+        
+        kappa_t = 0.2*(1 + 0.74) # thomson opacity using solar metallicity ( 0.2*(1 + X) = mean Thomson opacity)
+        Ledd = (FOUR_PI * c.G.cgs.value * self._Mh * M_SUN_CGS *
+                C_CGS / kappa_t)
+
+        #luminosities[luminosities > Ledd] = Ledd
+
         # ----------------TESTING ----------------
         if self.TESTING == True:
             np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:08d}'.format(self.testnum)+'.txt',
@@ -584,4 +597,4 @@ class Fallback(Engine):
         
         # ----------------------------------------
 
-        return {'dense_luminosities': luminosities, 'Rstar': Rstar}
+        return {'dense_luminosities': luminosities, 'Rstar': Rstar, 'tpeak': tpeak}
