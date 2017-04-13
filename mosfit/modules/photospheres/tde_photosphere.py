@@ -73,28 +73,15 @@ class tde_photosphere(Photosphere):
 
             # adding rphotmin on to rphot so that there's a soft minimum
             # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
-            rphot2 =  (self._Rph_0 * a_p * self._luminosities[ilumzero:]/ Ledd)**self._l 
-            rphot2 = (rphot2 * rphotmax)/(rphot2 + rphotmax) + rphotmin
-        
-            #print ('rphotmin =', rphotmin, 'rphotmax = ', rphotmax, 'min(rphot2) = ', min(rphot2), 'max(rphot2) = ', max(rphot2) )           
-            #rphot2 = np.where(rphot2 > rphotmax, rphotmax, rphot2)
-            # if rphot < rphotmin, set rphot to rphotmin + rphot (makes still dep. on parameters, should
-            # help with fitting)   
-            #if min(rphot2) < 0: print (rphot2)
-            #rphot2 = np.where(rphot2 < rphotmin, rphot2 + rphotmin, rphot2) 
-            #if len(rphot2[rphot2 < rphotmin]) > 0 : 
-            #    print (self._times[ilumzero:][rphot2 < rphotmin])
-
-            
-            #if len(rphotmax[rphotmax<rphotmin])>1 : print ('rphotmin > rphotmax at some point', rphotmax[rphotmax<rphotmin] )
+            # this means the new max is rphotmax/2
+            rphot2 =  self._Rph_0 * a_p * (self._luminosities[ilumzero:]/ Ledd)**self._l 
+            rphot2 = (rphot2 * rphotmax)/(rphot2 + rphotmax) + rphotmin         
             rphot = np.concatenate((rphot1, rphot2))
-            #print (rphotmin, min(rphot), rphot[0])
 
             Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
         # ----------------TESTING ----------------
         if self.TESTING == True:
-            #if ilumzero != len(self._luminosities): 
             np.savetxt('test_dir/test_photosphere/end_photosphere/time+Tphot+rphot'+'{:08d}'.format(self.testnum)+'.txt',
                             (self._times, Tphot, rphot), header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero)) # set time = 0 when explosion goes off
             #np.savetxt('test_dir/test_photosphere/end_photosphere/postilumzerotime+Tphot+rphot'+'{:08d}'.format(self.testnum)+'postilumzero.txt',
