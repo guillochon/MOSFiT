@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
+import gc
 import io
 import json
 import os
@@ -940,6 +941,7 @@ class Fitter(object):
                             'Memory halved, sli: {}'.format(sli))
 
                 sampler.reset()
+                gc.collect()
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
