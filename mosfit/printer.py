@@ -4,6 +4,7 @@ from __future__ import print_function
 
 import datetime
 import json
+import os
 import sys
 from builtins import input
 from textwrap import fill
@@ -53,16 +54,53 @@ class Printer(object):
             '!c': CYAN
         }
 
-    def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None):
+    def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
+                 language='en'):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._quiet = quiet
         self._pool = pool
         self._fitter = fitter
+        self._language = language
 
-    def set_strings(self, strings):
+        self.set_strings()
+
+    def set_strings(self):
         """Set pre-defined list of strings."""
-        self._strings = strings
+        dir_path = os.path.dirname(os.path.realpath(__file__))
+        with open(os.path.join(dir_path, 'strings.json')) as f:
+            strings = json.load(f)
+        if self._language == 'en':
+            self._strings = strings
+            return
+        lsf = os.path.join(dir_path, 'strings-' + self._language + '.json')
+        if os.path.isfile(lsf):
+            with open(lsf) as f:
+                self._strings = json.load(f)
+            if set(self._strings.keys()) == set(strings):
+                return
+
+        try:
+            from googletrans import Translator  # noqa
+        except Exception:
+            self.wrapped(
+                'The `--language` option requires the `Googletrans` package. '
+                'Please install with `pip install googletrans`.')
+            self._strings = strings
+            pass
+        else:
+            self.wrapped(self.translate(
+                'Building strings for `{}`, please wait...'
+                .format(self._language)))
+            self._strings = {}
+            for key in strings:
+                self._strings[key] = self.translate(strings[key])
+            with open(lsf, 'w') as f:
+                json.dump(self._strings, f)
+
+    def set_language(self, language):
+        """Set language."""
+        self._language = language
 
     def colorify(self, text):
         """Add colors to text."""
@@ -102,11 +140,11 @@ class Printer(object):
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
             if prefix and len(lines):
-                lines[0] = 'Warning: ' + lines[0]
+                lines[0] = self._strings['warning'] + ': ' + lines[0]
         if error:
             sys.stdout.write(self.bcolors.FAIL)
             if prefix and len(lines):
-                lines[0] = 'Error: ' + lines[0]
+                lines[0] = self._strings['error'] + ': ' + lines[0]
         if not new_line:
             for line in lines:
                 sys.stdout.write("\033[F")
@@ -129,18 +167,18 @@ class Printer(object):
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
             if prefix:
-                text = 'Warning: ' + text
+                text = self._strings['warning'] + ': ' + text
         if error:
             sys.stdout.write(self.bcolors.FAIL)
             if prefix:
-                text = 'Error: ' + text
+                text = self._strings['error'] + ': ' + text
         print(fill(text, wl))
         if error or warning:
             sys.stdout.write(self.bcolors.ENDC)
 
     def prompt(self, text, wrap_length=None, kind='bool',
                none_string='None of the above.',
-               options=None):
+               options=None, translate=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -150,11 +188,12 @@ class Printer(object):
         if kind == 'bool':
             choices = ' (y/[n])'
         elif kind == 'select':
+            selpad = ''.join([' ' for x in str(len(options))])
             choices = '\n' + '\n'.join([
-                ' ' + str(i + 1) + '.  ' + options[i] for i in range(
-                    len(options))
+                ' ' + str(i + 1) + '. ' + selpad[len(str(i + 1)) - 1:] +
+                options[i] for i in range(len(options))
             ] + [
-                '[n]. ' + none_string + '\n'
+                '[n].' + selpad + none_string + '\n' +
                 'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
                     len(options)) + '/[n]):'
             ])
@@ -163,7 +202,10 @@ class Printer(object):
         else:
             raise ValueError('Unknown prompt kind.')
 
-        prompt_txt = (text + choices).split('\n')
+        textchoices = text + choices
+        if translate:
+            textchoices = self.translate(textchoices)
+        prompt_txt = (textchoices).split('\n')
         for txt in prompt_txt[:-1]:
             ptxt = fill(txt, wl, replace_whitespace=False)
             print(ptxt)
@@ -196,13 +238,16 @@ class Printer(object):
 
         outarr = [fitter._event_name]
         if desc:
-            if desc == 'Burning':
-                descstr = self.bcolors.ORANGE + desc + self.bcolors.ENDC
+            if desc == 'burning':
+                descstr = self.bcolors.ORANGE + self._strings.get(
+                    desc, '?') + self.bcolors.ENDC
             else:
-                descstr = desc
+                descstr = self._strings.get(desc, '?')
             outarr.append(descstr)
         if isinstance(scores, list):
-            scorestring = 'Fracking scores' if fracking else 'Score ranges'
+            scorestring = self._strings[
+                'fracking_scores'] if fracking else self._strings[
+                    'score_ranges']
             scorestring += ': [ ' + ', '.join([
                 '...'.join([
                     pretty_num(min(x))
@@ -218,7 +263,7 @@ class Printer(object):
                 scorestring = 'WAIC: ' + pretty_num(calculate_WAIC(scores))
                 outarr.append(scorestring)
         if isinstance(accepts, list):
-            scorestring = 'Moves accepted: [ '
+            scorestring = self._strings['moves_accepted'] + ': [ '
             scorestring += ', '.join([
                 (self.bcolors.FAIL if x < 0.01 else
                  (self.bcolors.WARNING if x < 0.1 else
@@ -229,12 +274,15 @@ class Printer(object):
             outarr.append(scorestring)
         if isinstance(progress, list):
             if progress[1]:
-                progressstring = 'Progress: [ {}/{} ]'.format(*progress)
+                progressstring = (
+                    self._strings['progress'] +
+                    ': [ {}/{} ]'.format(*progress))
             else:
-                progressstring = 'Progress: [ {} ]'.format(progress[0])
+                progressstring = (
+                    self._strings['progress'] + ': [ {} ]'.format(progress[0]))
             outarr.append(progressstring)
         if fitter._emcee_est_t < 0.0:
-            outarr.append('Running until convergence')
+            outarr.append(self._strings['run_until_converged'])
         elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
             if fitter._bh_est_t > 0.0 or not fitter._fracking:
                 tott = fitter._emcee_est_t + fitter._bh_est_t
@@ -246,7 +294,7 @@ class Printer(object):
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
                 acorstring = (self.bcolors.FAIL +
-                              'Chain too short for acor ({})'.format(
+                              'Chain too short for `acor` ({})'.format(
                                   acorcstr) + self.bcolors.ENDC)
             else:
                 acortstr = pretty_num(acor[0], sig=3)
@@ -304,7 +352,18 @@ class Printer(object):
         elapsed times for emcee and fracking.
         """
         td = str(datetime.timedelta(seconds=int(round(t))))
-        return ('Estimated time left: [ ' + td + ' ]')
+        return (self._strings['estimated_time'] + ': [ ' + td + ' ]')
+
+    def translate(self, text):
+        """Translate text to another language."""
+        if self._language != 'en':
+            try:
+                from googletrans import Translator
+                translator = Translator()
+                text = translator.translate(text, dest=self._language).text
+            except Exception:
+                pass
+        return text
 
     def tree(self, my_tree):
         """Pretty print the module dependency trees for each root."""

@@ -176,3 +176,24 @@ def is_master():
         return MPI.COMM_WORLD.Get_rank() == 0
     except ImportError:
         return True
+
+
+def speak(text, lang='es'):
+    """Text to speech. For fun."""
+    try:
+        from gtts import gTTS
+        from pygame import mixer
+        from tempfile import TemporaryFile
+        from googletrans import Translator
+
+        translator = Translator()
+        tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
+        mixer.init()
+
+        sf = TemporaryFile()
+        tts.write_to_fp(sf)
+        sf.seek(0)
+        mixer.music.load(sf)
+        mixer.music.play()
+    except Exception:
+        raise

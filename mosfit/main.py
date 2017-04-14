@@ -13,7 +13,7 @@ import numpy as np
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master
+from mosfit.utils import get_mosfit_hash, is_master, speak
 
 
 class SortingHelpFormatter(argparse.HelpFormatter):
@@ -417,6 +417,23 @@ def get_parser():
         help=("Create a separate `Variance` for each type of observation "
               "specified. Currently `band` is the only valid option."))
 
+    parser.add_argument(
+        '--speak',
+        dest='speak',
+        const='en',
+        default=False,
+        nargs='?',
+        help=("Speak."))
+
+    parser.add_argument(
+        '--language',
+        dest='language',
+        type=str,
+        const='select',
+        default='en',
+        nargs='?',
+        help=("Language for output text."))
+
     return parser
 
 
@@ -428,7 +445,27 @@ def main():
 
     args = parser.parse_args()
 
-    prt = Printer(wrap_length=100, quiet=args.quiet)
+    if args.speak:
+        speak('Mosfit', args.speak)
+
+    if args.language != 'en':
+        try:
+            from googletrans.constants import LANGUAGES
+        except Exception:
+            raise RuntimeError(
+                '`--language` requires `googletrans` package, '
+                'install with `pip install googletrans`.')
+
+        if args.language == 'select' or args.language not in LANGUAGES:
+            tprt = Printer(wrap_length=100, quiet=args.quiet, language='en')
+            languages = list(
+                sorted([LANGUAGES[x].title().replace('_', ' ') +
+                        ' (' + x + ')' for x in LANGUAGES]))
+            sel = tprt.prompt(
+                'Select a language:', kind='select', options=languages)
+            args.language = sel.split('(')[-1].strip(')')
+
+    prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
     args.printer = prt
 
     args.write = True
@@ -440,7 +477,7 @@ def main():
         args.extrapolate_time = 100.0
 
     if len(args.band_list) and args.smooth_times == -1:
-        prt.wrapped('Enabling -S as extra bands were defined.')
+        prt.message('enabling_s')
         args.smooth_times = 0
 
     changed_iterations = False
@@ -565,9 +602,7 @@ def main():
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
-            prt.wrapped(
-                'Copying MOSFiT folder hierarchy to current working directory '
-                '(disable with --no-copy-at-launch).')
+            prt.message('copying')
             fc = False
             if args.force_copy:
                 fc = prt.prompt(
