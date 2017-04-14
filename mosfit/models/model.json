@@ -137,7 +137,6 @@
     "fitlc":{
         "kind":"output",
         "inputs":[
-            "likelihood",
             "transient",
             "photometry"
         ],
