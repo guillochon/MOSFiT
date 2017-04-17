@@ -20,16 +20,16 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
+from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          is_number, listify, pretty_num, speak)
+                          listify, pretty_num, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -524,7 +524,7 @@ class Fitter(object):
                     ]))
             band_len = max([
                 len(self._model._modules['photometry']._unique_bands[bi][
-                    'SVO']) for bi in bis
+                    'origin']) for bi in bis
             ])
             filts = self._model._modules['photometry']
             ubs = filts._unique_bands
@@ -533,7 +533,7 @@ class Fitter(object):
                           filts._band_offsets[bis[i]], ois[i], bis[i])
                          for i in range(len(bis))]
             filterrows = [(
-                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
                 .ljust(band_len) + ' [' + ', '.join(
                     list(
                         filter(None, (

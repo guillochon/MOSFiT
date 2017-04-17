@@ -23,17 +23,6 @@ def get_url_file_handle(url, timeout=10):
     return urlopen(url, timeout=timeout)
 
 
-def is_number(s):
-    """Check if input is numeric."""
-    if isinstance(s, bool):
-        return False
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-
 def is_integer(s):
     """Check if input is an integer."""
     if isinstance(s, list) and not isinstance(s, string_types):

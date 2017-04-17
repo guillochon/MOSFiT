@@ -18,6 +18,7 @@
                 "e_lower_fluxdensity":["optional", "numeric"],
                 "countrate":["optional", "numeric"],
                 "e_countrate":["optional", "numeric"],
+                "u_countrate":"optional",
                 "e_upper_countrate":["optional", "numeric"],
                 "e_lower_countrate":["optional", "numeric"],
                 "instrument":"optional",

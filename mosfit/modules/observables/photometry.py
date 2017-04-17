@@ -167,7 +167,9 @@ class Photometry(Module):
                         else:
                             print('Error: Could not read SVO filter!')
                             raise RuntimeError
+                    self._unique_bands[i]['origin'] = band['SVO']
                 else:
+                    self._unique_bands[i]['origin'] = band['path']
                     path = band['path']
 
                 with open(os.path.join(dir_path, 'filters', path), 'r') as f:

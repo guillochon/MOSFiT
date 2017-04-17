@@ -2,8 +2,9 @@
 from collections import OrderedDict
 
 import numpy as np
+from astrocats.catalog.utils import is_number
 from mosfit.modules.module import Module
-from mosfit.utils import is_number, listify
+from mosfit.utils import listify
 
 
 # Important: Only define one ``Module`` class per file.
@@ -68,11 +69,12 @@ class Transient(Module):
                 if any([x in entry for x in exc_subkeys]):
                     continue
                 if any([
-                        x in entry and ((isinstance(entry[x], list) and all([
-                            is_number(y) and not np.isnan(float(y))
+                        x in entry and ((isinstance(entry[x], list) and any([
+                            not is_number(y) or np.isnan(float(y))
                             for y in entry[x]
-                        ])) or not is_number(entry[x]) or
-                        np.isnan(float(entry[x])))
+                        ])) or not isinstance(entry[x], list) and (
+                            not is_number(entry[x]) or np.isnan(
+                                float(entry[x]))))
                         for x in num_subkeys
                 ]):
                     continue
@@ -111,9 +113,10 @@ class Transient(Module):
                     if skip_entry:
                         continue
 
-                    if (('magnitude' in entry) != ('band' in entry) or
-                            ('fluxdensity' in entry) !=
-                            ('frequency' in entry)):
+                    if ((('magnitude' in entry) != ('band' in entry)) or
+                        (('fluxdensity' in entry) != ('frequency' in entry)) or
+                        (('countrate' in entry) and
+                         ('instrument' not in entry))):
                         continue
 
                 for x in subkeys:
@@ -137,7 +140,9 @@ class Transient(Module):
                 if not any(is_number(x) for x in self._data[key]):
                     continue
                 self._data[key] = [
-                    float(x) if is_number(x) else x for x in self._data[key]
+                    (np.mean([float(y) for y in x]) if isinstance(
+                        x, list) else float(x)) if
+                    is_number(x) else x for x in self._data[key]
                 ]
                 num_values = [
                     x for x in self._data[key] if isinstance(x, float)
@@ -153,7 +158,7 @@ class Transient(Module):
             obs = list(
                 zip(*(self._data['systems'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'], self._data['countrates'])))
+                          'frequencies'])))
             if len(band_list):
                 b_insts = band_instruments if len(band_instruments) == len(
                     band_list) else ([band_instruments[0] for x in band_list]
@@ -192,8 +197,7 @@ class Transient(Module):
                 zip(*(
                     self._data['times'], self._data['systems'],
                     self._data['instruments'], self._data['bandsets'],
-                    self._data['bands'], self._data['frequencies'],
-                    self._data['countrates'])))
+                    self._data['bands'], self._data['frequencies'])))
 
             obslist = []
             for t in alltimes:
@@ -208,8 +212,7 @@ class Transient(Module):
                 (self._data['extra_times'], self._data['extra_systems'],
                  self._data['extra_instruments'], self._data['extra_bandsets'],
                  self._data['extra_bands'],
-                 self._data['extra_frequencies'],
-                 self._data['extra_countrates']) = zip(*obslist)
+                 self._data['extra_frequencies']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]
@@ -218,6 +221,8 @@ class Transient(Module):
                 self._data['extra_' + qkey] = [
                     x - minv for x in self._data['extra_' + qkey]
                 ]
+
+        print(self._data['countrates'])
 
         return True
 
