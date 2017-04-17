@@ -34,10 +34,7 @@ class tde_photosphere(Photosphere):
 
         # Assume solar metallicity for now
         kappa_t = 0.2*(1 + 0.74) # thomson opacity using solar metallicity ( 0.2*(1 + X) = mean Thomson opacity)
-        tpeak = kwargs['tpeak'] #self._times[np.argmax(self._luminosities)] # but what if peak isn't in self._luminsoties after sparsified??
-
-        ilumzero = len(np.where(self._luminosities <= 0)[0]) # index of first mass accretion
-        # semi-major axis of material that accretes at time = tpeak --> shouldn't T be tpeak - tdisruption?
+        tpeak = kwargs['tpeak'] 
 
         Ledd = (4 * np.pi * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
@@ -47,13 +44,7 @@ class tde_photosphere(Photosphere):
         rp = rt/self._beta
         
         r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS) # Risco in cgs
-        rphotmin = r_isco #2*rp #r_isco
-       
-        #if ilumzero == len(self._luminosities): # this will happen if all luminosities are 0
-            #print ('all sparse luminosities are zero (happens in photosphere)')
-        #    rphot = np.ones(len(self._luminosities))*rphotmin
-        #    Tphot = np.zeros(len(self._luminosities)) # should I set a Tmin instead?
-        
+        rphotmin = r_isco #2*rp #r_isco    
         
         a_p =(c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
              self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
@@ -67,15 +58,15 @@ class tde_photosphere(Photosphere):
         
         rphotmax = rp + 2 * a_t
 
-
-        #rphot1 = np.ones(ilumzero)*rphotmin # set rphot to minimum before mass starts accreting (when
-        # the luminosity is zero)
-
-
         # adding rphotmin on to rphot so that there's a soft minimum
         # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
         # this means the new max is rphotmax/2
         rphot =  self._Rph_0 * a_p * (self._luminosities/ Ledd)**self._l 
+
+        if self.TESTING == True:
+            np.savetxt('test_dir/test_photosphere/precut_photosphere/time+rphot'+'{:08d}'.format(self.testnum)+'.txt',
+                            (self._times, rphot))
+
         rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin         
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
@@ -83,7 +74,7 @@ class tde_photosphere(Photosphere):
         # ----------------TESTING ----------------
         if self.TESTING == True:
             np.savetxt('test_dir/test_photosphere/end_photosphere/time+Tphot+rphot'+'{:08d}'.format(self.testnum)+'.txt',
-                            (self._times, Tphot, rphot), header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero)) # set time = 0 when explosion goes off
+                            (self._times, Tphot, rphot)) #, header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero)) # set time = 0 when explosion goes off
             #np.savetxt('test_dir/test_photosphere/end_photosphere/postilumzerotime+Tphot+rphot'+'{:08d}'.format(self.testnum)+'postilumzero.txt',
             #                (self._times[ilumzero:], Tphot[ilumzero:], rphot[ilumzero:]), header = 'M_h ='+str(self._Mh))
            

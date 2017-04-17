@@ -27,8 +27,8 @@
         "max_value":0.1
     },
     "texplosion":{
-        "min_value":-100.0,
-        "max_value":100.0
+        "min_value":-500.0,
+        "max_value":500.0
     },
     "variance":{
         "min_value":1.0e-3,
@@ -37,10 +37,10 @@
     },
     "lphoto":{
         "min_value":0.0,
-        "max_value":4.0
+        "max_value":3.0
     },
     "Rph0":{
-        "min_value":-4.0,
-        "max_value":4.0
+        "min_value":-2.0,
+        "max_value":2.0
     }
 }

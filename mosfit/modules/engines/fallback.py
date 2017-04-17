@@ -74,6 +74,11 @@ class Fallback(Engine):
             filestodelete = os.listdir('test_dir/test_fallback/postLeddcut')
             for f in filestodelete:
                 os.remove('test_dir/test_fallback/postLeddcut/' + f)
+            filestodelete = os.listdir('test_dir/test_photosphere/precut_photosphere')
+            for f in filestodelete:
+                os.remove('test_dir/test_photosphere/precut_photosphere/' + f)
+
+                
 
               
              
@@ -590,8 +595,10 @@ class Fallback(Engine):
         Ledd = (FOUR_PI * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
 
-        #luminosities[luminosities > Ledd] = Ledd
-
+        # two options for soft Ledd cuts, should try both & see what fits stuff better
+        #luminosities = np.where(luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * luminosities, luminosities)
+        luminosities = (luminosities * Ledd/(luminosities + Ledd))
+        
         # ----------------TESTING ----------------
         if self.TESTING == True:
             np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:08d}'.format(self.testnum)+'.txt',
