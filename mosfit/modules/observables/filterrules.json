@@ -643,5 +643,17 @@
                 "offset": 0.0
             }
         }
+    },
+    {
+        "instruments": [
+            "ACIS-S"
+        ],
+        "filters": {
+            "": {
+                "path": "chandra_acis-s_.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
     }
 ]

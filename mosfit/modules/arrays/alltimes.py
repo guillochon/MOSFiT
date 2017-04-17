@@ -23,15 +23,16 @@ class AllTimes(Array):
         self._instruments = []
         self._bandsets = []
         self._frequencies = []
+        self._counts = []
 
     def process(self, **kwargs):
         """Process module."""
         old_bands = (self._systems, self._instruments, self._bandsets,
-                     self._bands, self._frequencies)
+                     self._bands, self._frequencies, self._counts)
         if (kwargs.get('root', 'output') == 'output' and
                 'extra_times' in kwargs):
             obs_keys = ['times', 'systems', 'instruments', 'bandsets',
-                        'bands', 'frequencies']
+                        'bands', 'frequencies', 'countrates']
             obslist = (list(
                 zip(*([kwargs.get(k) for k in obs_keys] +
                       [[True for x in range(len(kwargs['times']))]]))
@@ -41,7 +42,8 @@ class AllTimes(Array):
             obslist.sort()
 
             (self._times, self._systems, self._instruments, self._bandsets,
-             self._bands, self._frequencies, self._observed) = zip(*obslist)
+             self._bands, self._frequencies, self._counts,
+             self._observed) = zip(*obslist)
         else:
             self._times = kwargs['times']
             self._systems = kwargs['systems']
@@ -52,6 +54,7 @@ class AllTimes(Array):
                 x / frequency_unit(y) if x != '' else ''
                 for x, y in zip(kwargs['frequencies'], kwargs['u_frequencies'])
             ]
+            self._counts = kwargs['countrates']
             self._observed = [True for x in kwargs['times']]
 
         outputs = OrderedDict()
@@ -61,14 +64,15 @@ class AllTimes(Array):
         outputs['all_bandsets'] = self._bandsets
         outputs['all_bands'] = self._bands
         outputs['all_frequencies'] = self._frequencies
+        outputs['all_countrates'] = self._counts
         if old_bands != (self._systems, self._instruments, self._bandsets,
-                         self._bands, self._frequencies):
+                         self._bands, self._frequencies, self._counts):
             self._all_band_indices = [
                 (self._photometry.find_band_index(
                     w, instrument=x, bandset=y, system=z) if a == '' else -1)
-                for w, x, y, z, a in zip(self._bands, self._instruments,
-                                         self._bandsets, self._systems,
-                                         self._frequencies)
+                for w, x, y, z, a in zip(
+                    self._bands, self._instruments, self._bandsets,
+                    self._systems, self._frequencies)
             ]
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observed'] = self._observed

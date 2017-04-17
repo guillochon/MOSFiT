@@ -58,6 +58,10 @@ class Likelihood(Module):
 
         self._o_band_vs = self._band_vs[self._observed]
 
+        cmask = self._cts != ''
+        self._o_band_vs[cmask] = self._cts[cmask] * 10.0 ** (
+            self._o_band_vs[cmask] / 2.5)
+
         # Calculate (model - obs) residuals.
         residuals = np.array([
             (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0) if a
@@ -65,7 +69,7 @@ class Likelihood(Module):
             (abs(x - fd) if not u or (x > fd and not isnan(x)) else 0.0)
             for x, y, fd, u, o, a in zip(
                 self._model_observations, self._mags, self._fds,
-                self._upper_limits, self._observed, self._are_mags) if o
+                self._upper_limits, self._observed, self._are_bands) if o
         ])
 
         # Observational errors to be put in diagonal of error matrix.
@@ -75,7 +79,7 @@ class Likelihood(Module):
             for x, y, eu, el, fd, fdeu, fdel, o, a in zip(
                 self._model_observations, self._mags,
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
-                self._e_l_fds, self._observed, self._are_mags) if o
+                self._e_l_fds, self._observed, self._are_bands) if o
         ]
 
         is_diag = False
@@ -139,6 +143,7 @@ class Likelihood(Module):
         self._times = np.array(kwargs.get('times', []))
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
+        self._cts = kwargs.get('countrates', [])
         self._freqs = kwargs.get('frequencies', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
         self._e_l_mags = kwargs.get('e_lower_magnitudes', [])
@@ -148,11 +153,14 @@ class Likelihood(Module):
         self._e_fds = kwargs.get('e_fluxdensities', [])
         self._u_fds = kwargs.get('u_fluxdensities', [])
         self._u_freqs = kwargs.get('u_frequencies', [])
+        self._e_u_cts = kwargs.get('e_upper_countrates', [])
+        self._e_l_cts = kwargs.get('e_lower_countrates', [])
+        self._e_cts = kwargs.get('e_countrates', [])
+        self._u_cts = kwargs.get('u_countrates', [])
         self._upper_limits = kwargs.get('upperlimits', [])
         self._observed = np.array(kwargs.get('observed', []))
         self._all_band_indices = kwargs.get('all_band_indices', [])
-        self._are_mags = np.array(self._all_band_indices) >= 0
-        self._are_fds = np.array(self._all_band_indices) < 0
+        self._are_bands = np.array(self._all_band_indices) >= 0
         self._all_band_avgs = np.array([
             self._average_wavelengths[bi] if bi >= 0 else
             C_CGS / self._freqs[i] / ANG_CGS for i, bi in
@@ -174,6 +182,22 @@ class Likelihood(Module):
             (kwargs['default_no_error_bar_error']
              if (e == '' and el == '') else (e if el == '' else el))
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
+        ]
+
+        # Now counts
+        self._e_u_cts = [
+            kwargs['default_upper_limit_error']
+            if (e == '' and eu == '' and self._upper_limits[i]) else
+            (kwargs['default_no_error_bar_error']
+             if (e == '' and eu == '') else (e if eu == '' else eu))
+            for i, (e, eu) in enumerate(zip(self._e_cts, self._e_u_cts))
+        ]
+        self._e_l_cts = [
+            kwargs['default_upper_limit_error']
+            if (e == '' and el == '' and self._upper_limits[i]) else
+            (kwargs['default_no_error_bar_error']
+             if (e == '' and el == '') else (e if el == '' else el))
+            for i, (e, el) in enumerate(zip(self._e_cts, self._e_l_cts))
         ]
 
         # Now flux densities

@@ -8,6 +8,7 @@ from copy import deepcopy
 
 import numpy as np
 from astropy import units as u
+from astropy import constants as c
 from astropy.io.votable import parse as voparse
 from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
@@ -69,12 +70,17 @@ class Photometry(Module):
         self._band_names = [x['name'] for x in self._unique_bands]
         self._n_bands = len(self._unique_bands)
         self._band_wavelengths = [[] for i in range(self._n_bands)]
+        self._band_energies = [[] for i in range(self._n_bands)]
         self._transmissions = [[] for i in range(self._n_bands)]
+        self._band_areas = [[] for i in range(self._n_bands)]
         self._min_waves = [0.0] * self._n_bands
         self._max_waves = [0.0] * self._n_bands
         self._filter_integrals = [0.0] * self._n_bands
         self._average_wavelengths = [0.0] * self._n_bands
         self._band_offsets = [0.0] * self._n_bands
+        self._band_xunits = ['Angstrom'] * self._n_bands
+        self._band_yunits = [''] * self._n_bands
+        self._band_kinds = ['mag'] * self._n_bands
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
@@ -176,25 +182,50 @@ class Photometry(Module):
                 rows = self._pool.comm.recv(source=0, tag=3)
                 zps = self._pool.comm.recv(source=0, tag=4)
 
-            self._band_wavelengths[i], self._transmissions[i] = list(
+            self._band_xunits[i] = band.get('xunit', 'Angstrom')
+            self._band_yunits[i] = band.get('yunit', '')
+
+            xvals, yvals = list(
                 map(list, zip(*rows)))
+
+            xu = u.Unit(self._band_xunits[i])
+            yu = u.Unit(self._band_yunits[i])
+            if '{0}'.format(yu) == 'cm2':
+                self._band_kinds[i] = 'cts'
+                self._band_energies[
+                    i], self._band_areas[i] = xvals, yvals
+                self._band_wavelengths[i] = [(c.c / (
+                    x * xu / c.h)).value for x in self._band_energies[i]]
+                self._filter_integrals[i] = np.trapz(
+                    np.array(self._band_areas[i]),
+                    self._band_energies[i])
+                self._average_wavelengths[i] = np.trapz([
+                    x * y
+                    for x, y in zip(
+                        self._band_areas[i], self._band_wavelengths[i])
+                ], self._band_wavelengths[i]) / np.trapz(
+                    self._band_areas[i], self._band_wavelengths[i])
+            else:
+                self._band_wavelengths[
+                    i], self._transmissions[i] = xvals, yvals
+                self._filter_integrals[i] = self.FLUX_STD * np.trapz(
+                    np.array(self._transmissions[i]) /
+                    np.array(self._band_wavelengths[i]) ** 2,
+                    self._band_wavelengths[i])
+                self._average_wavelengths[i] = np.trapz([
+                    x * y
+                    for x, y in zip(
+                        self._transmissions[i], self._band_wavelengths[i])
+                ], self._band_wavelengths[i]) / np.trapz(
+                    self._transmissions[i], self._band_wavelengths[i])
+
+                if 'offset' in band:
+                    self._band_offsets[i] = band['offset']
+                elif 'SVO' in band:
+                    self._band_offsets[i] = zps[-1]
+
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = self.FLUX_STD * np.trapz(
-                np.array(self._transmissions[i]) /
-                np.array(self._band_wavelengths[i]) ** 2,
-                self._band_wavelengths[i])
-            self._average_wavelengths[i] = np.trapz([
-                x * y
-                for x, y in zip(self._transmissions[i], self._band_wavelengths[
-                    i])
-            ], self._band_wavelengths[i]) / np.trapz(self._transmissions[i],
-                                                     self._band_wavelengths[i])
-
-            if 'offset' in band:
-                self._band_offsets[i] = band['offset']
-            elif 'SVO' in band:
-                self._band_offsets[i] = zps[-1]
 
     def find_band_index(self, band, instrument='', bandset='', system=''):
         """Find the index corresponding to the provided band information."""
@@ -241,18 +272,30 @@ class Photometry(Module):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if bi >= 0:
-                offsets[li] = self._band_offsets[bi]
-                wavs = kwargs['sample_wavelengths'][bi]
-                dx = wavs[1] - wavs[0]
-                yvals = np.interp(
-                    wavs, self._band_wavelengths[bi],
-                    self._transmissions[bi]) * kwargs['seds'][li] / zp1
-                eff_fluxes[li] = np.trapz(
-                    yvals, dx=dx) / self._filter_integrals[bi]
+                if self._band_kinds == 'mag':
+                    offsets[li] = self._band_offsets[bi]
+                    wavs = kwargs['sample_wavelengths'][bi]
+                    dx = wavs[1] - wavs[0]
+                    yvals = np.interp(
+                        wavs, self._band_wavelengths[bi],
+                        self._transmissions[bi]) * kwargs['seds'][li] / zp1
+                    eff_fluxes[li] = np.trapz(
+                        yvals, dx=dx) / self._filter_integrals[bi]
+                elif self._band_kinds == 'cts':
+                    wavs = kwargs['sample_wavelengths'][bi]
+                    # Fix
+                    yvals = np.interp(
+                        wavs, self._band_energies[bi],
+                        self._band_areas[bi]) * kwargs['seds'][li] / zp1
+                    eff_fluxes[li] = np.trapz(
+                        yvals, wavs) / self._filter_integrals[bi]
+                else:
+                    raise RuntimeError('Unknown band kind.')
             else:
                 eff_fluxes[li] = kwargs['seds'][li][0] / self.ANG_CGS * (
                     C_CGS / (self._frequencies[li] ** 2))
-        nbs = np.array(self._band_indices) < 0
+        nbs = np.array(self._band_indices) < 0 | np.array(
+            self._band_kinds) != 'mag'
         ybs = np.array(self._band_indices) >= 0
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])

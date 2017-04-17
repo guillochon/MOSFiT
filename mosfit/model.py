@@ -125,6 +125,10 @@ class Model(object):
         with open(model_path, 'r') as f:
             self._model.update(json.load(f, object_pairs_hook=OrderedDict))
 
+        # with open(os.path.join(
+        #         self.MODEL_OUTPUT_DIR, self._model_name + '.json'), 'w') as f:
+        #     json.dump(self._model, f)
+
         # Load model parameter file.
         model_pp = os.path.join(
             os.path.split(model_path)[0], 'parameters.json')
@@ -207,6 +211,11 @@ class Model(object):
             for task in unsorted_call_stack:
                 if unsorted_call_stack[task]['depth'] == depth:
                     self._call_stack[task] = unsorted_call_stack[task]
+
+        # with open(os.path.join(
+        #         self.MODEL_OUTPUT_DIR,
+        #         self._model_name + '-stack.json'), 'w') as f:
+        #     json.dump(self._call_stack, f)
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]

@@ -121,12 +121,13 @@ class Transient(Module):
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
+                        print(self._model._inflect.plural(x))
                         self._data.setdefault(
                             self._model._inflect.plural(x),
                             []).append(entry.get(x, falseval))
 
-        if 'times' not in self._data or ('magnitudes' not in self._data and
-                                         'frequencies' not in self._data):
+        if 'times' not in self._data or not any([x in self._data for x in [
+                'magnitudes', 'frequencies', 'countrates']]):
             print('No fittable data in `{}`!'.format(name))
             return False
 
@@ -151,7 +152,7 @@ class Transient(Module):
             obs = list(
                 zip(*(self._data['systems'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'])))
+                          'frequencies'], self._data['countrates'])))
             if len(band_list):
                 b_insts = band_instruments if len(band_instruments) == len(
                     band_list) else ([band_instruments[0] for x in band_list]
@@ -187,9 +188,11 @@ class Transient(Module):
                     set([x for x in self._data['times']] + list(
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
             currobslist = list(
-                zip(*(self._data['times'], self._data['systems'], self._data[
-                    'instruments'], self._data['bandsets'], self._data[
-                        'bands'], self._data['frequencies'])))
+                zip(*(
+                    self._data['times'], self._data['systems'],
+                    self._data['instruments'], self._data['bandsets'],
+                    self._data['bands'], self._data['frequencies'],
+                    self._data['countrates'])))
 
             obslist = []
             for t in alltimes:
@@ -204,7 +207,8 @@ class Transient(Module):
                 (self._data['extra_times'], self._data['extra_systems'],
                  self._data['extra_instruments'], self._data['extra_bandsets'],
                  self._data['extra_bands'],
-                 self._data['extra_frequencies']) = zip(*obslist)
+                 self._data['extra_frequencies'],
+                 self._data['extra_countrates']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
             minv = self._data['min_' + qkey]
