@@ -59,8 +59,9 @@ class Likelihood(Module):
         self._o_band_vs = self._band_vs[self._observed]
 
         cmask = self._cts != ''
-        self._o_band_vs[cmask] = self._cts[cmask] * 10.0 ** (
-            self._o_band_vs[cmask] / 2.5)
+        if np.count_nonzero(cmask):
+            self._o_band_vs[cmask] = self._cts[cmask] * 10.0 ** (
+                self._o_band_vs[cmask] / 2.5)
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
@@ -143,7 +144,7 @@ class Likelihood(Module):
         self._times = np.array(kwargs.get('times', []))
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
-        self._cts = kwargs.get('countrates', [])
+        self._cts = np.array(kwargs.get('countrates', []))
         self._freqs = kwargs.get('frequencies', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
         self._e_l_mags = kwargs.get('e_lower_magnitudes', [])

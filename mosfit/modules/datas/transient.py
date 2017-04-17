@@ -121,10 +121,11 @@ class Transient(Module):
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
-                        print(self._model._inflect.plural(x))
+                        plural = self._model._inflect.plural(x)
+                        if plural == x:
+                            plural = x + 's'
                         self._data.setdefault(
-                            self._model._inflect.plural(x),
-                            []).append(entry.get(x, falseval))
+                            plural, []).append(entry.get(x, falseval))
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):
