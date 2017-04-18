@@ -23,6 +23,7 @@ class Photometry(Module):
 
     FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
     ANG_CGS = u.Angstrom.cgs.scale
+    H_C_ANG_CGS = c.h.cgs.value * c.c.cgs.value * u.Angstrom.cgs.scale
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -235,6 +236,8 @@ class Photometry(Module):
                 elif 'SVO' in band:
                     self._band_offsets[i] = zps[-1]
 
+            self._band_wavelengths[i] = np.array(self._band_wavelengths[i])
+
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
 
@@ -287,10 +290,11 @@ class Photometry(Module):
                     eff_fluxes[li] = np.trapz(
                         yvals, dx=dx) / self._filter_integrals[bi]
                 elif self._observation_types[li] == 'countrate':
-                    wavs = kwargs['sample_wavelengths'][bi]
+                    wavs = np.array(kwargs['sample_wavelengths'][bi])
                     yvals = np.interp(
                         wavs, self._band_wavelengths[bi],
-                        self._band_areas[bi]) * kwargs['seds'][li] / zp1
+                        self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
+                            self.H_C_ANG_CGS / wavs)
                     eff_fluxes[li] = np.trapz(
                         yvals, wavs) / self._filter_integrals[bi]
                 else:
