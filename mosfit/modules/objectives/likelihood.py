@@ -62,9 +62,6 @@ class Likelihood(Module):
             self._o_band_vs[self._cmask] = self._cts[self._cmask] * 10.0 ** (
                 self._o_band_vs[self._cmask] / 2.5)
 
-        print([o for o, ct in zip(self._model_observations, self._cts) if
-               ct is not None])
-
         # Calculate (model - obs) residuals.
         residuals = np.array([
             (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0) if ct

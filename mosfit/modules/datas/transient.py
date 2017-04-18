@@ -178,7 +178,7 @@ class Transient(Module):
                     band_list) else ([band_bandsets[0] for x in band_list]
                                      if len(band_bandsets) else
                                      ['' for x in band_list])
-                b_freqs = ['' for x in band_list]
+                b_freqs = [None for x in band_list]
                 obs.extend(
                     list(
                         zip(*(b_systs, b_insts, b_bsets, band_list, b_freqs))))
