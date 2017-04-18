@@ -23,16 +23,15 @@ class AllTimes(Array):
         self._instruments = []
         self._bandsets = []
         self._frequencies = []
-        self._countrates = []
 
     def process(self, **kwargs):
         """Process module."""
         old_bands = (self._systems, self._instruments, self._bandsets,
-                     self._bands, self._frequencies, self._countrates)
+                     self._bands, self._frequencies)
         if (kwargs.get('root', 'output') == 'output' and
                 'extra_times' in kwargs):
             obs_keys = ['times', 'systems', 'instruments', 'bandsets',
-                        'bands', 'frequencies', 'countrates']
+                        'bands', 'frequencies']
             obslist = (list(
                 zip(*([kwargs.get(k) for k in obs_keys] +
                       [[True for x in range(len(kwargs['times']))]]))
@@ -42,8 +41,7 @@ class AllTimes(Array):
             obslist.sort()
 
             (self._times, self._systems, self._instruments, self._bandsets,
-             self._bands, self._frequencies, self._countrates,
-             self._observed) = zip(*obslist)
+             self._bands, self._frequencies, self._observed) = zip(*obslist)
         else:
             self._times = kwargs['times']
             self._systems = kwargs['systems']
@@ -51,10 +49,9 @@ class AllTimes(Array):
             self._bandsets = kwargs['bandsets']
             self._bands = kwargs['bands']
             self._frequencies = [
-                x / frequency_unit(y) if x != '' else ''
+                x / frequency_unit(y) if x is not None else None
                 for x, y in zip(kwargs['frequencies'], kwargs['u_frequencies'])
             ]
-            self._countrates = kwargs['countrates']
             self._observed = [True for x in kwargs['times']]
 
         outputs = OrderedDict()
@@ -64,21 +61,21 @@ class AllTimes(Array):
         outputs['all_bandsets'] = self._bandsets
         outputs['all_bands'] = self._bands
         outputs['all_frequencies'] = self._frequencies
-        outputs['all_countrates'] = self._countrates
         if old_bands != (self._systems, self._instruments, self._bandsets,
-                         self._bands, self._frequencies, self._countrates):
+                         self._bands, self._frequencies):
             self._all_band_indices = [
                 (self._photometry.find_band_index(
-                    w, instrument=x, bandset=y, system=z) if a == '' else -1)
+                    w, instrument=x, bandset=y, system=z) if a is None else -1)
                 for w, x, y, z, a in zip(
                     self._bands, self._instruments, self._bandsets,
                     self._systems, self._frequencies)
             ]
-            self._all_band_kinds = [
-                'mag' if x == '' else 'cts' for x in self._countrates
+            self._observation_types = [
+                self._photometry._band_kinds[bi] if bi >= 0 else
+                'fluxdensity' for bi in self._all_band_indices
             ]
         outputs['all_band_indices'] = self._all_band_indices
-        outputs['all_band_kinds'] = self._all_band_kinds
+        outputs['observation_types'] = self._observation_types
         outputs['observed'] = self._observed
         return outputs
 

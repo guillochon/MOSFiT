@@ -58,10 +58,12 @@ class Likelihood(Module):
 
         self._o_band_vs = self._band_vs[self._observed]
 
-        cmask = self._cts != ''
-        if np.count_nonzero(cmask):
-            self._o_band_vs[cmask] = self._cts[cmask] * 10.0 ** (
-                self._o_band_vs[cmask] / 2.5)
+        if np.count_nonzero(self._cmask):
+            print(self._cts[self._cmask])
+            print(self._mags)
+            self._o_band_vs[self._cmask] = self._cts[self._cmask] * 10.0 ** (
+                self._o_band_vs[self._cmask] / 2.5)
+            print(self._o_band_vs[self._cmask])
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
@@ -172,58 +174,59 @@ class Likelihood(Module):
         # half-Gaussian, this is very approximate and can be improved upon.
         self._e_u_mags = [
             kwargs['default_upper_limit_error']
-            if (e == '' and eu == '' and self._upper_limits[i]) else
+            if (e is None and eu is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e == '' and eu == '') else (e if eu == '' else eu))
+             if (e is None and eu is None) else (e if eu is None else eu))
             for i, (e, eu) in enumerate(zip(self._e_mags, self._e_u_mags))
         ]
         self._e_l_mags = [
             kwargs['default_upper_limit_error']
-            if (e == '' and el == '' and self._upper_limits[i]) else
+            if (e is None and el is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e == '' and el == '') else (e if el == '' else el))
+             if (e is None and el is None) else (e if el is None else el))
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
         ]
 
         # Now counts
+        self._cmask = [x is not None for x in self._cts]
         self._e_u_cts = [
             kwargs['default_upper_limit_error']
-            if (e == '' and eu == '' and self._upper_limits[i]) else
+            if (e is None and eu is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e == '' and eu == '') else (e if eu == '' else eu))
+             if (e is None and eu is None) else (e if eu is None else eu))
             for i, (e, eu) in enumerate(zip(self._e_cts, self._e_u_cts))
         ]
         self._e_l_cts = [
             kwargs['default_upper_limit_error']
-            if (e == '' and el == '' and self._upper_limits[i]) else
+            if (e is None and el is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e == '' and el == '') else (e if el == '' else el))
+             if (e is None and el is None) else (e if el is None else el))
             for i, (e, el) in enumerate(zip(self._e_cts, self._e_l_cts))
         ]
 
         # Now flux densities
         self._e_u_fds = [
-            v if (e == '' and eu == '' and self._upper_limits[i]) else
-            (v if (e == '' and eu == '') else (e if eu == '' else eu))
+            v if (e is None and eu is None and self._upper_limits[i]) else
+            (v if (e is None and eu is None) else (e if eu is None else eu))
             for i, (e, eu, v) in enumerate(
                 zip(self._e_fds, self._e_u_fds, self._fds))
         ]
         self._e_l_fds = [
-            0.0 if self._upper_limits[i] else (v if (e == '' and el == '') else
-                                               (e if el == '' else el))
+            0.0 if self._upper_limits[i] else (
+                v if (e is None and el is None) else (e if el is None else el))
             for i, (e, el, v) in enumerate(
                 zip(self._e_fds, self._e_l_fds, self._fds))
         ]
         self._fds = [
-            x / flux_density_unit(y) if x != '' else ''
+            x / flux_density_unit(y) if x is not None else None
             for x, y in zip(self._fds, self._u_fds)
         ]
         self._e_u_fds = [
-            x / flux_density_unit(y) if x != '' else ''
+            x / flux_density_unit(y) if x is not None else None
             for x, y in zip(self._e_u_fds, self._u_fds)
         ]
         self._e_l_fds = [
-            x / flux_density_unit(y) if x != '' else ''
+            x / flux_density_unit(y) if x is not None else None
             for x, y in zip(self._e_l_fds, self._u_fds)
         ]
 

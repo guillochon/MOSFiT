@@ -43,6 +43,7 @@ class Transient(Module):
             return
         name = list(self._all_data.keys())[0]
         self._data['name'] = name
+        numeric_keys = set()
         for key in self._keys:
             if key not in self._all_data[name]:
                 continue
@@ -129,6 +130,8 @@ class Transient(Module):
                             plural = x + 's'
                         self._data.setdefault(
                             plural, []).append(entry.get(x, falseval))
+                        if x in num_subkeys:
+                            numeric_keys.add(plural)
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):
@@ -137,18 +140,22 @@ class Transient(Module):
 
         for key in list(self._data.keys()):
             if isinstance(self._data[key], list):
-                if not any(is_number(x) for x in self._data[key]):
+                if key not in numeric_keys:
                     continue
                 self._data[key] = [
                     (np.mean([float(y) for y in x]) if isinstance(
                         x, list) else float(x)) if
-                    is_number(x) else x for x in self._data[key]
+                    (is_number(x) and not isinstance(x, bool)) else (
+                        None if x == '' else x) for
+                    x in self._data[key]
                 ]
                 num_values = [
                     x for x in self._data[key] if isinstance(x, float)
                 ]
-                self._data['min_' + key] = min(num_values)
-                self._data['max_' + key] = max(num_values)
+                print(key)
+                if len(num_values):
+                    self._data['min_' + key] = min(num_values)
+                    self._data['max_' + key] = max(num_values)
             else:
                 if is_number(self._data[key]):
                     self._data[key] = float(self._data[key])
@@ -221,8 +228,6 @@ class Transient(Module):
                 self._data['extra_' + qkey] = [
                     x - minv for x in self._data['extra_' + qkey]
                 ]
-
-        print(self._data['countrates'])
 
         return True
 

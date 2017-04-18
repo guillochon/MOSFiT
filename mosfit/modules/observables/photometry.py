@@ -80,7 +80,7 @@ class Photometry(Module):
         self._band_offsets = [0.0] * self._n_bands
         self._band_xunits = ['Angstrom'] * self._n_bands
         self._band_yunits = [''] * self._n_bands
-        self._band_kinds = ['mag'] * self._n_bands
+        self._band_kinds = ['magnitude'] * self._n_bands
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
@@ -193,7 +193,7 @@ class Photometry(Module):
             xu = u.Unit(self._band_xunits[i])
             yu = u.Unit(self._band_yunits[i])
             if '{0}'.format(yu) == 'cm2':
-                self._band_kinds[i] = 'cts'
+                self._band_kinds[i] = 'countrate'
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
                 self._band_wavelengths[i] = [(c.c / (
@@ -260,7 +260,7 @@ class Photometry(Module):
         kwargs = self.prepare_input('luminosities', **kwargs)
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._all_band_kinds = kwargs['all_band_kinds']
+        self._observation_types = kwargs['observation_types']
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
@@ -275,7 +275,7 @@ class Photometry(Module):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if bi >= 0:
-                if self._all_band_kinds[li] == 'mag':
+                if self._observation_types[li] == 'magnitude':
                     offsets[li] = self._band_offsets[bi]
                     wavs = kwargs['sample_wavelengths'][bi]
                     dx = wavs[1] - wavs[0]
@@ -284,9 +284,8 @@ class Photometry(Module):
                         self._transmissions[bi]) * kwargs['seds'][li] / zp1
                     eff_fluxes[li] = np.trapz(
                         yvals, dx=dx) / self._filter_integrals[bi]
-                elif self._all_band_kinds[li] == 'cts':
+                elif self._observation_types[li] == 'countrate':
                     wavs = kwargs['sample_wavelengths'][bi]
-                    # Fix
                     yvals = np.interp(
                         wavs, self._band_energies[bi],
                         self._band_areas[bi]) * kwargs['seds'][li] / zp1
@@ -298,8 +297,9 @@ class Photometry(Module):
                 eff_fluxes[li] = kwargs['seds'][li][0] / self.ANG_CGS * (
                     C_CGS / (self._frequencies[li] ** 2))
         nbs = np.logical_or(np.array(self._band_indices) < 0, np.array(
-            self._all_band_kinds) != 'mag')
-        ybs = np.array(self._band_indices) >= 0
+            self._observation_types) != 'magnitude')
+        ybs = np.logical_and(np.array(self._band_indices) >= 0, np.array(
+            self._observation_types) == 'magnitude')
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
         return {'model_observations': observations}

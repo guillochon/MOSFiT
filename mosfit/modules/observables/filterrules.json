@@ -650,7 +650,7 @@
         ],
         "filters": {
             "": {
-                "path": "chandra_acis-s_.area",
+                "path": "chandra_acis-s.area",
                 "xunit": "keV",
                 "yunit": "cm2"
             }

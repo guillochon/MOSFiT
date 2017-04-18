@@ -13,8 +13,8 @@ class LightCurve(Output):
     _lc_keys = [
         'magnitudes', 'e_magnitudes', 'model_observations',
         'all_bands', 'all_systems', 'all_instruments', 'all_bandsets',
-        'all_times', 'all_frequencies', 'all_countrates', 'observed',
-        'all_band_indices'
+        'all_times', 'all_frequencies', 'observed', 'all_band_indices',
+        'observation_types'
     ]
 
     def __init__(self, **kwargs):
@@ -27,12 +27,6 @@ class LightCurve(Output):
         """Process module."""
         output = OrderedDict()
         for key in self._dense_keys:
-            if key == 'all_band_indices':
-                output['observation_types'] = [
-                    'magnitude' if x >= 0 else 'fluxdensity'
-                    for x in kwargs[key]
-                ]
-            else:
-                output[key.replace('all_', '')] = kwargs[key]
+            output[key.replace('all_', '')] = kwargs[key]
 
         return output
