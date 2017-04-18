@@ -247,7 +247,7 @@ class Photometry(Module):
             self, band, telescope='', instrument='', mode='', bandset='',
             system=''):
         """Find the index corresponding to the provided band information."""
-        for i in range(5):
+        for i in range(6):
             for bi, bnd in enumerate(self._unique_bands):
                 if (band == bnd['name'] and
                     (i > 4 or telescope == self._band_teles[bi]) and
