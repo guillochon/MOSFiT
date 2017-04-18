@@ -221,7 +221,7 @@ class Transient(Module):
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = tuple(([t] + list(o)))
+                    newobs = tuple([t] + list(o))
                     if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 
@@ -235,6 +235,11 @@ class Transient(Module):
                  self._data['extra_frequencies']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
+            if 'upperlimits' in self._data:
+                new_vals = np.array(self._data[qkey])[
+                    np.array(self._data['upperlimits']) != True]  # noqa E712
+                self._data['min_' + qkey] = min(new_vals)
+                self._data['max_' + qkey] = max(new_vals)
             minv = self._data['min_' + qkey]
             self._data[qkey] = [x - minv for x in self._data[qkey]]
             if 'extra_' + qkey in self._data:
