@@ -28,7 +28,7 @@ class AllTimes(Array):
 
     def process(self, **kwargs):
         """Process module."""
-        old_bands = (self._systems, self._telescopes, self._instruments,
+        old_bands = (self._telescopes, self._systems, self._instruments,
                      self._modes, self._bandsets,
                      self._bands, self._frequencies)
         if (kwargs.get('root', 'output') == 'output' and
