@@ -64,7 +64,7 @@ class Likelihood(Module):
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
-            (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0) if ct
+            (abs(x - ct) if not u or (x > ct and not isnan(x)) else 0.0) if ct
             is not None
             else
             (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0) if a
@@ -77,7 +77,7 @@ class Likelihood(Module):
 
         # Observational errors to be put in diagonal of error matrix.
         diag = [
-            ((ctel if x > ct else cteu) ** 2) if ct is not None else
+            ((ctel if x < ct else cteu) ** 2) if ct is not None else
             ((el if x > y else eu) ** 2) if a else
             ((fdel if x < fd else fdeu) ** 2)
             for x, y, eu, el, fd, fdeu, fdel, ct, ctel, cteu, o, a in zip(
