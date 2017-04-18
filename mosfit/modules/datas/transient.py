@@ -221,7 +221,7 @@ class Transient(Module):
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = tuple(([t] + o))
+                    newobs = tuple(([t] + list(o)))
                     if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 
