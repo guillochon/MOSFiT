@@ -27,7 +27,6 @@ class Photometry(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Photometry, self).__init__(**kwargs)
-        self._bands = []
 
         bands = kwargs.get('bands', '')
         bands = listify(bands)
@@ -265,15 +264,11 @@ class Photometry(Module):
     def process(self, **kwargs):
         """Process module."""
         kwargs = self.prepare_input('luminosities', **kwargs)
-        self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._observation_types = np.array(kwargs['observation_types'])
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
-        self._systems = kwargs['systems']
-        self._instruments = kwargs['instruments']
-        self._bandsets = kwargs['bandsets']
         self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
