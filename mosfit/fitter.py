@@ -1082,18 +1082,19 @@ class Fitter(object):
                                     i] * flux_density_unit('µJy')
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                        if output['telescopes'][i]:
+                        if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]
-                        if output['systems'][i]:
+                        if 'systems' in output and output['systems'][i]:
                             photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                        if output['bandsets'][i]:
+                        if 'bandsets' in output and output['bandsets'][i]:
                             photodict[PHOTOMETRY.BAND_SET] = output[
                                 'bandsets'][i]
-                        if output['instruments'][i]:
+                        if 'instruments' in output and output[
+                                'instruments'][i]:
                             photodict[PHOTOMETRY.INSTRUMENT] = output[
                                 'instruments'][i]
-                        if output['modes'][i]:
+                        if 'modes' in output and output['modes'][i]:
                             photodict[PHOTOMETRY.MODE] = output[
                                 'modes'][i]
                         entry.add_photometry(
