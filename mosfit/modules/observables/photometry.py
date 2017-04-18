@@ -267,7 +267,7 @@ class Photometry(Module):
         kwargs = self.prepare_input('luminosities', **kwargs)
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
-        self._observation_types = kwargs['observation_types']
+        self._observation_types = np.array(kwargs['observation_types'])
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
@@ -303,10 +303,8 @@ class Photometry(Module):
             else:
                 eff_fluxes[li] = kwargs['seds'][li][0] / self.ANG_CGS * (
                     C_CGS / (self._frequencies[li] ** 2))
-        nbs = np.logical_or(np.array(self._band_indices) < 0, np.array(
-            self._observation_types) != 'magnitude')
-        ybs = np.logical_and(np.array(self._band_indices) >= 0, np.array(
-            self._observation_types) == 'magnitude')
+        nbs = self._observation_types != 'magnitude'
+        ybs = self._observation_types == 'magnitude'
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
         return {'model_observations': observations}
