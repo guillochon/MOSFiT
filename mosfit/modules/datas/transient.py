@@ -152,7 +152,6 @@ class Transient(Module):
                 num_values = [
                     x for x in self._data[key] if isinstance(x, float)
                 ]
-                print(key)
                 if len(num_values):
                     self._data['min_' + key] = min(num_values)
                     self._data['max_' + key] = max(num_values)

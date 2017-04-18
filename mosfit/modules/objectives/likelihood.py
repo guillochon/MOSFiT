@@ -59,30 +59,35 @@ class Likelihood(Module):
         self._o_band_vs = self._band_vs[self._observed]
 
         if np.count_nonzero(self._cmask):
-            print(self._cts[self._cmask])
-            print(self._mags)
             self._o_band_vs[self._cmask] = self._cts[self._cmask] * 10.0 ** (
                 self._o_band_vs[self._cmask] / 2.5)
-            print(self._o_band_vs[self._cmask])
+
+        print([o for o, ct in zip(self._model_observations, self._cts) if
+               ct is not None])
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
+            (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0) if ct
+            is not None
+            else
             (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0) if a
             else
             (abs(x - fd) if not u or (x > fd and not isnan(x)) else 0.0)
-            for x, y, fd, u, o, a in zip(
-                self._model_observations, self._mags, self._fds,
+            for x, y, ct, fd, u, o, a in zip(
+                self._model_observations, self._mags, self._cts, self._fds,
                 self._upper_limits, self._observed, self._are_bands) if o
         ])
 
         # Observational errors to be put in diagonal of error matrix.
         diag = [
+            ((ctel if x > ct else cteu) ** 2) if ct is not None else
             ((el if x > y else eu) ** 2) if a else
             ((fdel if x < fd else fdeu) ** 2)
-            for x, y, eu, el, fd, fdeu, fdel, o, a in zip(
+            for x, y, eu, el, fd, fdeu, fdel, ct, ctel, cteu, o, a in zip(
                 self._model_observations, self._mags,
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
-                self._e_l_fds, self._observed, self._are_bands) if o
+                self._e_l_fds, self._cts, self._e_l_cts, self._e_u_cts,
+                self._observed, self._are_bands) if o
         ]
 
         is_diag = False

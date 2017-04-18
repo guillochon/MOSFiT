@@ -196,8 +196,9 @@ class Photometry(Module):
                 self._band_kinds[i] = 'countrate'
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
-                self._band_wavelengths[i] = [(c.c / (
-                    x * xu / c.h)).value for x in self._band_energies[i]]
+                self._band_wavelengths[i] = [
+                    (c.c / (x * xu / c.h) / (1.0 * u.Angstrom)).cgs.value
+                    for x in self._band_energies[i]]
                 self._filter_integrals[i] = np.trapz(
                     np.array(self._band_areas[i]),
                     self._band_energies[i])
