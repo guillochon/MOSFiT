@@ -288,12 +288,12 @@ class Photometry(Module):
                 elif self._observation_types[li] == 'countrate':
                     wavs = kwargs['sample_wavelengths'][bi]
                     yvals = np.interp(
-                        wavs, self._band_energies[bi],
+                        wavs, self._band_wavelengths[bi],
                         self._band_areas[bi]) * kwargs['seds'][li] / zp1
                     eff_fluxes[li] = np.trapz(
                         yvals, wavs) / self._filter_integrals[bi]
                 else:
-                    raise RuntimeError('Unknown band kind.')
+                    raise RuntimeError('Unknown observation kind.')
             else:
                 eff_fluxes[li] = kwargs['seds'][li][0] / self.ANG_CGS * (
                     C_CGS / (self._frequencies[li] ** 2))
