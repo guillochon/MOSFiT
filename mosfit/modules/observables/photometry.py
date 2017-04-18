@@ -325,9 +325,9 @@ class Photometry(Module):
     def abmag(self, eff_fluxes, offsets):
         """Convert fluxes into AB magnitude."""
         mags = np.full(len(eff_fluxes), np.inf)
-        mags[eff_fluxes !=
-             0.0] = - offsets[eff_fluxes != 0.0] - MAG_FAC * (
-                 np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
+        ef_mask = eff_fluxes != 0.0
+        mags[ef_mask] = - offsets[ef_mask] - MAG_FAC * (
+            np.log10(eff_fluxes[ef_mask]) - self._ldist_const)
         return mags
 
     def set_variance_bands(self, band_pairs):
