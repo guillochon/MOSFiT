@@ -1,6 +1,7 @@
 include mosfit/cache/names.min.json
 include LICENSE
 include test.sh
+include mosfit/strings.json
 exclude docs/_build
 exclude docs/api
 exclude build/
