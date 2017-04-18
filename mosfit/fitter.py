@@ -530,7 +530,9 @@ class Fitter(object):
             ubs = filts._unique_bands
             filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
                           filts._average_wavelengths[bis[i]],
-                          filts._band_offsets[bis[i]], ois[i], bis[i])
+                          filts._band_offsets[bis[i]],
+                          filts._band_kinds[bis[i]],
+                          ois[i], bis[i])
                          for i in range(len(bis))]
             filterrows = [(
                 ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
@@ -539,7 +541,8 @@ class Fitter(object):
                         filter(None, (
                             'Bandset: ' + s[1] if s[1] else '',
                             'System: ' + s[0] if s[0] else '',
-                            'AB offset: ' + pretty_num(s[3]))))) +
+                            'AB offset: ' + pretty_num(
+                                s[3]) if s[4] == 'magnitude' else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
@@ -1082,6 +1085,9 @@ class Fitter(object):
                                     i] * flux_density_unit('µJy')
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['telescopes'][i]:
+                            photodict[PHOTOMETRY.TELESCOPE] = output[
+                                'telescopes'][i]
                         if output['systems'][i]:
                             photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
                         if output['bandsets'][i]:
@@ -1090,6 +1096,9 @@ class Fitter(object):
                         if output['instruments'][i]:
                             photodict[PHOTOMETRY.INSTRUMENT] = output[
                                 'instruments'][i]
+                        if output['modes'][i]:
+                            photodict[PHOTOMETRY.MODE] = output[
+                                'modes'][i]
                         entry.add_photometry(
                             compare_to_existing=False, **photodict)
 

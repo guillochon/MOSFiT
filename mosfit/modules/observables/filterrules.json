@@ -645,12 +645,63 @@
         }
     },
     {
+        "telescopes": [
+            "Chandra"
+        ],
         "instruments": [
             "ACIS-S"
         ],
         "filters": {
             "": {
                 "path": "chandra_acis-s.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "XMM"
+        ],
+        "instruments": [
+            "PN"
+        ],
+        "filters": {
+            "": {
+                "path": "xmm_pn_medium.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "Swift"
+        ],
+        "instruments": [
+            "XRT"
+        ],
+        "modes":[
+            "PC"
+        ],
+        "filters": {
+            "": {
+                "path": "swift_xrt_pc.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "ROSAT"
+        ],
+        "instruments": [
+            "PSPC"
+        ],
+        "filters": {
+            "": {
+                "path": "rosat_pspc_r4tor7.area",
                 "xunit": "keV",
                 "yunit": "cm2"
             }

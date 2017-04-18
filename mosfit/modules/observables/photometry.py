@@ -49,11 +49,15 @@ class Photometry(Module):
                     {
                         'systems': xx,
                         'instruments': yy,
-                        'bandsets': zz
+                        'bandsets': zz,
+                        'telescopes': tt,
+                        'modes': mm
                     }
                     for xx in rule.get('systems', [''])
                     for yy in rule.get('instruments', [''])
                     for zz in rule.get('bandsets', [''])
+                    for tt in rule.get('telescopes', [''])
+                    for mm in rule.get('modes', [''])
                 ]
                 for bnd in rule.get('filters', []):
                     if band == bnd or band == '':
@@ -67,6 +71,8 @@ class Photometry(Module):
         self._band_insts = [x['instruments'] for x in self._unique_bands]
         self._band_bsets = [x['bandsets'] for x in self._unique_bands]
         self._band_systs = [x['systems'] for x in self._unique_bands]
+        self._band_teles = [x['telescopes'] for x in self._unique_bands]
+        self._band_modes = [x['modes'] for x in self._unique_bands]
         self._band_names = [x['name'] for x in self._unique_bands]
         self._n_bands = len(self._unique_bands)
         self._band_wavelengths = [[] for i in range(self._n_bands)]
@@ -85,8 +91,11 @@ class Photometry(Module):
         if self._pool.is_master():
             vo_tabs = OrderedDict()
 
+        self._printer.prt('')
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
+                self._printer.inline('Loading bands [ {0:.0f}% ]'.format(
+                    100.0 * float(i) / len(self._unique_bands)))
                 systems = ['AB']
                 zps = [0.0]
                 if 'SVO' in band:
@@ -193,12 +202,12 @@ class Photometry(Module):
             xu = u.Unit(self._band_xunits[i])
             yu = u.Unit(self._band_yunits[i])
             if '{0}'.format(yu) == 'cm2':
+                xscale = (c.c / (xu / c.h) / (1.0 * u.Angstrom)).cgs.value
                 self._band_kinds[i] = 'countrate'
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
                 self._band_wavelengths[i] = [
-                    (c.c / (x * xu / c.h) / (1.0 * u.Angstrom)).cgs.value
-                    for x in self._band_energies[i]]
+                    xscale / x for x in self._band_energies[i]]
                 self._filter_integrals[i] = np.trapz(
                     np.array(self._band_areas[i]),
                     self._band_energies[i])
@@ -230,31 +239,28 @@ class Photometry(Module):
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
 
-    def find_band_index(self, band, instrument='', bandset='', system=''):
+        if self._pool.is_master():
+            self._printer.inline('Loading bands complete.'.format(
+                100.0 * float(i) / len(self._unique_bands)))
+
+    def find_band_index(
+            self, band, telescope='', instrument='', mode='', bandset='',
+            system=''):
         """Find the index corresponding to the provided band information."""
-        for i in range(4):
+        for i in range(5):
             for bi, bnd in enumerate(self._unique_bands):
-                if (i == 0 and band == bnd['name'] and
-                        instrument == self._band_insts[bi] and
-                        bandset == self._band_bsets[bi] and
-                        system == self._band_systs[bi]):
-                    return bi
-                elif (i == 1 and band == bnd['name'] and
-                      instrument == self._band_insts[bi] and
-                      system == self._band_systs[bi]):
-                    return bi
-                elif (i == 2 and band == bnd['name'] and
-                      system == self._band_systs[bi]):
-                    return bi
-                elif (i == 3 and band == bnd['name'] and
-                      '' == self._band_insts[bi] and
-                      '' == self._band_bsets[bi] and
-                      '' == self._band_systs[bi]):
+                if (band == bnd['name'] and
+                    (i > 4 or telescope == self._band_teles[bi]) and
+                    (i > 3 or instrument == self._band_insts[bi]) and
+                    (i > 2 or mode == self._band_modes[bi]) and
+                    (i > 1 or bandset == self._band_bsets[bi]) and
+                        (i > 0 or system == self._band_systs[bi])):
                     return bi
         raise ValueError(
-            'Cannot find band index for `{}` band of bandset `{}` with '
-            'instrument `{}` in the `{}` system!'.format(band, bandset,
-                                                         instrument, system))
+            'Cannot find band index for `{}` band of bandset `{}` '
+            'in mode `{}` with '
+            'instrument `{}` on telescope `{}` in the `{}` system!'.format(
+                band, bandset, mode, instrument, telescope, system))
 
     def process(self, **kwargs):
         """Process module."""

@@ -33,8 +33,10 @@ class Transient(Module):
                  exclude_bands=[],
                  exclude_instruments=[],
                  band_list=[],
+                 band_telescopes=[],
                  band_systems=[],
                  band_instruments=[],
+                 band_modes=[],
                  band_bandsets=[]):
         """Set transient data."""
         self._all_data = all_data
@@ -162,17 +164,26 @@ class Transient(Module):
 
         if 'times' in self._data and smooth_times >= 0:
             obs = list(
-                zip(*(self._data['systems'], self._data['instruments'],
+                zip(*(self._data['telescopes'], self._data['systems'],
+                      self._data['modes'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'], self._data[
                           'frequencies'])))
             if len(band_list):
-                b_insts = band_instruments if len(band_instruments) == len(
-                    band_list) else ([band_instruments[0] for x in band_list]
-                                     if len(band_instruments) else
+                b_teles = band_telescopes if len(band_telescopes) == len(
+                    band_list) else ([band_telescopes[0] for x in band_list]
+                                     if len(band_telescopes) else
                                      ['' for x in band_list])
                 b_systs = band_systems if len(band_systems) == len(
                     band_list) else ([band_systems[0] for x in band_list]
                                      if len(band_systems) else
+                                     ['' for x in band_list])
+                b_modes = band_modes if len(band_modes) == len(
+                    band_list) else ([band_modes[0] for x in band_list]
+                                     if len(band_modes) else
+                                     ['' for x in band_list])
+                b_insts = band_instruments if len(band_instruments) == len(
+                    band_list) else ([band_instruments[0] for x in band_list]
+                                     if len(band_instruments) else
                                      ['' for x in band_list])
                 b_bsets = band_bandsets if len(band_bandsets) == len(
                     band_list) else ([band_bandsets[0] for x in band_list]
@@ -181,7 +192,8 @@ class Transient(Module):
                 b_freqs = [None for x in band_list]
                 obs.extend(
                     list(
-                        zip(*(b_systs, b_insts, b_bsets, band_list, b_freqs))))
+                        zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
+                              band_list, b_freqs))))
 
             uniqueobs = []
             for o in obs:
@@ -201,21 +213,23 @@ class Transient(Module):
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
             currobslist = list(
                 zip(*(
-                    self._data['times'], self._data['systems'],
+                    self._data['times'], self._data['telescopes'],
+                    self._data['systems'], self._data['modes'],
                     self._data['instruments'], self._data['bandsets'],
                     self._data['bands'], self._data['frequencies'])))
 
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = tuple((t, o[0], o[1], o[2], o[3], o[4]))
+                    newobs = tuple(([t] + o))
                     if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 
             obslist.sort()
 
             if len(obslist):
-                (self._data['extra_times'], self._data['extra_systems'],
+                (self._data['extra_times'], self._data['extra_telescopes'],
+                 self._data['extra_systems'], self._data['extra_modes'],
                  self._data['extra_instruments'], self._data['extra_bandsets'],
                  self._data['extra_bands'],
                  self._data['extra_frequencies']) = zip(*obslist)
