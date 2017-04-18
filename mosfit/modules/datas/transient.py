@@ -95,7 +95,9 @@ class Transient(Module):
                     skip_entry = False
                     for x in subkeys:
                         if limit_fitting_mjds is not False and x == 'time':
-                            val = float(entry.get(x, None))
+                            val = np.mean([
+                                float(x) for x in listify(
+                                    entry.get(x, None))])
                             if (val < limit_fitting_mjds[0] or
                                     val > limit_fitting_mjds[1]):
                                 skip_entry = True
@@ -123,15 +125,20 @@ class Transient(Module):
                         continue
 
                 for x in subkeys:
-                    falseval = False if x in boo_subkeys else ''
+                    falseval = (
+                        False if x in boo_subkeys else None if
+                        x in num_subkeys else '')
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
                         plural = self._model._inflect.plural(x)
                         if plural == x:
                             plural = x + 's'
-                        self._data.setdefault(
-                            plural, []).append(entry.get(x, falseval))
+                        val = entry.get(x, falseval)
+                        if x in num_subkeys:
+                            val = None if val is None else np.mean([
+                                float(x) for x in listify(val)])
+                        self._data.setdefault(plural, []).append(val)
                         if x in num_subkeys:
                             numeric_keys.add(plural)
 
@@ -144,13 +151,6 @@ class Transient(Module):
             if isinstance(self._data[key], list):
                 if key not in numeric_keys:
                     continue
-                self._data[key] = [
-                    (np.mean([float(y) for y in x]) if isinstance(
-                        x, list) else float(x)) if
-                    (is_number(x) and not isinstance(x, bool)) else (
-                        None if x == '' else x) for
-                    x in self._data[key]
-                ]
                 num_values = [
                     x for x in self._data[key] if isinstance(x, float)
                 ]
@@ -238,8 +238,9 @@ class Transient(Module):
             if 'upperlimits' in self._data:
                 new_vals = np.array(self._data[qkey])[
                     np.array(self._data['upperlimits']) != True]  # noqa E712
-                self._data['min_' + qkey] = min(new_vals)
-                self._data['max_' + qkey] = max(new_vals)
+                if len(new_vals):
+                    self._data['min_' + qkey] = min(new_vals)
+                    self._data['max_' + qkey] = max(new_vals)
             minv = self._data['min_' + qkey]
             self._data[qkey] = [x - minv for x in self._data[qkey]]
             if 'extra_' + qkey in self._data:
