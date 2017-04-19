@@ -142,8 +142,6 @@ class Fitter(object):
         if len(model_list) and not len(event_list):
             event_list = ['']
 
-        event_list = [x.replace('‑', '-') for x in event_list]
-
         self._catalogs = {
             'OSC': ('https://sne.space/astrocats/astrocats/'
                     'supernovae/output'),
@@ -154,11 +152,27 @@ class Fitter(object):
         if not len(event_list) and not len(model_list):
             prt.message('no_events_models', warning=True)
 
+        data = {}
+
+        new_event_list = []
+        for event in event_list:
+            if '.' in event and not event.endswith('.json'):
+                with open(event, 'r') as f:
+                    new_events = [
+                        it for s in [
+                            [y.strip("\" ") for y in x.replace(
+                                '\t', ',').split(',')]
+                            for x in f.read().splitlines()] for it in s]
+                new_event_list.extend(new_events)
+            else:
+                new_event_list.append(event)
+        event_list = new_event_list
+
+        event_list = [x.replace('‑', '-') for x in event_list]
+
         entries = [[] for x in range(len(event_list))]
         ps = [[] for x in range(len(event_list))]
         lnprobs = [[] for x in range(len(event_list))]
-
-        data = {}
 
         self._event_name = 'Batch'
         self._event_catalog = ''

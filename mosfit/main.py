@@ -38,9 +38,13 @@ def get_parser():
         dest='events',
         default=[],
         nargs='+',
-        help=("List of event names to be fit, delimited by spaces. If an "
+        help=("List of event names (or file names) to be fit, delimited by "
+              "spaces. If an "
               "event name contains a space, enclose the event's name in "
-              "double quote marks, e.g. \"SDSS-II SN 5944\"."))
+              "double quote marks, e.g. \"SDSS-II SN 5944\". Files with "
+              "`.json` extensions are presumed to be in Open Catalog "
+              "format, whereas files with any other extension will be read "
+              "as a list of event names."))
 
     parser.add_argument(
         '--models',
