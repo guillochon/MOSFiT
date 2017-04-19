@@ -149,6 +149,7 @@ class Transient(Module):
 
         for key in list(self._data.keys()):
             if isinstance(self._data[key], list):
+                self._data[key] = np.array(self._data[key])
                 if key not in numeric_keys:
                     continue
                 num_values = [

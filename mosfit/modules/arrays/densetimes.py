@@ -31,7 +31,6 @@ class DenseTimes(Array):
 
         outputs = OrderedDict()
         max_times = max(self._rest_times)
-        # NOTE: Need to check this logic.
         if max_times > self._rest_t_explosion:
             outputs['dense_times'] = np.unique(
                 np.concatenate(([0.0], [

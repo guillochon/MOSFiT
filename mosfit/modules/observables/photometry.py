@@ -68,25 +68,31 @@ class Photometry(Module):
                             band_list.append(new_band)
 
         self._unique_bands = band_list
-        self._band_insts = [x['instruments'] for x in self._unique_bands]
-        self._band_bsets = [x['bandsets'] for x in self._unique_bands]
-        self._band_systs = [x['systems'] for x in self._unique_bands]
-        self._band_teles = [x['telescopes'] for x in self._unique_bands]
-        self._band_modes = [x['modes'] for x in self._unique_bands]
-        self._band_names = [x['name'] for x in self._unique_bands]
+        self._band_insts = np.array(
+            [x['instruments'] for x in self._unique_bands], dtype=object)
+        self._band_bsets = np.array(
+            [x['bandsets'] for x in self._unique_bands], dtype=object)
+        self._band_systs = np.array(
+            [x['systems'] for x in self._unique_bands], dtype=object)
+        self._band_teles = np.array(
+            [x['telescopes'] for x in self._unique_bands], dtype=object)
+        self._band_modes = np.array(
+            [x['modes'] for x in self._unique_bands], dtype=object)
+        self._band_names = np.array(
+            [x['name'] for x in self._unique_bands], dtype=object)
         self._n_bands = len(self._unique_bands)
         self._band_wavelengths = [[] for i in range(self._n_bands)]
         self._band_energies = [[] for i in range(self._n_bands)]
         self._transmissions = [[] for i in range(self._n_bands)]
         self._band_areas = [[] for i in range(self._n_bands)]
-        self._min_waves = [0.0] * self._n_bands
-        self._max_waves = [0.0] * self._n_bands
-        self._filter_integrals = [0.0] * self._n_bands
-        self._average_wavelengths = [0.0] * self._n_bands
-        self._band_offsets = [0.0] * self._n_bands
-        self._band_xunits = ['Angstrom'] * self._n_bands
-        self._band_yunits = [''] * self._n_bands
-        self._band_kinds = ['magnitude'] * self._n_bands
+        self._min_waves = np.full(self._n_bands, 0.0)
+        self._max_waves = np.full(self._n_bands, 0.0)
+        self._filter_integrals = np.full(self._n_bands, 0.0)
+        self._average_wavelengths = np.full(self._n_bands, 0.0)
+        self._band_offsets = np.full(self._n_bands, 0.0)
+        self._band_xunits = np.full(self._n_bands, 'Angstrom', dtype=object)
+        self._band_yunits = np.full(self._n_bands, '', dtype=object)
+        self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
@@ -198,6 +204,8 @@ class Photometry(Module):
 
             xvals, yvals = list(
                 map(list, zip(*rows)))
+            xvals = np.array(xvals)
+            yvals = np.array(yvals)
 
             xu = u.Unit(self._band_xunits[i])
             yu = u.Unit(self._band_yunits[i])
@@ -206,8 +214,8 @@ class Photometry(Module):
                 self._band_kinds[i] = 'countrate'
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
-                self._band_wavelengths[i] = [
-                    xscale / x for x in self._band_energies[i]]
+                self._band_wavelengths[i] = np.array([
+                    xscale / x for x in self._band_energies[i]])
                 self._filter_integrals[i] = np.trapz(
                     np.array(self._band_areas[i]),
                     self._band_energies[i])
@@ -235,8 +243,6 @@ class Photometry(Module):
                     self._band_offsets[i] = band['offset']
                 elif 'SVO' in band:
                     self._band_offsets[i] = zps[-1]
-
-            self._band_wavelengths[i] = np.array(self._band_wavelengths[i])
 
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])

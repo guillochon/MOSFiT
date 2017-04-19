@@ -38,16 +38,15 @@ class DiffusionCSM(Transform):
             self._kappa * self._mass) / (13.8 * C_CGS * self._Rph) / DAY_CGS
 
         tbarg = self.MIN_EXP_ARG * self._tau_diff ** 2
-        new_lum = []
+        new_lum = np.zeros_like(self._times_to_process)
         evaled = False
         lum_cache = OrderedDict()
         min_te = min(self._dense_times_since_exp)
-        for te in self._times_to_process:
+        for ti, te in enumerate(self._times_to_process):
             if te <= 0.0:
-                new_lum.append(0.0)
                 continue
             if te in lum_cache:
-                new_lum.append(lum_cache[te])
+                new_lum[ti] = lum_cache[te]
                 continue
             te2 = te ** 2
             tb = max(np.sqrt(max(te2 - tbarg, 0.0)), min_te)
@@ -68,5 +67,5 @@ class DiffusionCSM(Transform):
             int_arg[np.isnan(int_arg)] = 0.0
             lum_val = np.trapz(int_arg, dx=dt)
             lum_cache[te] = lum_val
-            new_lum.append(lum_val)
+            new_lum[ti] = lum_val
         return {self.dense_key('luminosities'): new_lum}

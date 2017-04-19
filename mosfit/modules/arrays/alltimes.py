@@ -1,6 +1,7 @@
 """Definitions for the `AllTimes` class."""
 from collections import OrderedDict
 
+import numpy as np
 from mosfit.modules.arrays.array import Array
 from mosfit.utils import frequency_unit
 
@@ -45,8 +46,8 @@ class AllTimes(Array):
             obslist.sort()
 
             (self._times, self._telescopes, self._systems, self._instruments,
-             self._modes, self._bandsets,
-             self._bands, self._frequencies, self._observed) = zip(*obslist)
+             self._modes, self._bandsets, self._bands, self._frequencies,
+             self._observed) = np.vstack(obslist).T
         else:
             self._times = kwargs['times']
             self._telescopes = kwargs['telescopes']
@@ -55,11 +56,11 @@ class AllTimes(Array):
             self._modes = kwargs['modes']
             self._bandsets = kwargs['bandsets']
             self._bands = kwargs['bands']
-            self._frequencies = [
+            self._frequencies = np.array([
                 x / frequency_unit(y) if x is not None else None
                 for x, y in zip(kwargs['frequencies'], kwargs['u_frequencies'])
-            ]
-            self._observed = [True for x in kwargs['times']]
+            ])
+            self._observed = np.full_like(kwargs['times'], True, dtype=bool)
 
         outputs = OrderedDict()
         outputs['all_times'] = self._times
@@ -70,10 +71,10 @@ class AllTimes(Array):
         outputs['all_bandsets'] = self._bandsets
         outputs['all_bands'] = self._bands
         outputs['all_frequencies'] = self._frequencies
-        if old_bands != (self._telescopes, self._systems, self._instruments,
-                         self._modes, self._bandsets,
-                         self._bands, self._frequencies):
-            self._all_band_indices = [
+        if any(not np.array_equal(x, y) for x, y in zip(old_bands, (
+            self._telescopes, self._systems, self._instruments, self._modes,
+                self._bandsets, self._bands, self._frequencies))):
+            self._all_band_indices = np.array([
                 (self._photometry.find_band_index(
                     w, telescope=t, instrument=x, mode=m, bandset=y, system=z)
                  if a is None else -1)
@@ -81,11 +82,11 @@ class AllTimes(Array):
                     self._bands, self._telescopes, self._instruments,
                     self._modes, self._bandsets,
                     self._systems, self._frequencies)
-            ]
-            self._observation_types = [
+            ])
+            self._observation_types = np.array([
                 self._photometry._band_kinds[bi] if bi >= 0 else
                 'fluxdensity' for bi in self._all_band_indices
-            ]
+            ], dtype=object)
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observation_types'] = self._observation_types
         outputs['observed'] = self._observed
