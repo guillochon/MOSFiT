@@ -2,8 +2,9 @@
 from collections import OrderedDict
 
 import numpy as np
+from astrocats.catalog.utils import is_number
 from mosfit.modules.module import Module
-from mosfit.utils import is_number, listify
+from mosfit.utils import listify
 
 
 # Important: Only define one ``Module`` class per file.
@@ -32,8 +33,10 @@ class Transient(Module):
                  exclude_bands=[],
                  exclude_instruments=[],
                  band_list=[],
+                 band_telescopes=[],
                  band_systems=[],
                  band_instruments=[],
+                 band_modes=[],
                  band_bandsets=[]):
         """Set transient data."""
         self._all_data = all_data
@@ -42,6 +45,7 @@ class Transient(Module):
             return
         name = list(self._all_data.keys())[0]
         self._data['name'] = name
+        numeric_keys = set()
         for key in self._keys:
             if key not in self._all_data[name]:
                 continue
@@ -68,11 +72,12 @@ class Transient(Module):
                 if any([x in entry for x in exc_subkeys]):
                     continue
                 if any([
-                        x in entry and ((isinstance(entry[x], list) and all([
-                            is_number(y) and not np.isnan(float(y))
+                        x in entry and ((isinstance(entry[x], list) and any([
+                            not is_number(y) or np.isnan(float(y))
                             for y in entry[x]
-                        ])) or not is_number(entry[x]) or
-                        np.isnan(float(entry[x])))
+                        ])) or not isinstance(entry[x], list) and (
+                            not is_number(entry[x]) or np.isnan(
+                                float(entry[x]))))
                         for x in num_subkeys
                 ]):
                     continue
@@ -90,7 +95,9 @@ class Transient(Module):
                     skip_entry = False
                     for x in subkeys:
                         if limit_fitting_mjds is not False and x == 'time':
-                            val = float(entry.get(x, None))
+                            val = np.mean([
+                                float(x) for x in listify(
+                                    entry.get(x, None))])
                             if (val < limit_fitting_mjds[0] or
                                     val > limit_fitting_mjds[1]):
                                 skip_entry = True
@@ -111,37 +118,46 @@ class Transient(Module):
                     if skip_entry:
                         continue
 
-                    if (('magnitude' in entry) != ('band' in entry) or
-                            ('fluxdensity' in entry) !=
-                            ('frequency' in entry)):
+                    if ((('magnitude' in entry) != ('band' in entry)) or
+                        (('fluxdensity' in entry) != ('frequency' in entry)) or
+                        (('countrate' in entry) and
+                         ('instrument' not in entry))):
                         continue
 
                 for x in subkeys:
-                    falseval = False if x in boo_subkeys else ''
+                    falseval = (
+                        False if x in boo_subkeys else None if
+                        x in num_subkeys else '')
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
-                        self._data.setdefault(
-                            self._model._inflect.plural(x),
-                            []).append(entry.get(x, falseval))
+                        plural = self._model._inflect.plural(x)
+                        if plural == x:
+                            plural = x + 's'
+                        val = entry.get(x, falseval)
+                        if x in num_subkeys:
+                            val = None if val is None else np.mean([
+                                float(x) for x in listify(val)])
+                        self._data.setdefault(plural, []).append(val)
+                        if x in num_subkeys:
+                            numeric_keys.add(plural)
 
-        if 'times' not in self._data or ('magnitudes' not in self._data and
-                                         'frequencies' not in self._data):
+        if 'times' not in self._data or not any([x in self._data for x in [
+                'magnitudes', 'frequencies', 'countrates']]):
             print('No fittable data in `{}`!'.format(name))
             return False
 
         for key in list(self._data.keys()):
             if isinstance(self._data[key], list):
-                if not any(is_number(x) for x in self._data[key]):
+                self._data[key] = np.array(self._data[key])
+                if key not in numeric_keys:
                     continue
-                self._data[key] = [
-                    float(x) if is_number(x) else x for x in self._data[key]
-                ]
                 num_values = [
                     x for x in self._data[key] if isinstance(x, float)
                 ]
-                self._data['min_' + key] = min(num_values)
-                self._data['max_' + key] = max(num_values)
+                if len(num_values):
+                    self._data['min_' + key] = min(num_values)
+                    self._data['max_' + key] = max(num_values)
             else:
                 if is_number(self._data[key]):
                     self._data[key] = float(self._data[key])
@@ -149,26 +165,36 @@ class Transient(Module):
 
         if 'times' in self._data and smooth_times >= 0:
             obs = list(
-                zip(*(self._data['systems'], self._data['instruments'],
+                zip(*(self._data['telescopes'], self._data['systems'],
+                      self._data['modes'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'], self._data[
                           'frequencies'])))
             if len(band_list):
-                b_insts = band_instruments if len(band_instruments) == len(
-                    band_list) else ([band_instruments[0] for x in band_list]
-                                     if len(band_instruments) else
+                b_teles = band_telescopes if len(band_telescopes) == len(
+                    band_list) else ([band_telescopes[0] for x in band_list]
+                                     if len(band_telescopes) else
                                      ['' for x in band_list])
                 b_systs = band_systems if len(band_systems) == len(
                     band_list) else ([band_systems[0] for x in band_list]
                                      if len(band_systems) else
                                      ['' for x in band_list])
+                b_modes = band_modes if len(band_modes) == len(
+                    band_list) else ([band_modes[0] for x in band_list]
+                                     if len(band_modes) else
+                                     ['' for x in band_list])
+                b_insts = band_instruments if len(band_instruments) == len(
+                    band_list) else ([band_instruments[0] for x in band_list]
+                                     if len(band_instruments) else
+                                     ['' for x in band_list])
                 b_bsets = band_bandsets if len(band_bandsets) == len(
                     band_list) else ([band_bandsets[0] for x in band_list]
                                      if len(band_bandsets) else
                                      ['' for x in band_list])
-                b_freqs = ['' for x in band_list]
+                b_freqs = [None for x in band_list]
                 obs.extend(
                     list(
-                        zip(*(b_systs, b_insts, b_bsets, band_list, b_freqs))))
+                        zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
+                              band_list, b_freqs))))
 
             uniqueobs = []
             for o in obs:
@@ -187,26 +213,35 @@ class Transient(Module):
                     set([x for x in self._data['times']] + list(
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
             currobslist = list(
-                zip(*(self._data['times'], self._data['systems'], self._data[
-                    'instruments'], self._data['bandsets'], self._data[
-                        'bands'], self._data['frequencies'])))
+                zip(*(
+                    self._data['times'], self._data['telescopes'],
+                    self._data['systems'], self._data['modes'],
+                    self._data['instruments'], self._data['bandsets'],
+                    self._data['bands'], self._data['frequencies'])))
 
             obslist = []
             for t in alltimes:
                 for o in uniqueobs:
-                    newobs = tuple((t, o[0], o[1], o[2], o[3], o[4]))
+                    newobs = tuple([t] + list(o))
                     if newobs not in obslist and newobs not in currobslist:
                         obslist.append(newobs)
 
             obslist.sort()
 
             if len(obslist):
-                (self._data['extra_times'], self._data['extra_systems'],
+                (self._data['extra_times'], self._data['extra_telescopes'],
+                 self._data['extra_systems'], self._data['extra_modes'],
                  self._data['extra_instruments'], self._data['extra_bandsets'],
                  self._data['extra_bands'],
                  self._data['extra_frequencies']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
+            if 'upperlimits' in self._data:
+                new_vals = np.array(self._data[qkey])[
+                    np.array(self._data['upperlimits']) != True]  # noqa E712
+                if len(new_vals):
+                    self._data['min_' + qkey] = min(new_vals)
+                    self._data['max_' + qkey] = max(new_vals)
             minv = self._data['min_' + qkey]
             self._data[qkey] = [x - minv for x in self._data[qkey]]
             if 'extra_' + qkey in self._data:

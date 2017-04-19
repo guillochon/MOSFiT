@@ -28,7 +28,6 @@ class MagnetarConstraints(Constraint):
         self._times = kwargs[self.key('dense_times')]
         self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         self._lums = kwargs[self.key('dense_luminosities')]
-        self._redshift = kwargs[self.key('redshift')]
         self._neutrino_energy = kwargs[self.key('neutrino_energy')]
 
         # Magnetar rotational energy

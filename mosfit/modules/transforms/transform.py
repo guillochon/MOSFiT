@@ -1,5 +1,7 @@
 """Definitions for the `Transform` class."""
+import numpy as np
 from mosfit.modules.module import Module
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -20,13 +22,13 @@ class Transform(Module):
             self._dense_times = kwargs['dense_times']
             self._dense_luminosities = kwargs[self.key('dense_luminosities')]
         elif min(self._times) > self._rest_t_explosion:
-            self._dense_times = [self._rest_t_explosion] + self._times
-            self._dense_luminosities = [0.0] + kwargs[
-                self.key('dense_luminosities')]
-        self._times_since_exp = [(x - self._rest_t_explosion)
-                                 for x in self._times]
-        self._dense_times_since_exp = [(x - self._rest_t_explosion)
-                                       for x in self._dense_times]
+            self._dense_times = np.concatenate(
+                ([self._rest_t_explosion], self._times))
+            self._dense_luminosities = np.concatenate(
+                ([0.0], kwargs[self.key('dense_luminosities')]))
+        self._times_since_exp = self._times - self._rest_t_explosion
+        self._dense_times_since_exp = (
+            self._dense_times - self._rest_t_explosion)
         if self._provide_dense:
             self._times_to_process = self._dense_times_since_exp
         else:

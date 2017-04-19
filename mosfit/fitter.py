@@ -20,16 +20,16 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
+from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          is_number, listify, pretty_num, speak)
+                          listify, pretty_num, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -524,22 +524,25 @@ class Fitter(object):
                     ]))
             band_len = max([
                 len(self._model._modules['photometry']._unique_bands[bi][
-                    'SVO']) for bi in bis
+                    'origin']) for bi in bis
             ])
             filts = self._model._modules['photometry']
             ubs = filts._unique_bands
             filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
                           filts._average_wavelengths[bis[i]],
-                          filts._band_offsets[bis[i]], ois[i], bis[i])
+                          filts._band_offsets[bis[i]],
+                          filts._band_kinds[bis[i]],
+                          ois[i], bis[i])
                          for i in range(len(bis))]
             filterrows = [(
-                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
                 .ljust(band_len) + ' [' + ', '.join(
                     list(
                         filter(None, (
                             'Bandset: ' + s[1] if s[1] else '',
                             'System: ' + s[0] if s[0] else '',
-                            'AB offset: ' + pretty_num(s[3]))))) +
+                            'AB offset: ' + pretty_num(
+                                s[3]) if s[4] == 'magnitude' else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
@@ -551,13 +554,10 @@ class Fitter(object):
         self._fracking = fracking
         if burn is not None:
             self._burn_in = min(burn, iterations)
-            self._post_burn = max(iterations - burn, 0)
         elif post_burn is not None:
-            self._post_burn = post_burn
             self._burn_in = max(iterations - post_burn, 0)
         else:
             self._burn_in = int(np.round(iterations / 2))
-            self._post_burn = max(iterations - self._burn_in, 0)
 
         return True
 
@@ -1082,14 +1082,21 @@ class Fitter(object):
                                     i] * flux_density_unit('µJy')
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                        if output['systems'][i]:
+                        if 'telescopes' in output and output['telescopes'][i]:
+                            photodict[PHOTOMETRY.TELESCOPE] = output[
+                                'telescopes'][i]
+                        if 'systems' in output and output['systems'][i]:
                             photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                        if output['bandsets'][i]:
+                        if 'bandsets' in output and output['bandsets'][i]:
                             photodict[PHOTOMETRY.BAND_SET] = output[
                                 'bandsets'][i]
-                        if output['instruments'][i]:
+                        if 'instruments' in output and output[
+                                'instruments'][i]:
                             photodict[PHOTOMETRY.INSTRUMENT] = output[
                                 'instruments'][i]
+                        if 'modes' in output and output['modes'][i]:
+                            photodict[PHOTOMETRY.MODE] = output[
+                                'modes'][i]
                         entry.add_photometry(
                             compare_to_existing=False, **photodict)
 
