@@ -67,7 +67,11 @@ class tde_photosphere(Photosphere):
             np.savetxt('test_dir/test_photosphere/precut_photosphere/time+rphot'+'{:08d}'.format(self.testnum)+'.txt',
                             (self._times, rphot))
 
-        rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin         
+        rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin      
+
+        nan = rphot[np.isnan(rphot)]  
+        if len(nan) > 0:
+            print (rphot)
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
