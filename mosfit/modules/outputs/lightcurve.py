@@ -27,6 +27,10 @@ class LightCurve(Output):
     def process(self, **kwargs):
         """Process module."""
         output = OrderedDict()
+        for key in sorted(kwargs.keys()):
+            if key in self._dense_keys:
+                continue
+            output[key] = kwargs[key]
         for key in self._dense_keys:
             output[key.replace('all_', '')] = kwargs[key]
 

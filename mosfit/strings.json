@@ -48,6 +48,7 @@
     "walking": "Walking",
     "want_more_walkers": "While `emcee` accepts a number of walkers that is twice the number of dimensions or greater, simple tests with toy problems show poor convergence with this minimum. We suggest using at least 10x the number of dimensions (`-N {}` suggested for this fit), and preferably more, if feasible.",
     "warning": "Warning",
+    "writing_extras": "Writing extra keys...",
     "writing_full_chain": "Writing full chain...",
     "writing_model": "Writing model output..."
 }
