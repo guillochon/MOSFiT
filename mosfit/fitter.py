@@ -112,6 +112,7 @@ class Fitter(object):
                    maximum_memory=np.inf,
                    speak=False,
                    language='en',
+                   return_fits=True,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -416,9 +417,10 @@ class Fitter(object):
                             check_upload_quality=check_upload_quality,
                             run_until_converged=run_until_converged,
                             save_full_chain=save_full_chain)
-                        entries[ei][mi] = deepcopy(entry)
-                        ps[ei][mi] = deepcopy(p)
-                        lnprobs[ei][mi] = deepcopy(lnprob)
+                        if return_fits:
+                            entries[ei][mi] = deepcopy(entry)
+                            ps[ei][mi] = deepcopy(p)
+                            lnprobs[ei][mi] = deepcopy(lnprob)
 
                     if pool.is_master():
                         pool.close()

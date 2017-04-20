@@ -480,6 +480,8 @@ def main():
 
     args.start_time = time.time()
 
+    args.return_fits = False
+
     if (isinstance(args.extrapolate_time, list) and
             len(args.extrapolate_time) == 0):
         args.extrapolate_time = 100.0
