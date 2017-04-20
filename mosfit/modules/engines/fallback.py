@@ -532,7 +532,7 @@ class Fallback(Engine):
 
                 #logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
                 #tfloor = 0.01
-                tfloor = 0.01 #+ 0.9*tfallback # want first time to be ~ 0 (so 0.01)
+                tfloor = 0.01 + 0.9*tfallback # want first time to be ~ 0 (so 0.01)
                 indexext = len(time[time<prepeaktimes[index1]])
                 #textp = np.logspace(logtfloor, np.log10(time[int(indexext)]), num = ipeak*5) # ending extrapolation here will help make it a smoother transition
                 textp = np.linspace(tfloor,time[int(indexext)], num = ipeak*5)
