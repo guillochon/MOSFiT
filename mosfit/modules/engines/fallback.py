@@ -503,8 +503,6 @@ class Fallback(Engine):
                     prepeaktimes = time[:ipeak]
                     prepeakdmdt = dmdt[:ipeak]
 
-                p = 0.1 # fraction of pre-peak dmdt to use for extrapolation to early times
-                # Is this necessary?
                 start = 0 #int(len(prepeakdmdt)*0.05) #0 # will cut off some part of original dmdt array, this # might change
 
                 index1 = int(len(prepeakdmdt)*0.1) # last index of first part of data used for getting power law fit
