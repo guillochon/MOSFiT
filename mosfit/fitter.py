@@ -457,8 +457,9 @@ class Fitter(object):
             if cur_task['kind'] == 'data':
                 success = self._model._modules[task].set_data(
                     data,
-                    req_key_values={'band': self._model._bands,
-                                    'instrument': self._model._instruments},
+                    req_key_values=OrderedDict((
+                        ('band', self._model._bands),
+                        ('instrument', self._model._instruments))),
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
