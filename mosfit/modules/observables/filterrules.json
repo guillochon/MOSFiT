@@ -524,6 +524,27 @@
         }
     },
     {
+        "systems": [
+            "",
+            "AB"
+        ],
+        "telescopes": [
+            "",
+            "HST"
+        ],
+        "instruments": [
+            "",
+            "WFC3",
+            "UVIS"
+        ],
+        "filters": {
+            "F225W": {
+                "SVO": "HST/WFC3_UVIS1.F225W",
+                "offset": 0.0
+            }
+        }
+    },
+    {
         "bandsets": [
             "Johnson"
         ],
