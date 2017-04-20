@@ -40,6 +40,10 @@
                 "SVO": "2MASS/2MASS.Ks",
                 "offset": 0.0
             },
+            "Y": {
+                "SVO": "LCO/CSP.Y",
+                "offset": 0.0
+            },
             "u": {
                 "SVO": "SLOAN/SDSS.u",
                 "offset": 0.0
@@ -129,6 +133,9 @@
             },
             "Ks": {
                 "SVO": "2MASS/2MASS.Ks"
+            },
+            "Y": {
+                "SVO": "LCO/CSP.Y"
             },
             "u": {
                 "SVO": "SLOAN/SDSS.u"
@@ -523,6 +530,7 @@
     {
         "instruments": [
             "PS1",
+            "Pan-STARRS1",
             "GPC"
         ],
         "bandsets": [
@@ -641,6 +649,71 @@
             "y": {
                 "SVO": "LSST/LSST.y",
                 "offset": 0.0
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "Chandra"
+        ],
+        "instruments": [
+            "ACIS-S"
+        ],
+        "filters": {
+            "": {
+                "path": "chandra_acis-s.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "XMM",
+            "XMM-Newton"
+        ],
+        "instruments": [
+            "PN"
+        ],
+        "filters": {
+            "": {
+                "path": "xmm_pn_medium.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "Swift"
+        ],
+        "instruments": [
+            "Swift-XRT",
+            "XRT"
+        ],
+        "modes":[
+            "PC"
+        ],
+        "filters": {
+            "": {
+                "path": "swift_xrt_pc.area",
+                "xunit": "keV",
+                "yunit": "cm2"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "ROSAT"
+        ],
+        "instruments": [
+            "PSPC"
+        ],
+        "filters": {
+            "": {
+                "path": "rosat_pspc_r4tor7.area",
+                "xunit": "keV",
+                "yunit": "cm2"
             }
         }
     }

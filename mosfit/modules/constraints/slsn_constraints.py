@@ -28,9 +28,8 @@ class SLSNConstraints(Constraint):
         self._vejecta = kwargs[self.key('vejecta')] * KM_CGS
         self._kappa = kwargs[self.key('kappa')]
         self._times = kwargs[self.key('dense_times')]
-        self._t_explosion = kwargs[self.key('texplosion')]
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         self._lums = kwargs[self.key('dense_luminosities')]
-        self._redshift = kwargs[self.key('redshift')]
         self._neutrino_energy = kwargs[self.key('neutrino_energy')]
         self._t_neb_min = kwargs[self.key('tnebular_min')]
 
@@ -39,10 +38,10 @@ class SLSNConstraints(Constraint):
                                                   2.) * self._Pspin ** (-2)
 
         # Ejecta kinetic energy
-        self._Ek = 0.5 * self._mejecta * self._vejecta**2
+        self._Ek = 0.5 * self._mejecta * self._vejecta ** 2
 
         # Construct array of rest-frame times since explosion
-        norm_times = (self._times - self._t_explosion) / (1.0 + self._redshift)
+        norm_times = self._times - self._rest_t_explosion
 
         # Shift array to get delta_t between observations
         shift_times = norm_times[:-1]
@@ -70,6 +69,6 @@ class SLSNConstraints(Constraint):
         # at t_obs-t_neb=50)
         if t_nebular < self._t_neb_min:
             self._score_modifier += -((self._t_neb_min -
-                                       t_nebular)**2 / (2. * 3.5 ** 2))
+                                       t_nebular) ** 2 / (2. * 3.5 ** 2))
 
         return {self.key('score_modifier'): self._score_modifier}

@@ -17,9 +17,7 @@ class Parameter(Module):
         self._min_value = kwargs.get('min_value', None)
         if (self._min_value is not None and self._max_value is not None and
                 self._min_value == self._max_value):
-            print('Warning: Minimum and maximum values are the same for '
-                  '`{}`, treating variable as a fixed parameter.'
-                  .format(self._name))
+            self._printer.message('min_max_same', [self._name], warning=True)
             self._value = self._min_value
             self._min_value, self._max_value = None, None
         self._value = kwargs.get('value', None)

@@ -23,17 +23,6 @@ def get_url_file_handle(url, timeout=10):
     return urlopen(url, timeout=timeout)
 
 
-def is_number(s):
-    """Check if input is numeric."""
-    if isinstance(s, bool):
-        return False
-    try:
-        float(s)
-        return True
-    except ValueError:
-        return False
-
-
 def is_integer(s):
     """Check if input is an integer."""
     if isinstance(s, list) and not isinstance(s, string_types):
@@ -176,3 +165,24 @@ def is_master():
         return MPI.COMM_WORLD.Get_rank() == 0
     except ImportError:
         return True
+
+
+def speak(text, lang='es'):
+    """Text to speech. For fun."""
+    try:
+        from gtts import gTTS
+        from pygame import mixer
+        from tempfile import TemporaryFile
+        from googletrans import Translator
+
+        translator = Translator()
+        tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
+        mixer.init()
+
+        sf = TemporaryFile()
+        tts.write_to_fp(sf)
+        sf.seek(0)
+        mixer.music.load(sf)
+        mixer.music.play()
+    except Exception:
+        raise

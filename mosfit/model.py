@@ -47,6 +47,7 @@ class Model(object):
         self._fitter = fitter
         self._print_trees = print_trees
         self._inflect = inflect.engine()
+        self._inflections = {}
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -71,15 +72,11 @@ class Model(object):
                 claimed_type = list(data.values())[0][
                     'claimedtype'][0][QUANTITY.VALUE]
             except Exception:
-                self._printer.wrapped(
-                    'No model specified and no claimed type for specified '
-                    'transient.', warning=True)
+                prt.message('no_model_type', warning=True)
             else:
                 type_options = model_types.get(claimed_type, [])
                 if not type_options:
-                    self._printer.wrapped(
-                        'No model available that matches the given '
-                        'transient\'s claimed type.', warning=True)
+                    prt.message('no_model_for_type', warning=True)
                 else:
                     if fitter._test:
                         self._model_name = type_options[0]
@@ -129,6 +126,10 @@ class Model(object):
         with open(model_path, 'r') as f:
             self._model.update(json.load(f, object_pairs_hook=OrderedDict))
 
+        # with open(os.path.join(
+        #         self.MODEL_OUTPUT_DIR, self._model_name + '.json'), 'w') as f:
+        #     json.dump(self._model, f)
+
         # Load model parameter file.
         model_pp = os.path.join(
             os.path.split(model_path)[0], 'parameters.json')
@@ -154,18 +155,15 @@ class Model(object):
             raise ValueError('Could not find parameter file!')
 
         if self._is_master:
-            prt.wrapped('Basic model file:', wrap_length)
-            prt.wrapped('  ' + basic_model_path, wrap_length)
-            prt.wrapped('Model file:', wrap_length)
-            prt.wrapped('  ' + model_path, wrap_length)
-            prt.wrapped('Parameter file:', wrap_length)
-            prt.wrapped('  ' + pp + '\n', wrap_length)
+            prt.message('files', [basic_model_path, model_path, pp],
+                        wrapped=False)
 
         with open(pp, 'r') as f:
             self._parameter_json = json.load(f, object_pairs_hook=OrderedDict)
         self._log = logging.getLogger()
         self._modules = OrderedDict()
         self._bands = []
+        self._instruments = []
 
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
@@ -216,6 +214,11 @@ class Model(object):
                 if unsorted_call_stack[task]['depth'] == depth:
                     self._call_stack[task] = unsorted_call_stack[task]
 
+        # with open(os.path.join(
+        #         self.MODEL_OUTPUT_DIR,
+        #         self._model_name + '-stack.json'), 'w') as f:
+        #     json.dump(self._call_stack, f)
+
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             mod_name = cur_task.get('class', task)
@@ -224,7 +227,8 @@ class Model(object):
                 cur_task.update(self._parameter_json[task])
             self._modules[task] = self._load_task_module(task)
             if mod_name == 'photometry':
-                self._bands = self._modules[task].band_names()
+                self._instruments = self._modules[task].instruments()
+                self._bands = self._modules[task].bands()
             self._modules[task].set_attributes(cur_task)
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
@@ -245,7 +249,7 @@ class Model(object):
             #     cur_task.update(self._parameter_json[task])
             # self._modules[task] = mod_class(name=task, **cur_task)
             # if mod_name == 'photometry':
-            #     self._bands = self._modules[task].band_names()
+            #     self._bands = self._modules[task].bands()
 
         # Look forward to see which modules want dense arrays.
         for task in self._call_stack:
@@ -291,7 +295,7 @@ class Model(object):
                     if ptask == 'photometry':
                         awaves = self._modules[ptask].average_wavelengths(
                             unique_band_indices)
-                        abands = self._modules[ptask].band_names(
+                        abands = self._modules[ptask].bands(
                             unique_band_indices)
                         band_pairs = list(sorted(zip(awaves, abands)))
                         break
@@ -545,6 +549,17 @@ class Model(object):
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l
+
+    def plural(self, x):
+        """Pluralize and cache model-related keys."""
+        if x not in self._inflections:
+            plural = self._inflect.plural(x)
+            if plural == x:
+                plural = x + 's'
+            self._inflections[x] = plural
+        else:
+            plural = self._inflections[x]
+        return plural
 
     def run_stack(self, x, root='objective'):
         """Run module stack.

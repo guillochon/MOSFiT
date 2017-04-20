@@ -8,6 +8,7 @@ from copy import deepcopy
 
 import numpy as np
 from astropy import units as u
+from astropy import constants as c
 from astropy.io.votable import parse as voparse
 from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
@@ -22,11 +23,11 @@ class Photometry(Module):
 
     FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
     ANG_CGS = u.Angstrom.cgs.scale
+    H_C_ANG_CGS = c.h.cgs.value * c.c.cgs.value * u.Angstrom.cgs.scale
 
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Photometry, self).__init__(**kwargs)
-        self._bands = []
 
         bands = kwargs.get('bands', '')
         bands = listify(bands)
@@ -48,11 +49,15 @@ class Photometry(Module):
                     {
                         'systems': xx,
                         'instruments': yy,
-                        'bandsets': zz
+                        'bandsets': zz,
+                        'telescopes': tt,
+                        'modes': mm
                     }
                     for xx in rule.get('systems', [''])
                     for yy in rule.get('instruments', [''])
                     for zz in rule.get('bandsets', [''])
+                    for tt in rule.get('telescopes', [''])
+                    for mm in rule.get('modes', [''])
                 ]
                 for bnd in rule.get('filters', []):
                     if band == bnd or band == '':
@@ -63,24 +68,40 @@ class Photometry(Module):
                             band_list.append(new_band)
 
         self._unique_bands = band_list
-        self._band_insts = [x['instruments'] for x in self._unique_bands]
-        self._band_bsets = [x['bandsets'] for x in self._unique_bands]
-        self._band_systs = [x['systems'] for x in self._unique_bands]
-        self._band_names = [x['name'] for x in self._unique_bands]
+        self._band_insts = np.array(
+            [x['instruments'] for x in self._unique_bands], dtype=object)
+        self._band_bsets = np.array(
+            [x['bandsets'] for x in self._unique_bands], dtype=object)
+        self._band_systs = np.array(
+            [x['systems'] for x in self._unique_bands], dtype=object)
+        self._band_teles = np.array(
+            [x['telescopes'] for x in self._unique_bands], dtype=object)
+        self._band_modes = np.array(
+            [x['modes'] for x in self._unique_bands], dtype=object)
+        self._band_names = np.array(
+            [x['name'] for x in self._unique_bands], dtype=object)
         self._n_bands = len(self._unique_bands)
         self._band_wavelengths = [[] for i in range(self._n_bands)]
+        self._band_energies = [[] for i in range(self._n_bands)]
         self._transmissions = [[] for i in range(self._n_bands)]
-        self._min_waves = [0.0] * self._n_bands
-        self._max_waves = [0.0] * self._n_bands
-        self._filter_integrals = [0.0] * self._n_bands
-        self._average_wavelengths = [0.0] * self._n_bands
-        self._band_offsets = [0.0] * self._n_bands
+        self._band_areas = [[] for i in range(self._n_bands)]
+        self._min_waves = np.full(self._n_bands, 0.0)
+        self._max_waves = np.full(self._n_bands, 0.0)
+        self._filter_integrals = np.full(self._n_bands, 0.0)
+        self._average_wavelengths = np.full(self._n_bands, 0.0)
+        self._band_offsets = np.full(self._n_bands, 0.0)
+        self._band_xunits = np.full(self._n_bands, 'Angstrom', dtype=object)
+        self._band_yunits = np.full(self._n_bands, '', dtype=object)
+        self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
+            self._printer.prt('')
 
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
+                self._printer.inline('Loading bands [ {0:.0f}% ]'.format(
+                    100.0 * float(i) / len(self._unique_bands)))
                 systems = ['AB']
                 zps = [0.0]
                 if 'SVO' in band:
@@ -109,8 +130,7 @@ class Photometry(Module):
                                     timeout=10)
                             except Exception:
                                 self._printer.inline(
-                                    'Warning: Could not download SVO filter '
-                                    '(are you online?), using cached filter.')
+                                    self._strings['cant_dl_svo'], warning=True)
                             else:
                                 with open(xml_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -162,7 +182,9 @@ class Photometry(Module):
                         else:
                             print('Error: Could not read SVO filter!')
                             raise RuntimeError
+                    self._unique_bands[i]['origin'] = band['SVO']
                 else:
+                    self._unique_bands[i]['origin'] = band['path']
                     path = band['path']
 
                 with open(os.path.join(dir_path, 'filters', path), 'r') as f:
@@ -177,63 +199,89 @@ class Photometry(Module):
                 rows = self._pool.comm.recv(source=0, tag=3)
                 zps = self._pool.comm.recv(source=0, tag=4)
 
-            self._band_wavelengths[i], self._transmissions[i] = list(
+            self._band_xunits[i] = band.get('xunit', 'Angstrom')
+            self._band_yunits[i] = band.get('yunit', '')
+
+            xvals, yvals = list(
                 map(list, zip(*rows)))
+            xvals = np.array(xvals)
+            yvals = np.array(yvals)
+
+            xu = u.Unit(self._band_xunits[i])
+            yu = u.Unit(self._band_yunits[i])
+            if '{0}'.format(yu) == 'cm2':
+                xscale = (c.c / (xu / c.h) / (1.0 * u.Angstrom)).cgs.value
+                self._band_kinds[i] = 'countrate'
+                self._band_energies[
+                    i], self._band_areas[i] = xvals, yvals
+                self._band_wavelengths[i] = np.array([
+                    xscale / x for x in self._band_energies[i]])
+                self._filter_integrals[i] = np.trapz(
+                    np.array(self._band_areas[i]),
+                    self._band_energies[i])
+                self._average_wavelengths[i] = np.trapz([
+                    x * y
+                    for x, y in zip(
+                        self._band_areas[i], self._band_wavelengths[i])
+                ], self._band_wavelengths[i]) / np.trapz(
+                    self._band_areas[i], self._band_wavelengths[i])
+            else:
+                self._band_wavelengths[
+                    i], self._transmissions[i] = xvals, yvals
+                self._filter_integrals[i] = self.FLUX_STD * np.trapz(
+                    np.array(self._transmissions[i]) /
+                    np.array(self._band_wavelengths[i]) ** 2,
+                    self._band_wavelengths[i])
+                self._average_wavelengths[i] = np.trapz([
+                    x * y
+                    for x, y in zip(
+                        self._transmissions[i], self._band_wavelengths[i])
+                ], self._band_wavelengths[i]) / np.trapz(
+                    self._transmissions[i], self._band_wavelengths[i])
+
+                if 'offset' in band:
+                    self._band_offsets[i] = band['offset']
+                elif 'SVO' in band:
+                    self._band_offsets[i] = zps[-1]
+
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._filter_integrals[i] = self.FLUX_STD * np.trapz(
-                np.array(self._transmissions[i]) /
-                np.array(self._band_wavelengths[i]) ** 2,
-                self._band_wavelengths[i])
-            self._average_wavelengths[i] = np.trapz([
-                x * y
-                for x, y in zip(self._transmissions[i], self._band_wavelengths[
-                    i])
-            ], self._band_wavelengths[i]) / np.trapz(self._transmissions[i],
-                                                     self._band_wavelengths[i])
 
-            if 'offset' in band:
-                self._band_offsets[i] = band['offset']
-            elif 'SVO' in band:
-                self._band_offsets[i] = zps[-1]
+        if self._pool.is_master():
+            self._printer.inline('Loading bands complete.'.format(
+                100.0 * float(i) / len(self._unique_bands)))
 
-    def find_band_index(self, band, instrument='', bandset='', system=''):
+    def find_band_index(
+            self, band, telescope='', instrument='', mode='', bandset='',
+            system=''):
         """Find the index corresponding to the provided band information."""
-        for i in range(4):
+        for i in range(6):
             for bi, bnd in enumerate(self._unique_bands):
-                if (i == 0 and band == bnd['name'] and
-                        instrument == self._band_insts[bi] and
-                        bandset == self._band_bsets[bi] and
-                        system == self._band_systs[bi]):
-                    return bi
-                elif (i == 1 and band == bnd['name'] and
-                      instrument == self._band_insts[bi] and
-                      system == self._band_systs[bi]):
-                    return bi
-                elif (i == 2 and band == bnd['name'] and
-                      system == self._band_systs[bi]):
-                    return bi
-                elif (i == 3 and band == bnd['name'] and
-                      '' == self._band_insts[bi] and
-                      '' == self._band_bsets[bi] and
-                      '' == self._band_systs[bi]):
+                if ((i < 5 or band != '') and band == bnd['name'] and
+                    (i > 4 or mode == '' or mode == self._band_modes[bi]) and
+                    (i > 3 or instrument == '' or
+                     instrument == self._band_insts[bi]) and
+                    (i > 2 or telescope == '' or
+                     telescope == self._band_teles[bi]) and
+                    (i > 1 or bandset == '' or
+                     bandset == self._band_bsets[bi]) and
+                    (i > 0 or system == '' or
+                     system == self._band_systs[bi])):
                     return bi
         raise ValueError(
-            'Cannot find band index for `{}` band of bandset `{}` with '
-            'instrument `{}` in the `{}` system!'.format(band, bandset,
-                                                         instrument, system))
+            'Cannot find band index for `{}` band of bandset `{}` '
+            'in mode `{}` with '
+            'instrument `{}` on telescope `{}` in the `{}` system!'.format(
+                band, bandset, mode, instrument, telescope, system))
 
     def process(self, **kwargs):
         """Process module."""
         kwargs = self.prepare_input('luminosities', **kwargs)
-        self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
+        self._observation_types = np.array(kwargs['observation_types'])
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs['luminosities']
-        self._systems = kwargs['systems']
-        self._instruments = kwargs['instruments']
-        self._bandsets = kwargs['bandsets']
         self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
@@ -242,19 +290,30 @@ class Photometry(Module):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if bi >= 0:
-                offsets[li] = self._band_offsets[bi]
-                wavs = kwargs['sample_wavelengths'][bi]
-                dx = wavs[1] - wavs[0]
-                yvals = np.interp(
-                    wavs, self._band_wavelengths[bi],
-                    self._transmissions[bi]) * kwargs['seds'][li] / zp1
-                eff_fluxes[li] = np.trapz(
-                    yvals, dx=dx) / self._filter_integrals[bi]
+                if self._observation_types[li] == 'magnitude':
+                    offsets[li] = self._band_offsets[bi]
+                    wavs = kwargs['sample_wavelengths'][bi]
+                    dx = wavs[1] - wavs[0]
+                    yvals = np.interp(
+                        wavs, self._band_wavelengths[bi],
+                        self._transmissions[bi]) * kwargs['seds'][li] / zp1
+                    eff_fluxes[li] = np.trapz(
+                        yvals, dx=dx) / self._filter_integrals[bi]
+                elif self._observation_types[li] == 'countrate':
+                    wavs = np.array(kwargs['sample_wavelengths'][bi])
+                    yvals = np.interp(
+                        wavs, self._band_wavelengths[bi],
+                        self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
+                            self.H_C_ANG_CGS / wavs)
+                    eff_fluxes[li] = np.trapz(
+                        yvals, wavs) / self._filter_integrals[bi]
+                else:
+                    raise RuntimeError('Unknown observation kind.')
             else:
                 eff_fluxes[li] = kwargs['seds'][li][0] / self.ANG_CGS * (
                     C_CGS / (self._frequencies[li] ** 2))
-        nbs = np.array(self._band_indices) < 0
-        ybs = np.array(self._band_indices) >= 0
+        nbs = self._observation_types != 'magnitude'
+        ybs = self._observation_types == 'magnitude'
         observations[nbs] = eff_fluxes[nbs] / self._dist_const
         observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
         return {'model_observations': observations}
@@ -266,19 +325,26 @@ class Photometry(Module):
                     enumerate(self._average_wavelengths) if i in indices]
         return self._average_wavelengths
 
-    def band_names(self, indices=None):
+    def bands(self, indices=None):
         """Return the list of unique band names."""
         if indices:
             return [x for i, x in
                     enumerate(self._band_names) if i in indices]
         return self._band_names
 
+    def instruments(self, indices=None):
+        """Return the list of instruments."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._band_insts) if i in indices]
+        return self._band_insts
+
     def abmag(self, eff_fluxes, offsets):
         """Convert fluxes into AB magnitude."""
         mags = np.full(len(eff_fluxes), np.inf)
-        mags[eff_fluxes !=
-             0.0] = - offsets[eff_fluxes != 0.0] - MAG_FAC * (
-                 np.log10(eff_fluxes[eff_fluxes != 0.0]) - self._ldist_const)
+        ef_mask = eff_fluxes != 0.0
+        mags[ef_mask] = - offsets[ef_mask] - MAG_FAC * (
+            np.log10(eff_fluxes[ef_mask]) - self._ldist_const)
         return mags
 
     def set_variance_bands(self, band_pairs):

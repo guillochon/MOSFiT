@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
+import gc
 import io
 import json
 import os
@@ -19,16 +20,16 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
+from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          is_number, listify, pretty_num)
+                          listify, pretty_num, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -100,7 +101,6 @@ class Fitter(object):
                    quiet=False,
                    upload_token='',
                    check_upload_quality=False,
-                   printer=None,
                    variance_for_each=[],
                    user_fixed_parameters=[],
                    run_until_converged=False,
@@ -110,6 +110,9 @@ class Fitter(object):
                    start_time=False,
                    print_trees=False,
                    maximum_memory=np.inf,
+                   speak=False,
+                   language='en',
+                   return_fits=True,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -118,16 +121,15 @@ class Fitter(object):
         self._maximum_walltime = maximum_walltime
         self._maximum_memory = maximum_memory
         self._debug = False
+        self._speak = speak
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
 
-        if not printer:
-            self._printer = Printer(wrap_length=wrap_length, quiet=quiet)
-        else:
-            self._printer = printer
+        self._printer = Printer(wrap_length=wrap_length, quiet=quiet,
+                                fitter=self, language=language)
 
         prt = self._printer
 
@@ -137,8 +139,6 @@ class Fitter(object):
         if len(model_list) and not len(event_list):
             event_list = ['']
 
-        event_list = [x.replace('‑', '-') for x in event_list]
-
         self._catalogs = {
             'OSC': ('https://sne.space/astrocats/astrocats/'
                     'supernovae/output'),
@@ -147,15 +147,29 @@ class Fitter(object):
         }
 
         if not len(event_list) and not len(model_list):
-            self._printer.wrapped(
-                'No events or models specified, initializing and then '
-                'exiting.', warning=True)
+            prt.message('no_events_models', warning=True)
+
+        data = {}
+
+        new_event_list = []
+        for event in event_list:
+            if '.' in event and not event.endswith('.json'):
+                with open(event, 'r') as f:
+                    new_events = [
+                        it for s in [
+                            [y.strip("\" ") for y in x.replace(
+                                '\t', ',').split(',')]
+                            for x in f.read().splitlines()] for it in s]
+                new_event_list.extend(new_events)
+            else:
+                new_event_list.append(event)
+        event_list = new_event_list
+
+        event_list = [x.replace('‑', '-') for x in event_list]
 
         entries = [[] for x in range(len(event_list))]
         ps = [[] for x in range(len(event_list))]
         lnprobs = [[] for x in range(len(event_list))]
-
-        data = {}
 
         self._event_name = 'Batch'
         self._event_catalog = ''
@@ -182,10 +196,7 @@ class Fitter(object):
                                          '.names.min.json') for x in
                             self._catalogs]
                         input_name = event.replace('.json', '')
-                        prt.wrapped(
-                            'Event `{}` interpreted as transient '
-                            'name, downloading lists of transient '
-                            'aliases...'.format(input_name))
+                        prt.message('dling_aliases', [input_name])
                         if not offline:
                             for ci, catalog in enumerate(self._catalogs):
                                 try:
@@ -194,10 +205,8 @@ class Fitter(object):
                                         '/names.min.json',
                                         timeout=10)
                                 except Exception:
-                                    prt.wrapped(
-                                        'Warning: Could not download {} '
-                                        'names (are you online?), using '
-                                        'cached list.'.format(catalog))
+                                    prt.message('cant_dl_names'
+                                                [catalog], warning=True)
                                     raise
                                 else:
                                     with open(names_paths[ci], 'wb') as f:
@@ -209,12 +218,10 @@ class Fitter(object):
                                     names[catalog] = json.load(
                                         f, object_pairs_hook=OrderedDict)
                             else:
-                                self._printer.wrapped(
-                                    'Warning: Could not read list of {} '
-                                    'names!'.format(catalog), warning=True)
+                                prt.message('cant_read_names', [catalog],
+                                            warning=True)
                                 if offline:
-                                    self._printer.wrapped(
-                                        'Try omitting the `--offline` flag.')
+                                    prt.message('omit_offline')
                                 raise RuntimeError
 
                             if event in names[catalog]:
@@ -239,9 +246,7 @@ class Fitter(object):
                                     event, namekeys, n=5, cutoff=0.8)
                                 # matches = []
                                 if len(matches) < 5 and is_number(event[0]):
-                                    prt.wrapped(
-                                        'Could not find event, performing '
-                                        'extended name search...')
+                                    prt.message('pef_ext_search')
                                     snprefixes = set(('SN19', 'SN20'))
                                     for name in names[catalog]:
                                         ind = re.search("\d", name)
@@ -284,28 +289,22 @@ class Fitter(object):
                                                 break
 
                         if not self._event_name:
-                            prt.wrapped(
-                                'Could not find event by that name, skipping!')
+                            prt.message('no_event_by_name')
                             continue
                         urlname = self._event_name + '.json'
                         name_path = os.path.join(dir_path, 'cache', urlname)
 
                         if not offline:
-                            prt.wrapped(
-                                'Found event by primary name `{}` in the {}, '
-                                'downloading data...'.format(
-                                    self._event_name, self._event_catalog))
+                            prt.message('dling_event', [
+                                self._event_name, self._event_catalog])
                             try:
                                 response = get_url_file_handle(
                                     self._catalogs[self._event_catalog] +
                                     '/json/' + urlname,
                                     timeout=10)
                             except Exception:
-                                prt.wrapped(
-                                    'Warning: Could not download data for '
-                                    ' `{}`, '
-                                    'will attempt to use cached data.'.format(
-                                        self._event_name))
+                                prt.message('cant_dl_event', [
+                                    self._event_name], warning=True)
                             else:
                                 with open(name_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -314,17 +313,13 @@ class Fitter(object):
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
-                        prt.wrapped('Event file:')
+                        prt.message('event_file')
                         prt.wrapped('  ' + path)
                     else:
-                        prt.wrapped(
-                            'Error: Could not find data for `{}` locally or '
-                            'in the {}.'.format(
-                                self._event_name,
-                                '/'.join(self._catalogs.keys())))
+                        prt.message('no_data', [
+                            self._event_name, '/'.join(self._catalogs.keys())])
                         if offline:
-                            prt.wrapped(
-                                'Try omitting the `--offline` flag.')
+                            prt.message('omit_offline')
                         raise RuntimeError
 
                     for rank in range(1, pool.size + 1):
@@ -367,15 +362,12 @@ class Fitter(object):
                         print_trees=print_trees)
 
                     if not self._model._model_name:
-                        self._printer.wrapped(
-                            'Skipping `{}`, no models available to fit the '
-                            'transient.'.format(self._event_name),
-                            warning=True)
+                        prt.message('no_models_avail', [
+                            self._event_name], warning=True)
                         continue
 
                     if not event:
-                        self._printer.wrapped(
-                            'No event specified, generating dummy data.')
+                        prt.message('gen_dummy')
                         self._event_name = mod_name
                         gen_args = {
                             'name': mod_name,
@@ -425,9 +417,10 @@ class Fitter(object):
                             check_upload_quality=check_upload_quality,
                             run_until_converged=run_until_converged,
                             save_full_chain=save_full_chain)
-                        entries[ei][mi] = deepcopy(entry)
-                        ps[ei][mi] = deepcopy(p)
-                        lnprobs[ei][mi] = deepcopy(lnprob)
+                        if return_fits:
+                            entries[ei][mi] = deepcopy(entry)
+                            ps[ei][mi] = deepcopy(p)
+                            lnprobs[ei][mi] = deepcopy(lnprob)
 
                     if pool.is_master():
                         pool.close()
@@ -462,7 +455,8 @@ class Fitter(object):
             if cur_task['kind'] == 'data':
                 success = self._model._modules[task].set_data(
                     data,
-                    req_key_values={'band': self._model._bands},
+                    req_key_values={'band': self._model._bands,
+                                    'instrument': self._model._instruments},
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
@@ -529,7 +523,7 @@ class Fitter(object):
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            prt.wrapped('Bands being used for current transient:')
+            prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
                        sorted(set(outputs['all_band_indices']))))
@@ -543,26 +537,39 @@ class Fitter(object):
                     ]))
             band_len = max([
                 len(self._model._modules['photometry']._unique_bands[bi][
-                    'SVO']) for bi in bis
+                    'origin']) for bi in bis
             ])
             filts = self._model._modules['photometry']
             ubs = filts._unique_bands
             filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
                           filts._average_wavelengths[bis[i]],
-                          filts._band_offsets[bis[i]], ois[i], bis[i])
+                          filts._band_offsets[bis[i]],
+                          filts._band_kinds[bis[i]],
+                          ois[i], bis[i])
                          for i in range(len(bis))]
             filterrows = [(
-                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['SVO']
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
                 .ljust(band_len) + ' [' + ', '.join(
                     list(
                         filter(None, (
                             'Bandset: ' + s[1] if s[1] else '',
                             'System: ' + s[0] if s[0] else '',
-                            'AB offset: ' + pretty_num(s[3]))))) +
+                            'AB offset: ' + pretty_num(
+                                s[3]) if s[4] == 'magnitude' else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
-            self._printer.prt('\n'.join(filterrows))
+            prt.prt('\n'.join(filterrows))
+
+            if ('unmatched_bands' in outputs and
+                    'unmatched_instruments' in outputs):
+                prt.message('unmatched_obs', warning=True)
+                prt.wrapped('Unmatched observations: ' + ', '.join(
+                    ['{} [{}]'.format(x[0], x[1]) if x[0] and x[1] else x[0]
+                     if not x[1] else x[1] for x in list(set(zip(
+                         outputs['unmatched_bands'],
+                         outputs['unmatched_instruments'])))]), warning=True,
+                    prefix=False)
 
         self._event_name = event_name
         self._emcee_est_t = 0.0
@@ -570,13 +577,10 @@ class Fitter(object):
         self._fracking = fracking
         if burn is not None:
             self._burn_in = min(burn, iterations)
-            self._post_burn = max(iterations - burn, 0)
         elif post_burn is not None:
-            self._post_burn = post_burn
             self._burn_in = max(iterations - post_burn, 0)
         else:
             self._burn_in = int(np.round(iterations / 2))
-            self._post_burn = max(iterations - self._burn_in, 0)
 
         return True
 
@@ -600,6 +604,8 @@ class Fitter(object):
 
         Fitting performed using a combination of emcee and fracking.
         """
+        if self._speak:
+            speak('Fitting ' + event_name, self._speak)
         from mosfit.__init__ import __version__
         global model
         model = self._model
@@ -614,10 +620,7 @@ class Fitter(object):
                 if self._test:
                     pass
                 else:
-                    self._printer.wrapped(
-                        'Dropbox python package required for uploads. '
-                        'Install with `pip install dropbox`.', error=True
-                    )
+                    prt.message('install_db', error=True)
                     raise
 
         if not pool.is_master():
@@ -642,32 +645,20 @@ class Fitter(object):
         redraw_mult = 1.0 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        self._printer.prt(
-            '{} measurements, {} free parameters.'.format(
-                model._num_measurements, ndim))
+        prt.message('nmeas_nfree', [model._num_measurements, ndim])
         if model._num_measurements <= ndim:
-            self._printer.wrapped(
-                'Warning: Number of free parameters exceeds number of '
-                'measurements. Please treat results with caution.',
-                warning=True)
+            prt.message('too_few_walkers', warning=True)
         if nwalkers < 10 * ndim:
-            self._printer.wrapped(
-                'Warning: While emcee accepts a number of walkers that is '
-                'twice the number of dimensions or greater, simple tests '
-                'with toy problems show poor convergence with this minimum. '
-                'We suggest using at least 10x the number of dimensions '
-                '(`-N {}` suggested for this fit), and preferably more, if '
-                'feasible.'.format(10 * ndim),
-                warning=True)
-        self._printer.prt('\n\n')
+            prt.message('want_more_walkers', [10 * ndim],
+                        warning=True)
+        prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
         for i, pt in enumerate(p0):
             dwscores = []
             while len(p0[i]) <= nwalkers:
                 prt.status(
-                    self,
-                    desc='Drawing initial walkers',
+                    desc='drawing_walkers',
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
                 if len(p0[i]) == nwalkers:
@@ -687,7 +678,7 @@ class Fitter(object):
                     self._draw_above_likelihood = np.mean(dwscores)
 
         prt.inline('Initial draws completed!')
-        self._printer.prt('\n\n')
+        prt.prt('\n\n')
         p = list(p0)
 
         sli = 1.0  # Keep track of how many times chain halved
@@ -738,8 +729,7 @@ class Fitter(object):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
-                        self._printer.wrapped(
-                            'Walltime exceeded, exiting...', warning=True)
+                        prt.message('exceeded_walltime', warning=True)
                         exceeded_walltime = True
                         break
                     emi = emi + 1
@@ -854,8 +844,7 @@ class Fitter(object):
 
                         if (run_until_converged and psrf < 1.1 and
                                 emi > iterations):
-                            self._printer.wrapped(
-                                'Convergence criterion met!')
+                            prt.message('converged')
                             converged = True
                             break
 
@@ -875,9 +864,8 @@ class Fitter(object):
 
                     scores = [np.array(x) for x in lnprob]
                     prt.status(
-                        self,
-                        desc='Fracking' if frack_now else
-                        ('Burning' if emi < self._burn_in else 'Walking'),
+                        desc='fracking' if frack_now else
+                        ('burning' if emi < self._burn_in else 'walking'),
                         scores=scores,
                         accepts=accepts,
                         progress=[emi, None if
@@ -931,8 +919,7 @@ class Fitter(object):
                             lnlike[wi][ti] = like
                     scores = [[-x.fun for x in bhs]]
                     prt.status(
-                        self,
-                        desc='Fracking Results',
+                        desc='fracking_results',
                         scores=scores,
                         fracking=True,
                         progress=[emi, None if
@@ -960,7 +947,7 @@ class Fitter(object):
                           all_lnlike.nbytes) / (1024. * 1024.)
 
                 if self._debug:
-                    self._printer.wrapped('Memory `{}`'.format(mem_mb))
+                    prt.wrapped('Memory `{}`'.format(mem_mb))
 
                 if mem_mb > self._maximum_memory:
                     sfrac = float(
@@ -970,15 +957,15 @@ class Fitter(object):
                     all_lnlike = all_lnlike[:, :, ::2]
                     sli *= sfrac
                     if self._debug:
-                        self._printer.wrapped(
+                        prt.wrapped(
                             'Memory halved, sli: {}'.format(sli))
 
                 sampler.reset()
+                gc.collect()
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
-            self._printer.wrapped(
-                '\b\bCtrl + C pressed, halting...', error=True)
+            prt.message('ctrl_c', error=True, prefix=False)
             s_exception = sys.exc_info()
         except Exception:
             raise
@@ -992,7 +979,9 @@ class Fitter(object):
                 sys.exit()
 
         if write:
-            prt.wrapped('Saving output to disk...')
+            prt.message('saving_output')
+            if self._speak:
+                speak(prt._strings['saving_output'], self._speak)
 
         if self._event_path:
             entry = Entry.init_from_file(
@@ -1059,9 +1048,7 @@ class Fitter(object):
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
                 if WAIC < 0.0:
-                    prt.wrapped(
-                        'WAIC score `{}` below 0.0, not uploading this fit.'.
-                        format(pretty_num(WAIC)))
+                    prt.message('no_ul_waic', [pretty_num(WAIC)])
                     upload_this = False
 
         modelnum = entry.add_model(**modeldict)
@@ -1115,14 +1102,21 @@ class Fitter(object):
                                     i] * flux_density_unit('µJy')
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                        if output['systems'][i]:
+                        if 'telescopes' in output and output['telescopes'][i]:
+                            photodict[PHOTOMETRY.TELESCOPE] = output[
+                                'telescopes'][i]
+                        if 'systems' in output and output['systems'][i]:
                             photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                        if output['bandsets'][i]:
+                        if 'bandsets' in output and output['bandsets'][i]:
                             photodict[PHOTOMETRY.BAND_SET] = output[
                                 'bandsets'][i]
-                        if output['instruments'][i]:
+                        if 'instruments' in output and output[
+                                'instruments'][i]:
                             photodict[PHOTOMETRY.INSTRUMENT] = output[
                                 'instruments'][i]
+                        if 'modes' in output and output['modes'][i]:
+                            photodict[PHOTOMETRY.MODE] = output[
+                                'modes'][i]
                         entry.add_photometry(
                             compare_to_existing=False, **photodict)
 
@@ -1175,7 +1169,7 @@ class Fitter(object):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
         if write:
-            prt.wrapped('Writing model output...')
+            prt.message('writing_model')
             with io.open(
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                     'w') as flast, io.open(os.path.join(
@@ -1187,7 +1181,7 @@ class Fitter(object):
                 entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
             if save_full_chain:
-                prt.wrapped('Writing full chain...')
+                prt.message('writing_full_chain')
                 with io.open(
                     os.path.join(model.MODEL_OUTPUT_DIR,
                                  'chain.json'), 'w') as flast, io.open(
@@ -1202,9 +1196,7 @@ class Fitter(object):
 
         if upload_this:
             uentry.sanitize()
-            prt.wrapped('Uploading fit...')
-            prt.wrapped(
-                'Data hash: ' + entryhash + ', model hash: ' + modelhash)
+            prt.message('ul_fit', [entryhash, modelhash])
             upath = '/' + '_'.join(
                 [self._event_name, entryhash, modelhash]) + '.json'
             ouentry = {self._event_name: uentry._ordered(uentry)}
@@ -1215,8 +1207,7 @@ class Fitter(object):
                     upayload.encode(),
                     upath,
                     mode=dropbox.files.WriteMode.overwrite)
-                prt.wrapped(
-                    'Uploading complete!')
+                prt.message('ul_complete')
             except Exception:
                 if self._test:
                     pass
