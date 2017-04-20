@@ -100,8 +100,8 @@ class Photometry(Module):
 
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
-                self._printer.inline('Loading bands [ {0:.0f}% ]'.format(
-                    100.0 * float(i) / len(self._unique_bands)))
+                self._printer.prt('Loading bands [ {0:.0f}% ]'.format(
+                    100.0 * float(i) / len(self._unique_bands)), inline=True)
                 systems = ['AB']
                 zps = [0.0]
                 if 'SVO' in band:
@@ -129,8 +129,9 @@ class Photometry(Module):
                                     'fps.php?PhotCalID=' + svopath,
                                     timeout=10)
                             except Exception:
-                                self._printer.inline(
-                                    self._strings['cant_dl_svo'], warning=True)
+                                self._printer.prt(
+                                    self._strings['cant_dl_svo'], warning=True,
+                                    inline=True)
                             else:
                                 with open(xml_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -248,8 +249,8 @@ class Photometry(Module):
             self._max_waves[i] = max(self._band_wavelengths[i])
 
         if self._pool.is_master():
-            self._printer.inline('Loading bands complete.'.format(
-                100.0 * float(i) / len(self._unique_bands)))
+            self._printer.prt('Loading bands complete.'.format(
+                100.0 * float(i) / len(self._unique_bands)), inline=True)
 
     def find_band_index(
             self, band, telescope='', instrument='', mode='', bandset='',

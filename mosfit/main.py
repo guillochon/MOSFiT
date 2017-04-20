@@ -512,28 +512,14 @@ def main():
         if not args.quiet:
             with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
                 logo = f.read()
-                logo = prt.colorify(logo)
                 firstline = logo.split('\n')[0]
                 if isinstance(firstline, bytes):
                     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
             for ll in logo.splitlines():
-                prt.prt(ll)
-            name_str = (
-                '### !mM!e!gO!e!rS!e!yFi!e!bT!e '
-                '-- Version {} ({}) ###')
-            col_name_str = prt.colorify(name_str)
-            cnlen = len(
-                repr(col_name_str)) - len(name_str) - name_str.count('!')
-            prt.prt(prt.colorify(col_name_str).format(
-                __version__, mosfit_hash).center(width + cnlen))
-            prt.prt(
-                'Authored by James Guillochon & Matt Nicholl'.center(width))
-            prt.prt('Released under the MIT license'.center(width))
-            url_str = '!u!chttps://github.com/guillochon/MOSFiT!e'
-            col_url_str = prt.colorify(url_str)
-            culen = len(repr(col_url_str)) - len(url_str) - url_str.count('!')
-            prt.prt((col_url_str + '\n').center(width + culen))
+                prt.prt(ll, colorify=True)
+            prt.message('byline', reps=[__version__, mosfit_hash],
+                        center=True, colorify=True, width=width, wrapped=False)
 
         # Get/set upload token
         upload_token = ''
@@ -586,31 +572,33 @@ def main():
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
-                prt.wrapped(
+                prt.prt(
                     "No upload token found! Please visit "
                     "https://sne.space/mosfit/ to obtain an upload "
-                    "token for MOSFiT.")
+                    "token for MOSFiT.", wrapped=True)
                 upload_token = prt.prompt(
                     "Please paste your Dropbox token, then hit enter:",
                     kind='string')
                 if len(upload_token) != 64:
-                    prt.wrapped(
+                    prt.prt(
                         'Error: Token must be exactly 64 characters in '
-                        'length.')
+                        'length.', wrapped=True)
                     continue
                 break
             with open(upload_token_path, 'w') as f:
                 f.write(upload_token)
 
         if args.upload:
-            prt.wrapped(
-                "Upload flag set, will upload results after completion.")
-            prt.wrapped("Dropbox token: " + upload_token)
+            prt.prt(
+                "Upload flag set, will upload results after completion.",
+                wrapped=True)
+            prt.prt("Dropbox token: " + upload_token, wrapped=True)
 
         args.upload_token = upload_token
 
         if changed_iterations:
-            prt.wrapped("No events specified, setting iterations to 0.")
+            prt.prt("No events specified, setting iterations to 0.",
+                    wrapped=True)
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:

@@ -406,6 +406,9 @@
         }
     },
     {
+        "telescopes": [
+            "Swift"
+        ],
         "systems": [
             "",
             "Vega"
@@ -495,6 +498,48 @@
             },
             "M2": {
                 "SVO": "Swift/UVOT.UVM2",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "",
+            "Gaia"
+        ],
+        "instruments": [
+            "",
+            "Gaia",
+            "Astrometric"
+        ],
+        "bandsets": [
+            "",
+            "Gaia"
+        ],
+        "filters": {
+            "G": {
+                "SVO": "GAIA/GAIA0.G",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "systems": [
+            "",
+            "AB"
+        ],
+        "telescopes": [
+            "",
+            "HST"
+        ],
+        "instruments": [
+            "",
+            "WFC3",
+            "UVIS"
+        ],
+        "filters": {
+            "F225W": {
+                "SVO": "HST/WFC3_UVIS1.F225W",
                 "offset": 0.0
             }
         }

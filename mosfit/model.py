@@ -176,7 +176,7 @@ class Model(object):
             self._model, self._trees, self._simple_trees, kinds=root_kinds)
 
         if self._print_trees:
-            self._printer.wrapped('Dependency trees:\n')
+            self._printer.prt('Dependency trees:\n', wrapped=True)
             self._printer.tree(self._simple_trees)
 
         unsorted_call_stack = OrderedDict()
@@ -317,11 +317,11 @@ class Model(object):
                     variance_bands.append([awav, band])
                 if needs_general_variance:
                     new_call_stack[task] = deepcopy(cur_task)
-                self._printer.wrapped(
+                self._printer.prt(
                     'Anchoring variances for the following filters '
                     '(interpolating variances for the rest): ' +
                     (', '.join([x[1] for x in variance_bands])),
-                    master_only=True)
+                    wrapped=True)
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = deepcopy(cur_task)
@@ -588,8 +588,9 @@ class Model(object):
                 if not isinstance(new_outs, OrderedDict):
                     new_outs = OrderedDict(sorted(new_outs.items()))
             except Exception:
-                self._printer.wrapped(
-                    "Failed to execute module `{}`\'s process().".format(task))
+                self._printer.prt(
+                    "Failed to execute module `{}`\'s process().".format(task),
+                    wrapped=True)
                 raise
             outputs.update(new_outs)
             if '_delete_keys' in outputs:
