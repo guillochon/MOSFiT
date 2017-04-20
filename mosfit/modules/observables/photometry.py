@@ -94,13 +94,15 @@ class Photometry(Module):
         self._band_yunits = np.full(self._n_bands, '', dtype=object)
         self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
 
+        prt = self._printer
+
         if self._pool.is_master():
             vo_tabs = OrderedDict()
-            self._printer.prt('')
+            prt.prt('')
 
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
-                self._printer.prt('Loading bands [ {0:.0f}% ]'.format(
+                prt.prt('Loading bands [ {0:.0f}% ]'.format(
                     100.0 * float(i) / len(self._unique_bands)), inline=True)
                 systems = ['AB']
                 zps = [0.0]
@@ -120,8 +122,7 @@ class Photometry(Module):
                             dir_path, 'filters',
                             svopath.replace('/', '_') + '.xml')
                         if not os.path.exists(xml_path):
-                            print('Downloading bandpass {} from SVO.'.format(
-                                svopath))
+                            prt.message('dl_svo', [svopath], inline=True)
                             try:
                                 response = get_url_file_handle(
                                     'http://svo2.cab.inta-csic.es'
@@ -129,9 +130,7 @@ class Photometry(Module):
                                     'fps.php?PhotCalID=' + svopath,
                                     timeout=10)
                             except Exception:
-                                self._printer.prt(
-                                    self._strings['cant_dl_svo'], warning=True,
-                                    inline=True)
+                                prt.message('cant_dl_svo', warning=True)
                             else:
                                 with open(xml_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
@@ -249,7 +248,7 @@ class Photometry(Module):
             self._max_waves[i] = max(self._band_wavelengths[i])
 
         if self._pool.is_master():
-            self._printer.prt('Loading bands complete.'.format(
+            prt.prt('Loading bands complete.'.format(
                 100.0 * float(i) / len(self._unique_bands)), inline=True)
 
     def find_band_index(

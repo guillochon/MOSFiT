@@ -445,6 +445,14 @@ def get_parser():
         nargs='?',
         help=("Language for output text."))
 
+    parser.add_argument(
+        '--extra-outputs',
+        '-x',
+        dest='extra_outputs',
+        default=[],
+        nargs='+',
+        help=("Extra keys to save alongside the default model outputs."))
+
     return parser
 
 

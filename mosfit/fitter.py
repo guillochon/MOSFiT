@@ -113,6 +113,7 @@ class Fitter(object):
                    speak=False,
                    language='en',
                    return_fits=True,
+                   extra_outputs=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -416,7 +417,8 @@ class Fitter(object):
                             upload_token=upload_token,
                             check_upload_quality=check_upload_quality,
                             run_until_converged=run_until_converged,
-                            save_full_chain=save_full_chain)
+                            save_full_chain=save_full_chain,
+                            extra_outputs=extra_outputs)
                         if return_fits:
                             entries[ei][mi] = deepcopy(entry)
                             ps[ei][mi] = deepcopy(p)
@@ -599,7 +601,8 @@ class Fitter(object):
                  upload_token='',
                  check_upload_quality=True,
                  run_until_converged=False,
-                 save_full_chain=False):
+                 save_full_chain=False,
+                 extra_outputs=[]):
         """Fit the data for a given event.
 
         Fitting performed using a combination of emcee and fracking.
@@ -1076,11 +1079,17 @@ class Fitter(object):
                     (all_lnprob[:, :, -i * actc], lnprobout), axis=1)
                 lnlikeout = np.concatenate(
                     (all_lnlike[:, :, -i * actc], lnlikeout), axis=1)
+
+        extras = OrderedDict()
         for xi, x in enumerate(pout):
             for yi, y in enumerate(pout[xi]):
                 # Only produce LCs for end walker state.
                 if yi <= nwalkers:
                     output = model.run_stack(y, root='output')
+                    if extra_outputs:
+                        for key in extra_outputs:
+                            extras.setdefault(key, []).append(
+                                output.get(key, []))
                     for i in range(len(output['times'])):
                         if not np.isfinite(output['model_observations'][i]):
                             continue
@@ -1194,6 +1203,17 @@ class Fitter(object):
                                        flast, separators=(',', ':'))
                     entabbed_json_dump(all_chain.tolist(),
                                        feven, separators=(',', ':'))
+
+            if extra_outputs:
+                prt.message('writing_extras')
+                with io.open(os.path.join(
+                    model.MODEL_OUTPUT_DIR, 'extras.json'),
+                        'w') as flast, io.open(os.path.join(
+                            model.MODEL_OUTPUT_DIR, self._event_name +
+                            '_extras' + (('_' + suffix) if suffix else '') +
+                            '.json'), 'w') as feven:
+                    entabbed_json_dump(extras, flast, separators=(',', ':'))
+                    entabbed_json_dump(extras, feven, separators=(',', ':'))
 
         if upload_this:
             uentry.sanitize()
