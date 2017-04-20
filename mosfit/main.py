@@ -511,22 +511,22 @@ def main():
                     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
             for ll in logo.splitlines():
-                print(ll, flush=True)
+                prt.prt(ll)
             name_str = (
                 '### !mM!e!gO!e!rS!e!yFi!e!bT!e '
                 '-- Version {} ({}) ###')
             col_name_str = prt.colorify(name_str)
             cnlen = len(
                 repr(col_name_str)) - len(name_str) - name_str.count('!')
-            print(prt.colorify(col_name_str).format(
-                __version__, mosfit_hash).center(width + cnlen), flush=True)
-            print('Authored by James Guillochon & Matt Nicholl'.center(width),
-                  flush=True)
-            print('Released under the MIT license'.center(width), flush=True)
+            prt.prt(prt.colorify(col_name_str).format(
+                __version__, mosfit_hash).center(width + cnlen))
+            prt.prt(
+                'Authored by James Guillochon & Matt Nicholl'.center(width))
+            prt.prt('Released under the MIT license'.center(width))
             url_str = '!u!chttps://github.com/guillochon/MOSFiT!e'
             col_url_str = prt.colorify(url_str)
             culen = len(repr(col_url_str)) - len(url_str) - url_str.count('!')
-            print((col_url_str + '\n').center(width + culen), flush=True)
+            prt.prt((col_url_str + '\n').center(width + culen))
 
         # Get/set upload token
         upload_token = ''

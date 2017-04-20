@@ -131,9 +131,7 @@ class Transient(Module):
                     if x == 'value':
                         self._data[key] = entry.get(x, falseval)
                     else:
-                        plural = self._model._inflect.plural(x)
-                        if plural == x:
-                            plural = x + 's'
+                        plural = self._model.plural(x)
                         val = entry.get(x, falseval)
                         if x in num_subkeys:
                             val = None if val is None else np.mean([

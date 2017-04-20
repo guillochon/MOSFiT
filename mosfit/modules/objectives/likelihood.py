@@ -170,6 +170,7 @@ class Likelihood(Module):
             self._average_wavelengths[bi] if bi >= 0 else
             C_CGS / self._freqs[i] / ANG_CGS for i, bi in
             enumerate(self._all_band_indices)])
+        self._n_obs = len(self._observed)
 
         # Magnitudes first
         # Note: Upper limits (censored data) currently treated as a
@@ -237,16 +238,12 @@ class Likelihood(Module):
         # Wavelength deltas (radial distance) for covariance matrix.
         self._o_waves = self._all_band_avgs[self._observed]
 
-        self._dtmat = np.array([
-            [0.0 if i == j else -0.5 * (ti - tj) ** 2 for
-             i, ti in enumerate(self._o_times)] for
-            j, tj in enumerate(self._o_times)
-        ])
+        self._dtmat = -0.5 * (
+            np.repeat(self._o_times[:, np.newaxis], self._n_obs, 1) -
+            np.repeat(self._o_times[np.newaxis, :], self._n_obs, 0)) ** 2
 
-        self._dlmat = np.array([
-            [0.0 if i == j else -0.5 * (li - lj) ** 2 for
-             i, li in enumerate(self._o_waves)] for
-            j, lj in enumerate(self._o_waves)
-        ])
+        self._dlmat = -0.5 * (
+            np.repeat(self._o_waves[:, np.newaxis], self._n_obs, 1) -
+            np.repeat(self._o_waves[np.newaxis, :], self._n_obs, 0)) ** 2
 
         self._preprocessed = True

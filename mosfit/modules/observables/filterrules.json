@@ -662,7 +662,8 @@
     },
     {
         "telescopes": [
-            "XMM"
+            "XMM",
+            "XMM-Newton"
         ],
         "instruments": [
             "PN"

@@ -38,7 +38,7 @@ class Printer(object):
         FAIL = '\033[0;91m'
         ENDC = '\033[0;0m'
         BOLD = '\033[0;1m'
-        UNDERLINE = '\033[0;4m'
+        UNDERLINE = '\033[4m'
         CYAN = '\033[0;96m'
         MAGENTA = '\033[1;35m'
         ORANGE = '\033[38;5;214m'

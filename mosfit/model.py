@@ -47,6 +47,7 @@ class Model(object):
         self._fitter = fitter
         self._print_trees = print_trees
         self._inflect = inflect.engine()
+        self._inflections = {}
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -548,6 +549,17 @@ class Model(object):
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l
+
+    def plural(self, x):
+        """Pluralize and cache model-related keys."""
+        if x not in self._inflections:
+            plural = self._inflect.plural(x)
+            if plural == x:
+                plural = x + 's'
+            self._inflections[x] = plural
+        else:
+            plural = self._inflections[x]
+        return plural
 
     def run_stack(self, x, root='objective'):
         """Run module stack.
