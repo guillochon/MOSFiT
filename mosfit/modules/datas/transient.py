@@ -84,9 +84,9 @@ class Transient(Module):
 
                 skip_key = False
                 for qkey in req_key_values:
-                    if (qkey in entry and
-                            entry[qkey] not in req_key_values[qkey]):
-                        skip_key = True
+                    if qkey in entry and entry[qkey] != '':
+                        if entry[qkey] not in req_key_values[qkey]:
+                            skip_key = True
                         break
                 if skip_key:
                     continue

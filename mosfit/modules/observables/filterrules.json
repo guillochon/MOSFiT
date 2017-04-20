@@ -680,6 +680,7 @@
             "Swift"
         ],
         "instruments": [
+            "Swift-XRT",
             "XRT"
         ],
         "modes":[

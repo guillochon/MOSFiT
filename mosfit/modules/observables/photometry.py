@@ -258,11 +258,15 @@ class Photometry(Module):
         for i in range(6):
             for bi, bnd in enumerate(self._unique_bands):
                 if ((i < 5 or band != '') and band == bnd['name'] and
-                    (i > 4 or telescope == self._band_teles[bi]) and
-                    (i > 3 or instrument == self._band_insts[bi]) and
-                    (i > 2 or mode == self._band_modes[bi]) and
-                    (i > 1 or bandset == self._band_bsets[bi]) and
-                        (i > 0 or system == self._band_systs[bi])):
+                    (i > 4 or mode == '' or mode == self._band_modes[bi]) and
+                    (i > 3 or instrument == '' or
+                     instrument == self._band_insts[bi]) and
+                    (i > 2 or telescope == '' or
+                     telescope == self._band_teles[bi]) and
+                    (i > 1 or bandset == '' or
+                     bandset == self._band_bsets[bi]) and
+                    (i > 0 or system == '' or
+                     system == self._band_systs[bi])):
                     return bi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` '
@@ -321,12 +325,19 @@ class Photometry(Module):
                     enumerate(self._average_wavelengths) if i in indices]
         return self._average_wavelengths
 
-    def band_names(self, indices=None):
+    def bands(self, indices=None):
         """Return the list of unique band names."""
         if indices:
             return [x for i, x in
                     enumerate(self._band_names) if i in indices]
         return self._band_names
+
+    def instruments(self, indices=None):
+        """Return the list of instruments."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._band_insts) if i in indices]
+        return self._band_insts
 
     def abmag(self, eff_fluxes, offsets):
         """Convert fluxes into AB magnitude."""
