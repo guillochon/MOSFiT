@@ -535,11 +535,52 @@
         "instruments": [
             "",
             "WFC3",
-            "UVIS"
+            "UVIS",
+            "UVIS1"
         ],
         "filters": {
+            "F218W": {
+                "SVO": "HST/WFC3_UVIS1.F218W",
+                "offset": 0.0
+            },
             "F225W": {
                 "SVO": "HST/WFC3_UVIS1.F225W",
+                "offset": 0.0
+            },
+            "F275W": {
+                "SVO": "HST/WFC3_UVIS1.F275W",
+                "offset": 0.0
+            },
+            "F336W": {
+                "SVO": "HST/WFC3_UVIS1.F336W",
+                "offset": 0.0
+            },
+            "F390W": {
+                "SVO": "HST/WFC3_UVIS1.F390W",
+                "offset": 0.0
+            },
+            "F438W": {
+                "SVO": "HST/WFC3_UVIS1.F438W",
+                "offset": 0.0
+            },
+            "F475W": {
+                "SVO": "HST/WFC3_UVIS1.F475W",
+                "offset": 0.0
+            },
+            "F555W": {
+                "SVO": "HST/WFC3_UVIS1.F555W",
+                "offset": 0.0
+            },
+            "F625W": {
+                "SVO": "HST/WFC3_UVIS1.F625W",
+                "offset": 0.0
+            },
+            "F775W": {
+                "SVO": "HST/WFC3_UVIS1.F775W",
+                "offset": 0.0
+            },
+            "F814W": {
+                "SVO": "HST/WFC3_UVIS1.F814W",
                 "offset": 0.0
             }
         }
