@@ -1089,8 +1089,10 @@ class Fitter(object):
                     output = model.run_stack(y, root='output')
                     if extra_outputs:
                         for key in extra_outputs:
-                            extras.setdefault(key, []).append(
-                                output.get(key, []))
+                            new_val = output.get(key, [])
+                            if type(new_val).__module__ == 'numpy':
+                                new_val = new_val.tolist()
+                            extras.setdefault(key, []).append(new_val)
                     for i in range(len(output['times'])):
                         if not np.isfinite(output['model_observations'][i]):
                             continue
