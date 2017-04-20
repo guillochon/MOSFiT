@@ -314,7 +314,7 @@ class Fitter(object):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
                         prt.message('event_file')
-                        prt.wrapped('  ' + path)
+                        prt.prt('  ' + path, wrapped=True)
                     else:
                         prt.message('no_data', [
                             self._event_name, '/'.join(self._catalogs.keys())])
@@ -564,12 +564,12 @@ class Fitter(object):
             if ('unmatched_bands' in outputs and
                     'unmatched_instruments' in outputs):
                 prt.message('unmatched_obs', warning=True)
-                prt.wrapped('Unmatched observations: ' + ', '.join(
+                prt.prt(', '.join(
                     ['{} [{}]'.format(x[0], x[1]) if x[0] and x[1] else x[0]
                      if not x[1] else x[1] for x in list(set(zip(
                          outputs['unmatched_bands'],
                          outputs['unmatched_instruments'])))]), warning=True,
-                    prefix=False)
+                    prefix=False, wrapped=True)
 
         self._event_name = event_name
         self._emcee_est_t = 0.0
@@ -677,7 +677,7 @@ class Fitter(object):
                 if self._draw_above_likelihood is not False:
                     self._draw_above_likelihood = np.mean(dwscores)
 
-        prt.inline('Initial draws completed!')
+        prt.message('initial_draws', inline=True)
         prt.prt('\n\n')
         p = list(p0)
 
@@ -947,7 +947,7 @@ class Fitter(object):
                           all_lnlike.nbytes) / (1024. * 1024.)
 
                 if self._debug:
-                    prt.wrapped('Memory `{}`'.format(mem_mb))
+                    prt.prt('Memory `{}`'.format(mem_mb), wrapped=True)
 
                 if mem_mb > self._maximum_memory:
                     sfrac = float(
@@ -957,8 +957,9 @@ class Fitter(object):
                     all_lnlike = all_lnlike[:, :, ::2]
                     sli *= sfrac
                     if self._debug:
-                        prt.wrapped(
-                            'Memory halved, sli: {}'.format(sli))
+                        prt.prt(
+                            'Memory halved, sli: {}'.format(sli),
+                            wrapped=True)
 
                 sampler.reset()
                 gc.collect()

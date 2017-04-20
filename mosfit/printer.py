@@ -5,6 +5,7 @@ from __future__ import print_function
 import datetime
 import json
 import os
+import re
 import sys
 from builtins import input
 from textwrap import fill
@@ -83,15 +84,15 @@ class Printer(object):
         try:
             from googletrans import Translator  # noqa
         except Exception:
-            self.wrapped(
+            self.prt(
                 'The `--language` option requires the `Googletrans` package. '
-                'Please install with `pip install googletrans`.')
+                'Please install with `pip install googletrans`.', wrapped=True)
             self._strings = strings
             pass
         else:
-            self.wrapped(self.translate(
+            self.prt(self.translate(
                 'Building strings for `{}`, please wait...'
-                .format(self._language)))
+                .format(self._language)), wrapped=True)
             self._strings = {}
             for key in strings:
                 self._strings[key] = self.translate(strings[key])
@@ -109,14 +110,53 @@ class Printer(object):
             output = output.replace(code, self.bcolors.codes[code])
         return output
 
-    def prt(self, text):
+    def prt(
+            self, text, colorify=False, center=False, width=None,
+            warning=False, error=False, prefix=True, color='', inline=False,
+            wrap_length=None, wrapped=False, master_only=True):
         """Print text without modification."""
         if self._quiet:
             return
-        print(text, flush=True)
+        if master_only and self._pool and not self._pool.is_master():
+            return
+        if width is None:
+            width = self._wrap_length
+        if warning:
+            if prefix:
+                text = '!y' + self._strings['warning'] + ': ' + text + '!e'
+        if error:
+            if prefix:
+                text = '!r' + self._strings['error'] + ': ' + text + '!e'
+        if color:
+            text = color + text + '!e'
+        if warning or error or color:
+            colorify = True
+        tspl = text.splitlines()
+        if wrapped:
+            if not wrap_length or not is_integer(wrap_length):
+                wrap_length = self._wrap_length
+            ntspl = []
+            for line in tspl:
+                ntspl.extend(fill(line, wrap_length).splitlines())
+            tspl = ntspl
+        if inline and self._fitter is not None:
+            inline = not self._fitter._test
+        if inline:
+            for line in tspl:
+                sys.stdout.write("\033[F")
+                sys.stdout.write("\033[K")
+        for ri, line in enumerate(tspl):
+            rline = line
+            if colorify:
+                rline = self.colorify(rline)
+            if center:
+                tlen = len(repr(rline)) - len(line) - line.count('!')
+                rline = rline.center(width + tlen)
+            print(rline, flush=True)
 
     def message(self, name, reps=[], wrapped=True, inline=False,
-                warning=False, error=False, prefix=True):
+                warning=False, error=False, prefix=True, center=False,
+                colorify=False, width=None):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -124,59 +164,9 @@ class Printer(object):
             text = '< Message not found [' + ''.join(
                 ['{} ' for x in range(len(reps))]).strip() + '] >'
         text = text.format(*reps)
-        if wrapped:
-            self.wrapped(text, warning=warning, error=error, prefix=prefix)
-        elif inline:
-            self.inline(text, warning=warning, error=error, prefix=prefix)
-        else:
-            self.prt(text)
-
-    def inline(self, x, new_line=False,
-               warning=False, error=False, prefix=True):
-        """Print inline, erasing underlying pre-existing text."""
-        if self._quiet:
-            return
-        if not new_line and self._fitter is not None:
-            new_line = self._fitter._test
-        lines = x.split('\n')
-        if warning:
-            sys.stdout.write(self.bcolors.WARNING)
-            if prefix and len(lines):
-                lines[0] = self._strings['warning'] + ': ' + lines[0]
-        if error:
-            sys.stdout.write(self.bcolors.FAIL)
-            if prefix and len(lines):
-                lines[0] = self._strings['error'] + ': ' + lines[0]
-        if not new_line:
-            for line in lines:
-                sys.stdout.write("\033[F")
-                sys.stdout.write("\033[K")
-        print(x, flush=True)
-        if error or warning:
-            sys.stdout.write(self.bcolors.ENDC)
-
-    def wrapped(self, text, wrap_length=None, master_only=True, warning=False,
-                error=False, prefix=True):
-        """Print text wrapped to either the specified length or the default."""
-        if self._quiet:
-            return
-        if wrap_length and is_integer(wrap_length):
-            wl = wrap_length
-        else:
-            wl = self._wrap_length
-        if master_only and self._pool and not self._pool.is_master():
-            return
-        if warning:
-            sys.stdout.write(self.bcolors.WARNING)
-            if prefix:
-                text = self._strings['warning'] + ': ' + text
-        if error:
-            sys.stdout.write(self.bcolors.FAIL)
-            if prefix:
-                text = self._strings['error'] + ': ' + text
-        print(fill(text, wl), flush=True)
-        if error or warning:
-            sys.stdout.write(self.bcolors.ENDC)
+        self.prt(
+            text, center=center, colorify=colorify, width=width, prefix=prefix,
+            inline=inline, wrapped=wrapped, warning=warning, error=error)
 
     def prompt(self, text, wrap_length=None, kind='bool',
                none_string='None of the above.',
@@ -345,7 +335,7 @@ class Printer(object):
 
         lines = lines + '\n' + line
 
-        self.inline(lines)
+        self.prt(lines, inline=True)
 
     def get_timestring(self, t):
         """Return estimated time remaining.
@@ -362,10 +352,21 @@ class Printer(object):
             try:
                 from googletrans import Translator
                 translator = Translator()
+                text, reps = self.rep_ansi(text)
                 text = translator.translate(text, dest=self._language).text
+                text = text.format(*reps)
             except Exception:
+                raise
                 pass
         return text
+
+    def rep_ansi(self, text):
+        """Replace ANSI codes and return the list of codes."""
+        patt = re.compile(r'({})'.format(
+            '|'.join(['\{\}'] + list(self.bcolors.codes.keys()))))
+        stext = patt.sub("{}", text)
+        matches = patt.findall(text)
+        return stext, matches
 
     def tree(self, my_tree):
         """Pretty print the module dependency trees for each root."""
