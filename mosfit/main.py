@@ -237,6 +237,13 @@ def get_parser():
               "optimization process."))
 
     parser.add_argument(
+        '--no-write',
+        dest='write',
+        default=True,
+        action='store_false',
+        help=("Do not write any results to disk."))
+
+    parser.add_argument(
         '--quiet',
         dest='quiet',
         default=False,
@@ -470,8 +477,6 @@ def main():
             args.language = sel.split('(')[-1].strip(')')
 
     prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
-
-    args.write = True
 
     args.start_time = time.time()
 

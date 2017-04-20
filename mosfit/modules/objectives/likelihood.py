@@ -22,6 +22,7 @@ class Likelihood(Module):
         """Process module."""
         self.preprocess(**kwargs)
         self._model_observations = kwargs['model_observations']
+        self._observation_types = kwargs['observation_types']
         self._fractions = kwargs['fractions']
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
             return {'value': LIKELIHOOD_FLOOR}
@@ -64,16 +65,22 @@ class Likelihood(Module):
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
-            (abs(x - ct) if not u or (x > ct and not isnan(x)) else 0.0) if ct
-            is not None
+            (abs(x - ct) if not u or (x > ct and not isnan(x)) else 0.0)
+            if t == 'countrate' and ct is not None
             else
-            (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0) if a
+            (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0)
+            if t == 'magnitude' and y is not None
             else
             (abs(x - fd) if not u or (x > fd and not isnan(x)) else 0.0)
-            for x, y, ct, fd, u, o, a in zip(
+            if t == 'fluxdensity' and fd is not None else None
+            for x, y, ct, fd, u, o, t in zip(
                 self._model_observations, self._mags, self._cts, self._fds,
-                self._upper_limits, self._observed, self._are_bands) if o
+                self._upper_limits, self._observed, self._observation_types)
+            if o
         ])
+
+        if np.any(residuals is None):
+            raise ValueError('Null residual.')
 
         # Observational errors to be put in diagonal of error matrix.
         diag = [
