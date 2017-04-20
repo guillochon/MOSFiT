@@ -83,13 +83,12 @@ class Transient(Module):
                     continue
 
                 skip_key = False
-                for qkey in req_key_values:
-                    if qkey in entry and entry[qkey] != '':
-                        if entry[qkey] not in req_key_values[qkey]:
-                            skip_key = True
-                        break
-                if skip_key:
-                    continue
+                if 'frequency' not in entry:
+                    for qkey in req_key_values:
+                        if qkey in entry and entry[qkey] != '':
+                            if entry[qkey] not in req_key_values[qkey]:
+                                skip_key = True
+                            break
 
                 if key == 'photometry':
                     skip_entry = False
@@ -129,16 +128,21 @@ class Transient(Module):
                         False if x in boo_subkeys else None if
                         x in num_subkeys else '')
                     if x == 'value':
-                        self._data[key] = entry.get(x, falseval)
+                        if not skip_key:
+                            self._data[key] = entry.get(x, falseval)
                     else:
                         plural = self._model.plural(x)
                         val = entry.get(x, falseval)
                         if x in num_subkeys:
                             val = None if val is None else np.mean([
                                 float(x) for x in listify(val)])
-                        self._data.setdefault(plural, []).append(val)
-                        if x in num_subkeys:
-                            numeric_keys.add(plural)
+                        if not skip_key:
+                            self._data.setdefault(plural, []).append(val)
+                            if x in num_subkeys:
+                                numeric_keys.add(plural)
+                        else:
+                            self._data.setdefault(
+                                'unmatched_' + plural, []).append(val)
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):

@@ -40,6 +40,10 @@
                 "SVO": "2MASS/2MASS.Ks",
                 "offset": 0.0
             },
+            "Y": {
+                "SVO": "LCO/CSP.Y",
+                "offset": 0.0
+            },
             "u": {
                 "SVO": "SLOAN/SDSS.u",
                 "offset": 0.0
@@ -129,6 +133,9 @@
             },
             "Ks": {
                 "SVO": "2MASS/2MASS.Ks"
+            },
+            "Y": {
+                "SVO": "LCO/CSP.Y"
             },
             "u": {
                 "SVO": "SLOAN/SDSS.u"

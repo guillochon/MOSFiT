@@ -559,6 +559,16 @@ class Fitter(object):
                 filterrows.append('  (* = Not observed in this band)')
             prt.prt('\n'.join(filterrows))
 
+            if ('unmatched_bands' in outputs and
+                    'unmatched_instruments' in outputs):
+                prt.message('unmatched_obs', warning=True)
+                prt.wrapped('Unmatched observations: ' + ', '.join(
+                    ['{} [{}]'.format(x[0], x[1]) if x[0] and x[1] else x[0]
+                     if not x[1] else x[1] for x in list(set(zip(
+                         outputs['unmatched_bands'],
+                         outputs['unmatched_instruments'])))]), warning=True,
+                    prefix=False)
+
         self._event_name = event_name
         self._emcee_est_t = 0.0
         self._bh_est_t = 0.0
