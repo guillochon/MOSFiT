@@ -470,7 +470,6 @@ def main():
             args.language = sel.split('(')[-1].strip(')')
 
     prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
-    args.printer = prt
 
     args.write = True
 
@@ -511,7 +510,8 @@ def main():
                 if isinstance(firstline, bytes):
                     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
-                print(logo)
+            for ll in logo.splitlines():
+                print(ll, flush=True)
             name_str = (
                 '### !mM!e!gO!e!rS!e!yFi!e!bT!e '
                 '-- Version {} ({}) ###')
@@ -519,13 +519,14 @@ def main():
             cnlen = len(
                 repr(col_name_str)) - len(name_str) - name_str.count('!')
             print(prt.colorify(col_name_str).format(
-                __version__, mosfit_hash).center(width + cnlen))
-            print('Authored by James Guillochon & Matt Nicholl'.center(width))
-            print('Released under the MIT license'.center(width))
+                __version__, mosfit_hash).center(width + cnlen), flush=True)
+            print('Authored by James Guillochon & Matt Nicholl'.center(width),
+                  flush=True)
+            print('Released under the MIT license'.center(width), flush=True)
             url_str = '!u!chttps://github.com/guillochon/MOSFiT!e'
             col_url_str = prt.colorify(url_str)
             culen = len(repr(col_url_str)) - len(url_str) - url_str.count('!')
-            print((col_url_str + '\n').center(width + culen))
+            print((col_url_str + '\n').center(width + culen), flush=True)
 
         # Get/set upload token
         upload_token = ''

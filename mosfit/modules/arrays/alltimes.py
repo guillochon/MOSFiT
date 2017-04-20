@@ -34,7 +34,7 @@ class AllTimes(Array):
                      self._bands, self._frequencies)
         if (kwargs.get('root', 'output') == 'output' and
                 'extra_times' in kwargs):
-            obs_keys = ['times', 'systems', 'telescopes', 'instruments',
+            obs_keys = ['times', 'telescopes', 'systems', 'instruments',
                         'modes', 'bandsets',
                         'bands', 'frequencies']
             obslist = (list(

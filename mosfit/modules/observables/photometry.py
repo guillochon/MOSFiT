@@ -96,8 +96,8 @@ class Photometry(Module):
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
+            self._printer.prt('')
 
-        self._printer.prt('')
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
                 self._printer.inline('Loading bands [ {0:.0f}% ]'.format(
@@ -257,7 +257,7 @@ class Photometry(Module):
         """Find the index corresponding to the provided band information."""
         for i in range(6):
             for bi, bnd in enumerate(self._unique_bands):
-                if (band == bnd['name'] and
+                if ((i < 5 or band != '') and band == bnd['name'] and
                     (i > 4 or telescope == self._band_teles[bi]) and
                     (i > 3 or instrument == self._band_insts[bi]) and
                     (i > 2 or mode == self._band_modes[bi]) and

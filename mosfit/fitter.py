@@ -101,7 +101,6 @@ class Fitter(object):
                    quiet=False,
                    upload_token='',
                    check_upload_quality=False,
-                   printer=None,
                    variance_for_each=[],
                    user_fixed_parameters=[],
                    run_until_converged=False,
@@ -128,11 +127,8 @@ class Fitter(object):
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
 
-        if not printer:
-            self._printer = Printer(wrap_length=wrap_length, quiet=quiet,
-                                    language=language)
-        else:
-            self._printer = printer
+        self._printer = Printer(wrap_length=wrap_length, quiet=quiet,
+                                fitter=self, language=language)
 
         prt = self._printer
 
@@ -649,7 +645,6 @@ class Fitter(object):
             dwscores = []
             while len(p0[i]) <= nwalkers:
                 prt.status(
-                    self,
                     desc='drawing_walkers',
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
@@ -856,7 +851,6 @@ class Fitter(object):
 
                     scores = [np.array(x) for x in lnprob]
                     prt.status(
-                        self,
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
                         scores=scores,
@@ -912,7 +906,6 @@ class Fitter(object):
                             lnlike[wi][ti] = like
                     scores = [[-x.fun for x in bhs]]
                     prt.status(
-                        self,
                         desc='fracking_results',
                         scores=scores,
                         fracking=True,

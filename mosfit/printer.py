@@ -31,15 +31,15 @@ class Printer(object):
     class bcolors(object):
         """Special formatting characters."""
 
-        HEADER = '\033[95m'
-        OKBLUE = '\033[94m'
-        OKGREEN = '\033[92m'
-        WARNING = '\033[93m'
-        FAIL = '\033[91m'
-        ENDC = '\033[0m'
-        BOLD = '\033[1m'
-        UNDERLINE = '\033[4m'
-        CYAN = '\033[96m'
+        HEADER = '\033[0;95m'
+        OKBLUE = '\033[0;94m'
+        OKGREEN = '\033[0;92m'
+        WARNING = '\033[0;93m'
+        FAIL = '\033[0;91m'
+        ENDC = '\033[0;0m'
+        BOLD = '\033[0;1m'
+        UNDERLINE = '\033[0;4m'
+        CYAN = '\033[0;96m'
         MAGENTA = '\033[1;35m'
         ORANGE = '\033[38;5;214m'
 
@@ -113,7 +113,7 @@ class Printer(object):
         """Print text without modification."""
         if self._quiet:
             return
-        print(text)
+        print(text, flush=True)
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True):
@@ -136,6 +136,8 @@ class Printer(object):
         """Print inline, erasing underlying pre-existing text."""
         if self._quiet:
             return
+        if not new_line and self._fitter is not None:
+            new_line = self._fitter._test
         lines = x.split('\n')
         if warning:
             sys.stdout.write(self.bcolors.WARNING)
@@ -172,7 +174,7 @@ class Printer(object):
             sys.stdout.write(self.bcolors.FAIL)
             if prefix:
                 text = self._strings['error'] + ': ' + text
-        print(fill(text, wl))
+        print(fill(text, wl), flush=True)
         if error or warning:
             sys.stdout.write(self.bcolors.ENDC)
 
@@ -208,7 +210,7 @@ class Printer(object):
         prompt_txt = (textchoices).split('\n')
         for txt in prompt_txt[:-1]:
             ptxt = fill(txt, wl, replace_whitespace=False)
-            print(ptxt)
+            print(ptxt, flush=True)
         user_input = input(
             fill(
                 prompt_txt[-1], wl, replace_whitespace=False) + " ")
@@ -223,7 +225,6 @@ class Printer(object):
             return user_input
 
     def status(self,
-               fitter,
                desc='',
                scores='',
                accepts='',
@@ -236,6 +237,7 @@ class Printer(object):
         if self._quiet:
             return
 
+        fitter = self._fitter
         outarr = [fitter._event_name]
         if desc:
             if desc == 'burning':
@@ -343,7 +345,7 @@ class Printer(object):
 
         lines = lines + '\n' + line
 
-        self.inline(lines, new_line=fitter._test)
+        self.inline(lines)
 
     def get_timestring(self, t):
         """Return estimated time remaining.
