@@ -40,6 +40,8 @@ class Fallback(Engine):
         Mstarbase = Msolar
         Rstarbase = Rsolar
 
+        self.EXTRAPOLATE = True
+
         self.TESTING = False
         ##### FOR TESTING ######
         if self.TESTING == True:
@@ -332,75 +334,6 @@ class Fallback(Engine):
                             self._sim_beta[g][interp_index_low])/(self._sim_beta[g][interp_index_high] - self._sim_beta[g][interp_index_low]))
                 time = np.array(time)
                 
-                # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
-                # new dmdt(t[0]) should == min(old dmdt)
-                # use power law to fit : dmdt = b*t^xi
-
-                # calculate floor dmdt and t to extrapolate down to this value for early times
-                '''
-                dfloor = np.min(dmdt) 
-                
-                if dmdt[0] >= dfloor*1.01: # not within 1% of floor, extrapolate
-
-                    ipeak = np.argmax(dmdt) # index of peak
-
-                    prepeakfunc = CubicSpline(time[:ipeak], dmdt[:ipeak])
-                    prepeaktimes = np.logspace(np.log10(time[0]),np.log10(time[ipeak-1]),1000)
-                    prepeakdmdt = prepeakfunc(prepeaktimes)
-
-                    p = 0.1 # fraction of pre-peak dmdt to use for extrapolation to early times
-                    start = 5 # will cut off some part of original dmdt array, this # might change
-
-                    index1 = int(len(prepeakdmdt)*p) #int(ipeak*p)
-
-                    while (index1 < 8):  # p should not be larger than 0.3
-                        p += 0.1
-                        index1 = int(len(prepeakdmdt)*p) #int(ipeak*p)
-                        if p >= 0.3:
-                            #print ('enter')
-                            break
-
-
-                    while (index1-start < 5): # ensure extrapolation will include at least 5 pts
-                        start -=1
-                        if start == 0: break
-
-
-                    if p*2 < 0.5 : index2 = int(len(prepeakdmdt)*p*2) #int(ipeak*(p*2)) # ensure extrap. won't extend more than halfway to peak
-                    else: index2 = int(len(prepeakdmdt)*0.5) #int(ipeak*0.5)
-
-                    #print ('ipeak, p, start, index1, index2', ipeak, p, start, index1, index2)
-
-                    t1 = prepeaktimes[start:index1]
-                    d1 = prepeakdmdt[start:index1]
-
-                    t2 = prepeaktimes[index2 - (index1 - start):index2]
-                    d2 = prepeakdmdt[index2 - (index1 - start):index2]
-
-                    #print ('index1:',index1)
-                    #print ('index2:', index2)
-                    #print ('p:', p)
-                    # exponent for power law fit
-                    #print (start, index1, index2)
-                    xi = np.log(d1/d2)/np.log(t1/t2)
-                    xiavg = np.mean(xi)
-
-                    # multiplicative factor for power law fit
-                    b1 = d1/(t1**xiavg)
-                    if t1[-1] < t2[0]: # if arrays don't overlap take mean of all values
-                        b2 = d2/(t2**xiavg)
-                        bavg = np.mean(np.array([b1,b2])) # np.mean flattens the array, so this works
-                    else: bavg = np.mean(b1)
-
-                    logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
-
-                    indexext = len(time[time<prepeaktimes[index1]])
-                    textp = np.logspace(logtfloor, np.log10(time[start+int(indexext)]), num = 75) # ending extrapolation here will help make it a smoother transition
-                    dextp = bavg*textp**xiavg
-
-                    time = np.concatenate((textp,time[start+int(indexext) + 1:]))
-                    dmdt = np.concatenate((dextp,dmdt[start+int(indexext) + 1:]))
-                '''
                 timedict[g] = time
                 dmdtdict[g] = dmdt
 
@@ -540,22 +473,88 @@ class Fallback(Engine):
         dmdt = dmdt * np.sqrt(Mhbase/self._Mh) * (self._Mstar/Mstarbase)**2.0 * (Rstarbase/Rstar)**1.5
         # tpeak ~ Mh^(1/2) * Mstar^(-1)
         time = time * np.sqrt(self._Mh/Mhbase) * (Mstarbase/self._Mstar) * (Rstar/Rstarbase)**1.5
-        tnew = time/(3600 * 24) # time is now in days to match self._times
+        
+        time = time/(3600 * 24) # time is now in days to match self._times
+        tfallback = time[0]
+        
+        # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
+        # new dmdt(t[0]) should == min(old dmdt)
+        # use power law to fit : dmdt = b*t^xi
 
+        # calculate floor dmdt and t to extrapolate down to this value for early times
+        if self.EXTRAPOLATE:
+            dfloor = min(dmdt) # will be at late times if using James's data (which already has been late time extrap.)
+          
+            if dmdt[0] >= dfloor*1.01: # not within 1% of floor, extrapolate --> NECESSARY?
+                
+                time = time + 0.9*tfallback # try shifting time before extrapolation to make power law drop off more suddenly around tfallback
+                
+                ipeak = np.argmax(dmdt) # index of peak
 
+                # the following makes sure there is enough prepeak sampling for a good extrapolation
+                if ipeak < 1000:
+                    prepeakfunc = interp1d(time[:ipeak], dmdt[:ipeak])
+                    #prepeaktimes = np.logspace(np.log10(time[0]),np.log10(time[ipeak-1]),1000)
+                    prepeaktimes = np.linspace(time[0], time[ipeak -1], num = 1000)
+                    if prepeaktimes[-1] > time[ipeak - 1]: prepeaktimes[-1] = time[ipeak - 1]
+                    if prepeaktimes[0] < time[0]: prepeaktimes[0] = time[0]
+                    prepeakdmdt = prepeakfunc(prepeaktimes)
+                else:
+                    prepeaktimes = time[:ipeak]
+                    prepeakdmdt = dmdt[:ipeak]
+
+                p = 0.1 # fraction of pre-peak dmdt to use for extrapolation to early times
+                # Is this necessary?
+                start = 0 #int(len(prepeakdmdt)*0.05) #0 # will cut off some part of original dmdt array, this # might change
+
+                index1 = int(len(prepeakdmdt)*0.1) # last index of first part of data used for getting power law fit
+
+                index2 = int(len(prepeakdmdt)*0.15) # last index of second part of data used for getting power law fit
+
+                t1 = prepeaktimes[start:index1]
+                d1 = prepeakdmdt[start:index1]
+
+                t2 = prepeaktimes[index2 - (index1 - start):index2]
+                d2 = prepeakdmdt[index2 - (index1 - start):index2]
+
+                # exponent for power law fit
+                xi = np.log(d1/d2)/np.log(t1/t2)
+                xiavg = np.mean(xi)
+
+                # multiplicative factor for power law fit
+                b1 = d1/(t1**xiavg)
+                #b2 = d2/(t2**xiavg)
+                #if t1[-1] < t2[0]: # if arrays don't overlap take mean of all values
+                #    b2 = d2/(t2**xiavg)
+                #    bavg = np.mean(np.array([b1,b2])) # np.mean flattens the array, so this works
+                #else: bavg = np.mean(b1)
+                bavg = np.mean(b1)
+
+                #logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
+                #tfloor = 0.01
+                tfloor = 0.01 #+ 0.9*tfallback # want first time to be ~ 0 (so 0.01)
+                indexext = len(time[time<prepeaktimes[index1]])
+                #textp = np.logspace(logtfloor, np.log10(time[int(indexext)]), num = ipeak*5) # ending extrapolation here will help make it a smoother transition
+                textp = np.linspace(tfloor,time[int(indexext)], num = ipeak*5)
+                dextp = bavg*(textp**xiavg)
+
+                time = np.concatenate((textp,time[int(indexext) + 1:]))
+                
+                time = time - 0.9*tfallback # shift back to original times
+                dmdt = np.concatenate((dextp,dmdt[int(indexext) + 1:])) 
    
 
         # try aligning first fallback time of simulation
-        # (whatever first time is after early t extrapolation) with parameter texplosion
-        self._rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days (very close
-        # bug was fixed in densetimes.py, now uses resttexplosion
-        tnew = tnew - (tnew[0] - self._rest_t_explosion)
+        # (whatever first time is before early t extrapolation) with parameter texplosion
+        self._rest_t_explosion = kwargs['resttexplosion'] # resttexplosion in days 
+        time = time - tfallback + self._rest_t_explosion
+
         
-        tpeak = tnew[np.argmax(dmdt)]
+        tpeak = time[np.argmax(dmdt)]
 
         if self.TESTING == True:
             np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt'+'{:08d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
-            (tnew, dmdt))
+            (time, dmdt))
 
 
         # ----------------TESTING ----------------
@@ -570,12 +569,12 @@ class Fallback(Engine):
         #dp = max(dmdt)
         #print (self.testnum, 'self._times[0]-[-1] =', self._times[0],'-', self._times[-1], 
         #    '; tnew[0]-[-1] =', tnew[0],'-', tnew[-1], '; tp =', tp,'; dmdt_p =', dp ) #, self._rest_times[-1], max(self._rest_times))
-        timeinterpfunc = interp1d(tnew, dmdt)
+        timeinterpfunc = interp1d(time, dmdt)
 
-        lengthpretimes = len(np.where(self._times < tnew[0])[0])
-        lengthposttimes = len(np.where(self._times > tnew[-1])[0])
+        lengthpretimes = len(np.where(self._times < time[0])[0])
+        lengthposttimes = len(np.where(self._times > time[-1])[0])
 
-        # this removes all extrapolation by setting dmdtnew = 0 outside of bounds of tnew
+        # this removes all extrapolation by interp1d by setting dmdtnew = 0 outside of bounds of tnew
         dmdt1 = np.zeros(lengthpretimes)
         dmdt3 = np.zeros(lengthposttimes)
         # include len(self._times) instead of just using -lengthposttimes for indexing in case lenghtposttimes == 0
