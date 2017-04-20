@@ -20,7 +20,7 @@ if [ "$1" = -c ]; then
 else
     $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic
 fi
-$RUNNER -m mosfit -e 12dlf --test -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0 -g -c --no-copy-at-launch
+$RUNNER -m mosfit -e 12dlf --test -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0 -g -c --no-copy-at-launch -x radiusphot
 $RUNNER -m mosfit -e 2010kd --test -i 5 --no-fracking -m csmni --extra-bands u g --extra-instruments LSST -L 55540 55560 --exclude-bands B -s test --quiet -u
 
 if [ "$1" = -c ]; then
