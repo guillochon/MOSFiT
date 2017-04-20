@@ -79,20 +79,26 @@ class Likelihood(Module):
             if o
         ])
 
-        if np.any(residuals is None):
+        if np.any(residuals == None):  # noqa: E711
             raise ValueError('Null residual.')
 
         # Observational errors to be put in diagonal of error matrix.
         diag = [
-            ((ctel if x < ct else cteu) ** 2) if ct is not None else
-            ((el if x > y else eu) ** 2) if a else
+            ((ctel if x < ct else cteu) ** 2)
+            if t == 'countrate' and ct is not None else
+            ((el if x > y else eu) ** 2)
+            if t == 'magnitude' and y is not None else
             ((fdel if x < fd else fdeu) ** 2)
-            for x, y, eu, el, fd, fdeu, fdel, ct, ctel, cteu, o, a in zip(
+            if t == 'fluxdensity' and fd is not None else None
+            for x, y, eu, el, fd, fdeu, fdel, ct, ctel, cteu, o, t in zip(
                 self._model_observations, self._mags,
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
                 self._e_l_fds, self._cts, self._e_l_cts, self._e_u_cts,
-                self._observed, self._are_bands) if o
+                self._observed, self._observation_types) if o
         ]
+
+        if np.any(diag == None):  # noqa: E711
+            raise ValueError('Null error.')
 
         is_diag = False
         if self._codeltatime >= 0 or self._codeltalambda >= 0:
