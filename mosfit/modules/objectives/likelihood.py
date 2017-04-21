@@ -60,8 +60,8 @@ class Likelihood(Module):
         self._o_band_vs = self._band_vs[self._observed]
 
         if np.count_nonzero(self._cmask):
-            self._o_band_vs[self._cmask] = self._cts[self._cmask] * 10.0 ** (
-                self._o_band_vs[self._cmask] / 2.5)
+            self._o_band_vs[self._cmask] = self._cts[self._cmask] * (10.0 ** (
+                self._o_band_vs[self._cmask] / 2.5) - 1.0)
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
@@ -83,7 +83,7 @@ class Likelihood(Module):
             raise ValueError('Null residual.')
 
         # Observational errors to be put in diagonal of error matrix.
-        diag = [
+        diag = np.array([
             ((ctel if x < ct else cteu) ** 2)
             if t == 'countrate' and ct is not None else
             ((el if x > y else eu) ** 2)
@@ -95,7 +95,7 @@ class Likelihood(Module):
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
                 self._e_l_fds, self._cts, self._e_l_cts, self._e_u_cts,
                 self._observed, self._observation_types) if o
-        ]
+        ])
 
         if np.any(diag == None):  # noqa: E711
             raise ValueError('Null error.')

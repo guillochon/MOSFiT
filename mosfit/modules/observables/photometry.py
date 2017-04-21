@@ -315,7 +315,6 @@ class Photometry(Module):
                         wavs, self._band_wavelengths[bi],
                         self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
                             self.H_C_ANG_CGS / wavs)
-                    print(max(yvals))
                     eff_fluxes[li] = np.abs(np.trapz(
                         yvals, band_es) / self._filter_integrals[bi])
                 else:
