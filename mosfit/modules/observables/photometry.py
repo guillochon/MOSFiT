@@ -7,8 +7,8 @@ from collections import OrderedDict
 from copy import deepcopy
 
 import numpy as np
-from astropy import units as u
 from astropy import constants as c
+from astropy import units as u
 from astropy.io.votable import parse as voparse
 from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
@@ -224,9 +224,6 @@ class Photometry(Module):
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
                 self._band_wavelengths[i] = xscale / self._band_energies[i]
-                self._filter_integrals[i] = np.trapz(
-                    self._band_areas[i],
-                    self._band_energies[i])
                 self._average_wavelengths[i] = np.trapz([
                     x * y
                     for x, y in zip(
@@ -309,14 +306,11 @@ class Photometry(Module):
                         yvals, dx=dx) / self._filter_integrals[bi]
                 elif self._observation_types[li] == 'countrate':
                     wavs = np.array(kwargs['sample_wavelengths'][bi])
-                    band_es = self.C_CGS * self.H_CGS / (
-                        self.ANG_CGS * wavs) / self._band_xu[bi]
-                    yvals = np.interp(
-                        wavs, self._band_wavelengths[bi],
-                        self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
-                            self.H_C_ANG_CGS / wavs)
-                    eff_fluxes[li] = np.abs(np.trapz(
-                        yvals, band_es) / self._filter_integrals[bi])
+                    yvals = (np.interp(
+                        wavs, self._band_wavelengths[bi], self._band_areas[
+                            bi]) * kwargs['seds'][li] / zp1 / (
+                                self.H_C_ANG_CGS / wavs))
+                    eff_fluxes[li] = np.trapz(yvals, wavs)
                 else:
                     raise RuntimeError('Unknown observation kind.')
             else:

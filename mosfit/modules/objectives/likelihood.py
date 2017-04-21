@@ -59,13 +59,12 @@ class Likelihood(Module):
 
         self._o_band_vs = self._band_vs[self._observed]
 
-        if np.count_nonzero(self._cmask):
-            self._o_band_vs[self._cmask] = self._cts[self._cmask] * (10.0 ** (
-                self._o_band_vs[self._cmask] / 2.5) - 1.0)
+        self._model_observations[self._cmask] = -2.5 * np.log10(
+            self._model_observations[self._cmask])
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
-            (abs(x - ct) if not u or (x > ct and not isnan(x)) else 0.0)
+            (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0)
             if t == 'countrate' and ct is not None
             else
             (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0)
@@ -84,7 +83,7 @@ class Likelihood(Module):
 
         # Observational errors to be put in diagonal of error matrix.
         diag = np.array([
-            ((ctel if x < ct else cteu) ** 2)
+            ((ctel if x > ct else cteu) ** 2)
             if t == 'countrate' and ct is not None else
             ((el if x > y else eu) ** 2)
             if t == 'magnitude' and y is not None else
@@ -161,7 +160,7 @@ class Likelihood(Module):
         self._times = np.array(kwargs.get('times', []))
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
-        self._cts = np.array(kwargs.get('countrates', []))
+        self._cts = -2.5 * np.log10(np.array(kwargs.get('countrates', [])))
         self._freqs = kwargs.get('frequencies', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
         self._e_l_mags = kwargs.get('e_lower_magnitudes', [])
@@ -204,20 +203,24 @@ class Likelihood(Module):
         ]
 
         # Now counts
-        self._cmask = [x is not None for x in self._cts]
+        self._cmask = np.array([x is not None for x in self._cts])
         self._e_u_cts = [
             kwargs['default_upper_limit_error']
             if (e is None and eu is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e is None and eu is None) else (e if eu is None else eu))
-            for i, (e, eu) in enumerate(zip(self._e_cts, self._e_u_cts))
+             if (e is None and eu is None) else
+             2.5 * (np.log10(c + (e if eu is None else eu)) - np.log10(c)))
+            for i, (c, e, eu) in enumerate(zip(
+                self._cts, self._e_cts, self._e_u_cts))
         ]
         self._e_l_cts = [
             kwargs['default_upper_limit_error']
             if (e is None and el is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e is None and el is None) else (e if el is None else el))
-            for i, (e, el) in enumerate(zip(self._e_cts, self._e_l_cts))
+             if (e is None and el is None) else
+             2.5 * (np.log10(c) - np.log10(c - (e if el is None else el))))
+            for i, (c, e, el) in enumerate(zip(
+                self._cts, self._e_cts, self._e_l_cts))
         ]
 
         # Now flux densities

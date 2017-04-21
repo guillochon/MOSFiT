@@ -35,15 +35,15 @@ class LOSExtinction(SED):
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]
             # Extinct out host gal (using rest wavelengths)
-            if bi >= 0:
+            if bi >= 0 and np.count_nonzero(self._ext_indices[si]) > 0:
                 if bi not in extinct_cache:
                     extinct_cache[bi] = odonnell94(
-                        self._band_rest_wavelengths[bi], av_host,
-                        self._rv_host)
+                        self._band_rest_wavelengths[bi][self._ext_indices[si]],
+                        av_host, self._rv_host)
                 # Add host and MW contributions
                 eapp(
                     self._mw_extinct[bi] + extinct_cache[bi],
-                    self._seds[si],
+                    self._seds[si][self._ext_indices[si]],
                     inplace=True)
             else:
                 # wavelengths = np.array(
@@ -65,7 +65,12 @@ class LOSExtinction(SED):
         self._av_mw = self.MW_RV * self._ebv
         # Pre-calculate LOS dust from MW for all bands
         self._mw_extinct = np.zeros_like(self._sample_wavelengths)
+        self._ext_indices = []
         for si, sw in enumerate(self._sample_wavelengths):
-            self._mw_extinct[si] = odonnell94(self._sample_wavelengths[si],
-                                              self._av_mw, self.MW_RV)
+            self._ext_indices.append(
+                self._sample_wavelengths[si] >= 1.0e4 / 11.0)
+            if np.count_nonzero(self._ext_indices[si]) > 0:
+                self._mw_extinct[si][self._ext_indices[si]] = odonnell94(
+                    self._sample_wavelengths[si][self._ext_indices[si]],
+                    self._av_mw, self.MW_RV)
         self._preprocessed = True
