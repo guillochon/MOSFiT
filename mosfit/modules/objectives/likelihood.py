@@ -160,7 +160,7 @@ class Likelihood(Module):
         self._times = np.array(kwargs.get('times', []))
         self._mags = kwargs.get('magnitudes', [])
         self._fds = kwargs.get('fluxdensities', [])
-        self._cts = -2.5 * np.log10(np.array(kwargs.get('countrates', [])))
+        self._cts = np.array(kwargs.get('countrates', []))
         self._freqs = kwargs.get('frequencies', [])
         self._e_u_mags = kwargs.get('e_upper_magnitudes', [])
         self._e_l_mags = kwargs.get('e_lower_magnitudes', [])
@@ -204,6 +204,7 @@ class Likelihood(Module):
 
         # Now counts
         self._cmask = np.array([x is not None for x in self._cts])
+        self._cts[self._cmask] = -2.5 * np.log10(self._cts[self._cmask])
         self._e_u_cts = [
             kwargs['default_upper_limit_error']
             if (e is None and eu is None and self._upper_limits[i]) else
