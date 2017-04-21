@@ -131,7 +131,7 @@ class Printer(object):
             text = color + text + '!e'
         if warning or error or color:
             colorify = True
-        tspl = text.splitlines()
+        tspl = (text + '\n').splitlines()
         if wrapped:
             if not wrap_length or not is_integer(wrap_length):
                 wrap_length = self._wrap_length

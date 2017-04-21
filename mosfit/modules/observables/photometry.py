@@ -23,7 +23,9 @@ class Photometry(Module):
 
     FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
     ANG_CGS = u.Angstrom.cgs.scale
-    H_C_ANG_CGS = c.h.cgs.value * c.c.cgs.value * u.Angstrom.cgs.scale
+    H_C_ANG_CGS = c.h.cgs.value * c.c.cgs.value / u.Angstrom.cgs.scale
+    C_CGS = c.c.cgs.value
+    H_CGS = c.h.cgs.value
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -92,6 +94,8 @@ class Photometry(Module):
         self._band_offsets = np.full(self._n_bands, 0.0)
         self._band_xunits = np.full(self._n_bands, 'Angstrom', dtype=object)
         self._band_yunits = np.full(self._n_bands, '', dtype=object)
+        self._band_xu = np.full(self._n_bands, u.Angstrom.cgs.scale)
+        self._band_yu = np.full(self._n_bands, 1.0)
         self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
 
         prt = self._printer
@@ -100,10 +104,14 @@ class Photometry(Module):
             vo_tabs = OrderedDict()
             prt.prt('')
 
+        per = 0.0
         for i, band in enumerate(self._unique_bands):
             if self._pool.is_master():
-                prt.prt('Loading bands [ {0:.0f}% ]'.format(
-                    100.0 * float(i) / len(self._unique_bands)), inline=True)
+                new_per = np.round(100.0 * float(i) / len(self._unique_bands))
+                if new_per > per:
+                    per = new_per
+                    prt.prt('Loading bands [ {0:.0f}% ]'.format(
+                        per), inline=True)
                 systems = ['AB']
                 zps = [0.0]
                 if 'SVO' in band:
@@ -207,17 +215,17 @@ class Photometry(Module):
             xvals = np.array(xvals)
             yvals = np.array(yvals)
 
-            xu = u.Unit(self._band_xunits[i])
-            yu = u.Unit(self._band_yunits[i])
-            if '{0}'.format(yu) == 'cm2':
-                xscale = (c.c / (xu / c.h) / (1.0 * u.Angstrom)).cgs.value
+            self._band_xu[i] = u.Unit(self._band_xunits[i]).cgs.scale
+            self._band_yu[i] = u.Unit(self._band_yunits[i]).cgs.scale
+            if '{0}'.format(self._band_yunits[i]) == 'cm2':
+                xscale = (c.h * c.c /
+                          u.Angstrom).cgs.value / self._band_xu[i]
                 self._band_kinds[i] = 'countrate'
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
-                self._band_wavelengths[i] = np.array([
-                    xscale / x for x in self._band_energies[i]])
+                self._band_wavelengths[i] = xscale / self._band_energies[i]
                 self._filter_integrals[i] = np.trapz(
-                    np.array(self._band_areas[i]),
+                    self._band_areas[i],
                     self._band_energies[i])
                 self._average_wavelengths[i] = np.trapz([
                     x * y
@@ -301,12 +309,15 @@ class Photometry(Module):
                         yvals, dx=dx) / self._filter_integrals[bi]
                 elif self._observation_types[li] == 'countrate':
                     wavs = np.array(kwargs['sample_wavelengths'][bi])
+                    band_es = self.C_CGS * self.H_CGS / (
+                        self.ANG_CGS * wavs) / self._band_xu[bi]
                     yvals = np.interp(
                         wavs, self._band_wavelengths[bi],
                         self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
                             self.H_C_ANG_CGS / wavs)
-                    eff_fluxes[li] = np.trapz(
-                        yvals, wavs) / self._filter_integrals[bi]
+                    print(max(yvals))
+                    eff_fluxes[li] = np.abs(np.trapz(
+                        yvals, band_es) / self._filter_integrals[bi])
                 else:
                     raise RuntimeError('Unknown observation kind.')
             else:
