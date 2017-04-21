@@ -1115,6 +1115,10 @@ class Fitter(object):
                                     i] * flux_density_unit('µJy')
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['observation_types'][i] == 'countrate':
+                            photodict[PHOTOMETRY.COUNT_RATE] = output[
+                                'model_observations'][i]
+                            photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]
