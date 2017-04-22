@@ -36,9 +36,10 @@ class Module(object):
         """Process module, should always return a dictionary."""
         return OrderedDict()
 
-    def reset_preprocessed(self):
+    def reset_preprocessed(self, exceptions):
         """Reset preprocessed flag."""
-        self._preprocessed = False
+        if self._name not in exceptions:
+            self._preprocessed = False
 
     def send_request(self, request):
         """Send a request."""

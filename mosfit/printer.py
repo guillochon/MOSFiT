@@ -110,11 +110,11 @@ class Printer(object):
             output = output.replace(code, self.bcolors.codes[code])
         return output
 
-    def prt(
-            self, text, colorify=False, center=False, width=None,
-            warning=False, error=False, prefix=True, color='', inline=False,
+    def _lines(
+        self, text, colorify=False, center=False, width=None,
+        warning=False, error=False, prefix=True, color='', inline=False,
             wrap_length=None, wrapped=False, master_only=True):
-        """Print text without modification."""
+        """Generate lines for output."""
         if self._quiet:
             return
         if master_only and self._pool and not self._pool.is_master():
@@ -129,8 +129,6 @@ class Printer(object):
                 text = '!r' + self._strings['error'] + ': ' + text + '!e'
         if color:
             text = color + text + '!e'
-        if warning or error or color:
-            colorify = True
         tspl = (text + '\n').splitlines()
         if wrapped:
             if not wrap_length or not is_integer(wrap_length):
@@ -139,6 +137,20 @@ class Printer(object):
             for line in tspl:
                 ntspl.extend(fill(line, wrap_length).splitlines())
             tspl = ntspl
+        return tspl
+
+    def prt(self, text, **kwargs):
+        """Print text without modification."""
+        warning = kwargs.get('warning', False)
+        error = kwargs.get('error', False)
+        color = kwargs.get('color', '')
+        inline = kwargs.get('inline', False)
+        center = kwargs.get('center', False)
+        width = kwargs.get('width', None)
+        colorify = kwargs.get('colorify', False)
+        tspl = self._lines(text, **kwargs)
+        if warning or error or color:
+            colorify = True
         if inline and self._fitter is not None:
             inline = not self._fitter._test
         if inline:
@@ -153,6 +165,20 @@ class Printer(object):
                 tlen = len(repr(rline)) - len(line) - line.count('!')
                 rline = rline.center(width + tlen)
             print(rline, flush=True)
+
+    def string(self, text, **kwargs):
+        """Return message string."""
+        center = kwargs['center']
+        width = kwargs['width']
+        tspl = self._lines(text, **kwargs)
+        lines = []
+        for ri, line in enumerate(tspl):
+            rline = line
+            if center:
+                tlen = len(repr(rline)) - len(line) - line.count('!')
+                rline = rline.center(width + tlen)
+            lines.append(rline)
+        return '\n'.join(lines)
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,

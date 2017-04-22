@@ -516,7 +516,7 @@ class Fitter(object):
 
         # Reset modules
         for task in self._model._call_stack:
-            self._model._modules[task].reset_preprocessed()
+            self._model._modules[task].reset_preprocessed(['photometry'])
 
         # Run through inits once more.
         for root in ['output', 'objective']:
