@@ -37,7 +37,7 @@ class Printer(object):
         OKGREEN = '\033[0;92m'
         WARNING = '\033[0;93m'
         FAIL = '\033[0;91m'
-        ENDC = '\033[0;0m'
+        ENDC = '\033[0m'
         BOLD = '\033[0;1m'
         UNDERLINE = '\033[4m'
         CYAN = '\033[0;96m'
@@ -382,7 +382,6 @@ class Printer(object):
                 text = translator.translate(text, dest=self._language).text
                 text = text.format(*reps)
             except Exception:
-                raise
                 pass
         return text
 

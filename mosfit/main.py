@@ -1,6 +1,7 @@
 """The main function."""
 
 import argparse
+import locale
 import os
 import shutil
 import sys
@@ -466,6 +467,10 @@ def main():
 
     if args.speak:
         speak('Mosfit', args.speak)
+
+    if args.language == 'en':
+        loc = locale.getlocale()
+        args.language = loc[0].split('_')[0]
 
     if args.language != 'en':
         try:
