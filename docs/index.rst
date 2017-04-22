@@ -12,20 +12,10 @@ Using MOSFiT
    installation.rst
    getting_started.rst
 
-
-Command line arguments
-----------------------
 .. toctree::
    :maxdepth: 1
 
    command_line.rst
-
-
-API
----
-.. toctree::
-   :maxdepth: 1
-
    api.rst
 
 Indices and tables
