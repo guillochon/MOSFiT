@@ -682,7 +682,6 @@ class Fitter(object):
                     self._draw_above_likelihood = np.mean(dwscores)
 
         prt.message('initial_draws', inline=True)
-        prt.prt('\n\n')
         p = list(p0)
 
         sli = 1.0  # Keep track of how many times chain halved
