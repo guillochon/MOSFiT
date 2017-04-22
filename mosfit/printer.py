@@ -116,9 +116,9 @@ class Printer(object):
             wrap_length=None, wrapped=False, master_only=True):
         """Generate lines for output."""
         if self._quiet:
-            return
+            return []
         if master_only and self._pool and not self._pool.is_master():
-            return
+            return []
         if width is None:
             width = self._wrap_length
         if warning:
