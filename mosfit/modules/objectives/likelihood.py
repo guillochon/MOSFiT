@@ -204,7 +204,8 @@ class Likelihood(Module):
 
         # Now counts
         self._cmask = np.array([x is not None for x in self._cts])
-        self._cts[self._cmask] = -2.5 * np.log10(self._cts[self._cmask])
+        self._cts[self._cmask] = -2.5 * np.log10(self._cts[self._cmask]
+                                                 .astype(np.float64))
         self._e_u_cts = [
             kwargs['default_upper_limit_error']
             if (e is None and eu is None and self._upper_limits[i]) else

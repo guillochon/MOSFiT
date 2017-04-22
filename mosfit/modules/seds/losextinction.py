@@ -1,6 +1,8 @@
 """Definitions for the `LOSExtinction` class."""
 from collections import OrderedDict
 
+import astropy.constants as c
+import astropy.units as u
 import numpy as np
 from mosfit.modules.seds.sed import SED
 
@@ -15,25 +17,43 @@ class LOSExtinction(SED):
     """Adds extinction to SED from both host galaxy and MW."""
 
     MW_RV = 3.1
+    H_CGS = c.h.cgs.value
+    C_CGS = c.c.cgs.value
+    H_C_CGS = c.h.cgs.value * c.c.cgs.value
+    ANG_CGS = u.Angstrom.cgs.scale
+    KEV_CGS = u.keV.cgs.scale
+    LYMAN = 912.0
 
-    def __init__(self):
+    def __init__(self, **kwargs):
         """Initialize module."""
-        self._mm83 = [[0.03, 0.0, 0.0, 0.0],
-                      [0.1, 17.3, 608.1, -2150.0],
-                      [0.284, 34.6, 267.9, -476.1],
-                      [0.4, 78.1, 18.8, 4.3],
-                      [0.532, 71.4, 66.8, -51.4],
-                      [0.707, 95.5, 145.8, -61.1],
-                      [0.867, 308.9, -380.6, 294.0],
-                      [1.303, 120.6, 169.3, -47.7],
-                      [1.84, 141.3, 146.8, -31.5],
-                      [2.471, 202.7, 104.7, -17.0],
-                      [3.21, 342.7, 18.7, 0.0],
-                      [4.038, 352.2, 18.7, 0.0],
-                      [7.111, 433.9, -2.4, 0.75],
-                      [8.331, 629.0, 30.9, 0.0],
-                      [10.0, 701.2, 25.2, 0.0]
-                      ]
+        super(LOSExtinction, self).__init__(**kwargs)
+
+        self._mm83 = np.array(
+            [[0.03, 17.3, 608.1, -2150.0],
+             [0.1, 34.6, 267.9, -476.1],
+             [0.284, 78.1, 18.8, 4.3],
+             [0.4, 71.4, 66.8, -51.4],
+             [0.532, 95.5, 145.8, -61.1],
+             [0.707, 308.9, -380.6, 294.0],
+             [0.867, 120.6, 169.3, -47.7],
+             [1.303, 141.3, 146.8, -31.5],
+             [1.84, 202.7, 104.7, -17.0],
+             [2.471, 342.7, 18.7, 0.0],
+             [3.21, 352.2, 18.7, 0.0],
+             [4.038, 433.9, -2.4, 0.75],
+             [7.111, 629.0, 30.9, 0.0],
+             [8.331, 701.2, 25.2, 0.0]
+             ])
+        self._min_xray = 0.03
+        self._max_xray = 10.0
+        self._min_wavelength = 1.0 * self.C_CGS / (
+            self._max_xray * self.KEV_CGS / self.H_CGS)
+        self._almin = 1.0e-24 * (
+            self._mm83[0, 1] + self._mm83[0, 2] * self._min_xray +
+            self._mm83[0, 3] * self._min_xray ** 2) / self._min_xray ** 3
+        self._almax = 1.0e-24 * (
+            self._mm83[-1, 1] + self._mm83[-1, 2] * self._max_xray +
+            self._mm83[-1, 3] * self._max_xray ** 2) / self._max_xray ** 3
 
     def process(self, **kwargs):
         """Process module."""
@@ -54,16 +74,24 @@ class LOSExtinction(SED):
         for si, cur_band in enumerate(self._bands):
             bi = self._band_indices[si]
             # Extinct out host gal (using rest wavelengths)
-            if bi >= 0 and np.count_nonzero(self._ext_indices[si]) > 0:
+            if bi >= 0:
                 if bi not in extinct_cache:
-                    extinct_cache[bi] = odonnell94(
-                        self._band_rest_wavelengths[bi][self._ext_indices[si]],
-                        av_host, self._rv_host)
+                    extinct_cache[bi] = np.zeros_like(
+                        self._band_rest_wavelengths[bi])
+                    ind = self._ext_indices[si]
+                    if np.count_nonzero(ind) > 0:
+                        extinct_cache[bi][ind] = odonnell94(
+                            self._band_rest_wavelengths[bi][ind],
+                            av_host, self._rv_host)
+                    ind = self._x_indices[si]
+                    if np.count_nonzero(ind) > 0:
+                        extinct_cache[bi][ind] = self.mm83(
+                            self._nh_host,
+                            self._band_rest_wavelengths[bi][ind])
                 # Add host and MW contributions
                 eapp(
                     self._mw_extinct[bi] + extinct_cache[bi],
-                    self._seds[si][self._ext_indices[si]],
-                    inplace=True)
+                    self._seds[si], inplace=True)
             else:
                 # wavelengths = np.array(
                 #   [c.c.cgs.value / self._frequencies[si]])
@@ -82,14 +110,42 @@ class LOSExtinction(SED):
             return
         self._ebv = kwargs[self.key('ebv')]
         self._av_mw = self.MW_RV * self._ebv
+        self._nh_mw = self._av_mw * 1.8e21
         # Pre-calculate LOS dust from MW for all bands
         self._mw_extinct = np.zeros_like(self._sample_wavelengths)
         self._ext_indices = []
+        self._x_indices = []
         for si, sw in enumerate(self._sample_wavelengths):
             self._ext_indices.append(
-                self._sample_wavelengths[si] >= 1.0e4 / 11.0)
+                self._sample_wavelengths[si] >= self.LYMAN)
+            self._x_indices.append(
+                (self._sample_wavelengths[si] >= self._min_wavelength) &
+                (self._sample_wavelengths[si] < self.LYMAN))
             if np.count_nonzero(self._ext_indices[si]) > 0:
                 self._mw_extinct[si][self._ext_indices[si]] = odonnell94(
                     self._sample_wavelengths[si][self._ext_indices[si]],
                     self._av_mw, self.MW_RV)
+            if np.count_nonzero(self._x_indices[si]) > 0:
+                self._mw_extinct[si][self._x_indices[si]] = self.mm83(
+                    self._nh_mw,
+                    self._sample_wavelengths[si][self._x_indices[si]])
         self._preprocessed = True
+
+    def mm83(self, nh, waves):
+        """X-ray extinction in the ISM from Morisson & McCammon 1983."""
+        y = np.array([self.H_C_CGS / (x * self.ANG_CGS * self.KEV_CGS)
+                      for x in waves])
+        i = np.array([np.searchsorted(self._mm83[:, 0], x) - 1 for x in y])
+        al = [1.0e-24 * (self._mm83[x, 1] + self._mm83[x, 2] * y[j] +
+                         self._mm83[x, 3] * y[j] ** 2) / y[j] ** 3
+              for j, x in enumerate(i)]
+        # For less than 0.03 keV assume cross-section scales as E^-3.
+        # http://ned.ipac.caltech.edu/level5/Madau6/Madau1_2.html
+        # See also Rumph, Boyer, & Vennes 1994.
+        al = [al[j] if x < self._min_xray
+              else self._almin * (self._min_xray / x) ** 3
+              for j, x in enumerate(y)]
+        al = [al[j] if x > self._max_xray
+              else self._almax * (self._max_xray / x) ** 3
+              for j, x in enumerate(y)]
+        return nh * np.array(al)
