@@ -173,6 +173,8 @@ class Fitter(object):
         ps = [[] for x in range(len(event_list))]
         lnprobs = [[] for x in range(len(event_list))]
 
+        walker_data = []
+
         self._event_name = 'Batch'
         self._event_catalog = ''
         for ei, event in enumerate(event_list):
@@ -328,7 +330,6 @@ class Fitter(object):
                         pool.comm.send(path, dest=rank, tag=1)
                         pool.comm.send(data, dest=rank, tag=2)
 
-                    walker_data = []
                     if len(walker_paths):
                         walker_path = walker_paths[ei]
                         if os.path.exists(walker_path):
