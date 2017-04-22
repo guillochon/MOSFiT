@@ -16,7 +16,7 @@ Using MOSFiT
 Command line arguments
 ----------------------
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    command_line.rst
 
@@ -24,7 +24,7 @@ Command line arguments
 API
 ---
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
 
    api.rst
 
