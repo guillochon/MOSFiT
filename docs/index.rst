@@ -1,17 +1,13 @@
-.. MOSFiT documentation master file, created by
-   sphinx-quickstart on Tue Feb 28 11:27:01 2017.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+MOSFiT
+======
 
-MOSFiT documentation
-====================
-
-Welcome to the documentation for MOSFiT! Please see the links below for information on how to install and run the package.
+Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients)! Please see the links below for information on how to install and run the package.
 
 Using MOSFiT
 ------------
 
 .. toctree::
+   :maxdepth: 2
 
    installation.rst
    getting_started.rst
@@ -20,7 +16,7 @@ Using MOSFiT
 Command line arguments
 ----------------------
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    command_line.rst
 
@@ -28,7 +24,7 @@ Command line arguments
 API
 ---
 .. toctree::
-   :maxdepth: 1
+   :maxdepth: 2
 
    api.rst
 
@@ -38,3 +34,10 @@ Indices and tables
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
+
+License & Attribution
+---------------------
+
+Copyright 2016+, James Guillochon, Matt Nicholl, and contributors.
+
+The source code is made available under the terms of the MIT license.
