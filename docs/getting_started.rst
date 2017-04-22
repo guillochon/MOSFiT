@@ -54,9 +54,9 @@ possible outcomes for a given theoretical model:
 
 The code outputs JSON files for each event/model combination that each
 contain a set of walkers that have been relaxed into an equilibrium
-about the combinations of parameters with the maximum likelihood. This
-output is visualized via an example Jupyter notebook (``mosfit.ipynb``)
-included with the software in the main directory, which by default shows
+about the posterior parameter distributions. This
+output is visualized via an example Jupyter notebook (``mosfit.ipynb``),
+which is copied to the `products` folder in the run directory, and by default shows
 output from the last ``MOSFiT`` run.
 
 To upload fits back to the open astronomy catalogs, users simply pass
