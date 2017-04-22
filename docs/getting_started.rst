@@ -68,4 +68,4 @@ the ``-u`` to the the code:
 
 After running ``MOSFiT`` to completion, and if the fits satisfy some
 quality checks, the model fits will be displayed on the open catalogs
-within 48 hours of their submission.
+within 24 hours of their submission.
