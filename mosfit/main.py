@@ -68,6 +68,18 @@ def get_parser():
               "of models"))
 
     parser.add_argument(
+        '--walker-paths',
+        '-w',
+        dest='walker_paths',
+        default=[],
+        nargs='+',
+        help=("List of paths to Open Catalog format files with walkers from "
+              "which to draw initial walker positions. Output data from "
+              "MOSFiT can be loaded with this command. If some variables "
+              "are not contained within the input file(s), they will be "
+              "drawn instead randomly from the specified model priors."))
+
+    parser.add_argument(
         '--plot-points',
         dest='plot_points',
         default=100,
@@ -470,7 +482,8 @@ def main():
 
     if args.language == 'en':
         loc = locale.getlocale()
-        args.language = loc[0].split('_')[0]
+        if loc[0]:
+            args.language = loc[0].split('_')[0]
 
     if args.language != 'en':
         try:

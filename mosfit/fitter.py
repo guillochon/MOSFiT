@@ -114,6 +114,7 @@ class Fitter(object):
                    language='en',
                    return_fits=True,
                    extra_outputs=[],
+                   walker_paths=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -314,8 +315,7 @@ class Fitter(object):
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
-                        prt.message('event_file')
-                        prt.prt('  ' + path, wrapped=True)
+                        prt.message('event_file', [path], wrapped=True)
                     else:
                         prt.message('no_data', [
                             self._event_name, '/'.join(self._catalogs.keys())])
@@ -327,10 +327,32 @@ class Fitter(object):
                         pool.comm.send(self._event_name, dest=rank, tag=0)
                         pool.comm.send(path, dest=rank, tag=1)
                         pool.comm.send(data, dest=rank, tag=2)
+
+                    if not len(walker_paths):
+                        walker_data = []
+                    else:
+                        walker_path = walker_paths[ei]
+                        if os.path.exists(walker_path):
+                            with open(walker_path, 'r') as f:
+                                walker_data = json.load(
+                                    f, object_pairs_hook=OrderedDict)
+                            prt.message('walker_file', [
+                                        walker_path], wrapped=True)
+                        else:
+                            prt.message('no_walker_data', [
+                                self._event_name,
+                                '/'.join(self._catalogs.keys())])
+                            if offline:
+                                prt.message('omit_offline')
+                            raise RuntimeError
+
+                    for rank in range(1, pool.size + 1):
+                        pool.comm.send(walker_data, dest=rank, tag=3)
                 else:
                     self._event_name = pool.comm.recv(source=0, tag=0)
                     path = pool.comm.recv(source=0, tag=1)
                     data = pool.comm.recv(source=0, tag=2)
+                    walker_data = pool.comm.recv(source=0, tag=3)
                     pool.wait()
 
                 self._event_path = path
@@ -399,7 +421,8 @@ class Fitter(object):
                         band_bandsets=band_bandsets,
                         variance_for_each=variance_for_each,
                         user_fixed_parameters=user_fixed_parameters,
-                        pool=pool)
+                        pool=pool,
+                        walker_data=walker_data)
 
                     if success:
                         entry, p, lnprob = self.fit_data(
@@ -447,7 +470,8 @@ class Fitter(object):
                   band_bandsets=[],
                   variance_for_each=[],
                   user_fixed_parameters=[],
-                  pool=''):
+                  pool='',
+                  walker_data=[]):
         """Load the data for the specified event."""
         prt = self._printer
         fixed_parameters = []
