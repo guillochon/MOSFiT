@@ -653,7 +653,7 @@ class Fitter(object):
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
         if nwalkers < 10 * ndim:
-            prt.message('want_more_walkers', [10 * ndim],
+            prt.message('want_more_walkers', [10 * ndim, nwalkers],
                         warning=True)
         prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]

@@ -389,7 +389,7 @@ class Printer(object):
     def rep_ansi(self, text):
         """Replace ANSI codes and return the list of codes."""
         patt = re.compile(r'({})'.format(
-            '|'.join(['\{\}'] + list(self.bcolors.codes.keys()))))
+            '|'.join(['\{.*?\}'] + list(self.bcolors.codes.keys()))))
         stext = patt.sub("{}", text)
         matches = patt.findall(text)
         return stext, matches
