@@ -6,6 +6,8 @@
 MOSFiT documentation
 ====================
 
+Welcome to the documentation for MOSFiT! Please see the links below for information on how to install and run the package.
+
 Using MOSFiT
 ------------
 
