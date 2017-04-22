@@ -472,7 +472,7 @@ class Model(object):
                     trees[tag]['children'].update(children)
                     simple[tag].update(simple_children)
 
-    def draw_walker(self, test=True):
+    def draw_walker(self, test=True, walkers_pool=[]):
         """Draw a walker randomly.
 
         Draw a walker randomly from the full range of all parameters, reject
@@ -486,6 +486,12 @@ class Model(object):
                 self._modules[self._free_parameters[i]].prior_cdf(x)
                 for i, x in enumerate(draw)
             ]
+            chosen_one = None
+            if len(walkers_pool):
+                chosen_one = np.random.choice(range(len(walkers_pool)))
+                for e, elem in enumerate(walkers_pool[chosen_one]):
+                    if elem:
+                        draw[e] = elem
             if not test:
                 p = draw
                 score = None
@@ -495,6 +501,8 @@ class Model(object):
                 (not isinstance(self._fitter._draw_above_likelihood, float) or
                  score > self._fitter._draw_above_likelihood)):
                 p = draw
+                if chosen_one:
+                    del(walkers_pool[chosen_one])
         return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):

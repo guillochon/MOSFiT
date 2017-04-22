@@ -76,8 +76,8 @@ def get_parser():
         help=("List of paths to Open Catalog format files with walkers from "
               "which to draw initial walker positions. Output data from "
               "MOSFiT can be loaded with this command. If some variables "
-              "are not contained within the input file(s), they will be "
-              "drawn instead randomly from the specified model priors."))
+              "are not contained within the input file(s), they will "
+              "instead be drawn randomly from the specified model priors."))
 
     parser.add_argument(
         '--plot-points',

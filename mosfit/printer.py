@@ -168,8 +168,8 @@ class Printer(object):
 
     def string(self, text, **kwargs):
         """Return message string."""
-        center = kwargs['center']
-        width = kwargs['width']
+        center = kwargs.get('center', False)
+        width = kwargs.get('width', None)
         tspl = self._lines(text, **kwargs)
         lines = []
         for ri, line in enumerate(tspl):
@@ -196,7 +196,7 @@ class Printer(object):
 
     def prompt(self, text, wrap_length=None, kind='bool',
                none_string='None of the above.',
-               options=None, translate=True):
+               options=None, translate=True, message=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -220,6 +220,8 @@ class Printer(object):
         else:
             raise ValueError('Unknown prompt kind.')
 
+        if message:
+            text = self.string(text, wrap_length=wrap_length)
         textchoices = text + choices
         if translate:
             textchoices = self.translate(textchoices)

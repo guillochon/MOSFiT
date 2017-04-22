@@ -36,10 +36,10 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
-def draw_walker(test=True):
+def draw_walker(test=True, walkers_pool=[]):
     """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test)  # noqa: F821
+    return model.draw_walker(test, walkers_pool)  # noqa: F821
 
 
 def likelihood(x):
@@ -328,20 +328,39 @@ class Fitter(object):
                         pool.comm.send(path, dest=rank, tag=1)
                         pool.comm.send(data, dest=rank, tag=2)
 
-                    if not len(walker_paths):
-                        walker_data = []
-                    else:
+                    walker_data = []
+                    if len(walker_paths):
                         walker_path = walker_paths[ei]
                         if os.path.exists(walker_path):
                             with open(walker_path, 'r') as f:
-                                walker_data = json.load(
+                                all_walker_data = json.load(
                                     f, object_pairs_hook=OrderedDict)
                             prt.message('walker_file', [
                                         walker_path], wrapped=True)
+                            models = all_walker_data.get(ENTRY.MODELS, [])
+                            choice = None
+                            if len(models) > 1:
+                                model_opts = [
+                                    '{}-{}-{}'.format(
+                                        x['code'], x['name'], x['date'])
+                                    for x in models]
+                                choice = prt.prompt(
+                                    'select_model_walkers', kind='select',
+                                    message=True, options=model_opts)
+                                choice = model_opts.index(choice)
+                            elif len(models) == 1:
+                                choice = 0
+
+                            if choice is not None:
+                                walker_data = [
+                                    x[REALIZATION.PARAMETERS]
+                                    for x in models[choice][
+                                        MODEL.REALIZATIONS]]
+
+                            if not len(walker_data):
+                                prt.message('no_walker_data')
                         else:
-                            prt.message('no_walker_data', [
-                                self._event_name,
-                                '/'.join(self._catalogs.keys())])
+                            prt.message('no_walker_data')
                             if offline:
                                 prt.message('omit_offline')
                             raise RuntimeError
@@ -474,6 +493,7 @@ class Fitter(object):
                   walker_data=[]):
         """Load the data for the specified event."""
         prt = self._printer
+        self._walker_data = walker_data
         fixed_parameters = []
         for task in self._model._call_stack:
             cur_task = self._model._call_stack[task]
@@ -682,6 +702,23 @@ class Fitter(object):
         prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
+        # Generate walker positions based upon loaded walker data, if
+        # available.
+        walkers_pool = []
+        for walk in self._walker_data:
+            new_walk = np.full(model._num_free_parameters, None)
+            for k, key in enumerate(model._free_parameters):
+                param = model._modules[key]
+                walk_param = walk.get(key, None)
+                if not walk_param:
+                    continue
+                if param:
+                    new_walk[k] = param.fraction(walk_param['value'])
+                walkers_pool.append(new_walk)
+
+        # Draw walker positions. This is either done from the priors or from
+        # loaded walker data. If some parameters are not available from the
+        # loaded walker data they will be drawn from their priors instead.
         for i, pt in enumerate(p0):
             dwscores = []
             while len(p0[i]) <= nwalkers:
@@ -692,8 +729,8 @@ class Fitter(object):
                 if len(p0[i]) == nwalkers:
                     break
 
-                if pool.size == 0:
-                    p, score = draw_walker(test_walker)
+                if pool.size == 0 or len(walkers_pool):
+                    p, score = draw_walker(test_walker, walkers_pool)
                     p0[i].append(p)
                     dwscores.append(score)
                 else:

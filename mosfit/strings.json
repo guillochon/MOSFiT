@@ -44,6 +44,7 @@
     "progress": "Progress",
     "run_until_converged": "Running until convergence",
     "saving_output": "Saving output to disk...",
+    "select_model_walkers": "More than one model output in this file, which model's walkers should we draw from?",
     "score_ranges": "Score ranges",
     "too_few_walkers": "Number of free parameters exceeds number of measurements. Please treat results with caution.",
     "ul_complete": "Uploading complete!",
