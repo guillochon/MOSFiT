@@ -56,7 +56,7 @@ The code outputs JSON files for each event/model combination that each
 contain a set of walkers that have been relaxed into an equilibrium
 about the posterior parameter distributions. This
 output is visualized via an example Jupyter notebook (``mosfit.ipynb``),
-which is copied to the `products` folder in the run directory, and by default shows
+which is copied to the ``products`` folder in the run directory, and by default shows
 output from the last ``MOSFiT`` run.
 
 To upload fits back to the open astronomy catalogs, users simply pass
