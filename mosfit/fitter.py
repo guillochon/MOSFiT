@@ -36,10 +36,10 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
-def draw_walker(test=True, walkers_pool=[]):
+def draw_walker(test=True, walkers_pool=[], replace=False):
     """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test, walkers_pool)  # noqa: F821
+    return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
 
 
 def likelihood(x):
@@ -714,23 +714,24 @@ class Fitter(object):
                     continue
                 if param:
                     new_walk[k] = param.fraction(walk_param['value'])
-                walkers_pool.append(new_walk)
+            walkers_pool.append(new_walk)
 
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the
         # loaded walker data they will be drawn from their priors instead.
         for i, pt in enumerate(p0):
             dwscores = []
-            while len(p0[i]) <= nwalkers:
+            while len(p0[i]) < nwalkers:
                 prt.status(
                     desc='drawing_walkers',
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
-                if len(p0[i]) == nwalkers:
-                    break
 
                 if pool.size == 0 or len(walkers_pool):
-                    p, score = draw_walker(test_walker, walkers_pool)
+                    p, score = draw_walker(
+                        test_walker, walkers_pool,
+                        replace=len(walkers_pool) < ntemps * nwalkers)
+                    print(len(walkers_pool))
                     p0[i].append(p)
                     dwscores.append(score)
                 else:
