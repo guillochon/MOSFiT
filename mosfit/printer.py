@@ -378,9 +378,9 @@ class Printer(object):
             try:
                 from googletrans import Translator
                 translator = Translator()
-                text, reps = self.rep_ansi(text)
-                text = translator.translate(text, dest=self._language).text
-                text = text.format(*reps)
+                ttext, reps = self.rep_ansi(text)
+                ttext = translator.translate(ttext, dest=self._language).text
+                text = ttext.format(*reps)
             except Exception:
                 pass
         return text
