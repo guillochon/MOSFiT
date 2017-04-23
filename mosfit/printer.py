@@ -7,7 +7,7 @@ import json
 import os
 import re
 import sys
-from builtins import input
+from builtins import input, str
 from textwrap import fill
 
 import numpy as np
@@ -388,7 +388,7 @@ class Printer(object):
                     continue
                 elif li > loff + len(lines) - 1:
                     break
-                doodle[li] += lines[li - loff]
+                doodle[li] = str(doodle[li]) + str(lines[li - loff])
             lines = '\n'.join(doodle)
 
         self.prt(lines, inline=not make_space)
