@@ -700,7 +700,6 @@ class Fitter(object):
         if nwalkers < 10 * ndim:
             prt.message('want_more_walkers', [10 * ndim, nwalkers],
                         warning=True)
-        prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
         # Generate walker positions based upon loaded walker data, if
