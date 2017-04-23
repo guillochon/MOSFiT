@@ -11,10 +11,6 @@ Using MOSFiT
 
    installation.rst
    getting_started.rst
-
-.. toctree::
-   :maxdepth: 1
-
    command_line.rst
    api.rst
 
