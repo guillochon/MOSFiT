@@ -24,12 +24,13 @@ class Likelihood(Module):
         self._model_observations = kwargs['model_observations']
         self._observation_types = kwargs['observation_types']
         self._fractions = kwargs['fractions']
+        ret = {'value': LIKELIHOOD_FLOOR, 'kmat': None}
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
-            return {'value': LIKELIHOOD_FLOOR}
+            return ret
         for oi, obs in enumerate(self._model_observations):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
-                return {'value': LIKELIHOOD_FLOOR}
+                return ret
         self._score_modifier = kwargs.get(self.key('score_modifier'), 0.0)
         self._codeltatime = kwargs.get(self.key('codeltatime'), -1)
         self._codeltalambda = kwargs.get(self.key('codeltalambda'), -1)
@@ -122,6 +123,8 @@ class Likelihood(Module):
             for i in range(kn):
                 kmat[i, i] += diag[i]
 
+            ret['kmat'] = kmat
+
             # full_size = np.count_nonzero(kmat)
 
             # Remove small covariance terms
@@ -145,8 +148,9 @@ class Likelihood(Module):
 
         score = self._score_modifier + value
         if isnan(score) or not np.isfinite(score):
-            return {'value': LIKELIHOOD_FLOOR}
-        return {'value': max(LIKELIHOOD_FLOOR, score)}
+            return ret
+        ret['value'] = max(LIKELIHOOD_FLOOR, score)
+        return ret
 
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""

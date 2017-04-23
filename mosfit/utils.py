@@ -186,3 +186,14 @@ def speak(text, lang='es'):
         mixer.music.play()
     except Exception:
         raise
+
+
+def rebin(a, newshape):
+    """Rebin an array to a new shape."""
+    assert len(a.shape) == len(newshape)
+
+    slices = [slice(0, old, float(old) / new)
+              for old, new in zip(a.shape, newshape)]
+    coordinates = np.mgrid[slices]
+    indices = coordinates.astype('i')
+    return a[tuple(indices)]

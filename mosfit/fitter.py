@@ -754,10 +754,12 @@ class Fitter(object):
         aa = 0
         psrf = np.inf
         s_exception = None
+        kmat = None
         all_chain = np.array([])
         scores = np.ones((ntemps, nwalkers)) * -np.inf
 
         max_chunk = 1000
+        kmat_chunk = 10
         iter_chunks = int(np.ceil(float(iterations) / max_chunk))
         iter_arr = [max_chunk if xi < iter_chunks - 1 else
                     iterations - max_chunk * (iter_chunks - 1)
@@ -928,10 +930,16 @@ class Fitter(object):
                                  emi % frack_step == 0)
 
                     scores = [np.array(x) for x in lnprob]
+                    if emim1 % kmat_chunk == 0:
+                        kmat = model.run_stack(
+                            p[np.unravel_index(
+                                np.argmax(lnprob), lnprob.shape)],
+                            root='objective')['kmat']
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
                         scores=scores,
+                        kmat=kmat,
                         accepts=accepts,
                         progress=[emi, None if
                                   run_until_converged else iterations],
