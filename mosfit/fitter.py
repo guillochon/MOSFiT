@@ -732,7 +732,6 @@ class Fitter(object):
                     p, score = draw_walker(
                         test_walker, walkers_pool,
                         replace=len(walkers_pool) < ntemps * nwalkers)
-                    print(len(walkers_pool))
                     p0[i].append(p)
                     dwscores.append(score)
                 else:

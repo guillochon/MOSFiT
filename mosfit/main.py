@@ -29,7 +29,7 @@ class SortingHelpFormatter(argparse.HelpFormatter):
 def get_parser():
     """Retrieve MOSFiT's `argparse.ArgumentParser` object."""
     parser = argparse.ArgumentParser(
-        prog='MOSFiT',
+        prog='mosfit',
         description='Fit astrophysical light curves using AstroCats data.',
         formatter_class=SortingHelpFormatter)
 
