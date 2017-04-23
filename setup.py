@@ -39,6 +39,9 @@ except ImportError:
 setup(
     name='mosfit',
     packages=find_packages(),
+    entry_points={'console_scripts': [
+        'mosfit = mosfit.main:main'
+    ]},
     include_package_data=True,
     version=__version__,  # noqa
     description=('Modular software for fitting '
