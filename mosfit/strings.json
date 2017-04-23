@@ -2,7 +2,7 @@
     "band_load_complete": "Loading bands complete.",
     "bands_used": "Bands being used for current transient:",
     "burning": "Burning",
-    "byline": "### !mM!e!gO!e!rS!e!yFi!e!bT!e -- Version {} ({}) ###\nAuthored by James Guillochon & Matt Nicholl\nReleased under the MIT license\n\nCode: !u!chttps://github.com/guillochon/MOSFiT!e\nDocumentation: !u!chttps://mosfit.readthedocs.io!e\n",
+    "byline": "### !mM!e!gO!e!rS!e!yFi!e!bT!e -- Version {} ({}) ###\nAuthored by James Guillochon & Matt Nicholl\nReleased under the MIT license\n\nCode: !c!uhttps://github.com/guillochon/MOSFiT!e!e\nDocumentation: !c!uhttps://mosfit.readthedocs.io!e!e\n",
     "cant_read_svo": "Error: Could not read SVO filter!",
     "cant_dl_event": "Could not download data for `{}`, will attempt to use cached data.",
     "cant_dl_names": "Could not download {} names (are you online?), using cached list.",

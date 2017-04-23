@@ -10,7 +10,6 @@ from operator import attrgetter
 from unicodedata import normalize
 
 import numpy as np
-
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer

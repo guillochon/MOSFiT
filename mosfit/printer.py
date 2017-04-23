@@ -357,11 +357,11 @@ class Printer(object):
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
             kmat_dimi = range(len(kmat_scaled))
             kmat_dimj = range(len(kmat_scaled[0]))
-            doodle = u'\n╔' + (u'═' * len(kmat_scaled)) + u'╗   \n'
-            doodle += u'║' + u'║   \n║'.join(
+            doodle = '\n╔' + ('═' * len(kmat_scaled)) + '╗   \n'
+            doodle += '║' + '║   \n║'.join(
                 [''.join([self.ascii_fill(kmat_scaled[i, j], kmat_pers)
-                          for i in kmat_dimi]) for j in kmat_dimj]) + u'║'
-            doodle += u'\n╚' + (u'═' * len(kmat_scaled)) + u'╝   '
+                          for i in kmat_dimi]) for j in kmat_dimj]) + '║'
+            doodle += '\n╚' + ('═' * len(kmat_scaled)) + '╝   '
             doodle = doodle.splitlines()
 
             kmat_extra = len(doodle[-1])
