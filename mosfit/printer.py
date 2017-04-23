@@ -1,6 +1,6 @@
 # -*- encoding: utf-8 -*-
 """Defines the `Printer` class."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import datetime
 import json
@@ -52,7 +52,8 @@ class Printer(object):
             '!r': FAIL,
             '!g': OKGREEN,
             '!u': UNDERLINE,
-            '!c': CYAN
+            '!c': CYAN,
+            '!o': ORANGE
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -259,8 +260,8 @@ class Printer(object):
         outarr = [fitter._event_name]
         if desc:
             if desc == 'burning':
-                descstr = self.bcolors.ORANGE + self._strings.get(
-                    desc, '?') + self.bcolors.ENDC
+                descstr = '!o' + self._strings.get(
+                    desc, '?') + '!e'
             else:
                 descstr = self._strings.get(desc, '?')
             outarr.append(descstr)
@@ -285,10 +286,8 @@ class Printer(object):
         if isinstance(accepts, list):
             scorestring = self._strings['moves_accepted'] + ': [ '
             scorestring += ', '.join([
-                (self.bcolors.FAIL if x < 0.01 else
-                 (self.bcolors.WARNING if x < 0.1 else
-                  self.bcolors.OKGREEN)) +
-                '{:.0%}'.format(x) + self.bcolors.ENDC
+                ('!r' if x < 0.01 else '!y' if x < 0.1 else '!g') +
+                '{:.0%}'.format(x) + '!e'
                 for x in accepts
             ]) + ' ]'
             outarr.append(scorestring)
@@ -313,36 +312,35 @@ class Printer(object):
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
-                acorstring = (self.bcolors.FAIL +
-                              'Chain too short for `acor` ({})'.format(
-                                  acorcstr) + self.bcolors.ENDC)
+                acorstring = ('!rChain too short for `acor` ({})!e'.format(
+                              acorcstr))
             else:
                 acortstr = pretty_num(acor[0], sig=3)
                 acorbstr = str(int(acor[2]))
                 if acor[1] < 2.0:
-                    col = self.bcolors.FAIL
+                    col = '!r'
                 elif acor[1] < 5.0:
-                    col = self.bcolors.WARNING
+                    col = '!y'
                 else:
-                    col = self.bcolors.OKGREEN
+                    col = '!g'
                 acorstring = col
                 acorstring = acorstring + 'Acor Tau (i > {}): {} ({}x)'.format(
                     acorbstr, acortstr, acorcstr)
-                acorstring = acorstring + (self.bcolors.ENDC if col else '')
+                acorstring = acorstring + ('!e' if col else '')
             outarr.append(acorstring)
         if psrf is not None and psrf[0] != np.inf:
             psrfstr = pretty_num(psrf[0], sig=4)
             psrfbstr = str(int(psrf[1]))
             if psrf[0] > 2.0:
-                col = self.bcolors.FAIL
+                col = '!r'
             elif psrf[0] > 1.2:
-                col = self.bcolors.WARNING
+                col = '!y'
             else:
-                col = self.bcolors.OKGREEN
+                col = '!g'
             psrfstring = col
             psrfstring = psrfstring + 'PSRF (i > {}): {}'.format(
                 psrfbstr, psrfstr)
-            psrfstring = psrfstring + (self.bcolors.ENDC if col else '')
+            psrfstring = psrfstring + ('!e' if col else '')
             outarr.append(psrfstring)
 
         if not isinstance(messages, list):
@@ -388,10 +386,10 @@ class Printer(object):
                     continue
                 elif li > loff + len(lines) - 1:
                     break
-                doodle[li] = str(doodle[li]) + str(lines[li - loff])
+                doodle[li] += lines[li - loff]
             lines = '\n'.join(doodle)
 
-        self.prt(lines, inline=not make_space)
+        self.prt(lines, colorify=True, inline=not make_space)
 
     def get_timestring(self, t):
         """Return estimated time remaining.
