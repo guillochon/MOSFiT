@@ -12,7 +12,7 @@ from textwrap import fill
 
 import numpy as np
 
-from .utils import calculate_WAIC, is_integer, pretty_num, rebin
+from .utils import calculate_WAIC, congrid, is_integer, pretty_num
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -351,7 +351,7 @@ class Printer(object):
 
         kmat_extra = 0
         if kmat is not None:
-            kmat_scaled = rebin(kmat, (16, 8))
+            kmat_scaled = congrid(kmat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
             kmat_scaled /= np.max(kmat_scaled)
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
