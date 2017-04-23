@@ -1,6 +1,8 @@
+# -*- encoding: utf-8 -*-
 """The main function."""
 
 import argparse
+import codecs
 import locale
 import os
 import shutil
@@ -535,11 +537,12 @@ def main():
 
         # Print our amazing ASCII logo.
         if not args.quiet:
-            with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
+            with codecs.open(os.path.join(dir_path, 'logo.txt'),
+                             'r', 'utf-8') as f:
                 logo = f.read()
                 firstline = logo.split('\n')[0]
-                if isinstance(firstline, bytes):
-                    firstline = firstline.decode('utf-8')
+                # if isinstance(firstline, bytes):
+                #     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
             for ll in logo.splitlines():
                 prt.prt(ll, colorify=True)

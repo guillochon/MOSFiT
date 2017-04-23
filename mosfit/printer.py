@@ -29,31 +29,31 @@ if sys.version_info[:2] < (3, 3):
 class Printer(object):
     """Print class for MOSFiT."""
 
-    class bcolors(object):
+    class ansi(object):
         """Special formatting characters."""
 
+        BOLD = '\033[0;1m'
+        CYAN = '\033[0;96m'
+        ENDC = '\033[0m'
+        FAIL = '\033[0;91m'
         HEADER = '\033[0;95m'
+        MAGENTA = '\033[1;35m'
         OKBLUE = '\033[0;94m'
         OKGREEN = '\033[0;92m'
-        WARNING = '\033[0;93m'
-        FAIL = '\033[0;91m'
-        ENDC = '\033[0m'
-        BOLD = '\033[0;1m'
-        UNDERLINE = '\033[4m'
-        CYAN = '\033[0;96m'
-        MAGENTA = '\033[1;35m'
         ORANGE = '\033[38;5;214m'
+        UNDERLINE = '\033[4m'
+        WARNING = '\033[0;93m'
 
         codes = {
-            '!e': ENDC,
-            '!m': MAGENTA,
-            '!y': WARNING,
             '!b': OKBLUE,
-            '!r': FAIL,
-            '!g': OKGREEN,
-            '!u': UNDERLINE,
             '!c': CYAN,
-            '!o': ORANGE
+            '!e': ENDC,
+            '!g': OKGREEN,
+            '!m': MAGENTA,
+            '!o': ORANGE,
+            '!r': FAIL,
+            '!u': UNDERLINE,
+            '!y': WARNING
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -107,8 +107,8 @@ class Printer(object):
     def colorify(self, text):
         """Add colors to text."""
         output = text
-        for code in self.bcolors.codes:
-            output = output.replace(code, self.bcolors.codes[code])
+        for code in self.ansi.codes:
+            output = output.replace(code, self.ansi.codes[code])
         return output
 
     def _lines(
@@ -416,7 +416,7 @@ class Printer(object):
     def rep_ansi(self, text):
         """Replace ANSI codes and return the list of codes."""
         patt = re.compile(r'({})'.format(
-            '|'.join(['\{.*?\}'] + list(self.bcolors.codes.keys()))))
+            '|'.join(['\{.*?\}'] + list(self.ansi.codes.keys()))))
         stext = patt.sub("{}", text)
         matches = patt.findall(text)
         return stext, matches
