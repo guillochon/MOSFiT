@@ -759,7 +759,7 @@ class Fitter(object):
         scores = np.ones((ntemps, nwalkers)) * -np.inf
 
         max_chunk = 1000
-        kmat_chunk = 10
+        kmat_chunk = 5
         iter_chunks = int(np.ceil(float(iterations) / max_chunk))
         iter_arr = [max_chunk if xi < iter_chunks - 1 else
                     iterations - max_chunk * (iter_chunks - 1)
@@ -994,6 +994,7 @@ class Fitter(object):
                     prt.status(
                         desc='fracking_results',
                         scores=scores,
+                        kmat=kmat,
                         fracking=True,
                         progress=[emi, None if
                                   run_until_converged else iterations])
