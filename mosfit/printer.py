@@ -249,7 +249,8 @@ class Printer(object):
                psrf=None,
                fracking=False,
                messages=[],
-               kmat=None):
+               kmat=None,
+               make_space=False):
         """Print status message showing state of fitting process."""
         if self._quiet:
             return
@@ -390,7 +391,7 @@ class Printer(object):
                 doodle[li] += lines[li - loff]
             lines = '\n'.join(doodle)
 
-        self.prt(lines, inline=True)
+        self.prt(lines, inline=not make_space)
 
     def get_timestring(self, t):
         """Return estimated time remaining.

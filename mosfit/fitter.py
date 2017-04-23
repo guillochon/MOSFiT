@@ -945,7 +945,8 @@ class Fitter(object):
                                   run_until_converged else iterations],
                         acor=acor,
                         psrf=[psrf, self._burn_in],
-                        messages=messages)
+                        messages=messages,
+                        make_space=emim1 == 0)
 
                     if s_exception:
                         break
