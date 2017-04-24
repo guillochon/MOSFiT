@@ -253,7 +253,7 @@ class Fallback(Engine):
 
         gamma_interp = False
 
-        '''
+        
         if kwargs['starmass'] <= 0.3 or kwargs['starmass'] >= 22 : gammas = [self._gammas[1]] # gamma = ['5-3']
         elif 1 <= kwargs['starmass'] <= 15 : gammas = [self._gammas[0]] # gamma = ['4-3']
         elif 0.3 < kwargs['starmass'] < 1:  # region going from gamma = 5/3 to gamma = 4/3 as mass increases
@@ -266,10 +266,11 @@ class Fallback(Engine):
             gammas = self._gammas
             # gfrac should == 0 for 4/3; == 1 for 5/3
             gfrac =  (kwargs['starmass'] - 15.)/(22. - 15.)
-        '''
+        
 
         # try decoupling gamma from starmass for testing
 
+        '''
         self._scaled_gamma = kwargs['scaledgamma']
         #print (self._scaled_gamma)
         if self._scaled_gamma == 0.0 : gammas = [self._gammas[0]]
@@ -278,7 +279,7 @@ class Fallback(Engine):
             gamma_interp = True
             gammas = self._gammas
             gfrac = self._scaled_gamma
-
+        '''
 
         timedict = {} # will hold time arrays for each g in gammas
         dmdtdict = {} # will hold dmdt arrays for each g in gammas
@@ -593,13 +594,13 @@ class Fallback(Engine):
                 C_CGS / kappa_t)
 
         # two options for soft Ledd cuts, should try both & see what fits stuff better
-        #luminosities = np.where(luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * luminosities, luminosities)
-        luminosities = (luminosities * Ledd/(luminosities + Ledd))
+        luminosities = np.where(luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * luminosities, luminosities)
+        #luminosities = (luminosities * Ledd/(luminosities + Ledd))
         
         # ----------------TESTING ----------------
         if self.TESTING == True:
-            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt'+'{:08d}'.format(self.testnum)+'.txt',
-                        (self._times, dmdtnew)) 
+            np.savetxt('test_dir/test_fallback/endfallback/time+dmdt+lum+Ledd'+'{:08d}'.format(self.testnum)+'.txt',
+                        (self._times, dmdtnew, luminosities, Ledd*np.ones(len(luminosities)))) 
             #np.savetxt('test_dir/test_fallback/postLeddcut/time+lum'+'{:08d}'.format(self.testnum)+'.txt',
             #            (self._times, luminosities)) 
             self.testnum += 1

@@ -53,7 +53,7 @@ class tde_photosphere(Photosphere):
         # semi-major axis of material that accretes at self._times, only calculate for times after first mass accretion
         a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((self._times -
              self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
-        a_t[self._times < self._rest_t_explosion] = 0.0
+        a_t[self._times < self._rest_t_explosion] = 0.0 
         
         
         rphotmax = rp + 2 * a_t
@@ -78,7 +78,7 @@ class tde_photosphere(Photosphere):
         # ----------------TESTING ----------------
         if self.TESTING == True:
             np.savetxt('test_dir/test_photosphere/end_photosphere/time+Tphot+rphot'+'{:08d}'.format(self.testnum)+'.txt',
-                            (self._times, Tphot, rphot)) #, header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero)) # set time = 0 when explosion goes off
+                            (self._times, Tphot, rphot, rphotmax)) #, header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero)) # set time = 0 when explosion goes off
             #np.savetxt('test_dir/test_photosphere/end_photosphere/postilumzerotime+Tphot+rphot'+'{:08d}'.format(self.testnum)+'postilumzero.txt',
             #                (self._times[ilumzero:], Tphot[ilumzero:], rphot[ilumzero:]), header = 'M_h ='+str(self._Mh))
            

@@ -27,12 +27,6 @@
         "class":"parameter",
         "latex":"b\\ (scaled\\ \\beta)"
     },
-    "scaledgamma":{
-        "kind":"parameter",
-        "value": 0.5,
-        "class":"parameter",
-        "latex":"\\rm scaled \\rm gamma"
-    },
     "efficiency":{
         "kind":"parameter",
         "value":0.05,
@@ -75,7 +69,6 @@
             "bhmass",
             "starmass",
             "b",
-            "scaledgamma",
             "efficiency",
             "texplosion"
         ]

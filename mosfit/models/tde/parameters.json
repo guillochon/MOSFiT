@@ -8,10 +8,6 @@
         "min_value":0.0,
         "max_value":2.0
     },
-    "scaledgamma":{
-        "min_value": 0.0,
-        "max_value": 1.0
-    },
     "bhmass":{
         "min_value":1.0e5,
         "max_value":1.0e8,
@@ -23,8 +19,8 @@
         "log":true
     },
     "efficiency":{
-        "min_value":0.01,
-        "max_value":0.1
+        "min_value":0.005,
+        "max_value":0.4
     },
     "texplosion":{
         "min_value":-500.0,
@@ -37,10 +33,10 @@
     },
     "lphoto":{
         "min_value":0.0,
-        "max_value":3.0
+        "max_value":4.0
     },
     "Rph0":{
-        "min_value":-2.0,
-        "max_value":2.0
+        "min_value":-4.0,
+        "max_value":4.0
     }
 }
