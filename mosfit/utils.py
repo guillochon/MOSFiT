@@ -6,6 +6,7 @@ import hashlib
 import json
 import re
 import sys
+from builtins import bytes
 from collections import OrderedDict
 from math import floor, isnan, log10
 
@@ -125,7 +126,7 @@ def hash_bytes(input_string):
     Necessary to have consistent behavior between Python 2 & 3.
     """
     if sys.version_info[0] < 3:
-        return bytes(input_string)
+        return bytes(input_string, 'utf-8')
     return input_string.encode()
 
 
@@ -140,7 +141,7 @@ def get_model_hash(modeldict, ignore_keys=[]):
     return hashlib.sha512(hash_bytes(string_rep)).hexdigest()[:16]
 
 
-def get_mosfit_hash(salt=''):
+def get_mosfit_hash(salt=u''):
     """Return a unique hash for the MOSFiT code."""
     import fnmatch
     import os
