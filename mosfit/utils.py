@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 """Miscellaneous utility functions."""
 
+import codecs
 import hashlib
 import json
 import re
@@ -154,7 +155,7 @@ def get_mosfit_hash(salt=''):
     matches = list(sorted(list(matches)))
     code_str = salt
     for match in matches:
-        with open(match, 'r') as f:
+        with codecs.open(match, 'r', 'utf-8') as f:
             code_str += f.read()
 
     return hashlib.sha512(hash_bytes(code_str)).hexdigest()[:16]

@@ -163,7 +163,10 @@ class Printer(object):
             if center:
                 tlen = len(repr(rline)) - len(line) - line.count('!')
                 rline = rline.center(width + tlen)
-            print(rline, flush=True)
+            try:
+                print(rline, flush=True)
+            except UnicodeEncodeError:
+                print(rline.encode('ascii', 'replace').decode(), flush=True)
 
     def string(self, text, **kwargs):
         """Return message string."""
@@ -227,7 +230,8 @@ class Printer(object):
         prompt_txt = (textchoices).split('\n')
         for txt in prompt_txt[:-1]:
             ptxt = fill(txt, wl, replace_whitespace=False)
-            print(ptxt, flush=True)
+            self.prt(ptxt)
+
         user_input = input(
             fill(
                 prompt_txt[-1], wl, replace_whitespace=False) + " ")
@@ -453,7 +457,7 @@ class Printer(object):
                         '│', ' ').replace(
                             '├', '└') for ci, x in enumerate(line)])
             tree_str = '\n'.join(lines)
-            print(tree_str)
+            self.prt(tree_str)
 
     def ascii_fill(self, value, pers):
         """Print a character based on range from 0 - 1."""
