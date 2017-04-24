@@ -184,7 +184,6 @@ class Fitter(object):
                 try:
                     pool = MPIPool()
                 except ValueError:
-                    prt.message('no_processes', warning=True)
                     pool = SerialPool()
                 if pool.is_master():
                     path = ''

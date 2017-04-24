@@ -32,28 +32,28 @@ class Printer(object):
     class ansi(object):
         """Special formatting characters."""
 
+        BLUE = '\033[0;94m'
         BOLD = '\033[0;1m'
         CYAN = '\033[0;96m'
-        ENDC = '\033[0m'
-        FAIL = '\033[0;91m'
+        END = '\033[0m'
+        GREEN = '\033[0;92m'
         HEADER = '\033[0;95m'
         MAGENTA = '\033[1;35m'
-        OKBLUE = '\033[0;94m'
-        OKGREEN = '\033[0;92m'
         ORANGE = '\033[38;5;214m'
+        RED = '\033[0;91m'
         UNDERLINE = '\033[4m'
-        WARNING = '\033[0;93m'
+        YELLOW = '\033[0;93m'
 
         codes = {
-            '!b': OKBLUE,
+            '!b': BLUE,
             '!c': CYAN,
-            '!e': ENDC,
-            '!g': OKGREEN,
+            '!e': END,
+            '!g': GREEN,
             '!m': MAGENTA,
             '!o': ORANGE,
-            '!r': FAIL,
+            '!r': RED,
             '!u': UNDERLINE,
-            '!y': WARNING
+            '!y': YELLOW
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -380,7 +380,7 @@ class Printer(object):
 
         if kmat is not None:
             lines = self._lines(lines)
-            loff = int(np.ceil((len(kmat_scaled[0]) - len(lines)) / 2.0)) + 1
+            loff = int(np.floor((len(kmat_scaled[0]) - len(lines)) / 2.0)) + 2
             for li, line in enumerate(doodle):
                 if li < loff:
                     continue

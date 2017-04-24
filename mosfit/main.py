@@ -544,8 +544,7 @@ def main():
                 # if isinstance(firstline, bytes):
                 #     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
-            for ll in logo.splitlines():
-                prt.prt(ll, colorify=True)
+            prt.prt(logo, colorify=True)
             prt.message('byline', reps=[__version__, mosfit_hash],
                         center=True, colorify=True, width=width, wrapped=False)
 
