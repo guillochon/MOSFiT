@@ -36,10 +36,10 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
-def draw_walker(test=True):
+def draw_walker(test=True, walkers_pool=[], replace=False):
     """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test)  # noqa: F821
+    return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
 
 
 def likelihood(x):
@@ -114,6 +114,7 @@ class Fitter(object):
                    language='en',
                    return_fits=True,
                    extra_outputs=[],
+                   walker_paths=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -172,6 +173,8 @@ class Fitter(object):
         ps = [[] for x in range(len(event_list))]
         lnprobs = [[] for x in range(len(event_list))]
 
+        walker_data = []
+
         self._event_name = 'Batch'
         self._event_catalog = ''
         for ei, event in enumerate(event_list):
@@ -180,7 +183,7 @@ class Fitter(object):
             if event:
                 try:
                     pool = MPIPool()
-                except Exception:
+                except ValueError:
                     pool = SerialPool()
                 if pool.is_master():
                     path = ''
@@ -314,8 +317,7 @@ class Fitter(object):
                     if os.path.exists(path):
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
-                        prt.message('event_file')
-                        prt.prt('  ' + path, wrapped=True)
+                        prt.message('event_file', [path], wrapped=True)
                     else:
                         prt.message('no_data', [
                             self._event_name, '/'.join(self._catalogs.keys())])
@@ -327,10 +329,50 @@ class Fitter(object):
                         pool.comm.send(self._event_name, dest=rank, tag=0)
                         pool.comm.send(path, dest=rank, tag=1)
                         pool.comm.send(data, dest=rank, tag=2)
+
+                    if len(walker_paths):
+                        walker_path = walker_paths[ei]
+                        if os.path.exists(walker_path):
+                            with open(walker_path, 'r') as f:
+                                all_walker_data = json.load(
+                                    f, object_pairs_hook=OrderedDict)
+                            prt.message('walker_file', [
+                                        walker_path], wrapped=True)
+                            models = all_walker_data.get(ENTRY.MODELS, [])
+                            choice = None
+                            if len(models) > 1:
+                                model_opts = [
+                                    '{}-{}-{}'.format(
+                                        x['code'], x['name'], x['date'])
+                                    for x in models]
+                                choice = prt.prompt(
+                                    'select_model_walkers', kind='select',
+                                    message=True, options=model_opts)
+                                choice = model_opts.index(choice)
+                            elif len(models) == 1:
+                                choice = 0
+
+                            if choice is not None:
+                                walker_data = [
+                                    x[REALIZATION.PARAMETERS]
+                                    for x in models[choice][
+                                        MODEL.REALIZATIONS]]
+
+                            if not len(walker_data):
+                                prt.message('no_walker_data')
+                        else:
+                            prt.message('no_walker_data')
+                            if offline:
+                                prt.message('omit_offline')
+                            raise RuntimeError
+
+                    for rank in range(1, pool.size + 1):
+                        pool.comm.send(walker_data, dest=rank, tag=3)
                 else:
                     self._event_name = pool.comm.recv(source=0, tag=0)
                     path = pool.comm.recv(source=0, tag=1)
                     data = pool.comm.recv(source=0, tag=2)
+                    walker_data = pool.comm.recv(source=0, tag=3)
                     pool.wait()
 
                 self._event_path = path
@@ -399,7 +441,8 @@ class Fitter(object):
                         band_bandsets=band_bandsets,
                         variance_for_each=variance_for_each,
                         user_fixed_parameters=user_fixed_parameters,
-                        pool=pool)
+                        pool=pool,
+                        walker_data=walker_data)
 
                     if success:
                         entry, p, lnprob = self.fit_data(
@@ -447,9 +490,11 @@ class Fitter(object):
                   band_bandsets=[],
                   variance_for_each=[],
                   user_fixed_parameters=[],
-                  pool=''):
+                  pool='',
+                  walker_data=[]):
         """Load the data for the specified event."""
         prt = self._printer
+        self._walker_data = walker_data
         fixed_parameters = []
         for task in self._model._call_stack:
             cur_task = self._model._call_stack[task]
@@ -516,7 +561,7 @@ class Fitter(object):
 
         # Reset modules
         for task in self._model._call_stack:
-            self._model._modules[task].reset_preprocessed()
+            self._model._modules[task].reset_preprocessed(['photometry'])
 
         # Run through inits once more.
         for root in ['output', 'objective']:
@@ -653,23 +698,39 @@ class Fitter(object):
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
         if nwalkers < 10 * ndim:
-            prt.message('want_more_walkers', [10 * ndim],
+            prt.message('want_more_walkers', [10 * ndim, nwalkers],
                         warning=True)
-        prt.prt('\n\n')
         p0 = [[] for x in range(ntemps)]
 
+        # Generate walker positions based upon loaded walker data, if
+        # available.
+        walkers_pool = []
+        for walk in self._walker_data:
+            new_walk = np.full(model._num_free_parameters, None)
+            for k, key in enumerate(model._free_parameters):
+                param = model._modules[key]
+                walk_param = walk.get(key, None)
+                if not walk_param:
+                    continue
+                if param:
+                    new_walk[k] = param.fraction(walk_param['value'])
+            walkers_pool.append(new_walk)
+
+        # Draw walker positions. This is either done from the priors or from
+        # loaded walker data. If some parameters are not available from the
+        # loaded walker data they will be drawn from their priors instead.
         for i, pt in enumerate(p0):
             dwscores = []
-            while len(p0[i]) <= nwalkers:
+            while len(p0[i]) < nwalkers:
                 prt.status(
                     desc='drawing_walkers',
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
-                if len(p0[i]) == nwalkers:
-                    break
 
-                if pool.size == 0:
-                    p, score = draw_walker(test_walker)
+                if pool.size == 0 or len(walkers_pool):
+                    p, score = draw_walker(
+                        test_walker, walkers_pool,
+                        replace=len(walkers_pool) < ntemps * nwalkers)
                     p0[i].append(p)
                     dwscores.append(score)
                 else:
@@ -682,7 +743,6 @@ class Fitter(object):
                     self._draw_above_likelihood = np.mean(dwscores)
 
         prt.message('initial_draws', inline=True)
-        prt.prt('\n\n')
         p = list(p0)
 
         sli = 1.0  # Keep track of how many times chain halved
@@ -693,10 +753,12 @@ class Fitter(object):
         aa = 0
         psrf = np.inf
         s_exception = None
+        kmat = None
         all_chain = np.array([])
         scores = np.ones((ntemps, nwalkers)) * -np.inf
 
         max_chunk = 1000
+        kmat_chunk = 5
         iter_chunks = int(np.ceil(float(iterations) / max_chunk))
         iter_arr = [max_chunk if xi < iter_chunks - 1 else
                     iterations - max_chunk * (iter_chunks - 1)
@@ -867,16 +929,23 @@ class Fitter(object):
                                  emi % frack_step == 0)
 
                     scores = [np.array(x) for x in lnprob]
+                    if emim1 % kmat_chunk == 0:
+                        kmat = model.run_stack(
+                            p[np.unravel_index(
+                                np.argmax(lnprob), lnprob.shape)],
+                            root='objective')['kmat']
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
                         scores=scores,
+                        kmat=kmat,
                         accepts=accepts,
                         progress=[emi, None if
                                   run_until_converged else iterations],
                         acor=acor,
                         psrf=[psrf, self._burn_in],
-                        messages=messages)
+                        messages=messages,
+                        make_space=emim1 == 0)
 
                     if s_exception:
                         break
@@ -925,6 +994,7 @@ class Fitter(object):
                     prt.status(
                         desc='fracking_results',
                         scores=scores,
+                        kmat=kmat,
                         fracking=True,
                         progress=[emi, None if
                                   run_until_converged else iterations])
@@ -1115,6 +1185,10 @@ class Fitter(object):
                                     i] * flux_density_unit('µJy')
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['observation_types'][i] == 'countrate':
+                            photodict[PHOTOMETRY.COUNT_RATE] = output[
+                                'model_observations'][i]
+                            photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]

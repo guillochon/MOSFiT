@@ -6,6 +6,6 @@ from . import plotting
 from . import printer
 from . import utils
 
-__version__ = '0.5.0'
+__version__ = '0.5.4'
 __author__ = 'James Guillochon & Matt Nicholl'
 __license__ = 'MIT'

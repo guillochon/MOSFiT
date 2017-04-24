@@ -7,8 +7,8 @@ from collections import OrderedDict
 from copy import deepcopy
 
 import numpy as np
-from astropy import units as u
 from astropy import constants as c
+from astropy import units as u
 from astropy.io.votable import parse as voparse
 from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
@@ -23,7 +23,9 @@ class Photometry(Module):
 
     FLUX_STD = 3631 * u.Jy.cgs.scale / u.Angstrom.cgs.scale * C_CGS
     ANG_CGS = u.Angstrom.cgs.scale
-    H_C_ANG_CGS = c.h.cgs.value * c.c.cgs.value * u.Angstrom.cgs.scale
+    H_C_ANG_CGS = c.h.cgs.value * c.c.cgs.value / u.Angstrom.cgs.scale
+    C_CGS = c.c.cgs.value
+    H_CGS = c.h.cgs.value
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -32,11 +34,11 @@ class Photometry(Module):
         bands = kwargs.get('bands', '')
         bands = listify(bands)
 
-        dir_path = os.path.dirname(os.path.realpath(__file__))
+        self._dir_path = os.path.dirname(os.path.realpath(__file__))
         band_list = []
 
         if self._pool.is_master():
-            with open(os.path.join(dir_path, 'filterrules.json')) as f:
+            with open(os.path.join(self._dir_path, 'filterrules.json')) as f:
                 filterrules = json.load(f, object_pairs_hook=OrderedDict)
             for rank in range(1, self._pool.size + 1):
                 self._pool.comm.send(filterrules, dest=rank, tag=5)
@@ -92,18 +94,38 @@ class Photometry(Module):
         self._band_offsets = np.full(self._n_bands, 0.0)
         self._band_xunits = np.full(self._n_bands, 'Angstrom', dtype=object)
         self._band_yunits = np.full(self._n_bands, '', dtype=object)
+        self._band_xu = np.full(self._n_bands, u.Angstrom.cgs.scale)
+        self._band_yu = np.full(self._n_bands, 1.0)
         self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
 
+        for i, band in enumerate(self._unique_bands):
+            self._band_xunits[i] = band.get('xunit', 'Angstrom')
+            self._band_yunits[i] = band.get('yunit', '')
+            self._band_xu[i] = u.Unit(self._band_xunits[i]).cgs.scale
+            self._band_yu[i] = u.Unit(self._band_yunits[i]).cgs.scale
+
+            if '{0}'.format(self._band_yunits[i]) == 'cm2':
+                self._band_kinds[i] = 'countrate'
+
+    def load_bands(self, band_indices):
+        """Load band files."""
         prt = self._printer
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
             prt.prt('')
 
+        per = 0.0
+        bc = 0
+        band_set = set(band_indices)
         for i, band in enumerate(self._unique_bands):
+            if len(band_indices) and i not in band_set:
+                continue
             if self._pool.is_master():
-                prt.prt('Loading bands [ {0:.0f}% ]'.format(
-                    100.0 * float(i) / len(self._unique_bands)), inline=True)
+                new_per = np.round(100.0 * float(bc) / len(band_set))
+                if new_per > per:
+                    per = new_per
+                    prt.message('loading_bands', [per], inline=True)
                 systems = ['AB']
                 zps = [0.0]
                 if 'SVO' in band:
@@ -115,11 +137,11 @@ class Photometry(Module):
                     zpfluxes = []
                     for sys in systems:
                         svopath = band['SVO'] + '/' + sys
-                        path = os.path.join(dir_path, 'filters',
+                        path = os.path.join(self._dir_path, 'filters',
                                             svopath.replace('/', '_') + '.dat')
 
                         xml_path = os.path.join(
-                            dir_path, 'filters',
+                            self._dir_path, 'filters',
                             svopath.replace('/', '_') + '.xml')
                         if not os.path.exists(xml_path):
                             prt.message('dl_svo', [svopath], inline=True)
@@ -180,14 +202,15 @@ class Photometry(Module):
                                 with open(path, 'w') as f:
                                     f.write(vo_string)
                         else:
-                            print('Error: Could not read SVO filter!')
-                            raise RuntimeError
+                            raise RuntimeError(
+                                prt.string('cant_read_svo'))
                     self._unique_bands[i]['origin'] = band['SVO']
                 else:
                     self._unique_bands[i]['origin'] = band['path']
                     path = band['path']
 
-                with open(os.path.join(dir_path, 'filters', path), 'r') as f:
+                with open(os.path.join(
+                        self._dir_path, 'filters', path), 'r') as f:
                     rows = []
                     for row in csv.reader(
                             f, delimiter=' ', skipinitialspace=True):
@@ -199,26 +222,17 @@ class Photometry(Module):
                 rows = self._pool.comm.recv(source=0, tag=3)
                 zps = self._pool.comm.recv(source=0, tag=4)
 
-            self._band_xunits[i] = band.get('xunit', 'Angstrom')
-            self._band_yunits[i] = band.get('yunit', '')
-
             xvals, yvals = list(
                 map(list, zip(*rows)))
             xvals = np.array(xvals)
             yvals = np.array(yvals)
 
-            xu = u.Unit(self._band_xunits[i])
-            yu = u.Unit(self._band_yunits[i])
-            if '{0}'.format(yu) == 'cm2':
-                xscale = (c.c / (xu / c.h) / (1.0 * u.Angstrom)).cgs.value
-                self._band_kinds[i] = 'countrate'
+            if '{0}'.format(self._band_yunits[i]) == 'cm2':
+                xscale = (c.h * c.c /
+                          u.Angstrom).cgs.value / self._band_xu[i]
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals
-                self._band_wavelengths[i] = np.array([
-                    xscale / x for x in self._band_energies[i]])
-                self._filter_integrals[i] = np.trapz(
-                    np.array(self._band_areas[i]),
-                    self._band_energies[i])
+                self._band_wavelengths[i] = xscale / self._band_energies[i]
                 self._average_wavelengths[i] = np.trapz([
                     x * y
                     for x, y in zip(
@@ -246,10 +260,10 @@ class Photometry(Module):
 
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
+            bc = bc + 1
 
         if self._pool.is_master():
-            prt.prt('Loading bands complete.'.format(
-                100.0 * float(i) / len(self._unique_bands)), inline=True)
+            prt.message('band_load_complete', inline=True)
 
     def find_band_index(
             self, band, telescope='', instrument='', mode='', bandset='',
@@ -274,8 +288,15 @@ class Photometry(Module):
             'instrument `{}` on telescope `{}` in the `{}` system!'.format(
                 band, bandset, mode, instrument, telescope, system))
 
+    def preprocess(self, **kwargs):
+        """Preprocess module."""
+        if not self._preprocessed:
+            self.load_bands(kwargs['all_band_indices'])
+            self._preprocessed = True
+
     def process(self, **kwargs):
         """Process module."""
+        self.preprocess(**kwargs)
         kwargs = self.prepare_input('luminosities', **kwargs)
         self._band_indices = kwargs['all_band_indices']
         self._observation_types = np.array(kwargs['observation_types'])
@@ -301,12 +322,11 @@ class Photometry(Module):
                         yvals, dx=dx) / self._filter_integrals[bi]
                 elif self._observation_types[li] == 'countrate':
                     wavs = np.array(kwargs['sample_wavelengths'][bi])
-                    yvals = np.interp(
-                        wavs, self._band_wavelengths[bi],
-                        self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
-                            self.H_C_ANG_CGS / wavs)
-                    eff_fluxes[li] = np.trapz(
-                        yvals, wavs) / self._filter_integrals[bi]
+                    yvals = (np.interp(
+                        wavs, self._band_wavelengths[bi], self._band_areas[
+                            bi]) * kwargs['seds'][li] / zp1 / (
+                                self.H_C_ANG_CGS / wavs))
+                    eff_fluxes[li] = np.trapz(yvals, wavs)
                 else:
                     raise RuntimeError('Unknown observation kind.')
             else:

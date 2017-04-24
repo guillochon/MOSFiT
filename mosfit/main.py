@@ -1,6 +1,9 @@
+# -*- encoding: utf-8 -*-
 """The main function."""
 
 import argparse
+import codecs
+import locale
 import os
 import shutil
 import sys
@@ -9,7 +12,6 @@ from operator import attrgetter
 from unicodedata import normalize
 
 import numpy as np
-
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
@@ -28,7 +30,7 @@ class SortingHelpFormatter(argparse.HelpFormatter):
 def get_parser():
     """Retrieve MOSFiT's `argparse.ArgumentParser` object."""
     parser = argparse.ArgumentParser(
-        prog='MOSFiT',
+        prog='mosfit',
         description='Fit astrophysical light curves using AstroCats data.',
         formatter_class=SortingHelpFormatter)
 
@@ -65,6 +67,18 @@ def get_parser():
         help=("Paths to parameter files corresponding to each model file; "
               "length of this list should be equal to the length of the list "
               "of models"))
+
+    parser.add_argument(
+        '--walker-paths',
+        '-w',
+        dest='walker_paths',
+        default=[],
+        nargs='+',
+        help=("List of paths to Open Catalog format files with walkers from "
+              "which to draw initial walker positions. Output data from "
+              "MOSFiT can be loaded with this command. If some variables "
+              "are not contained within the input file(s), they will "
+              "instead be drawn randomly from the specified model priors."))
 
     parser.add_argument(
         '--plot-points',
@@ -467,6 +481,11 @@ def main():
     if args.speak:
         speak('Mosfit', args.speak)
 
+    if args.language == 'en':
+        loc = locale.getlocale()
+        if loc[0]:
+            args.language = loc[0].split('_')[0]
+
     if args.language != 'en':
         try:
             from googletrans.constants import LANGUAGES
@@ -518,14 +537,14 @@ def main():
 
         # Print our amazing ASCII logo.
         if not args.quiet:
-            with open(os.path.join(dir_path, 'logo.txt'), 'r') as f:
+            with codecs.open(os.path.join(dir_path, 'logo.txt'),
+                             'r', 'utf-8') as f:
                 logo = f.read()
                 firstline = logo.split('\n')[0]
-                if isinstance(firstline, bytes):
-                    firstline = firstline.decode('utf-8')
+                # if isinstance(firstline, bytes):
+                #     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
-            for ll in logo.splitlines():
-                prt.prt(ll, colorify=True)
+            prt.prt(logo, colorify=True)
             prt.message('byline', reps=[__version__, mosfit_hash],
                         center=True, colorify=True, width=width, wrapped=False)
 

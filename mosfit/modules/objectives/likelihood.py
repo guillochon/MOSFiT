@@ -24,12 +24,13 @@ class Likelihood(Module):
         self._model_observations = kwargs['model_observations']
         self._observation_types = kwargs['observation_types']
         self._fractions = kwargs['fractions']
+        ret = {'value': LIKELIHOOD_FLOOR, 'kmat': None}
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
-            return {'value': LIKELIHOOD_FLOOR}
+            return ret
         for oi, obs in enumerate(self._model_observations):
             if not self._upper_limits[oi] and (isnan(obs) or
                                                not np.isfinite(obs)):
-                return {'value': LIKELIHOOD_FLOOR}
+                return ret
         self._score_modifier = kwargs.get(self.key('score_modifier'), 0.0)
         self._codeltatime = kwargs.get(self.key('codeltatime'), -1)
         self._codeltalambda = kwargs.get(self.key('codeltalambda'), -1)
@@ -59,13 +60,12 @@ class Likelihood(Module):
 
         self._o_band_vs = self._band_vs[self._observed]
 
-        if np.count_nonzero(self._cmask):
-            self._o_band_vs[self._cmask] = self._cts[self._cmask] * 10.0 ** (
-                self._o_band_vs[self._cmask] / 2.5)
+        self._model_observations[self._cmask] = -2.5 * np.log10(
+            self._model_observations[self._cmask])
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
-            (abs(x - ct) if not u or (x > ct and not isnan(x)) else 0.0)
+            (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0)
             if t == 'countrate' and ct is not None
             else
             (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0)
@@ -83,8 +83,8 @@ class Likelihood(Module):
             raise ValueError('Null residual.')
 
         # Observational errors to be put in diagonal of error matrix.
-        diag = [
-            ((ctel if x < ct else cteu) ** 2)
+        diag = np.array([
+            ((ctel if x > ct else cteu) ** 2)
             if t == 'countrate' and ct is not None else
             ((el if x > y else eu) ** 2)
             if t == 'magnitude' and y is not None else
@@ -95,7 +95,7 @@ class Likelihood(Module):
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
                 self._e_l_fds, self._cts, self._e_l_cts, self._e_u_cts,
                 self._observed, self._observation_types) if o
-        ]
+        ])
 
         if np.any(diag == None):  # noqa: E711
             raise ValueError('Null error.')
@@ -123,6 +123,8 @@ class Likelihood(Module):
             for i in range(kn):
                 kmat[i, i] += diag[i]
 
+            ret['kmat'] = kmat
+
             # full_size = np.count_nonzero(kmat)
 
             # Remove small covariance terms
@@ -146,8 +148,9 @@ class Likelihood(Module):
 
         score = self._score_modifier + value
         if isnan(score) or not np.isfinite(score):
-            return {'value': LIKELIHOOD_FLOOR}
-        return {'value': max(LIKELIHOOD_FLOOR, score)}
+            return ret
+        ret['value'] = max(LIKELIHOOD_FLOOR, score)
+        return ret
 
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
@@ -204,20 +207,26 @@ class Likelihood(Module):
         ]
 
         # Now counts
-        self._cmask = [x is not None for x in self._cts]
+        self._cmask = np.array([x is not None for x in self._cts])
+        self._cts[self._cmask] = -2.5 * np.log10(self._cts[self._cmask]
+                                                 .astype(np.float64))
         self._e_u_cts = [
             kwargs['default_upper_limit_error']
             if (e is None and eu is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e is None and eu is None) else (e if eu is None else eu))
-            for i, (e, eu) in enumerate(zip(self._e_cts, self._e_u_cts))
+             if (e is None and eu is None) else
+             2.5 * (np.log10(c + (e if eu is None else eu)) - np.log10(c)))
+            for i, (c, e, eu) in enumerate(zip(
+                self._cts, self._e_cts, self._e_u_cts))
         ]
         self._e_l_cts = [
             kwargs['default_upper_limit_error']
             if (e is None and el is None and self._upper_limits[i]) else
             (kwargs['default_no_error_bar_error']
-             if (e is None and el is None) else (e if el is None else el))
-            for i, (e, el) in enumerate(zip(self._e_cts, self._e_l_cts))
+             if (e is None and el is None) else
+             2.5 * (np.log10(c) - np.log10(c - (e if el is None else el))))
+            for i, (c, e, el) in enumerate(zip(
+                self._cts, self._e_cts, self._e_l_cts))
         ]
 
         # Now flux densities

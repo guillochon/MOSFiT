@@ -1,18 +1,18 @@
-# -*- coding: utf-8 -*-
+# -*- encoding: utf-8 -*-
 """Defines the `Printer` class."""
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 
 import datetime
 import json
 import os
 import re
 import sys
-from builtins import input
+from builtins import input, str
 from textwrap import fill
 
 import numpy as np
 
-from .utils import calculate_WAIC, is_integer, pretty_num
+from .utils import calculate_WAIC, congrid, is_integer, pretty_num
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -29,30 +29,31 @@ if sys.version_info[:2] < (3, 3):
 class Printer(object):
     """Print class for MOSFiT."""
 
-    class bcolors(object):
+    class ansi(object):
         """Special formatting characters."""
 
-        HEADER = '\033[0;95m'
-        OKBLUE = '\033[0;94m'
-        OKGREEN = '\033[0;92m'
-        WARNING = '\033[0;93m'
-        FAIL = '\033[0;91m'
-        ENDC = '\033[0;0m'
+        BLUE = '\033[0;94m'
         BOLD = '\033[0;1m'
-        UNDERLINE = '\033[4m'
         CYAN = '\033[0;96m'
+        END = '\033[0m'
+        GREEN = '\033[0;92m'
+        HEADER = '\033[0;95m'
         MAGENTA = '\033[1;35m'
         ORANGE = '\033[38;5;214m'
+        RED = '\033[0;91m'
+        UNDERLINE = '\033[4m'
+        YELLOW = '\033[0;93m'
 
         codes = {
-            '!e': ENDC,
+            '!b': BLUE,
+            '!c': CYAN,
+            '!e': END,
+            '!g': GREEN,
             '!m': MAGENTA,
-            '!y': WARNING,
-            '!b': OKBLUE,
-            '!r': FAIL,
-            '!g': OKGREEN,
+            '!o': ORANGE,
+            '!r': RED,
             '!u': UNDERLINE,
-            '!c': CYAN
+            '!y': YELLOW
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -106,21 +107,19 @@ class Printer(object):
     def colorify(self, text):
         """Add colors to text."""
         output = text
-        for code in self.bcolors.codes:
-            output = output.replace(code, self.bcolors.codes[code])
+        for code in self.ansi.codes:
+            output = output.replace(code, self.ansi.codes[code])
         return output
 
-    def prt(
-            self, text, colorify=False, center=False, width=None,
-            warning=False, error=False, prefix=True, color='', inline=False,
+    def _lines(
+        self, text, colorify=False, center=False, width=None,
+        warning=False, error=False, prefix=True, color='', inline=False,
             wrap_length=None, wrapped=False, master_only=True):
-        """Print text without modification."""
+        """Generate lines for output."""
         if self._quiet:
-            return
+            return []
         if master_only and self._pool and not self._pool.is_master():
-            return
-        if width is None:
-            width = self._wrap_length
+            return []
         if warning:
             if prefix:
                 text = '!y' + self._strings['warning'] + ': ' + text + '!e'
@@ -129,9 +128,7 @@ class Printer(object):
                 text = '!r' + self._strings['error'] + ': ' + text + '!e'
         if color:
             text = color + text + '!e'
-        if warning or error or color:
-            colorify = True
-        tspl = text.splitlines()
+        tspl = (text + '\n').splitlines()
         if wrapped:
             if not wrap_length or not is_integer(wrap_length):
                 wrap_length = self._wrap_length
@@ -139,6 +136,20 @@ class Printer(object):
             for line in tspl:
                 ntspl.extend(fill(line, wrap_length).splitlines())
             tspl = ntspl
+        return tspl
+
+    def prt(self, text, **kwargs):
+        """Print text without modification."""
+        warning = kwargs.get('warning', False)
+        error = kwargs.get('error', False)
+        color = kwargs.get('color', '')
+        inline = kwargs.get('inline', False)
+        center = kwargs.get('center', False)
+        width = kwargs.get('width', None)
+        colorify = kwargs.get('colorify', False)
+        tspl = self._lines(text, **kwargs)
+        if warning or error or color:
+            colorify = True
         if inline and self._fitter is not None:
             inline = not self._fitter._test
         if inline:
@@ -153,6 +164,20 @@ class Printer(object):
                 tlen = len(repr(rline)) - len(line) - line.count('!')
                 rline = rline.center(width + tlen)
             print(rline, flush=True)
+
+    def string(self, text, **kwargs):
+        """Return message string."""
+        center = kwargs.get('center', False)
+        width = kwargs.get('width', None)
+        tspl = self._lines(text, **kwargs)
+        lines = []
+        for ri, line in enumerate(tspl):
+            rline = line
+            if center:
+                tlen = len(repr(rline)) - len(line) - line.count('!')
+                rline = rline.center(width + tlen)
+            lines.append(rline)
+        return '\n'.join(lines)
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
@@ -170,7 +195,7 @@ class Printer(object):
 
     def prompt(self, text, wrap_length=None, kind='bool',
                none_string='None of the above.',
-               options=None, translate=True):
+               options=None, translate=True, message=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -194,6 +219,8 @@ class Printer(object):
         else:
             raise ValueError('Unknown prompt kind.')
 
+        if message:
+            text = self.string(text, wrap_length=wrap_length)
         textchoices = text + choices
         if translate:
             textchoices = self.translate(textchoices)
@@ -222,7 +249,9 @@ class Printer(object):
                acor=None,
                psrf=None,
                fracking=False,
-               messages=[]):
+               messages=[],
+               kmat=None,
+               make_space=False):
         """Print status message showing state of fitting process."""
         if self._quiet:
             return
@@ -231,8 +260,8 @@ class Printer(object):
         outarr = [fitter._event_name]
         if desc:
             if desc == 'burning':
-                descstr = self.bcolors.ORANGE + self._strings.get(
-                    desc, '?') + self.bcolors.ENDC
+                descstr = '!o' + self._strings.get(
+                    desc, '?') + '!e'
             else:
                 descstr = self._strings.get(desc, '?')
             outarr.append(descstr)
@@ -257,10 +286,8 @@ class Printer(object):
         if isinstance(accepts, list):
             scorestring = self._strings['moves_accepted'] + ': [ '
             scorestring += ', '.join([
-                (self.bcolors.FAIL if x < 0.01 else
-                 (self.bcolors.WARNING if x < 0.1 else
-                  self.bcolors.OKGREEN)) +
-                '{:.0%}'.format(x) + self.bcolors.ENDC
+                ('!r' if x < 0.01 else '!y' if x < 0.1 else '!g') +
+                '{:.0%}'.format(x) + '!e'
                 for x in accepts
             ]) + ' ]'
             outarr.append(scorestring)
@@ -285,41 +312,57 @@ class Printer(object):
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
-                acorstring = (self.bcolors.FAIL +
-                              'Chain too short for `acor` ({})'.format(
-                                  acorcstr) + self.bcolors.ENDC)
+                acorstring = ('!rChain too short for `acor` ({})!e'.format(
+                              acorcstr))
             else:
                 acortstr = pretty_num(acor[0], sig=3)
                 acorbstr = str(int(acor[2]))
                 if acor[1] < 2.0:
-                    col = self.bcolors.FAIL
+                    col = '!r'
                 elif acor[1] < 5.0:
-                    col = self.bcolors.WARNING
+                    col = '!y'
                 else:
-                    col = self.bcolors.OKGREEN
+                    col = '!g'
                 acorstring = col
                 acorstring = acorstring + 'Acor Tau (i > {}): {} ({}x)'.format(
                     acorbstr, acortstr, acorcstr)
-                acorstring = acorstring + (self.bcolors.ENDC if col else '')
+                acorstring = acorstring + ('!e' if col else '')
             outarr.append(acorstring)
         if psrf is not None and psrf[0] != np.inf:
             psrfstr = pretty_num(psrf[0], sig=4)
             psrfbstr = str(int(psrf[1]))
             if psrf[0] > 2.0:
-                col = self.bcolors.FAIL
+                col = '!r'
             elif psrf[0] > 1.2:
-                col = self.bcolors.WARNING
+                col = '!y'
             else:
-                col = self.bcolors.OKGREEN
+                col = '!g'
             psrfstring = col
             psrfstring = psrfstring + 'PSRF (i > {}): {}'.format(
                 psrfbstr, psrfstr)
-            psrfstring = psrfstring + (self.bcolors.ENDC if col else '')
+            psrfstring = psrfstring + ('!e' if col else '')
             outarr.append(psrfstring)
 
         if not isinstance(messages, list):
             raise ValueError('`messages` must be list!')
         outarr.extend(messages)
+
+        kmat_extra = 0
+        if kmat is not None:
+            kmat_scaled = congrid(kmat, (14, 7))
+            kmat_scaled = np.log(kmat_scaled)
+            kmat_scaled /= np.max(kmat_scaled)
+            kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
+            kmat_dimi = range(len(kmat_scaled))
+            kmat_dimj = range(len(kmat_scaled[0]))
+            doodle = '\n╔' + ('═' * len(kmat_scaled)) + '╗   \n'
+            doodle += '║' + '║   \n║'.join(
+                [''.join([self.ascii_fill(kmat_scaled[i, j], kmat_pers)
+                          for i in kmat_dimi]) for j in kmat_dimj]) + '║'
+            doodle += '\n╚' + ('═' * len(kmat_scaled)) + '╝   '
+            doodle = doodle.splitlines()
+
+            kmat_extra = len(doodle[-1])
 
         line = ''
         lines = ''
@@ -328,14 +371,25 @@ class Printer(object):
             oldline = line
             line = line + (' | ' if li > 0 else '') + item
             li = li + 1
-            if len(line) > self._wrap_length:
+            if len(line) > self._wrap_length - kmat_extra:
                 li = 1
                 lines = lines + '\n' + oldline
                 line = item
 
         lines = lines + '\n' + line
 
-        self.prt(lines, inline=True)
+        if kmat is not None:
+            lines = self._lines(lines)
+            loff = int(np.floor((len(kmat_scaled[0]) - len(lines)) / 2.0)) + 2
+            for li, line in enumerate(doodle):
+                if li < loff:
+                    continue
+                elif li > loff + len(lines) - 1:
+                    break
+                doodle[li] += lines[li - loff]
+            lines = '\n'.join(doodle)
+
+        self.prt(lines, colorify=True, inline=not make_space)
 
     def get_timestring(self, t):
         """Return estimated time remaining.
@@ -352,18 +406,17 @@ class Printer(object):
             try:
                 from googletrans import Translator
                 translator = Translator()
-                text, reps = self.rep_ansi(text)
-                text = translator.translate(text, dest=self._language).text
-                text = text.format(*reps)
+                ttext, reps = self.rep_ansi(text)
+                ttext = translator.translate(ttext, dest=self._language).text
+                text = ttext.format(*reps)
             except Exception:
-                raise
                 pass
         return text
 
     def rep_ansi(self, text):
         """Replace ANSI codes and return the list of codes."""
         patt = re.compile(r'({})'.format(
-            '|'.join(['\{\}'] + list(self.bcolors.codes.keys()))))
+            '|'.join(['\{.*?\}'] + list(self.ansi.codes.keys()))))
         stext = patt.sub("{}", text)
         matches = patt.findall(text)
         return stext, matches
@@ -401,3 +454,14 @@ class Printer(object):
                             '├', '└') for ci, x in enumerate(line)])
             tree_str = '\n'.join(lines)
             print(tree_str)
+
+    def ascii_fill(self, value, pers):
+        """Print a character based on range from 0 - 1."""
+        if np.isnan(value) or value < pers[0]:
+            return ' '
+        if np.isnan(value) or value < pers[1]:
+            return '.'
+        elif value < pers[2]:
+            return '*'
+        else:
+            return '#'
