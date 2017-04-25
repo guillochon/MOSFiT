@@ -3,6 +3,7 @@
 
 import codecs
 import hashlib
+import io
 import json
 import os
 import re
@@ -361,7 +362,7 @@ def open_atomic(filepath, *args, **kwargs):
 
     with temp_atomic(
             dir=os.path.dirname(os.path.abspath(filepath))) as tmppath:
-        with open(tmppath, *args, **kwargs) as file:
+        with io.open(tmppath, *args, **kwargs) as file:
             try:
                 yield file
             finally:
