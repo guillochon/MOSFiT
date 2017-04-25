@@ -24,9 +24,9 @@ before_install:
 install:
     - conda update setuptools
     - conda config --add channels conda-forge
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION matplotlib openmpi scipy jupyter astropy cython emcee nbstripout numexpr palettable seaborn six coveralls
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION astrocats inflect matplotlib openmpi scipy jupyter astropy cython emcee nbstripout numexpr palettable seaborn six coveralls corner dropbox
     - xargs -L 1 pip install < requirements.txt
-    - pip install dropbox corner googletrans
+    - pip install googletrans
     - coverage run -p setup.py install
 
 # Run test
