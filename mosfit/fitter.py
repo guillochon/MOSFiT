@@ -292,6 +292,8 @@ class Fitter(object):
                                                 self._event_name = name
                                                 self._event_catalog = catalog
                                                 break
+                                        if self._event_name:
+                                            break
 
                         if not self._event_name:
                             prt.message('no_event_by_name')
