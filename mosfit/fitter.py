@@ -606,7 +606,8 @@ class Fitter(object):
                             'Bandset: ' + s[1] if s[1] else '',
                             'System: ' + s[0] if s[0] else '',
                             'AB offset: ' + pretty_num(
-                                s[3]) if s[4] == 'magnitude' else '')))) +
+                                s[3]) if (s[4] == 'magnitude' and
+                                          s[3] > 0) else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
