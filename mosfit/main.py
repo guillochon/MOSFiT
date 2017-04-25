@@ -479,7 +479,6 @@ def get_parser():
 
 def main():
     """Main function for MOSFiT."""
-
     parser = get_parser()
 
     args = parser.parse_args()
