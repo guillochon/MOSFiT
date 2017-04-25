@@ -571,7 +571,7 @@ def main():
 
         # Perform a few checks on upload before running (to keep size
         # manageable)
-        if args.upload and args.smooth_times > 100:
+        if args.upload and not args.test and args.smooth_times > 100:
             response = prt.prompt(
                 'You have set the `--smooth-times` flag to a value '
                 'greater than 100, which will disable uploading. Continue '
@@ -581,7 +581,7 @@ def main():
             else:
                 sys.exit()
 
-        if args.upload and args.num_walkers < 100:
+        if args.upload and not args.test and args.num_walkers < 100:
             response = prt.prompt(
                 'An uploaded run must be converged, which is much less likely '
                 'with so few walkers (`--num-walkers` must exceed 100.) '
@@ -591,7 +591,7 @@ def main():
             else:
                 sys.exit()
 
-        if (args.upload and args.num_walkers and
+        if (args.upload and not args.test and args.num_walkers and
                 args.num_walkers * args.num_temps > 500):
             response = prt.prompt(
                 'The product of `--num-walkers` and `--num-temps` exceeds '
