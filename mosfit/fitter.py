@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
 import gc
-import io
 import json
 import os
 import re
