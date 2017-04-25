@@ -581,11 +581,21 @@ def main():
             else:
                 sys.exit()
 
+        if args.upload and args.num_walkers < 100:
+            response = prt.prompt(
+                'An uploaded run must be converged, which is much less likely '
+                'with so few walkers (`--num-walkers` must exceed 100.) '
+                'Continue with uploading disabled?')
+            if response:
+                args.upload = False
+            else:
+                sys.exit()
+
         if (args.upload and args.num_walkers and
-                args.num_walkers * args.num_temps > 200):
+                args.num_walkers * args.num_temps > 500):
             response = prt.prompt(
                 'The product of `--num-walkers` and `--num-temps` exceeds '
-                '200, which will disable uploading. Continue '
+                '500, which will disable uploading. Continue '
                 'with uploading disabled?')
             if response:
                 args.upload = False

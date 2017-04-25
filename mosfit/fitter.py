@@ -1107,14 +1107,24 @@ class Fitter(object):
                 QUANTITY.VALUE: str(WAIC),
                 QUANTITY.KIND: 'WAIC'
             }
+            modeldict[MODEL.CONVERGENCE] = []
+            if psrf < np.inf:
+                modeldict[MODEL.CONVERGENCE].append(
+                    {
+                        QUANTITY.VALUE: str(psrf),
+                        QUANTITY.KIND: 'psrf'
+                    }
+                )
             if acor and aacort > 0:
                 actc = int(np.ceil(aacort))
                 acortimes = '<' if aa < self._MAX_ACORC else ''
                 acortimes += str(np.int(float(emi - ams) / actc))
-                modeldict[MODEL.CONVERGENCE] = {
-                    QUANTITY.VALUE: str(acortimes),
-                    QUANTITY.KIND: 'autocorrelationtimes'
-                }
+                modeldict[MODEL.CONVERGENCE].append(
+                    {
+                        QUANTITY.VALUE: str(acortimes),
+                        QUANTITY.KIND: 'autocorrelationtimes'
+                    }
+                )
             modeldict[MODEL.STEPS] = str(emi)
 
         if upload:
