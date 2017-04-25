@@ -94,9 +94,13 @@ def entabbed_json_dumps(string, **kwargs):
     return newstr
 
 
-def entabbed_json_dump(string, f, **kwargs):
+def entabbed_json_dump(dic, f, **kwargs):
     """Write `entabbed_json_dumps` output to file handle."""
-    f.write(entabbed_json_dumps(string, **kwargs))
+    string = entabbed_json_dumps(dic, **kwargs)
+    try:
+        f.write(string)
+    except UnicodeEncodeError:
+        f.write(string.encode('ascii', 'replace').decode())
 
 
 def calculate_WAIC(scores):
@@ -362,7 +366,7 @@ def open_atomic(filepath, *args, **kwargs):
 
     with temp_atomic(
             dir=os.path.dirname(os.path.abspath(filepath))) as tmppath:
-        with io.open(tmppath, *args, **kwargs) as file:
+        with open(tmppath, *args, **kwargs) as file:
             try:
                 yield file
             finally:

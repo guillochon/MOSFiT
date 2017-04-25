@@ -353,7 +353,7 @@ class Printer(object):
 
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
-            kmat_scaled = congrid(kmat, (14, 7))
+            kmat_scaled = congrid(kmat, (14, 7), minusone=True)
             kmat_scaled = np.log(kmat_scaled)
             kmat_scaled /= np.max(kmat_scaled)
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
