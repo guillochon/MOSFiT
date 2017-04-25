@@ -24,6 +24,7 @@ class Line(SED):
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._sample_wavelengths = kwargs['sample_wavelengths']
+        self._frequencies = kwargs['all_frequencies']
         self._luminosities = kwargs[self.key('luminosities')]
         self._line_wavelength = kwargs[self.key('line_wavelength')]
         self._line_width = kwargs[self.key('line_width')]

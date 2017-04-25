@@ -78,12 +78,12 @@ class LOSExtinction(SED):
                 if bi not in extinct_cache:
                     extinct_cache[bi] = np.zeros_like(
                         self._band_rest_wavelengths[bi])
-                    ind = self._ext_indices[si]
+                    ind = self._ext_indices[bi]
                     if np.count_nonzero(ind) > 0:
                         extinct_cache[bi][ind] = odonnell94(
                             self._band_rest_wavelengths[bi][ind],
                             av_host, self._rv_host)
-                    ind = self._x_indices[si]
+                    ind = self._x_indices[bi]
                     if np.count_nonzero(ind) > 0:
                         extinct_cache[bi][ind] = self.mm83(
                             self._nh_host,
