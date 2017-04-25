@@ -15,7 +15,7 @@ import numpy as np
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master, speak
+from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
 
 
 class SortingHelpFormatter(argparse.HelpFormatter):
@@ -451,6 +451,13 @@ def get_parser():
         help=("Speak."))
 
     parser.add_argument(
+        '--version',
+        dest='version',
+        default=False,
+        action='store_true',
+        help=("Print code version info."))
+
+    parser.add_argument(
         '--language',
         dest='language',
         type=str,
@@ -472,11 +479,15 @@ def get_parser():
 
 def main():
     """Main function for MOSFiT."""
-    dir_path = os.path.dirname(os.path.realpath(__file__))
-
     parser = get_parser()
 
     args = parser.parse_args()
+
+    if args.version:
+        print('MOSFiT v{}'.format(__version__))
+        return
+
+    dir_path = os.path.dirname(os.path.realpath(__file__))
 
     if args.speak:
         speak('Mosfit', args.speak)
@@ -612,7 +623,7 @@ def main():
                         'length.', wrapped=True)
                     continue
                 break
-            with open(upload_token_path, 'w') as f:
+            with open_atomic(upload_token_path, 'w') as f:
                 f.write(upload_token)
 
         if args.upload:

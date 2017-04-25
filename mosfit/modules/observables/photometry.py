@@ -10,9 +10,10 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 from astropy.io.votable import parse as voparse
+
 from mosfit.constants import C_CGS, FOUR_PI, MAG_FAC, MPC_CGS
 from mosfit.modules.module import Module
-from mosfit.utils import get_url_file_handle, listify, syst_syns
+from mosfit.utils import get_url_file_handle, listify, open_atomic, syst_syns
 
 
 # Important: Only define one ``Module`` class per file.
@@ -154,7 +155,7 @@ class Photometry(Module):
                             except Exception:
                                 prt.message('cant_dl_svo', warning=True)
                             else:
-                                with open(xml_path, 'wb') as f:
+                                with open_atomic(xml_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
 
                         if os.path.exists(xml_path):
@@ -199,7 +200,7 @@ class Photometry(Module):
                                     ' '.join([str(y) for y in x])
                                     for x in vo_dat
                                 ])
-                                with open(path, 'w') as f:
+                                with open_atomic(path, 'w') as f:
                                     f.write(vo_string)
                         else:
                             raise RuntimeError(

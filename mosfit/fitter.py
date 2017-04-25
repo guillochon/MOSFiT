@@ -22,14 +22,15 @@ from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
+
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          listify, pretty_num, speak)
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
+                          listify, open_atomic, pretty_num, speak)
 
 from .model import Model
 
@@ -213,7 +214,8 @@ class Fitter(object):
                                                 [catalog], warning=True)
                                     raise
                                 else:
-                                    with open(names_paths[ci], 'wb') as f:
+                                    with open_atomic(
+                                            names_paths[ci], 'wb') as f:
                                         shutil.copyfileobj(response, f)
                         names = OrderedDict()
                         for ci, catalog in enumerate(self._catalogs):
@@ -310,7 +312,7 @@ class Fitter(object):
                                 prt.message('cant_dl_event', [
                                     self._event_name], warning=True)
                             else:
-                                with open(name_path, 'wb') as f:
+                                with open_atomic(name_path, 'wb') as f:
                                     shutil.copyfileobj(response, f)
                         path = name_path
 
@@ -1257,9 +1259,9 @@ class Fitter(object):
 
         if write:
             prt.message('writing_model')
-            with io.open(
+            with open_atomic(
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                    'w') as flast, io.open(os.path.join(
+                    'w') as flast, open_atomic(os.path.join(
                         model.MODEL_OUTPUT_DIR,
                         self._event_name + (
                             ('_' + suffix) if suffix else '') +
@@ -1269,9 +1271,9 @@ class Fitter(object):
 
             if save_full_chain:
                 prt.message('writing_full_chain')
-                with io.open(
+                with open_atomic(
                     os.path.join(model.MODEL_OUTPUT_DIR,
-                                 'chain.json'), 'w') as flast, io.open(
+                                 'chain.json'), 'w') as flast, open_atomic(
                         os.path.join(model.MODEL_OUTPUT_DIR,
                                      self._event_name + '_chain' + (
                                          ('_' + suffix) if suffix else '') +
@@ -1283,9 +1285,9 @@ class Fitter(object):
 
             if extra_outputs:
                 prt.message('writing_extras')
-                with io.open(os.path.join(
+                with open_atomic(os.path.join(
                     model.MODEL_OUTPUT_DIR, 'extras.json'),
-                        'w') as flast, io.open(os.path.join(
+                        'w') as flast, open_atomic(os.path.join(
                             model.MODEL_OUTPUT_DIR, self._event_name +
                             '_extras' + (('_' + suffix) if suffix else '') +
                             '.json'), 'w') as feven:

@@ -1,11 +1,16 @@
 # -*- coding: UTF-8 -*-
 """Miscellaneous utility functions."""
 
+import codecs
 import hashlib
 import json
+import os
 import re
 import sys
+import tempfile
+from builtins import bytes
 from collections import OrderedDict
+from contextlib import contextmanager
 from math import floor, isnan, log10
 
 import numpy as np
@@ -124,7 +129,7 @@ def hash_bytes(input_string):
     Necessary to have consistent behavior between Python 2 & 3.
     """
     if sys.version_info[0] < 3:
-        return bytes(input_string)
+        return bytes(input_string, 'utf-8')
     return input_string.encode()
 
 
@@ -139,7 +144,7 @@ def get_model_hash(modeldict, ignore_keys=[]):
     return hashlib.sha512(hash_bytes(string_rep)).hexdigest()[:16]
 
 
-def get_mosfit_hash(salt=''):
+def get_mosfit_hash(salt=u''):
     """Return a unique hash for the MOSFiT code."""
     import fnmatch
     import os
@@ -154,7 +159,7 @@ def get_mosfit_hash(salt=''):
     matches = list(sorted(list(matches)))
     code_str = salt
     for match in matches:
-        with open(match, 'r') as f:
+        with codecs.open(match, 'r', 'utf-8') as f:
             code_str += f.read()
 
     return hashlib.sha512(hash_bytes(code_str)).hexdigest()[:16]
@@ -301,3 +306,66 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
               "Currently only \'neighbour\', \'nearest\',\'linear\',"
               "and \'spline\' are supported.")
         return None
+
+
+# Below from
+# http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
+@contextmanager
+def temp_atomic(suffix='', dir=None):
+    """Context for temporary file.
+
+    Will find a free temporary filename upon entering
+    and will try to delete the file on leaving, even in case of an exception.
+
+    Parameters
+    ----------
+    suffix : string
+        optional file suffix
+    dir : string
+        optional directory to save temporary file in
+    """
+    tf = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir)
+    tf.file.close()
+    try:
+        yield tf.name
+    finally:
+        try:
+            os.remove(tf.name)
+        except OSError as e:
+            if e.errno == 2:
+                pass
+            else:
+                raise
+
+
+@contextmanager
+def open_atomic(filepath, *args, **kwargs):
+    """Open temporary file object that atomically moves upon exiting.
+
+    Allows reading and writing to and from the same filename.
+
+    The file will not be moved to destination in case of an exception.
+
+    Parameters
+    ----------
+    filepath : string
+        the file path to be opened
+    fsync : bool
+        whether to force write the file to disk
+    *args : mixed
+        Any valid arguments for :code:`open`
+    **kwargs : mixed
+        Any valid keyword arguments for :code:`open`
+    """
+    fsync = kwargs.get('fsync', False)
+
+    with temp_atomic(
+            dir=os.path.dirname(os.path.abspath(filepath))) as tmppath:
+        with open(tmppath, *args, **kwargs) as file:
+            try:
+                yield file
+            finally:
+                if fsync:
+                    file.flush()
+                    os.fsync(file.fileno())
+        os.rename(tmppath, filepath)
