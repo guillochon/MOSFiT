@@ -12,7 +12,7 @@ from textwrap import fill
 
 import numpy as np
 
-from .utils import calculate_WAIC, congrid, is_integer, pretty_num
+from .utils import calculate_WAIC, congrid, is_integer, open_atomic, pretty_num
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -97,7 +97,7 @@ class Printer(object):
             self._strings = {}
             for key in strings:
                 self._strings[key] = self.translate(strings[key])
-            with open(lsf, 'w') as f:
+            with open_atomic(lsf, 'w') as f:
                 json.dump(self._strings, f)
 
     def set_language(self, language):

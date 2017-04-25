@@ -15,7 +15,7 @@ import numpy as np
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master, speak
+from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
 
 
 class SortingHelpFormatter(argparse.HelpFormatter):
@@ -623,7 +623,7 @@ def main():
                         'length.', wrapped=True)
                     continue
                 break
-            with open(upload_token_path, 'w') as f:
+            with open_atomic(upload_token_path, 'w') as f:
                 f.write(upload_token)
 
         if args.upload:
