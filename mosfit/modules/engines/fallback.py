@@ -594,7 +594,7 @@ class Fallback(Engine):
                 C_CGS / kappa_t)
 
         # two options for soft Ledd cuts, should try both & see what fits stuff better
-        luminosities = np.where(luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * luminosities, luminosities)
+        luminosities = np.where(luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * Ledd, luminosities)
         #luminosities = (luminosities * Ledd/(luminosities + Ledd))
         
         # ----------------TESTING ----------------
