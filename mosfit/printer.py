@@ -352,7 +352,7 @@ class Printer(object):
         outarr.extend(messages)
 
         kmat_extra = 0
-        if kmat is not None:
+        if kmat is not None and kmat.shape[0] > 1:
             kmat_scaled = congrid(kmat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
             kmat_scaled /= np.max(kmat_scaled)
@@ -382,7 +382,7 @@ class Printer(object):
 
         lines = lines + '\n' + line
 
-        if kmat is not None:
+        if kmat is not None and kmat.shape[0] > 1:
             lines = self._lines(lines)
             loff = int(np.floor((len(kmat_scaled[0]) - len(lines)) / 2.0)) + 2
             for li, line in enumerate(doodle):
