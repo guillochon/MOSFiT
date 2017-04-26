@@ -22,7 +22,6 @@ class Likelihood(Module):
         """Process module."""
         self.preprocess(**kwargs)
         self._model_observations = kwargs['model_observations']
-        self._observation_types = kwargs['observation_types']
         self._fractions = kwargs['fractions']
         ret = {'value': LIKELIHOOD_FLOOR, 'kmat': None}
         if min(self._fractions) < 0.0 or max(self._fractions) > 1.0:
@@ -181,6 +180,7 @@ class Likelihood(Module):
         self._upper_limits = kwargs.get('upperlimits', [])
         self._observed = np.array(kwargs.get('observed', []))
         self._all_band_indices = kwargs.get('all_band_indices', [])
+        self._observation_types = kwargs['observation_types']
         self._are_bands = np.array(self._all_band_indices) >= 0
         self._all_band_avgs = np.array([
             self._average_wavelengths[bi] if bi >= 0 else
@@ -207,7 +207,7 @@ class Likelihood(Module):
         ]
 
         # Now counts
-        self._cmask = np.array([x is not None for x in self._cts])
+        self._cmask = self._observation_types == 'countrate'
         self._cts[self._cmask] = -2.5 * np.log10(self._cts[self._cmask]
                                                  .astype(np.float64))
         self._e_u_cts = [
