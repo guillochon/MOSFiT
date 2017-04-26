@@ -64,6 +64,7 @@ class Printer(object):
         self._pool = pool
         self._fitter = fitter
         self._language = language
+        self._was_inline = False
 
         self.set_strings()
 
@@ -153,9 +154,13 @@ class Printer(object):
         if inline and self._fitter is not None:
             inline = not self._fitter._test
         if inline:
-            for line in tspl:
-                sys.stdout.write("\033[F")
-                sys.stdout.write("\033[K")
+            if self._was_inline:
+                for line in tspl:
+                    sys.stdout.write("\033[F")
+                    sys.stdout.write("\033[K")
+            self._was_inline = True
+        else:
+            self._was_inline = False
         for ri, line in enumerate(tspl):
             rline = line
             if colorify:
@@ -395,6 +400,8 @@ class Printer(object):
             lines = '\n'.join(doodle)
 
         self.prt(lines, colorify=True, inline=not make_space)
+        if make_space:
+            self._was_inline = True
 
     def get_timestring(self, t):
         """Return estimated time remaining.
