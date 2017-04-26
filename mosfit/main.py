@@ -166,9 +166,13 @@ def get_parser():
         '-i',
         dest='iterations',
         type=int,
+        const=0,
         default=-1,
+        nargs='?',
         help=("Number of iterations to run emcee for, including burn-in and "
-              "post-burn iterations."))
+              "post-burn iterations. Setting this option to `0` (or "
+              "providing no argument) will only draw walker positions "
+              "and immediately exit."))
 
     parser.add_argument(
         '--smooth-times',
