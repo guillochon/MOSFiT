@@ -115,6 +115,7 @@ class Fitter(object):
                    return_fits=True,
                    extra_outputs=[],
                    walker_paths=[],
+                   catalogs=[],
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -147,6 +148,12 @@ class Fitter(object):
             'OTC': ('https://tde.space/astrocats/astrocats/'
                     'tidaldisruptions/output')
         }
+
+        # Exclude catalogs not included in catalog list.
+        if len(catalogs):
+            for cat in self._catalogs.copy():
+                if cat.upper() not in [x.upper() for x in catalogs]:
+                    del(self._catalogs[cat])
 
         if not len(event_list) and not len(model_list):
             prt.message('no_events_models', warning=True)
@@ -187,21 +194,24 @@ class Fitter(object):
                     pool = SerialPool()
                 if pool.is_master():
                     path = ''
-                    # If the event name ends in .json, assume a path
+                    # If the event name ends in .json, assume event is a path.
                     if event.endswith('.json'):
                         path = event
                         self._event_name = event.replace('.json',
                                                          '').split('/')[-1]
 
-                    # If not (or the file doesn't exist), download from OSC
+                    # If not (or the file doesn't exist), download from an open
+                    # catalog.
                     if not path or not os.path.exists(path):
                         names_paths = [
                             os.path.join(dir_path, 'cache', x +
                                          '.names.min.json') for x in
                             self._catalogs]
                         input_name = event.replace('.json', '')
-                        prt.message('dling_aliases', [input_name])
-                        if not offline:
+                        if offline:
+                            prt.message('event_interp', [input_name])
+                        else:
+                            prt.message('dling_aliases', [input_name])
                             for ci, catalog in enumerate(self._catalogs):
                                 try:
                                     response = get_url_file_handle(
@@ -301,7 +311,10 @@ class Fitter(object):
                         urlname = self._event_name + '.json'
                         name_path = os.path.join(dir_path, 'cache', urlname)
 
-                        if not offline:
+                        if offline:
+                            prt.message('cached_event', [
+                                self._event_name, self._event_catalog])
+                        else:
                             prt.message('dling_event', [
                                 self._event_name, self._event_catalog])
                             try:

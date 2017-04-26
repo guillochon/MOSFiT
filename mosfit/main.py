@@ -474,6 +474,14 @@ def get_parser():
         nargs='+',
         help=("Extra keys to save alongside the default model outputs."))
 
+    parser.add_argument(
+        '--catalogs',
+        '-C',
+        dest='catalogs',
+        default=[],
+        nargs='+',
+        help=("Restrict data acquisition to the listed catalogs."))
+
     return parser
 
 
