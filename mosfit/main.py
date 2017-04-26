@@ -492,8 +492,8 @@ def get_parser():
         dest='open_in_browser',
         default=False,
         action='store_true',
-        help=("Open the first event listed with `-e` in the user's web "
-              "browser."))
+        help=("Open the events listed with `-e` in the user's web "
+              "browser one at a time."))
 
     return parser
 

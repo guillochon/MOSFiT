@@ -19,7 +19,8 @@
         "kind":"parameter",
         "value":0.0,
         "class":"parameter",
-        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
+        "derived_keys":"reference_time"
     },
     "Pspin":{
         "kind":"parameter",
