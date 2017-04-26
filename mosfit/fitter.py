@@ -283,10 +283,7 @@ class Fitter(object):
                                         response = matches[0]
                                     else:
                                         response = prt.prompt(
-                                            'No exact match to given '
-                                            'transient '
-                                            'found. Did you mean one of the '
-                                            'following transients?',
+                                            'no_exact_match',
                                             kind='select',
                                             options=matches,
                                             none_string=(
@@ -1064,10 +1061,7 @@ class Fitter(object):
 
         if s_exception:
             pool.close()
-            if (not prt.prompt(
-                    'You have interrupted the Monte Carlo. Do you wish to '
-                    'save the incomplete run to disk? Previous results will '
-                    'be overwritten.', self._wrap_length)):
+            if (not prt.prompt('mc_interrupted', self._wrap_length)):
                 sys.exit()
 
         if write:

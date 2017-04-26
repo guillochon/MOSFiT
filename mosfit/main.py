@@ -519,7 +519,8 @@ def main():
                 sorted([LANGUAGES[x].title().replace('_', ' ') +
                         ' (' + x + ')' for x in LANGUAGES]))
             sel = tprt.prompt(
-                'Select a language:', kind='select', options=languages)
+                'Select a language:', kind='select', options=languages,
+                message=False)
             args.language = sel.split('(')[-1].strip(')')
 
     prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
@@ -580,20 +581,14 @@ def main():
         # Perform a few checks on upload before running (to keep size
         # manageable)
         if args.upload and not args.test and args.smooth_times > 100:
-            response = prt.prompt(
-                'You have set the `--smooth-times` flag to a value '
-                'greater than 100, which will disable uploading. Continue '
-                'with uploading disabled?')
+            response = prt.prompt('ul_warning_smooth')
             if response:
                 args.upload = False
             else:
                 sys.exit()
 
         if args.upload and not args.test and args.num_walkers < 100:
-            response = prt.prompt(
-                'An uploaded run must be converged, which is much less likely '
-                'with so few walkers (`--num-walkers` must exceed 100.) '
-                'Continue with uploading disabled?')
+            response = prt.prompt('ul_warning_few_walkers')
             if response:
                 args.upload = False
             else:
@@ -601,10 +596,7 @@ def main():
 
         if (args.upload and not args.test and args.num_walkers and
                 args.num_walkers * args.num_temps > 500):
-            response = prt.prompt(
-                'The product of `--num-walkers` and `--num-temps` exceeds '
-                '500, which will disable uploading. Continue '
-                'with uploading disabled?')
+            response = prt.prompt('ul_warning_too_many_walkers')
             if response:
                 args.upload = False
             else:
@@ -628,13 +620,9 @@ def main():
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
-                prt.prt(
-                    "No upload token found! Please visit "
-                    "https://sne.space/mosfit/ to obtain an upload "
-                    "token for MOSFiT.", wrapped=True)
-                upload_token = prt.prompt(
-                    "Please paste your Dropbox token, then hit enter:",
-                    kind='string')
+                prt.message('no_ul_token', ['https://sne.space/mosfit/'],
+                            wrapped=True)
+                upload_token = prt.prompt('paste_token', kind='string')
                 if len(upload_token) != 64:
                     prt.prt(
                         'Error: Token must be exactly 64 characters in '
@@ -661,10 +649,7 @@ def main():
             prt.message('copying')
             fc = False
             if args.force_copy:
-                fc = prt.prompt(
-                    "The flag `--force-copy-at-launch` has been set. Do you "
-                    "really wish to overwrite your local model/module/jupyter "
-                    "file hierarchy? This action cannot be reversed.", width)
+                fc = prt.prompt('force_copy')
             if not os.path.exists('jupyter'):
                 os.mkdir(os.path.join('jupyter'))
             if not os.path.isfile(os.path.join('jupyter',
