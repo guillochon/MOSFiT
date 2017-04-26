@@ -486,6 +486,15 @@ def get_parser():
         nargs='+',
         help=("Restrict data acquisition to the listed catalogs."))
 
+    parser.add_argument(
+        '--open-in-browser',
+        '-O',
+        dest='open_in_browser',
+        default=False,
+        action='store_true',
+        help=("Open the first event listed with `-e` in the user's web "
+              "browser."))
+
     return parser
 
 

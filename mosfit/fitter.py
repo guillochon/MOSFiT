@@ -8,6 +8,7 @@ import shutil
 import sys
 import time
 import warnings
+import webbrowser
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
@@ -116,6 +117,7 @@ class Fitter(object):
                    extra_outputs=[],
                    walker_paths=[],
                    catalogs=[],
+                   open_in_browser=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         if start_time is False:
@@ -142,12 +144,20 @@ class Fitter(object):
         if len(model_list) and not len(event_list):
             event_list = ['']
 
-        self._catalogs = {
-            'OSC': ('https://sne.space/astrocats/astrocats/'
+        self._catalogs = OrderedDict((
+            ('OSC', {
+                'json': (
+                    'https://sne.space/astrocats/astrocats/'
                     'supernovae/output'),
-            'OTC': ('https://tde.space/astrocats/astrocats/'
-                    'tidaldisruptions/output')
-        }
+                'web': 'https://sne.space/sne/'
+            }),
+            ('OTC', {
+                'json': (
+                    'https://tde.space/astrocats/astrocats/'
+                    'tidaldisruptions/output'),
+                'web': 'https://tde.space/tde/'
+            })
+        ))
 
         # Exclude catalogs not included in catalog list.
         if len(catalogs):
@@ -215,7 +225,7 @@ class Fitter(object):
                             for ci, catalog in enumerate(self._catalogs):
                                 try:
                                     response = get_url_file_handle(
-                                        self._catalogs[catalog] +
+                                        self._catalogs[catalog]['json'] +
                                         '/names.min.json',
                                         timeout=10)
                                 except Exception:
@@ -316,8 +326,8 @@ class Fitter(object):
                                 self._event_name, self._event_catalog])
                             try:
                                 response = get_url_file_handle(
-                                    self._catalogs[self._event_catalog] +
-                                    '/json/' + urlname,
+                                    self._catalogs[self._event_catalog][
+                                        'json'] + '/json/' + urlname,
                                     timeout=10)
                             except Exception:
                                 prt.message('cant_dl_event', [
@@ -328,6 +338,10 @@ class Fitter(object):
                         path = name_path
 
                     if os.path.exists(path):
+                        if open_in_browser:
+                            webbrowser.open(
+                                self._catalogs[self._event_catalog]['web'] +
+                                self._event_name)
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
                         prt.message('event_file', [path], wrapped=True)
