@@ -15,7 +15,7 @@ import numpy as np
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master, speak
+from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
 
 
 class SortingHelpFormatter(argparse.HelpFormatter):
@@ -571,7 +571,7 @@ def main():
 
         # Perform a few checks on upload before running (to keep size
         # manageable)
-        if args.upload and args.smooth_times > 100:
+        if args.upload and not args.test and args.smooth_times > 100:
             response = prt.prompt(
                 'You have set the `--smooth-times` flag to a value '
                 'greater than 100, which will disable uploading. Continue '
@@ -581,11 +581,21 @@ def main():
             else:
                 sys.exit()
 
-        if (args.upload and args.num_walkers and
-                args.num_walkers * args.num_temps > 200):
+        if args.upload and not args.test and args.num_walkers < 100:
+            response = prt.prompt(
+                'An uploaded run must be converged, which is much less likely '
+                'with so few walkers (`--num-walkers` must exceed 100.) '
+                'Continue with uploading disabled?')
+            if response:
+                args.upload = False
+            else:
+                sys.exit()
+
+        if (args.upload and not args.test and args.num_walkers and
+                args.num_walkers * args.num_temps > 500):
             response = prt.prompt(
                 'The product of `--num-walkers` and `--num-temps` exceeds '
-                '200, which will disable uploading. Continue '
+                '500, which will disable uploading. Continue '
                 'with uploading disabled?')
             if response:
                 args.upload = False
@@ -623,7 +633,7 @@ def main():
                         'length.', wrapped=True)
                     continue
                 break
-            with open(upload_token_path, 'w') as f:
+            with open_atomic(upload_token_path, 'w') as f:
                 f.write(upload_token)
 
         if args.upload:
