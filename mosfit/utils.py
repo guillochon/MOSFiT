@@ -211,7 +211,8 @@ def rebin(a, newshape):
     return a[tuple(indices)]
 
 
-def congrid(a, newdims, method='linear', centre=False, minusone=False):
+def congrid(a, newdims, method='linear', centre=False, minusone=False,
+            bounds_error=False):
     """Arbitrary resampling of source array to new dimension sizes.
 
     Currently only supports maintaining the same number of dimensions.
@@ -272,14 +273,16 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
         olddims = [np.arange(i, dtype=np.float) for i in list(a.shape)]
 
         # first interpolation - for ndims = any
-        mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method)
+        mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method,
+                                          bounds_error=bounds_error)
         newa = mint(dimlist[-1])
 
         trorder = [ndims - 1] + list(range(ndims - 1))
         for i in range(ndims - 2, -1, -1):
             newa = newa.transpose(trorder)
 
-            mint = scipy.interpolate.interp1d(olddims[i], newa, kind=method)
+            mint = scipy.interpolate.interp1d(olddims[i], newa, kind=method,
+                                              bounds_error=bounds_error)
             newa = mint(dimlist[i])
 
         if ndims > 1:
