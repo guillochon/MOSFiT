@@ -1272,7 +1272,8 @@ class Fitter(object):
                     pi = pi + 1
 
                 for key in list(sorted(list(derived_keys))):
-                    parameters.update({key: {'value': output[key]}})
+                    if output.get(key, None) is not None:
+                        parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
                 if lnprobout is not None:

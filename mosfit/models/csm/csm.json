@@ -20,7 +20,9 @@
         "value":0.0,
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}",
-        "derived_keys":"reference_time"
+        "requests":{
+            "min_times": "transient"
+        }
     },
     "n":{
         "kind":"parameter",

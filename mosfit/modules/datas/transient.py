@@ -251,10 +251,14 @@ class Transient(Module):
                     x - minv for x in self._data['extra_' + qkey]
                 ]
 
-        self._data['reference_time'] = self._data['min_times']
-
         return True
 
     def get_data_determined_parameters(self):
         """Return list of parameters determined by data."""
         return self._data_determined_parameters
+
+    def send_request(self, request):
+        """Send requests to other modules."""
+        if request == 'min_times':
+            return self._data['min_times']
+        return []
