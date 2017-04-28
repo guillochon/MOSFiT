@@ -12,7 +12,8 @@ from textwrap import fill
 
 import numpy as np
 
-from .utils import calculate_WAIC, congrid, is_integer, open_atomic, pretty_num
+from .utils import (calculate_WAIC, congrid, is_integer, open_atomic,
+                    pretty_num, rebin)
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -358,8 +359,10 @@ class Printer(object):
 
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
-            kmat_scaled = congrid(kmat, (14, 7), minusone=True,
-                                  bounds_error=False)
+            try:
+                kmat_scaled = congrid(kmat, (14, 7), minusone=True)
+            except Exception:
+                kmat_scaled = rebin(kmat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
             kmat_scaled /= np.max(kmat_scaled)
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]

@@ -211,7 +211,7 @@ def rebin(a, newshape):
     return a[tuple(indices)]
 
 
-def congrid(a, newdims, method='linear', centre=False, minusone=False,
+def congrid(a, newdims, method='linear', center=False, minusone=False,
             bounds_error=False):
     """Arbitrary resampling of source array to new dimension sizes.
 
@@ -229,8 +229,8 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False,
     (see Numerical Recipes for validity of use of n 1-D interpolations)
     spline - uses ndimage.map_coordinates
 
-    centre:
-    True - interpolation points are at the centres of the bins
+    center:
+    True - interpolation points are at the centers of the bins
     False - points are at the front edge of the bin
 
     minusone:
@@ -243,7 +243,7 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False,
         a = np.cast[float](a)
 
     m1 = np.cast[int](minusone)
-    ofs = np.cast[int](centre) * 0.5
+    ofs = np.cast[int](center) * 0.5
     old = np.array(a.shape)
     ndims = len(a.shape)
     if len(newdims) != ndims:
@@ -275,6 +275,7 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False,
         # first interpolation - for ndims = any
         mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method,
                                           bounds_error=bounds_error)
+        print(dimlist[-1], olddims[-1], a)
         newa = mint(dimlist[-1])
 
         trorder = [ndims - 1] + list(range(ndims - 1))
