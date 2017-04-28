@@ -275,7 +275,6 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
         # first interpolation - for ndims = any
         mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method,
                                           bounds_error=bounds_error)
-        print(dimlist[-1], olddims[-1], a)
         newa = mint(dimlist[-1])
 
         trorder = [ndims - 1] + list(range(ndims - 1))

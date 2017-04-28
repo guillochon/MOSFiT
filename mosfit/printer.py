@@ -360,7 +360,8 @@ class Printer(object):
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
             try:
-                kmat_scaled = congrid(kmat, (14, 7), minusone=True)
+                kmat_scaled = congrid(kmat, (14, 7), minusone=True,
+                                      bounds_error=True)
             except Exception:
                 kmat_scaled = rebin(kmat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
