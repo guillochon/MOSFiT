@@ -120,6 +120,7 @@ class Fitter(object):
                    open_in_browser=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
+        global model
         if start_time is False:
             start_time = time.time()
         self._start_time = start_time
@@ -496,6 +497,11 @@ class Fitter(object):
 
                     if pool.is_master():
                         pool.close()
+
+                    # Remove global model variable and garbage collect.
+                    del(model)
+                    del(self._model)
+                    gc.collect()
 
         return (entries, ps, lnprobs)
 
