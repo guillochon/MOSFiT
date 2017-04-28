@@ -499,7 +499,12 @@ class Fitter(object):
                         pool.close()
 
                     # Remove global model variable and garbage collect.
-                    del(model)
+                    try:
+                        model
+                    except NameError:
+                        pass
+                    else:
+                        del(model)
                     del(self._model)
                     gc.collect()
 

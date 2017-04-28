@@ -35,6 +35,7 @@
     "min_max_same": "Minimum and maximum values are the same for `{}`, treating variable as a fixed parameter.",
     "moves_accepted": "Moves accepted",
     "nmeas_nfree": "{} measurements, {} free parameters.",
+    "no_fittable_data": "No fittable data in `{}`!",
     "no_data": "Could not find data for `{}` locally or in the `{}`.",
     "no_exact_match": "'No exact match to given transient found. Did you mean one of the following transients?",
     "no_walker_data": "Could not find walker data.",

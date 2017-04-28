@@ -146,7 +146,7 @@ class Transient(Module):
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):
-            print('No fittable data in `{}`!'.format(name))
+            self._printer.message('no_fittable_data', [name])
             return False
 
         for key in list(self._data.keys()):
