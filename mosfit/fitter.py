@@ -833,7 +833,7 @@ class Fitter(object):
                         p, lnprob, lnlike) in enumerate(
                             sampler.sample(
                                 p, iterations=ic, gibbs=gibbs if
-                                emi >= self._burn_in else False)):
+                                emi >= self._burn_in else True)):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
