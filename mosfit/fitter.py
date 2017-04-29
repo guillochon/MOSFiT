@@ -730,7 +730,7 @@ class Fitter(object):
         lnlike = None
         pool_size = max(pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
-        redraw_mult = 1.0 * np.sqrt(
+        redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
@@ -830,7 +830,7 @@ class Fitter(object):
                         p, lnprob, lnlike) in enumerate(
                             sampler.sample(
                                 p, iterations=ic, gibbs=gibbs if
-                                emi >= self._burn_in else True)):
+                                emi >= self._burn_in else False)):
                     if (self._maximum_walltime is not False and
                             time.time() - self._start_time >
                             self._maximum_walltime):
