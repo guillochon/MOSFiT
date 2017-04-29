@@ -11,7 +11,7 @@
     },
     "texplosion":{
         "min_value":-500.0,
-        "max_value":500.0
+        "max_value":0.0
     },
     "temperature":{
         "min_value":1.0,

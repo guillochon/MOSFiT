@@ -863,8 +863,10 @@ class Fitter(object):
                         (sampler.ntemps, sampler.nwalkers),
                         dtype=np.float)
 
-                    # First, redraw any walkers with scores significantly
-                    # worse than their peers (only during burn-in).
+                    # During burn-in only, redraw any walkers with scores
+                    # significantly worse than their peers, or those that are
+                    # stale (i.e. remained in the same position for a long
+                    # time).
                     if emim1 <= self._burn_in:
                         pmedian = [np.median(x) for x in lnprob]
                         pmead = [np.mean([abs(y - pmedian) for y in x])

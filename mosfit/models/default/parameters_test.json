@@ -11,7 +11,7 @@
     },
     "texplosion":{
         "min_value":-1000.0,
-        "max_value":-1.0e-3
+        "max_value":0.0
     },
     "temperature":{
         "class":"powerlaw",
