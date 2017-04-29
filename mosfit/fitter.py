@@ -65,6 +65,7 @@ class Fitter(object):
     """Fit transient events with the provided model."""
 
     _MAX_ACORC = 5
+    _REPLACE_AGE = 20
 
     def __init__(self):
         """Initialize `Fitter`."""
@@ -795,6 +796,8 @@ class Fitter(object):
         kmat = None
         all_chain = np.array([])
         scores = np.ones((ntemps, nwalkers)) * -np.inf
+        ages = np.zeros((ntemps, nwalkers), dtype=int)
+        oldp = p
 
         max_chunk = 1000
         kmat_chunk = 5
@@ -841,6 +844,15 @@ class Fitter(object):
                     emim1 = emi - 1
                     messages = []
 
+                    # Increment the age of each walker if their positions are
+                    # unchanged.
+                    for ti in range(ntemps):
+                        for wi in range(nwalkers):
+                            if np.array_equal(p[ti][wi], oldp[ti][wi]):
+                                ages[ti][wi] += 1
+                            else:
+                                ages[ti][wi] = 0
+
                     # Record then reset sampler proposal/acceptance counts.
                     accepts = list(
                         np.mean(sampler.nprop_accepted / sampler.nprop,
@@ -864,7 +876,8 @@ class Fitter(object):
                                 if (wprob <= pmedian[ti] -
                                     max(redraw_mult * pmead[ti],
                                         float(nwalkers)) or
-                                        np.isnan(wprob)):
+                                        np.isnan(wprob) or
+                                        ages[ti][wi] >= self._REPLACE_AGE):
                                     redraw_count = redraw_count + 1
                                     dxx = np.random.normal(
                                         scale=0.01, size=ndim)
@@ -885,6 +898,8 @@ class Fitter(object):
                                 '{:.0%} redraw, {}/{} success'.format(
                                     redraw_count / (nwalkers * ntemps),
                                     redraw_count - bad_redraws, redraw_count))
+
+                    oldp = p.copy()
 
                     # Calculate the autocorrelation time.
                     low = 10
