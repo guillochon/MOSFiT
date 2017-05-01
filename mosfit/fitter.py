@@ -775,7 +775,7 @@ class Fitter(object):
                     p0[i].append(p)
                     dwscores.append(score)
                 else:
-                    nmap = nwalkers - len(p0[i])
+                    nmap = min(nwalkers - len(p0[i]), max(pool.size, 10))
                     dws = pool.map(draw_walker, [test_walker] * nmap)
                     p0[i].extend([x[0] for x in dws])
                     dwscores.extend([x[1] for x in dws])
@@ -1097,14 +1097,14 @@ class Fitter(object):
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
-            prt.message('ctrl_c', error=True, prefix=False)
+            prt.message('ctrl_c', error=True, prefix=False, color='!r')
             s_exception = sys.exc_info()
         except Exception:
             raise
 
         if s_exception:
             pool.close()
-            if (not prt.prompt('mc_interrupted', self._wrap_length)):
+            if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
         if write:
