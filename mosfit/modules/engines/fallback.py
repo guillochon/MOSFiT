@@ -8,8 +8,6 @@ import numpy as np
 
 import os
 
-# from scipy.interpolate import CubicSpline
-
 from scipy.interpolate import interp1d
 
 from mosfit.modules.engines.engine import Engine
@@ -132,7 +130,7 @@ class Fallback(Engine):
                       g, dmdebound[dmdebound < 0])
 
             # calculate de/dt, time and dm/dt arrays
-            # de/dt in log(erg/s), time in log(seconds), dm/dt in log(g/s)
+            # de/dt in log(/s), time in log(seconds), dm/dt in log(g/s)
             dedt = (1.0/3.0)*(-2.0*ebound)**(5.0/2.0)/(2.0*np.pi*G*Mhbase)
             time['lo'] = np.log10((2.0*np.pi*G*Mhbase) *
                                   (-2.0*ebound)**(-3.0/2.0))
@@ -468,6 +466,8 @@ class Fallback(Engine):
 
         time = np.array(time)
         dmdt = np.array(dmdt)
+        unscaleddmdt = np.copy(dmdt)
+        unscaledtime = np.copy(time)
         # ----------------TESTING ----------------
         if self.TESTING:
             if gamma_interp:
@@ -494,7 +494,6 @@ class Fallback(Engine):
         self._Mstar = kwargs['starmass']  # in units of solar masses
 
         # calculate Rstar from Mstar (using Tout et. al. 1996),
-        # assuming solar metallicity
         # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
         Z = 0.0134  # assume solar metallicity
         log10_Z_02 = np.log10(Z/0.02)
@@ -540,12 +539,15 @@ class Fallback(Engine):
                 (Rstar/Rstarbase)**1.5)
 
         time = time/DAY_CGS  # time is now in days to match self._times
-        tfallback = time[0]
+        tfallback = np.copy(time[0])
+        self._rest_t_explosion = kwargs['resttexplosion']  # units = days
 
+        dmdtbeforeextrap = np.copy(dmdt)
+        timebeforeextrap = np.copy(time)
         # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
         # use power law to fit : dmdt = b*t^xi
 
-        if self.EXTRAPOLATE:
+        if self.EXTRAPOLATE and self._rest_t_explosion > self._times[0]:
             dfloor = min(dmdt)  # will be at late times if using James's
             # simulaiton data (which already has been late time extrap.)
 
@@ -555,6 +557,11 @@ class Fallback(Engine):
                 # try shifting time before extrapolation to make power law drop
                 # off more suddenly around tfallback
                 time = time + 0.9*tfallback
+                # this will ensure extrapolation will extend back to first
+                # transient time.
+                # requires self._rest_t_explosion > self._times[0]
+                # time = (time - tfallback + self._rest_t_explosion -
+                #        self._times[0])
 
                 ipeak = np.argmax(dmdt)  # index of peak
 
@@ -562,10 +569,10 @@ class Fallback(Engine):
                 # good extrapolation
                 if ipeak < 1000:
                     prepeakfunc = interp1d(time[:ipeak], dmdt[:ipeak])
-                    # prepeaktimes = np.logspace(np.log10(time[0]),
-                    #                            np.log10(time[ipeak-1]),1000)
-                    prepeaktimes = np.linspace(time[0], time[ipeak - 1],
-                                               num=1000)
+                    prepeaktimes = np.logspace(np.log10(time[0]),
+                                               np.log10(time[ipeak-1]), 1000)
+                    # prepeaktimes = np.linspace(time[0], time[ipeak - 1],
+                    #                           num=1000)
                     if prepeaktimes[-1] > time[ipeak - 1]:
                         prepeaktimes[-1] = time[ipeak - 1]
                     if prepeaktimes[0] < time[0]:
@@ -602,6 +609,8 @@ class Fallback(Engine):
                 # logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
                 # tfloor = 0.01
                 tfloor = 0.01 + 0.9*tfallback  # want first time ~0 (0.01)
+                # tfloor = 0.01  # (0.01 + self._rest_t_explosion -
+                # self._times[0])
                 indexext = len(time[time < prepeaktimes[index1]])
                 # ending extrapolation here will help make it a smoother
                 # transition
@@ -613,12 +622,16 @@ class Fallback(Engine):
                 time = np.concatenate((textp, time[int(indexext) + 1:]))
 
                 time = time - 0.9*tfallback  # shift back to original times
+                # time = (time + tfallback - self._rest_t_explosion +
+                #        self._times[0])
                 dmdt = np.concatenate((dextp, dmdt[int(indexext) + 1:]))
 
+        dmdtafterextrap = np.copy(dmdt)
+        timeafterextrap = np.copy(time)
         # try aligning first fallback time of simulation
         # (whatever first time is before early t extrapolation)
         # with parameter texplosion
-        self._rest_t_explosion = kwargs['resttexplosion']  # units = days
+
         time = time - tfallback + self._rest_t_explosion
 
         tpeak = time[np.argmax(dmdt)]
@@ -649,7 +662,7 @@ class Fallback(Engine):
         self._efficiency = kwargs['efficiency']
         # luminosities in erg/s
         luminosities = self._efficiency*dmdtnew*c.c.cgs.value*c.c.cgs.value
-
+        precutlums = np.copy(luminosities)
         # -------------- EDDINGTON LUMINOSITY CUT -------------------
         # Assume solar metallicity for now
 
@@ -659,10 +672,10 @@ class Fallback(Engine):
                 C_CGS / kappa_t)
 
         # 2 options for soft Ledd cuts, try both & see what fits stuff better
-        luminosities = np.where(
-            luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * Ledd,
-            luminosities)
-        # luminosities = (luminosities * Ledd/(luminosities + Ledd))
+        # luminosities = np.where(
+        #    luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * Ledd,
+        #    luminosities)
+        luminosities = (luminosities * Ledd/(luminosities + Ledd))
 
         # ----------------TESTING ----------------
         if self.TESTING:
@@ -676,4 +689,9 @@ class Fallback(Engine):
         # ----------------------------------------
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak}
+                'tpeak': tpeak, 'unscaleddmdt': unscaleddmdt,
+                'unscaledtime': unscaledtime, 'dmdtbeforeextrap':
+                dmdtbeforeextrap, 'timebeforeextrap': timebeforeextrap,
+                'dmdtafterextrap': dmdtafterextrap,
+                'timeafterextrap': timeafterextrap,
+                'precutlums': precutlums, 'Ledd': Ledd}

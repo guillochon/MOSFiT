@@ -71,6 +71,7 @@ class TdePhotosphere(Photosphere):
         # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
         # this means the new max is rphotmax/2
         rphot = self._Rph_0 * a_p * (self._luminosities/Ledd)**self._l
+        rphotbeforecut = np.copy(rphot)
 
         if self.TESTING:
             np.savetxt('test_dir/test_photosphere/precut_photosphere/' +
@@ -80,8 +81,9 @@ class TdePhotosphere(Photosphere):
         rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin
 
         nan = rphot[np.isnan(rphot)]
+        nan_error = ''
         if len(nan) > 0:
-            print(rphot)
+            nan_error = 'there are nan values in radiusphot'
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
@@ -95,4 +97,8 @@ class TdePhotosphere(Photosphere):
             self.testnum += 1
         # ----------------------------------------
 
-        return {'radiusphot': rphot, 'temperaturephot': Tphot}
+        return {'radiusphot': rphot, 'temperaturephot': Tphot,
+                'rphotbeforecut': rphotbeforecut, 'rphotmax': rphotmax,
+                'rphotmin': rphotmin,
+                'sparse_luminosities': self._luminosities,
+                'nan_error': nan_error}
