@@ -12,6 +12,7 @@ from operator import attrgetter
 from unicodedata import normalize
 
 import numpy as np
+
 from mosfit import __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
@@ -500,6 +501,13 @@ def get_parser():
 
 def main():
     """Main function for MOSFiT."""
+    # try:
+    #     import pycuda.autoinit  # noqa: F401
+    #     import skcuda.linalg as linalg
+    #     linalg.init()
+    # except ImportError:
+    #     pass
+
     parser = get_parser()
 
     args = parser.parse_args()
