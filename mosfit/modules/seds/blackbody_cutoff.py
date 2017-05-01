@@ -50,7 +50,7 @@ class BlackbodyCutoff(SED):
         ac = ANG_CGS
         cwave_ac = self._cutoff_wavelength * ac
         cwave_ac2 = cwave_ac * cwave_ac
-        cwave_ac3 = cwave_ac2 * cwave_ac
+        cwave_ac3 = cwave_ac2 * cwave_ac  # noqa: F841
         zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         norm_arr = OrderedDict()
@@ -59,7 +59,7 @@ class BlackbodyCutoff(SED):
             radius_phot2 = self._radius_phot[li] ** 2
             tp = self._temperature_phot[li]
             tp2 = tp * tp
-            tp3 = tp2 * tp
+            tp3 = tp2 * tp  # noqa: F841
             bi = self._band_indices[li]
             time = self._times[li]
             if lum == 0.0:
@@ -77,14 +77,14 @@ class BlackbodyCutoff(SED):
             absorbed = rest_wavs < cwave_ac
 
             # Blackbody SED
-            sed = (fc * (radius_phot2 / rest_wavs ** 5) / (
-                np.exp(xc / rest_wavs / tp) - 1.0))
+            sed = (fc * (radius_phot2 / rest_wavs ** 5) /
+                   np.expm1(xc / rest_wavs / tp))
 
             # Absorbed blackbody: 0% transmission at 0 Angstroms
             # 100% at >3000 Angstroms
             sed[absorbed] = (fc * (
-                radius_phot2 / cwave_ac / rest_wavs[absorbed] ** 4) / (
-                    np.exp(xc / rest_wavs[absorbed] / tp) - 1.0))
+                radius_phot2 / cwave_ac / rest_wavs[absorbed] ** 4) / np.expm1(
+                    xc / rest_wavs[absorbed] / tp))
 
             sed = np.nan_to_num(sed)
 
@@ -99,7 +99,7 @@ class BlackbodyCutoff(SED):
                 # luminosity using this (series expansion) integral
                 # of the absorbed blackbody function
                 # wavelength < cutoff:
-                nxcs = self._nxcs
+                nxcs = self._nxcs  # noqa: F841
                 if not evaled:
                     f_blue_red = ne.evaluate(
                         "sum((exp(-nxcs / (cwave_ac * tp)) * ("

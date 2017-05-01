@@ -19,6 +19,7 @@ mosfit.egg-info/
 /*.json
 /*.csv
 mosfit/strings-*.json
+*.tags*
 
 # Documentation
 docs/_build

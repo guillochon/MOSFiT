@@ -1,10 +1,8 @@
 """Definitions for the `Diffusion` class."""
-from collections import OrderedDict
-
-import numexpr as ne
 import numpy as np
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
+from scipy.interpolate import interp1d
 
 
 # Important: Only define one ``Module`` class per file.
@@ -32,40 +30,32 @@ class Diffusion(Transform):
             (self._v_ejecta ** 2)) / DAY_CGS ** 2
         td2, A = self._tau_diff ** 2, self._trap_coeff  # noqa: F841
 
-        new_lum = np.zeros_like(self._times_to_process)
-        evaled = False
-        lum_cache = OrderedDict()
+        new_lums = np.zeros_like(self._times_to_process)
         min_te = min(self._dense_times_since_exp)
-        for ti, te in enumerate(self._times_to_process):
-            if te <= 0.0:
-                continue
-            if te in lum_cache:
-                new_lum[ti] = lum_cache[te]
-                continue
-            te2 = te ** 2  # noqa: F841
-            tb = max(0.0, min_te)
-            int_times = np.linspace(tb, te, self.N_INT_TIMES)
-            dt = int_times[1] - int_times[0]
+        tb = max(0.0, min_te)
+        linterp = interp1d(self._dense_times_since_exp,
+                           self._dense_luminosities, copy=False,
+                           assume_sorted=True)
 
-            int_lums = np.interp(  # noqa: F841
-                int_times, self._dense_times_since_exp,
-                self._dense_luminosities)
+        uniq_times = np.unique(self._times_to_process[
+            self._times_to_process > 0.0])
+        lu = len(uniq_times)
 
-            if not evaled:
-                int_arg = ne.evaluate('2.0 * int_lums * int_times / td2 * '
-                                      'exp((int_times**2 - te2) / td2) * '
-                                      '(1.0 - exp(-A / te2))')
-                evaled = True
-            else:
-                int_arg = ne.re_evaluate()
-            # int_arg = [
-            #     2.0 * l * t / td2 *
-            #     np.exp((t**2 - te**2) / td2) * (1.0 - np.exp(-A / te**2))
-            #     for t, l in zip(int_times, int_lums)
-            # ]
-            int_arg[np.isnan(int_arg)] = 0.0
-            lum_val = np.trapz(int_arg, dx=dt)
-            lum_cache[te] = lum_val
-            new_lum[ti] = lum_val
+        xm = np.linspace(0, 1, self.N_INT_TIMES)
+        int_times = tb + (uniq_times.reshape(lu, 1) - tb) * xm
 
-        return {self.dense_key('luminosities'): new_lum}
+        dts = int_times[:, 1] - int_times[:, 0]
+        int_te2s = int_times[:, -1] ** 2
+        int_lums = linterp(int_times)  # noqa: F841
+        int_args = int_lums * int_times * np.exp(
+            (int_times**2 - int_te2s.reshape(lu, 1)) / td2)
+        int_args[np.isnan(int_args)] = 0.0
+
+        uniq_lums = np.sum(int_args[:, 2:-1], axis=1) + 0.5 * (
+            int_args[:, 0] + int_args[:, -1])
+        uniq_lums *= -2.0 * np.expm1(-A / int_te2s) * dts / td2
+
+        new_lums = uniq_lums[np.searchsorted(uniq_times,
+                                             self._times_to_process)]
+
+        return {self.dense_key('luminosities'): new_lums}
