@@ -273,15 +273,15 @@ class Photometry(Module):
         for i in range(6):
             for bi, bnd in enumerate(self._unique_bands):
                 if ((i < 5 or band != '') and band == bnd['name'] and
-                    (i > 4 or mode == '' or mode == self._band_modes[bi]) and
-                    (i > 3 or instrument == '' or
+                    (i > 4 or system == '' or
+                     system == self._band_systs[bi]) and
+                    (i > 3 or mode == '' or mode == self._band_modes[bi]) and
+                    (i > 2 or instrument == '' or
                      instrument == self._band_insts[bi]) and
-                    (i > 2 or telescope == '' or
+                    (i > 1 or telescope == '' or
                      telescope == self._band_teles[bi]) and
-                    (i > 1 or bandset == '' or
-                     bandset == self._band_bsets[bi]) and
-                    (i > 0 or system == '' or
-                     system == self._band_systs[bi])):
+                    (i > 0 or bandset == '' or
+                     bandset == self._band_bsets[bi])):
                     return bi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` '
