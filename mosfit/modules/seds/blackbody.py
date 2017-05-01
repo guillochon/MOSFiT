@@ -63,7 +63,7 @@ class Blackbody(SED):
             else:
                 sed = ne.re_evaluate()
 
-            sed = np.nan_to_num(sed)
+            sed[np.isnan(sed)] = 0.0
 
             seds.append(sed)
 

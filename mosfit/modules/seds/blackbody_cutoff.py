@@ -86,7 +86,7 @@ class BlackbodyCutoff(SED):
                 radius_phot2 / cwave_ac / rest_wavs[absorbed] ** 4) / np.expm1(
                     xc / rest_wavs[absorbed] / tp))
 
-            sed = np.nan_to_num(sed)
+            sed[np.isnan(sed)] = 0.0
 
             # Renormalise to conserve energy
             # print(time)
@@ -111,6 +111,7 @@ class BlackbodyCutoff(SED):
                         "nxcs * cwave_ac2 * tp2 + cwave_ac3 *"
                         "tp3)) / cwave_ac3) / (nxcs ** 4))"
                     )
+                    evaled = True
                 else:
                     f_blue_red = ne.re_evaluate()
 
