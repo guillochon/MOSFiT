@@ -38,7 +38,7 @@ class Diffusion(Transform):
                            assume_sorted=True)
 
         uniq_times = np.unique(self._times_to_process[
-            self._times_to_process > 0.0])
+            self._times_to_process > tb])
         lu = len(uniq_times)
 
         xm = np.linspace(0, 1, self.N_INT_TIMES)
