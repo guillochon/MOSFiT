@@ -1,8 +1,9 @@
 """Definitions for the `Diffusion` class."""
 import numpy as np
+from scipy.interpolate import interp1d
+
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
 from mosfit.modules.transforms.transform import Transform
-from scipy.interpolate import interp1d
 
 
 # Important: Only define one ``Module`` class per file.
@@ -33,9 +34,11 @@ class Diffusion(Transform):
         new_lums = np.zeros_like(self._times_to_process)
         min_te = min(self._dense_times_since_exp)
         tb = max(0.0, min_te)
-        linterp = interp1d(self._dense_times_since_exp,
-                           self._dense_luminosities, copy=False,
-                           assume_sorted=True)
+        linterp = interp1d(
+            self._dense_times_since_exp, self._dense_luminosities, copy=False,
+            assume_sorted=True, kind=(
+                'linear' if len(self._dense_times_since_exp) > 1
+                else 'nearest'))
 
         uniq_times = np.unique(self._times_to_process[
             self._times_to_process > tb])
@@ -48,7 +51,7 @@ class Diffusion(Transform):
         int_te2s = int_times[:, -1] ** 2
         int_lums = linterp(int_times)  # noqa: F841
         int_args = int_lums * int_times * np.exp(
-            (int_times**2 - int_te2s.reshape(lu, 1)) / td2)
+            (int_times ** 2 - int_te2s.reshape(lu, 1)) / td2)
         int_args[np.isnan(int_args)] = 0.0
 
         uniq_lums = np.sum(int_args[:, 2:-1], axis=1) + 0.5 * (
