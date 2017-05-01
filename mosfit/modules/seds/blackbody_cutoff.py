@@ -86,10 +86,15 @@ class BlackbodyCutoff(SED):
             sed[np.isnan(sed)] = 0.0
             seds[li] = sed
 
-        norms = self._luminosities / (fc / ac * rp2 * tp)
+        uniq_times = np.unique(self._times)
+        uniq_is = np.searchsorted(self._times, uniq_times)
+        lu = len(uniq_times)
 
-        rp2 = rp2.reshape(lt, 1)
-        tp = tp.reshape(lt, 1)
+        norms = self._luminosities[
+            uniq_is] / (fc / ac * rp2[uniq_is] * tp[uniq_is])
+
+        rp2 = rp2[uniq_is].reshape(lu, 1)
+        tp = tp[uniq_is].reshape(lu, 1)
         tp2 = tp * tp
         tp3 = tp2 * tp  # noqa: F841
         nxcs = self._nxcs  # noqa: F841
@@ -108,7 +113,7 @@ class BlackbodyCutoff(SED):
         norms /= f_blue_reds
 
         # Apply renormalisation
-        seds *= norms
+        seds *= norms[np.searchsorted(uniq_times, self._times)]
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
