@@ -270,19 +270,30 @@ class Photometry(Module):
             self, band, telescope='', instrument='', mode='', bandset='',
             system=''):
         """Find the index corresponding to the provided band information."""
-        for i in range(6):
-            for bi, bnd in enumerate(self._unique_bands):
-                if ((i < 5 or band != '') and band == bnd['name'] and
-                    (i > 4 or system == '' or
-                     system == self._band_systs[bi]) and
-                    (i > 3 or mode == '' or mode == self._band_modes[bi]) and
-                    (i > 2 or instrument == '' or
-                     instrument == self._band_insts[bi]) and
-                    (i > 1 or telescope == '' or
-                     telescope == self._band_teles[bi]) and
-                    (i > 0 or bandset == '' or
-                     bandset == self._band_bsets[bi])):
-                    return bi
+        bmatch = 0
+        bbi = None
+        for bi, bnd in enumerate(self._unique_bands):
+            lmatch = sum(
+                [band == bnd['name'],
+                 system == self._band_systs[bi],
+                 mode == self._band_modes[bi],
+                 instrument == self._band_insts[bi],
+                 telescope == self._band_teles[bi],
+                 bandset == self._band_bsets[bi]])
+            nbmatch = sum(
+                [(band == bnd['name']) & (band != ''),
+                 (system == self._band_systs[bi]) & (system != ''),
+                 (mode == self._band_modes[bi]) & (mode != ''),
+                 (instrument == self._band_insts[bi]) & (instrument != ''),
+                 (telescope == self._band_teles[bi]) & (telescope != ''),
+                 (bandset == self._band_bsets[bi]) & (bandset != '')])
+            if lmatch > bmatch and nbmatch > 0:
+                bmatch = lmatch
+                bbi = bi
+            if lmatch == 6:
+                break
+        if bbi is not None:
+            return bbi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` '
             'in mode `{}` with '
