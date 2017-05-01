@@ -154,6 +154,16 @@ class Printer(object):
             colorify = True
         if inline and self._fitter is not None:
             inline = not self._fitter._test
+        rlines = []
+        for ri, line in enumerate(tspl):
+            rline = line
+            if colorify:
+                rline = self.colorify(rline)
+            if center:
+                tlen = len(repr(rline)) - len(line) - line.count('!')
+                rline = rline.center(width + tlen)
+            rlines.append(rline)
+
         if inline:
             if self._was_inline:
                 for line in tspl:
@@ -162,13 +172,8 @@ class Printer(object):
             self._was_inline = True
         else:
             self._was_inline = False
-        for ri, line in enumerate(tspl):
-            rline = line
-            if colorify:
-                rline = self.colorify(rline)
-            if center:
-                tlen = len(repr(rline)) - len(line) - line.count('!')
-                rline = rline.center(width + tlen)
+
+        for rline in rlines:
             try:
                 print(rline, flush=True)
             except UnicodeEncodeError:
@@ -190,7 +195,7 @@ class Printer(object):
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
-                colorify=False, width=None):
+                colorify=True, width=None, prt=True, color=''):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -198,12 +203,15 @@ class Printer(object):
             text = '< Message not found [' + ''.join(
                 ['{} ' for x in range(len(reps))]).strip() + '] >'
         text = text.format(*reps)
-        self.prt(
-            text, center=center, colorify=colorify, width=width, prefix=prefix,
-            inline=inline, wrapped=wrapped, warning=warning, error=error)
+        if prt:
+            self.prt(
+                text, center=center, colorify=colorify, width=width,
+                prefix=prefix, inline=inline, wrapped=wrapped,
+                warning=warning, error=error, color=color)
+        return text
 
     def prompt(self, text, wrap_length=None, kind='bool',
-               none_string='None of the above.',
+               none_string='None of the above.', colorify=True,
                options=None, translate=True, message=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
@@ -229,7 +237,8 @@ class Printer(object):
             raise ValueError('Unknown prompt kind.')
 
         if message:
-            text = self.string(text, wrap_length=wrap_length)
+            text = self.string(
+                self.message(text, prt=False), wrap_length=wrap_length)
         textchoices = text + choices
         if translate:
             textchoices = self.translate(textchoices)

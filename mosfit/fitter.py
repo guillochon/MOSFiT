@@ -1097,14 +1097,14 @@ class Fitter(object):
                 ici = ici + 1
 
         except (KeyboardInterrupt, SystemExit):
-            prt.message('ctrl_c', error=True, prefix=False)
+            prt.message('ctrl_c', error=True, prefix=False, color='!r')
             s_exception = sys.exc_info()
         except Exception:
             raise
 
         if s_exception:
             pool.close()
-            if (not prt.prompt('mc_interrupted', self._wrap_length)):
+            if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
         if write:
