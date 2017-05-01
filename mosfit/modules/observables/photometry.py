@@ -48,6 +48,8 @@ class Photometry(Module):
 
         for bi, band in enumerate(bands):
             for rule in filterrules:
+                if '@note' in rule:
+                    continue
                 sysinstperms = [
                     {
                         'systems': xx,
@@ -259,6 +261,14 @@ class Photometry(Module):
                 elif 'SVO' in band:
                     self._band_offsets[i] = zps[-1]
 
+                # Do some sanity checks.
+                if (self._band_offsets[i] != 0.0 and
+                        self._band_systs[i] == 'AB'):
+                    raise RuntimeError(
+                        'Filters in AB system should always have offset = '
+                        '0.0, not the case for `{}`'.format(
+                            self._band_names[i]))
+
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
             bc = bc + 1
@@ -273,13 +283,13 @@ class Photometry(Module):
         bmatch = 0
         bbi = None
         for bi, bnd in enumerate(self._unique_bands):
-            lmatch = sum(
-                [band == bnd['name'],
-                 system == self._band_systs[bi],
-                 mode == self._band_modes[bi],
-                 instrument == self._band_insts[bi],
-                 telescope == self._band_teles[bi],
-                 bandset == self._band_bsets[bi]])
+            matches = [band == bnd['name'],
+                       system == self._band_systs[bi],
+                       mode == self._band_modes[bi],
+                       instrument == self._band_insts[bi],
+                       telescope == self._band_teles[bi],
+                       bandset == self._band_bsets[bi]]
+            lmatch = sum(matches)
             nbmatch = sum(
                 [(band == bnd['name']) & (band != ''),
                  (system == self._band_systs[bi]) & (system != ''),

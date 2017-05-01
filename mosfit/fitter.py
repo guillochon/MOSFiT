@@ -632,6 +632,7 @@ class Fitter(object):
                           filts._average_wavelengths[bis[i]],
                           filts._band_offsets[bis[i]],
                           filts._band_kinds[bis[i]],
+                          filts._band_names[bis[i]],
                           ois[i], bis[i])
                          for i in range(len(bis))]
             filterrows = [(
