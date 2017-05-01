@@ -2,7 +2,6 @@
 import importlib
 import inspect
 import json
-import logging
 import os
 from collections import OrderedDict
 from copy import deepcopy
@@ -161,7 +160,6 @@ class Model(object):
 
         with open(pp, 'r') as f:
             self._parameter_json = json.load(f, object_pairs_hook=OrderedDict)
-        self._log = logging.getLogger()
         self._modules = OrderedDict()
         self._bands = []
         self._instruments = []
