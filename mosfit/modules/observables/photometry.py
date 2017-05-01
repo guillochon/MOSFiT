@@ -48,6 +48,8 @@ class Photometry(Module):
 
         for bi, band in enumerate(bands):
             for rule in filterrules:
+                if '@note' in rule:
+                    continue
                 sysinstperms = [
                     {
                         'systems': xx,
@@ -259,6 +261,14 @@ class Photometry(Module):
                 elif 'SVO' in band:
                     self._band_offsets[i] = zps[-1]
 
+                # Do some sanity checks.
+                if (self._band_offsets[i] != 0.0 and
+                        self._band_systs[i] == 'AB'):
+                    raise RuntimeError(
+                        'Filters in AB system should always have offset = '
+                        '0.0, not the case for `{}`'.format(
+                            self._band_names[i]))
+
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
             bc = bc + 1
@@ -270,19 +280,30 @@ class Photometry(Module):
             self, band, telescope='', instrument='', mode='', bandset='',
             system=''):
         """Find the index corresponding to the provided band information."""
-        for i in range(6):
-            for bi, bnd in enumerate(self._unique_bands):
-                if ((i < 5 or band != '') and band == bnd['name'] and
-                    (i > 4 or mode == '' or mode == self._band_modes[bi]) and
-                    (i > 3 or instrument == '' or
-                     instrument == self._band_insts[bi]) and
-                    (i > 2 or telescope == '' or
-                     telescope == self._band_teles[bi]) and
-                    (i > 1 or bandset == '' or
-                     bandset == self._band_bsets[bi]) and
-                    (i > 0 or system == '' or
-                     system == self._band_systs[bi])):
-                    return bi
+        bmatch = 0
+        bbi = None
+        for bi, bnd in enumerate(self._unique_bands):
+            matches = [band == bnd['name'],
+                       system == self._band_systs[bi],
+                       mode == self._band_modes[bi],
+                       instrument == self._band_insts[bi],
+                       telescope == self._band_teles[bi],
+                       bandset == self._band_bsets[bi]]
+            lmatch = sum(matches)
+            nbmatch = sum(
+                [(band == bnd['name']) & (band != ''),
+                 (system == self._band_systs[bi]) & (system != ''),
+                 (mode == self._band_modes[bi]) & (mode != ''),
+                 (instrument == self._band_insts[bi]) & (instrument != ''),
+                 (telescope == self._band_teles[bi]) & (telescope != ''),
+                 (bandset == self._band_bsets[bi]) & (bandset != '')])
+            if lmatch > bmatch and nbmatch > 0:
+                bmatch = lmatch
+                bbi = bi
+            if lmatch == 6 and nbmatch > 0:
+                break
+        if bbi is not None:
+            return bbi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` '
             'in mode `{}` with '

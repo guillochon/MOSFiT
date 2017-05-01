@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
 import gc
-import io
 import json
 import os
 import re
@@ -9,6 +8,7 @@ import shutil
 import sys
 import time
 import warnings
+import webbrowser
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
@@ -65,6 +65,7 @@ class Fitter(object):
     """Fit transient events with the provided model."""
 
     _MAX_ACORC = 5
+    _REPLACE_AGE = 20
 
     def __init__(self):
         """Initialize `Fitter`."""
@@ -116,8 +117,11 @@ class Fitter(object):
                    return_fits=True,
                    extra_outputs=[],
                    walker_paths=[],
+                   catalogs=[],
+                   open_in_browser=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
+        global model
         if start_time is False:
             start_time = time.time()
         self._start_time = start_time
@@ -142,12 +146,26 @@ class Fitter(object):
         if len(model_list) and not len(event_list):
             event_list = ['']
 
-        self._catalogs = {
-            'OSC': ('https://sne.space/astrocats/astrocats/'
+        self._catalogs = OrderedDict((
+            ('OSC', {
+                'json': (
+                    'https://sne.space/astrocats/astrocats/'
                     'supernovae/output'),
-            'OTC': ('https://tde.space/astrocats/astrocats/'
-                    'tidaldisruptions/output')
-        }
+                'web': 'https://sne.space/sne/'
+            }),
+            ('OTC', {
+                'json': (
+                    'https://tde.space/astrocats/astrocats/'
+                    'tidaldisruptions/output'),
+                'web': 'https://tde.space/tde/'
+            })
+        ))
+
+        # Exclude catalogs not included in catalog list.
+        if len(catalogs):
+            for cat in self._catalogs.copy():
+                if cat.upper() not in [x.upper() for x in catalogs]:
+                    del(self._catalogs[cat])
 
         if not len(event_list) and not len(model_list):
             prt.message('no_events_models', warning=True)
@@ -188,25 +206,28 @@ class Fitter(object):
                     pool = SerialPool()
                 if pool.is_master():
                     path = ''
-                    # If the event name ends in .json, assume a path
+                    # If the event name ends in .json, assume event is a path.
                     if event.endswith('.json'):
                         path = event
                         self._event_name = event.replace('.json',
                                                          '').split('/')[-1]
 
-                    # If not (or the file doesn't exist), download from OSC
+                    # If not (or the file doesn't exist), download from an open
+                    # catalog.
                     if not path or not os.path.exists(path):
                         names_paths = [
                             os.path.join(dir_path, 'cache', x +
                                          '.names.min.json') for x in
                             self._catalogs]
                         input_name = event.replace('.json', '')
-                        prt.message('dling_aliases', [input_name])
-                        if not offline:
+                        if offline:
+                            prt.message('event_interp', [input_name])
+                        else:
+                            prt.message('dling_aliases', [input_name])
                             for ci, catalog in enumerate(self._catalogs):
                                 try:
                                     response = get_url_file_handle(
-                                        self._catalogs[catalog] +
+                                        self._catalogs[catalog]['json'] +
                                         '/names.min.json',
                                         timeout=10)
                                 except Exception:
@@ -274,10 +295,7 @@ class Fitter(object):
                                         response = matches[0]
                                     else:
                                         response = prt.prompt(
-                                            'No exact match to given '
-                                            'transient '
-                                            'found. Did you mean one of the '
-                                            'following transients?',
+                                            'no_exact_match',
                                             kind='select',
                                             options=matches,
                                             none_string=(
@@ -293,6 +311,8 @@ class Fitter(object):
                                                 self._event_name = name
                                                 self._event_catalog = catalog
                                                 break
+                                        if self._event_name:
+                                            break
 
                         if not self._event_name:
                             prt.message('no_event_by_name')
@@ -300,13 +320,16 @@ class Fitter(object):
                         urlname = self._event_name + '.json'
                         name_path = os.path.join(dir_path, 'cache', urlname)
 
-                        if not offline:
+                        if offline:
+                            prt.message('cached_event', [
+                                self._event_name, self._event_catalog])
+                        else:
                             prt.message('dling_event', [
                                 self._event_name, self._event_catalog])
                             try:
                                 response = get_url_file_handle(
-                                    self._catalogs[self._event_catalog] +
-                                    '/json/' + urlname,
+                                    self._catalogs[self._event_catalog][
+                                        'json'] + '/json/' + urlname,
                                     timeout=10)
                             except Exception:
                                 prt.message('cant_dl_event', [
@@ -317,6 +340,10 @@ class Fitter(object):
                         path = name_path
 
                     if os.path.exists(path):
+                        if open_in_browser:
+                            webbrowser.open(
+                                self._catalogs[self._event_catalog]['web'] +
+                                self._event_name)
                         with open(path, 'r') as f:
                             data = json.load(f, object_pairs_hook=OrderedDict)
                         prt.message('event_file', [path], wrapped=True)
@@ -472,6 +499,16 @@ class Fitter(object):
                     if pool.is_master():
                         pool.close()
 
+                    # Remove global model variable and garbage collect.
+                    try:
+                        model
+                    except NameError:
+                        pass
+                    else:
+                        del(model)
+                    del(self._model)
+                    gc.collect()
+
         return (entries, ps, lnprobs)
 
     def load_data(self,
@@ -595,6 +632,7 @@ class Fitter(object):
                           filts._average_wavelengths[bis[i]],
                           filts._band_offsets[bis[i]],
                           filts._band_kinds[bis[i]],
+                          filts._band_names[bis[i]],
                           ois[i], bis[i])
                          for i in range(len(bis))]
             filterrows = [(
@@ -605,7 +643,8 @@ class Fitter(object):
                             'Bandset: ' + s[1] if s[1] else '',
                             'System: ' + s[0] if s[0] else '',
                             'AB offset: ' + pretty_num(
-                                s[3]) if s[4] == 'magnitude' else '')))) +
+                                s[3]) if (s[4] == 'magnitude' and
+                                          s[0] != 'AB') else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
@@ -693,7 +732,7 @@ class Fitter(object):
         lnlike = None
         pool_size = max(pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
-        redraw_mult = 1.0 * np.sqrt(
+        redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
@@ -758,6 +797,8 @@ class Fitter(object):
         kmat = None
         all_chain = np.array([])
         scores = np.ones((ntemps, nwalkers)) * -np.inf
+        ages = np.zeros((ntemps, nwalkers), dtype=int)
+        oldp = p
 
         max_chunk = 1000
         kmat_chunk = 5
@@ -804,6 +845,15 @@ class Fitter(object):
                     emim1 = emi - 1
                     messages = []
 
+                    # Increment the age of each walker if their positions are
+                    # unchanged.
+                    for ti in range(ntemps):
+                        for wi in range(nwalkers):
+                            if np.array_equal(p[ti][wi], oldp[ti][wi]):
+                                ages[ti][wi] += 1
+                            else:
+                                ages[ti][wi] = 0
+
                     # Record then reset sampler proposal/acceptance counts.
                     accepts = list(
                         np.mean(sampler.nprop_accepted / sampler.nprop,
@@ -814,8 +864,10 @@ class Fitter(object):
                         (sampler.ntemps, sampler.nwalkers),
                         dtype=np.float)
 
-                    # First, redraw any walkers with scores significantly
-                    # worse than their peers (only during burn-in).
+                    # During burn-in only, redraw any walkers with scores
+                    # significantly worse than their peers, or those that are
+                    # stale (i.e. remained in the same position for a long
+                    # time).
                     if emim1 <= self._burn_in:
                         pmedian = [np.median(x) for x in lnprob]
                         pmead = [np.mean([abs(y - pmedian) for y in x])
@@ -827,7 +879,8 @@ class Fitter(object):
                                 if (wprob <= pmedian[ti] -
                                     max(redraw_mult * pmead[ti],
                                         float(nwalkers)) or
-                                        np.isnan(wprob)):
+                                        np.isnan(wprob) or
+                                        ages[ti][wi] >= self._REPLACE_AGE):
                                     redraw_count = redraw_count + 1
                                     dxx = np.random.normal(
                                         scale=0.01, size=ndim)
@@ -848,6 +901,8 @@ class Fitter(object):
                                 '{:.0%} redraw, {}/{} success'.format(
                                     redraw_count / (nwalkers * ntemps),
                                     redraw_count - bad_redraws, redraw_count))
+
+                    oldp = p.copy()
 
                     # Calculate the autocorrelation time.
                     low = 10
@@ -1049,10 +1104,7 @@ class Fitter(object):
 
         if s_exception:
             pool.close()
-            if (not prt.prompt(
-                    'You have interrupted the Monte Carlo. Do you wish to '
-                    'save the incomplete run to disk? Previous results will '
-                    'be overwritten.', self._wrap_length)):
+            if (not prt.prompt('mc_interrupted', self._wrap_length)):
                 sys.exit()
 
         if write:
@@ -1107,14 +1159,24 @@ class Fitter(object):
                 QUANTITY.VALUE: str(WAIC),
                 QUANTITY.KIND: 'WAIC'
             }
+            modeldict[MODEL.CONVERGENCE] = []
+            if psrf < np.inf:
+                modeldict[MODEL.CONVERGENCE].append(
+                    {
+                        QUANTITY.VALUE: str(psrf),
+                        QUANTITY.KIND: 'psrf'
+                    }
+                )
             if acor and aacort > 0:
                 actc = int(np.ceil(aacort))
                 acortimes = '<' if aa < self._MAX_ACORC else ''
                 acortimes += str(np.int(float(emi - ams) / actc))
-                modeldict[MODEL.CONVERGENCE] = {
-                    QUANTITY.VALUE: str(acortimes),
-                    QUANTITY.KIND: 'autocorrelationtimes'
-                }
+                modeldict[MODEL.CONVERGENCE].append(
+                    {
+                        QUANTITY.VALUE: str(acortimes),
+                        QUANTITY.KIND: 'autocorrelationtimes'
+                    }
+                )
             modeldict[MODEL.STEPS] = str(emi)
 
         if upload:
@@ -1239,7 +1301,8 @@ class Fitter(object):
                     pi = pi + 1
 
                 for key in list(sorted(list(derived_keys))):
-                    parameters.update({key: {'value': output[key]}})
+                    if output.get(key, None) is not None:
+                        parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
                 if lnprobout is not None:

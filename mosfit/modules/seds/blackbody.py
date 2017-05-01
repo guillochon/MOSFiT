@@ -32,16 +32,16 @@ class Blackbody(SED):
         self._frequencies = kwargs['all_frequencies']
         self._radius_phot = kwargs[self.key('radiusphot')]
         self._temperature_phot = kwargs[self.key('temperaturephot')]
-        xc = self.X_CONST
-        fc = self.FLUX_CONST
+        xc = self.X_CONST  # noqa: F841
+        fc = self.FLUX_CONST  # noqa: F841
         cc = self.C_CONST
         temperature_phot = self._temperature_phot
         zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         evaled = False
         for li, lum in enumerate(self._luminosities):
-            radius_phot = self._radius_phot[li]
-            temperature_phot = self._temperature_phot[li]
+            radius_phot = self._radius_phot[li]  # noqa: F841
+            temperature_phot = self._temperature_phot[li]  # noqa: F841
             bi = self._band_indices[li]
             if lum == 0.0:
                 if bi >= 0:
@@ -50,20 +50,20 @@ class Blackbody(SED):
                     seds.append([0.0])
                 continue
             if bi >= 0:
-                rest_wavs = (self._sample_wavelengths[bi]
-                             * u.Angstrom.cgs.scale / zp1)
+                rest_wavs = (self._sample_wavelengths[bi] *
+                             u.Angstrom.cgs.scale / zp1)
             else:
-                rest_wavs = [cc / (self._frequencies[li] * zp1)]
+                rest_wavs = [cc / (self._frequencies[li] * zp1)]  # noqa: F841
 
             if not evaled:
                 sed = ne.evaluate(
                     'fc * radius_phot**2 / rest_wavs**5 / '
-                    '(exp(xc / rest_wavs / temperature_phot) - 1.0)')
+                    'expm1(xc / rest_wavs / temperature_phot)')
                 evaled = True
             else:
                 sed = ne.re_evaluate()
 
-            sed = np.nan_to_num(sed)
+            sed[np.isnan(sed)] = 0.0
 
             seds.append(sed)
 

@@ -1,5 +1,8 @@
 [
     {
+        "@note": "List of rules to find the right filter for each observation. Generic rules should go near the top of the file, whereas instrument/telescope-specific rules should go near the bottom."
+    },
+    {
         "systems": [
             "AB"
         ],
@@ -88,14 +91,6 @@
                 "SVO": "Generic/Bessell.R",
                 "offset": 0.0
             },
-            "FUV": {
-                "SVO": "GALEX/GALEX.FUV",
-                "offset": 0.0
-            },
-            "NUV": {
-                "SVO": "GALEX/GALEX.NUV",
-                "offset": 0.0
-            },
             "Z": {
                 "SVO": "CFHT/CFHT.Z",
                 "offset": 0.0
@@ -170,21 +165,12 @@
             "ROTSE": {
                 "SVO": "Generic/Bessell.R"
             },
-            "FUV": {
-                "SVO": "GALEX/GALEX.FUV"
-            },
-            "NUV": {
-                "SVO": "GALEX/GALEX.NUV"
-            },
             "Z": {
                 "SVO": "CFHT/CFHT.Z"
             }
         }
     },
     {
-        "systems": [
-            ""
-        ],
         "bandsets": [
             "Standard",
             ""
@@ -257,9 +243,6 @@
                 "SVO": "SLOAN/SDSS.z",
                 "offset": 0.0
             },
-            "ROTSE": {
-                "SVO": "Generic/Bessell.R"
-            },
             "FUV": {
                 "SVO": "GALEX/GALEX.FUV",
                 "offset": 0.0
@@ -274,8 +257,62 @@
         }
     },
     {
+        "telescopes": [
+            "",
+            "ROTSE"
+        ],
         "instruments": [
+            "",
+            "ROTSE"
+        ],
+        "systems": [
+            "",
+            "AB"
+        ],
+        "filters": {
+            "ROTSE": {
+                "SVO": "Generic/Bessell.R",
+                "offset": 0.0
+            },
+            "R": {
+                "SVO": "Generic/Bessell.R",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "",
+            "ROTSE"
+        ],
+        "instruments": [
+            "",
+            "ROTSE"
+        ],
+        "systems": [
+            "Vega"
+        ],
+        "filters": {
+            "ROTSE": {
+                "SVO": "Generic/Bessell.R"
+            },
+            "R": {
+                "SVO": "Generic/Bessell.R"
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "",
             "GALEX"
+        ],
+        "instruments": [
+            "",
+            "GALEX"
+        ],
+        "systems": [
+            "",
+            "AB"
         ],
         "filters": {
             "FUV": {
@@ -285,6 +322,27 @@
             "NUV": {
                 "SVO": "GALEX/GALEX.NUV",
                 "offset": 0.0
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "",
+            "GALEX"
+        ],
+        "instruments": [
+            "",
+            "GALEX"
+        ],
+        "systems": [
+            "Vega"
+        ],
+        "filters": {
+            "FUV": {
+                "SVO": "GALEX/GALEX.FUV"
+            },
+            "NUV": {
+                "SVO": "GALEX/GALEX.NUV"
             }
         }
     },
@@ -407,6 +465,7 @@
     },
     {
         "telescopes": [
+            "",
             "Swift"
         ],
         "systems": [
@@ -452,10 +511,15 @@
         }
     },
     {
+        "telescopes": [
+            "",
+            "Swift"
+        ],
         "systems": [
             "AB"
         ],
         "instruments": [
+            "",
             "UVOT"
         ],
         "bandsets": [
@@ -615,6 +679,7 @@
     },
     {
         "instruments": [
+            "",
             "PS1",
             "Pan-STARRS1",
             "GPC"
@@ -704,7 +769,12 @@
         }
     },
     {
+        "telescopes": [
+            "",
+            "LSST"
+        ],
         "instruments": [
+            "",
             "LSST"
         ],
         "bandsets": [
@@ -740,6 +810,7 @@
     },
     {
         "telescopes": [
+            "",
             "Chandra"
         ],
         "instruments": [
@@ -755,6 +826,7 @@
     },
     {
         "telescopes": [
+            "",
             "XMM",
             "XMM-Newton"
         ],
@@ -771,9 +843,11 @@
     },
     {
         "telescopes": [
+            "",
             "Swift"
         ],
         "instruments": [
+            "",
             "Swift-XRT",
             "XRT"
         ],
@@ -790,6 +864,7 @@
     },
     {
         "telescopes": [
+            "",
             "ROSAT"
         ],
         "instruments": [

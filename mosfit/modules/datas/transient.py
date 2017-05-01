@@ -146,7 +146,7 @@ class Transient(Module):
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):
-            print('No fittable data in `{}`!'.format(name))
+            self._printer.message('no_fittable_data', [name])
             return False
 
         for key in list(self._data.keys()):
@@ -256,3 +256,9 @@ class Transient(Module):
     def get_data_determined_parameters(self):
         """Return list of parameters determined by data."""
         return self._data_determined_parameters
+
+    def send_request(self, request):
+        """Send requests to other modules."""
+        if request == 'min_times':
+            return self._data['min_times']
+        return []

@@ -1,7 +1,6 @@
 language: python
 python:
     - "2.7"
-    - "3.4"
     - "3.5"
     - "3.6"
 notifications:
@@ -25,8 +24,7 @@ before_install:
 install:
     - conda update setuptools
     - conda config --add channels conda-forge
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION astrocats inflect matplotlib openmpi scipy jupyter astropy cython emcee nbstripout numexpr palettable seaborn six coveralls corner dropbox
-    - xargs -L 1 pip install < requirements.txt
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION astrocats astropy corner coveralls cython dropbox emcee extinction inflect jupyter matplotlib mpi4py nbstripout numexpr palettable schwimmbad scipy seaborn six
     - pip install googletrans
     - coverage run -p setup.py install
 

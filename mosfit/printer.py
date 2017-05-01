@@ -12,7 +12,8 @@ from textwrap import fill
 
 import numpy as np
 
-from .utils import calculate_WAIC, congrid, is_integer, open_atomic, pretty_num
+from .utils import (calculate_WAIC, congrid, is_integer, open_atomic,
+                    pretty_num, rebin)
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -64,6 +65,7 @@ class Printer(object):
         self._pool = pool
         self._fitter = fitter
         self._language = language
+        self._was_inline = False
 
         self.set_strings()
 
@@ -153,9 +155,13 @@ class Printer(object):
         if inline and self._fitter is not None:
             inline = not self._fitter._test
         if inline:
-            for line in tspl:
-                sys.stdout.write("\033[F")
-                sys.stdout.write("\033[K")
+            if self._was_inline:
+                for line in tspl:
+                    sys.stdout.write("\033[F")
+                    sys.stdout.write("\033[K")
+            self._was_inline = True
+        else:
+            self._was_inline = False
         for ri, line in enumerate(tspl):
             rline = line
             if colorify:
@@ -353,7 +359,11 @@ class Printer(object):
 
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
-            kmat_scaled = congrid(kmat, (14, 7))
+            try:
+                kmat_scaled = congrid(kmat, (14, 7), minusone=True,
+                                      bounds_error=True)
+            except Exception:
+                kmat_scaled = rebin(kmat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
             kmat_scaled /= np.max(kmat_scaled)
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
@@ -394,6 +404,8 @@ class Printer(object):
             lines = '\n'.join(doodle)
 
         self.prt(lines, colorify=True, inline=not make_space)
+        if make_space:
+            self._was_inline = True
 
     def get_timestring(self, t):
         """Return estimated time remaining.

@@ -37,7 +37,10 @@
         "kind":"parameter",
         "value":0.0,
         "class":"parameter",
-        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
+        "requests":{
+            "min_times": "transient"
+        }
     },
     "n":{
         "kind":"parameter",

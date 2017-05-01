@@ -3,6 +3,7 @@
 
 import codecs
 import hashlib
+import io
 import json
 import os
 import re
@@ -93,9 +94,13 @@ def entabbed_json_dumps(string, **kwargs):
     return newstr
 
 
-def entabbed_json_dump(string, f, **kwargs):
+def entabbed_json_dump(dic, f, **kwargs):
     """Write `entabbed_json_dumps` output to file handle."""
-    f.write(entabbed_json_dumps(string, **kwargs))
+    string = entabbed_json_dumps(dic, **kwargs)
+    try:
+        f.write(string)
+    except UnicodeEncodeError:
+        f.write(string.encode('ascii', 'replace').decode())
 
 
 def calculate_WAIC(scores):
@@ -206,7 +211,8 @@ def rebin(a, newshape):
     return a[tuple(indices)]
 
 
-def congrid(a, newdims, method='linear', centre=False, minusone=False):
+def congrid(a, newdims, method='linear', center=False, minusone=False,
+            bounds_error=False):
     """Arbitrary resampling of source array to new dimension sizes.
 
     Currently only supports maintaining the same number of dimensions.
@@ -223,8 +229,8 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
     (see Numerical Recipes for validity of use of n 1-D interpolations)
     spline - uses ndimage.map_coordinates
 
-    centre:
-    True - interpolation points are at the centres of the bins
+    center:
+    True - interpolation points are at the centers of the bins
     False - points are at the front edge of the bin
 
     minusone:
@@ -237,7 +243,7 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
         a = np.cast[float](a)
 
     m1 = np.cast[int](minusone)
-    ofs = np.cast[int](centre) * 0.5
+    ofs = np.cast[int](center) * 0.5
     old = np.array(a.shape)
     ndims = len(a.shape)
     if len(newdims) != ndims:
@@ -267,14 +273,16 @@ def congrid(a, newdims, method='linear', centre=False, minusone=False):
         olddims = [np.arange(i, dtype=np.float) for i in list(a.shape)]
 
         # first interpolation - for ndims = any
-        mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method)
+        mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method,
+                                          bounds_error=bounds_error)
         newa = mint(dimlist[-1])
 
         trorder = [ndims - 1] + list(range(ndims - 1))
         for i in range(ndims - 2, -1, -1):
             newa = newa.transpose(trorder)
 
-            mint = scipy.interpolate.interp1d(olddims[i], newa, kind=method)
+            mint = scipy.interpolate.interp1d(olddims[i], newa, kind=method,
+                                              bounds_error=bounds_error)
             newa = mint(dimlist[i])
 
         if ndims > 1:

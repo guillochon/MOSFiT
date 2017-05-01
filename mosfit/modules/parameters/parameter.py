@@ -1,6 +1,7 @@
 """Definitions for the `Parameter` class."""
 import numpy as np
 
+from collections import OrderedDict
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
@@ -23,7 +24,8 @@ class Parameter(Module):
         self._value = kwargs.get('value', None)
         self._log = kwargs.get('log', False)
         self._latex = kwargs.get('latex', self._name)
-        self._derived_keys = listify(kwargs.get('derived_keys', []))
+        self._derived_keys = listify(kwargs.get('derived_keys', [])) + [
+            'reference_' + self._name]
         if (self._log and self._min_value is not None and
                 self._max_value is not None):
             if self._min_value <= 0.0 or self._max_value <= 0.0:
@@ -31,6 +33,7 @@ class Parameter(Module):
                     'Parameter with log prior cannot have range values <= 0!')
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
+        self._reference_value = None
 
     def fix_value(self, value):
         """Fix value of parameter."""
@@ -92,4 +95,15 @@ class Parameter(Module):
         else:
             value = self.value(kwargs['fraction'])
 
-        return {self._name: value}
+        output = OrderedDict([[self._name, value]])
+        if self._reference_value is not None:
+            output['reference_' + self._name] = self._reference_value
+
+        return output
+
+    def receive_requests(self, **requests):
+        """Receive requests from other ``Module`` objects."""
+        # Get the first value in the requests dictionary.
+        req_keys = list(requests.keys())
+        if len(req_keys):
+            self._reference_value = requests.get(req_keys[0], None)

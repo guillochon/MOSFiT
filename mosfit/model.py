@@ -127,7 +127,8 @@ class Model(object):
             self._model.update(json.load(f, object_pairs_hook=OrderedDict))
 
         # with open(os.path.join(
-        #         self.MODEL_OUTPUT_DIR, self._model_name + '.json'), 'w') as f:
+        #         self.MODEL_OUTPUT_DIR,
+        #         self._model_name + '.json'), 'w') as f:
         #     json.dump(self._model, f)
 
         # Load model parameter file.
@@ -490,7 +491,7 @@ class Model(object):
             if len(walkers_pool):
                 chosen_one = np.random.choice(range(len(walkers_pool)))
                 for e, elem in enumerate(walkers_pool[chosen_one]):
-                    if elem:
+                    if elem is not None:
                         draw[e] = elem
             if not test:
                 p = draw
