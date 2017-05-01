@@ -290,7 +290,7 @@ class Photometry(Module):
             if lmatch > bmatch and nbmatch > 0:
                 bmatch = lmatch
                 bbi = bi
-            if lmatch == 6:
+            if lmatch == 6 and nbmatch > 0:
                 break
         if bbi is not None:
             return bbi
