@@ -504,6 +504,7 @@ class Fitter(object):
 
     def generate_event_list(self, event_list):
         """Generate a list of events and/or convert events to JSON format."""
+        prt = self._printer
         header_keys = {
             PHOTOMETRY.TIME: ['time', 'mjd', 'jd'],
             PHOTOMETRY.BAND: ['band', 'filter'],
@@ -512,9 +513,14 @@ class Fitter(object):
             PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
             PHOTOMETRY.E_MAGNITUDE: [
                 'magnitude error', 'error', 'e mag', 'e magnitude'],
-            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit']
+            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit'],
+            PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
+            PHOTOMETRY.E_COUNT_RATE: [
+                'e_counts', 'count error', 'count rate error']
         }
-        critical_keys = ['time', 'magnitude', 'e_magnitude']
+        critical_keys = [
+            PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.E_MAGNITUDE,
+            PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE]
         for key in header_keys.keys():
             for val in header_keys[key]:
                 rep = val.replace(' ', '_')
@@ -523,15 +529,18 @@ class Fitter(object):
 
         new_event_list = []
         for event in event_list:
+            lcritical_keys = critical_keys.copy()
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
                 with open(event, 'r') as f:
                     fsplit = f.read().splitlines()
                     fsplit = [x.replace(',', '\t') for x in fsplit]
                     flines = [
-                        [y.replace('"', '').replace("'", '') for y in re.split(
-                            '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
+                        [y.replace('"', '').replace("'", '') for y in
+                         re.split(
+                             '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
                         for x in fsplit]
+                    flines = [list(filter(None, x)) for x in flines]
                     # If the first two rows contain no numeric data, the file
                     # is likely a list of transients.
                     if (len(flines) and not is_number(flines[0][0]) and
@@ -548,11 +557,11 @@ class Fitter(object):
                                 'consistent!')
                         # If the first row is not a number it is likely a
                         # header.
-                        new_events = [event.split('.')]
+                        new_events = [event.split('.')[0].split('/')[-1]]
+                        cidict = {}
                         if not is_number(flines[0][0]):
                             # Try to associate column names with common header
                             # keys.
-                            cidict = {}
                             for ci, col in flines[0]:
                                 for key in header_keys:
                                     if any([x in col.lower()
@@ -560,22 +569,43 @@ class Fitter(object):
                                         cidict[key] = ci
                                         break
 
-                            # See which keys we collected. If we are missing
-                            # any critical keys, ask the user which column they
-                            # are.
-                            columns = np.array(flines[1:]).T.aslist()
-                            colstrs = [', '.join(x[:2]) for x in columns]
-                            for key in critical_keys:
-                                if key not in cidict:
-                                    select = None
-                                    while select is not is_integer(select):
-                                        text = self.prt.message(
-                                            'no_matching_column', [key],
-                                            prt=False)
-                                        select = self.prt.prompt(
-                                            text,
-                                            kind='select',
-                                            choices=colstrs)
+                        # See which keys we collected. If we are missing
+                        # any critical keys, ask the user which column they
+                        # are.
+
+                        # First ask the user if this data is in magnitudes or
+                        # in counts.
+                        if (PHOTOMETRY.MAGNITUDE not in cidict and
+                                PHOTOMETRY.COUNT_RATE not in cidict):
+                            text = prt.message(
+                                'counts_or_mags', [key],
+                                prt=False)
+                            select = False
+                            while select is False:
+                                select = prt.prompt(
+                                    text, message=False,
+                                    kind='option',
+                                    options=['Magnitudes', 'Counts (fluxes)'])
+                            if select == 1:
+                                lcritical_keys.remove(PHOTOMETRY.COUNT_RATE)
+                                lcritical_keys.remove(PHOTOMETRY.E_COUNT_RATE)
+                            else:
+                                lcritical_keys.remove(PHOTOMETRY.MAGNITUDE)
+                                lcritical_keys.remove(PHOTOMETRY.E_MAGNITUDE)
+
+                        columns = np.array(flines[1:]).T.tolist()
+                        colstrs = [', '.join(x[:2]) + ', ...' for x in columns]
+                        for key in lcritical_keys:
+                            if key not in cidict:
+                                select = False
+                                while select is False:
+                                    text = prt.message(
+                                        'no_matching_column', [key],
+                                        prt=False)
+                                    select = prt.prompt(
+                                        text, message=False,
+                                        kind='option',
+                                        options=colstrs)
 
                 new_event_list.extend(new_events)
             else:

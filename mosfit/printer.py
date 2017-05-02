@@ -221,7 +221,7 @@ class Printer(object):
 
         if kind == 'bool':
             choices = ' (y/[n])'
-        elif kind == 'select':
+        elif kind in ['select', 'option']:
             selpad = ''.join([' ' for x in str(len(options))])
             choices = '\n' + '\n'.join([
                 ' ' + str(i + 1) + '. ' + selpad[len(str(i + 1)) - 1:] +
@@ -256,6 +256,11 @@ class Printer(object):
             if (is_integer(user_input) and
                     int(user_input) in list(range(1, len(options) + 1))):
                 return options[int(user_input) - 1]
+            return False
+        elif kind == 'option':
+            if (is_integer(user_input) and
+                    int(user_input) in list(range(1, len(options) + 1))):
+                return int(user_input)
             return False
         elif kind == 'string':
             return user_input
