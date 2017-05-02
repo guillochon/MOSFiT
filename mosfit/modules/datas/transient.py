@@ -120,6 +120,7 @@ class Transient(Module):
                     if ((('magnitude' in entry) != ('band' in entry)) or
                         (('fluxdensity' in entry) != ('frequency' in entry)) or
                         (('countrate' in entry) and
+                         ('magnitude' not in entry) and
                          ('instrument' not in entry))):
                         continue
 
