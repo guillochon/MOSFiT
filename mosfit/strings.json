@@ -38,6 +38,7 @@
     "no_fittable_data": "No fittable data in `{}`!",
     "no_data": "Could not find data for `{}` locally or in the `{}`.",
     "no_exact_match": "'No exact match to given transient found. Did you mean one of the following transients?",
+    "no_matching_column": "Could not automatically find a column corresponding to `{}`, which of the following columns correponds to this quantity?",
     "no_walker_data": "Could not find walker data.",
     "no_ul_waic": "WAIC score `{}` below 0.0, not uploading this fit.",
     "no_event_by_name": "Could not find event by that name, skipping!",

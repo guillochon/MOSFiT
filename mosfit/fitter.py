@@ -20,7 +20,7 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
-from astrocats.catalog.utils import is_number
+from astrocats.catalog.utils import is_integer, is_number
 from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
 from six import string_types
@@ -172,19 +172,10 @@ class Fitter(object):
 
         data = {}
 
-        new_event_list = []
-        for event in event_list:
-            if '.' in event and not event.endswith('.json'):
-                with open(event, 'r') as f:
-                    new_events = [
-                        it for s in [
-                            [y.strip("\" ") for y in x.replace(
-                                '\t', ',').split(',')]
-                            for x in f.read().splitlines()] for it in s]
-                new_event_list.extend(new_events)
-            else:
-                new_event_list.append(event)
-        event_list = new_event_list
+        # If the input is not a JSON file, assume it is either a list of
+        # transients or that it is the data from a single transient in tabular
+        # form. Try to guess the format first, and if that fails ask the user.
+        event_list = self.generate_event_list(event_list)
 
         event_list = [x.replace('‑', '-') for x in event_list]
 
@@ -510,6 +501,87 @@ class Fitter(object):
                     gc.collect()
 
         return (entries, ps, lnprobs)
+
+    def generate_event_list(self, event_list):
+        """Generate a list of events and/or convert events to JSON format."""
+        header_keys = {
+            PHOTOMETRY.TIME: ['time', 'mjd', 'jd'],
+            PHOTOMETRY.BAND: ['band', 'filter'],
+            PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
+            PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
+            PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
+            PHOTOMETRY.E_MAGNITUDE: [
+                'magnitude error', 'error', 'e mag', 'e magnitude'],
+            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit']
+        }
+        critical_keys = ['time', 'magnitude', 'e_magnitude']
+        for key in header_keys.keys():
+            for val in header_keys[key]:
+                rep = val.replace(' ', '_')
+                if rep != val:
+                    header_keys[key].extend(rep)
+
+        new_event_list = []
+        for event in event_list:
+            if ('.' in event and os.path.isfile(event) and
+                    not event.endswith('.json')):
+                with open(event, 'r') as f:
+                    fsplit = f.read().splitlines()
+                    fsplit = [x.replace(',', '\t') for x in fsplit]
+                    flines = [
+                        [y.replace('"', '').replace("'", '') for y in re.split(
+                            '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
+                        for x in fsplit]
+                    # If the first two rows contain no numeric data, the file
+                    # is likely a list of transients.
+                    if (len(flines) and not is_number(flines[0][0]) and
+                            (not is_number(flines[1][0]) or len(flines) == 1)):
+                        new_events = [
+                            it for s in flines for it in s]
+                    # If second row is numeric, then likely this is a single
+                    # transient.
+                    elif len(flines) > 1 and is_number(flines[1][0]):
+                        # Check that each row has the same number of columns.
+                        if len(set([len(x) for x in flines])) > 1:
+                            raise ValueError(
+                                'Number of columns in each row not '
+                                'consistent!')
+                        # If the first row is not a number it is likely a
+                        # header.
+                        new_events = [event.split('.')]
+                        if not is_number(flines[0][0]):
+                            # Try to associate column names with common header
+                            # keys.
+                            cidict = {}
+                            for ci, col in flines[0]:
+                                for key in header_keys:
+                                    if any([x in col.lower()
+                                            for x in header_keys[key]]):
+                                        cidict[key] = ci
+                                        break
+
+                            # See which keys we collected. If we are missing
+                            # any critical keys, ask the user which column they
+                            # are.
+                            columns = np.array(flines[1:]).T.aslist()
+                            colstrs = [', '.join(x[:2]) for x in columns]
+                            for key in critical_keys:
+                                if key not in cidict:
+                                    select = None
+                                    while select is not is_integer(select):
+                                        text = self.prt.message(
+                                            'no_matching_column', [key],
+                                            prt=False)
+                                        select = self.prt.prompt(
+                                            text,
+                                            kind='select',
+                                            choices=colstrs)
+
+                new_event_list.extend(new_events)
+            else:
+                new_event_list.append(event)
+
+        return new_event_list
 
     def load_data(self,
                   data,
