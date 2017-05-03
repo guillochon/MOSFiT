@@ -17,10 +17,10 @@ import numpy as np
 import scipy
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
-from astrocats.catalog.photometry import PHOTOMETRY
+from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
-from astrocats.catalog.utils import is_integer, is_number
+from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
 from six import string_types
@@ -510,22 +510,32 @@ class Fitter(object):
             PHOTOMETRY.BAND: ['band', 'filter'],
             PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
             PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
+            PHOTOMETRY.SYSTEM: ['system'],
             PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
             PHOTOMETRY.E_MAGNITUDE: [
                 'magnitude error', 'error', 'e mag', 'e magnitude'],
             PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit'],
             PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
             PHOTOMETRY.E_COUNT_RATE: [
-                'e_counts', 'count error', 'count rate error']
+                'e_counts', 'count error', 'count rate error'],
+            PHOTOMETRY.ZERO_POINT: ['zero point', 'zp']
         }
         critical_keys = [
-            PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.E_MAGNITUDE,
-            PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE]
+            PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.BAND,
+            PHOTOMETRY.E_MAGNITUDE,
+            PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.ZERO_POINT]
+        optional_keys = [PHOTOMETRY.ZERO_POINT]
         for key in header_keys.keys():
             for val in header_keys[key]:
                 rep = val.replace(' ', '_')
                 if rep != val:
                     header_keys[key].extend(rep)
+                rep = val.replace(' ', '')
+                if rep != val:
+                    header_keys[key].extend(rep)
+
+        gcidict = {}
 
         new_event_list = []
         for event in event_list:
@@ -541,24 +551,27 @@ class Fitter(object):
                              '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
                         for x in fsplit]
                     flines = [list(filter(None, x)) for x in flines]
+                    flines = [[x.strip() for x in y] for y in flines]
                     # If the first two rows contain no numeric data, the file
                     # is likely a list of transients.
                     if (len(flines) and not is_number(flines[0][0]) and
                             (not is_number(flines[1][0]) or len(flines) == 1)):
                         new_events = [
                             it for s in flines for it in s]
-                    # If second row is numeric, then likely this is a single
+                    # If last row is numeric, then likely this is a single
                     # transient.
-                    elif len(flines) > 1 and is_number(flines[1][0]):
+                    elif len(flines) > 1 and is_number(flines[-1][0]):
                         # Check that each row has the same number of columns.
                         if len(set([len(x) for x in flines])) > 1:
                             raise ValueError(
                                 'Number of columns in each row not '
                                 'consistent!')
+                        new_event_name = event.split(
+                            '.')[0].split('/')[-1]
+                        new_events = [new_event_name + '.json']
+                        cidict = {}
                         # If the first row is not a number it is likely a
                         # header.
-                        new_events = [event.split('.')[0].split('/')[-1]]
-                        cidict = {}
                         if not is_number(flines[0][0]):
                             # Try to associate column names with common header
                             # keys.
@@ -575,26 +588,28 @@ class Fitter(object):
 
                         # First ask the user if this data is in magnitudes or
                         # in counts.
+                        cm_sel = 1
                         if (PHOTOMETRY.MAGNITUDE not in cidict and
                                 PHOTOMETRY.COUNT_RATE not in cidict):
-                            text = prt.message(
-                                'counts_or_mags', [key],
-                                prt=False)
-                            select = False
-                            while select is False:
-                                select = prt.prompt(
-                                    text, message=False,
-                                    kind='option',
-                                    options=['Magnitudes', 'Counts (fluxes)'])
-                            if select == 1:
+                            cm_sel = False
+                            while cm_sel is False:
+                                cm_sel = prt.prompt(
+                                    'counts_or_mags', kind='option',
+                                    options=['Magnitudes', 'Counts (fluxes)'],
+                                    color='!m')
+                            if cm_sel == 1:
                                 lcritical_keys.remove(PHOTOMETRY.COUNT_RATE)
                                 lcritical_keys.remove(PHOTOMETRY.E_COUNT_RATE)
+                                lcritical_keys.remove(PHOTOMETRY.ZERO_POINT)
                             else:
                                 lcritical_keys.remove(PHOTOMETRY.MAGNITUDE)
                                 lcritical_keys.remove(PHOTOMETRY.E_MAGNITUDE)
 
                         columns = np.array(flines[1:]).T.tolist()
-                        colstrs = [', '.join(x[:2]) + ', ...' for x in columns]
+                        colstrs = np.array([
+                            ', '.join(x[:2]) + ', ...' for x in columns])
+                        colinds = np.arange(len(colstrs))
+                        ignore = prt.message('ignore_column', prt=False)
                         for key in lcritical_keys:
                             if key not in cidict:
                                 select = False
@@ -604,8 +619,44 @@ class Fitter(object):
                                         prt=False)
                                     select = prt.prompt(
                                         text, message=False,
-                                        kind='option',
-                                        options=colstrs)
+                                        kind='option', none_string=(
+                                            ignore if key in optional_keys
+                                            else None),
+                                        options=colstrs[colinds], color='!m')
+                                if select is not None:
+                                    cidict[key] = colinds[select - 1]
+                                    colinds = np.delete(colinds, select - 1)
+
+                        zp = ''
+                        if cm_sel == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
+                            while not is_number(zp):
+                                zp = prt.prompt(
+                                    'zeropoint', kind='string', color='!m')
+
+                        # Create a new event, populate the photometry, and dump
+                        # to a JSON file in the run directory.
+                        entry = Entry(name=new_event_name)
+                        source = entry.add_source(name='MOSFiT paper')
+                        for row in flines[1:]:
+                            photodict = {PHOTOMETRY.SOURCE: source}
+                            for key in cidict:
+                                photodict[key] = row[cidict[key]]
+                            if zp:
+                                photodict[PHOTOMETRY.ZERO_POINT] = zp
+                            set_pd_mag_from_counts(
+                                photodict,
+                                c=row[cidict[PHOTOMETRY.COUNT_RATE]],
+                                ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
+                                zp=zp)
+                            entry.add_photometry(**photodict)
+
+                        entry.sanitize()
+                        oentry = entry._ordered(entry)
+
+                        with open(new_events[0], 'w') as f:
+                            entabbed_json_dump(
+                                {new_event_name: oentry}, f,
+                                separators=(',', ':'))
 
                 new_event_list.extend(new_events)
             else:

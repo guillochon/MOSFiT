@@ -148,7 +148,7 @@ class Printer(object):
         inline = kwargs.get('inline', False)
         center = kwargs.get('center', False)
         width = kwargs.get('width', None)
-        colorify = kwargs.get('colorify', False)
+        colorify = kwargs.get('colorify', True)
         tspl = self._lines(text, **kwargs)
         if warning or error or color:
             colorify = True
@@ -212,7 +212,7 @@ class Printer(object):
 
     def prompt(self, text, wrap_length=None, kind='bool',
                none_string='None of the above.', colorify=True,
-               options=None, translate=True, message=True):
+               options=None, translate=True, message=True, color=''):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -223,44 +223,56 @@ class Printer(object):
             choices = ' (y/[n])'
         elif kind in ['select', 'option']:
             selpad = ''.join([' ' for x in str(len(options))])
-            choices = '\n' + '\n'.join([
+            carr = [
                 ' ' + str(i + 1) + '. ' + selpad[len(str(i + 1)) - 1:] +
                 options[i] for i in range(len(options))
-            ] + [
-                '[n].' + selpad + none_string + '\n' +
-                'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
-                    len(options)) + '/[n]):'
-            ])
+            ]
+            if none_string is not None:
+                carr += [
+                    '[n].' + selpad + none_string
+                ]
+            carr += ['Enter selection (' + (
+                '1-' if len(options) > 1 else '') + str(
+                    len(options)) + '/[n]):']
+            choices = '\n' + '\n'.join(carr)
         elif kind == 'string':
             choices = ''
         else:
             raise ValueError('Unknown prompt kind.')
 
         if message:
-            text = self.string(
-                self.message(text, prt=False), wrap_length=wrap_length)
+            text = self.message(text, prt=False)
         textchoices = text + choices
         if translate:
             textchoices = self.translate(textchoices)
         prompt_txt = (textchoices).split('\n')
         for txt in prompt_txt[:-1]:
             ptxt = fill(txt, wl, replace_whitespace=False)
-            self.prt(ptxt)
+            self.prt(ptxt, color=color)
 
-        user_input = input(
-            fill(
-                prompt_txt[-1], wl, replace_whitespace=False) + " ")
+        inp_text = fill(
+            prompt_txt[-1], wl, replace_whitespace=False) + " "
+        if colorify and choices == '':
+            inp_text = self.colorify(color + inp_text + "!e")
+        user_input = input(inp_text)
+
+        nos = ['n', 'no', '']
+
         if kind == 'bool':
             return user_input in ["Y", "y", "Yes", "yes"]
         elif kind == 'select':
             if (is_integer(user_input) and
                     int(user_input) in list(range(1, len(options) + 1))):
                 return options[int(user_input) - 1]
+            if user_input.lower() in nos:
+                return None
             return False
         elif kind == 'option':
             if (is_integer(user_input) and
                     int(user_input) in list(range(1, len(options) + 1))):
                 return int(user_input)
+            if user_input.lower() in nos:
+                return None
             return False
         elif kind == 'string':
             return user_input

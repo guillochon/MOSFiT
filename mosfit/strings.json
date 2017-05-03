@@ -11,6 +11,7 @@
     "cant_read_names": "Could not read list of {} names!",
     "converged": "Converged!",
     "copying": "Copying MOSFiT folder hierarchy to current working directory (disable with `--no-copy-at-launch`).",
+    "counts_or_mags": "\nNo header found in the specified datafile. Are the points presented in the datafile represented as magnitudes or as a count rate (or flux)?",
     "ctrl_c": "\b\bCtrl + C pressed, halting...",
     "dl_svo": "Downloading bandpass `{}` from SVO...",
     "dling_aliases": "Event `{}` interpreted as a transient name, downloading lists of transient aliases...",
@@ -29,6 +30,7 @@
     "error": "Error",
     "estimated_time": "Estimated time left",
     "event_file": "Event file:\n  {}",
+    "ignore_column": "No column correponds to this quantity.",
     "initial_draws": "Initial draws completed!",
     "loading_bands": "Loading bands [ {0:.0f}% ]",
     "mc_interrupted": "You have interrupted the Monte Carlo. Do you wish to save the incomplete run to disk? Previous results will be overwritten.",
@@ -38,7 +40,7 @@
     "no_fittable_data": "No fittable data in `{}`!",
     "no_data": "Could not find data for `{}` locally or in the `{}`.",
     "no_exact_match": "'No exact match to given transient found. Did you mean one of the following transients?",
-    "no_matching_column": "Could not automatically find a column corresponding to `{}`, which of the following columns correponds to this quantity?",
+    "no_matching_column": "\nCould not automatically find a column corresponding to `{}`, which of the following columns correponds to this quantity?",
     "no_walker_data": "Could not find walker data.",
     "no_ul_waic": "WAIC score `{}` below 0.0, not uploading this fit.",
     "no_event_by_name": "Could not find event by that name, skipping!",
@@ -69,5 +71,6 @@
     "warning": "Warning",
     "writing_extras": "Writing extra keys...",
     "writing_full_chain": "Writing full chain...",
-    "writing_model": "Writing model output..."
+    "writing_model": "Writing model output...",
+    "zeropoint": "\nNo zeropoint column available, please provide a zeropoint value for all the provided count (flux) data: "
 }
