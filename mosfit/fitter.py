@@ -513,7 +513,7 @@ class Fitter(object):
             PHOTOMETRY.SYSTEM: ['system'],
             PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
             PHOTOMETRY.E_MAGNITUDE: [
-                'magnitude error', 'error', 'e mag', 'e magnitude'],
+                'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag'],
             PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit'],
             PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
             PHOTOMETRY.E_COUNT_RATE: [
@@ -550,34 +550,46 @@ class Fitter(object):
                          re.split(
                              '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
                         for x in fsplit]
+                    flines = [[
+                        x.strip().strip('#') for x in y] for y in flines]
                     flines = [list(filter(None, x)) for x in flines]
-                    flines = [[x.strip() for x in y] for y in flines]
                     # If the first two rows contain no numeric data, the file
                     # is likely a list of transients.
-                    if (len(flines) and not is_number(flines[0][0]) and
-                            (not is_number(flines[1][0]) or len(flines) == 1)):
+                    if (len(flines) and
+                        not any([is_number(x) for x in flines[0]]) and
+                            (not any([is_number(x) for x in flines[1]]) or
+                             len(flines) == 1)):
                         new_events = [
                             it for s in flines for it in s]
                     # If last row is numeric, then likely this is a single
                     # transient.
-                    elif len(flines) > 1 and is_number(flines[-1][0]):
+                    elif (len(flines) > 1 and
+                            any([is_number(x) for x in flines[1]])):
                         # Check that each row has the same number of columns.
                         if len(set([len(x) for x in flines])) > 1:
+                            print(flines)
                             raise ValueError(
                                 'Number of columns in each row not '
                                 'consistent!')
-                        new_event_name = event.split(
-                            '.')[0].split('/')[-1]
+                        new_event_name = '.'.join(event.split(
+                            '.')[:-2]).split('/')[-1]
+                        text = prt.message(
+                            'is_event_name', [new_event_name], prt=False)
+                        is_name = prt.prompt(text, message=False,
+                                             kind='bool', color='!m')
+                        if not is_name:
+                            new_event_name = prt.prompt(
+                                'enter_name', kind='string', color='!m')
                         new_events = [new_event_name + '.json']
                         cidict = {}
                         # If the first row is not a number it is likely a
                         # header.
-                        if not is_number(flines[0][0]):
+                        if not any([is_number(x) for x in flines[0]]):
                             # Try to associate column names with common header
                             # keys.
-                            for ci, col in flines[0]:
+                            for ci, col in enumerate(flines[0]):
                                 for key in header_keys:
-                                    if any([x in col.lower()
+                                    if any([x == col.lower()
                                             for x in header_keys[key]]):
                                         cidict[key] = ci
                                         break
@@ -589,26 +601,32 @@ class Fitter(object):
                         # First ask the user if this data is in magnitudes or
                         # in counts.
                         cm_sel = 1
-                        if (PHOTOMETRY.MAGNITUDE not in cidict and
+                        if (PHOTOMETRY.MAGNITUDE in cidict and
                                 PHOTOMETRY.COUNT_RATE not in cidict):
+                            cm_sel = 1
+                        elif (PHOTOMETRY.MAGNITUDE not in cidict and
+                              PHOTOMETRY.COUNT_RATE in cidict):
+                            cm_sel = 2
+                        else:
                             cm_sel = False
                             while cm_sel is False:
                                 cm_sel = prt.prompt(
                                     'counts_or_mags', kind='option',
                                     options=['Magnitudes', 'Counts (fluxes)'],
                                     color='!m')
-                            if cm_sel == 1:
-                                lcritical_keys.remove(PHOTOMETRY.COUNT_RATE)
-                                lcritical_keys.remove(PHOTOMETRY.E_COUNT_RATE)
-                                lcritical_keys.remove(PHOTOMETRY.ZERO_POINT)
-                            else:
-                                lcritical_keys.remove(PHOTOMETRY.MAGNITUDE)
-                                lcritical_keys.remove(PHOTOMETRY.E_MAGNITUDE)
+                        if cm_sel == 1:
+                            lcritical_keys.remove(PHOTOMETRY.COUNT_RATE)
+                            lcritical_keys.remove(PHOTOMETRY.E_COUNT_RATE)
+                            lcritical_keys.remove(PHOTOMETRY.ZERO_POINT)
+                        else:
+                            lcritical_keys.remove(PHOTOMETRY.MAGNITUDE)
+                            lcritical_keys.remove(PHOTOMETRY.E_MAGNITUDE)
 
                         columns = np.array(flines[1:]).T.tolist()
                         colstrs = np.array([
                             ', '.join(x[:2]) + ', ...' for x in columns])
-                        colinds = np.arange(len(colstrs))
+                        colinds = np.setdiff1d(np.arange(len(colstrs)),
+                                               list(cidict.values()))
                         ignore = prt.message('ignore_column', prt=False)
                         for key in lcritical_keys:
                             if key not in cidict:
@@ -641,13 +659,14 @@ class Fitter(object):
                             photodict = {PHOTOMETRY.SOURCE: source}
                             for key in cidict:
                                 photodict[key] = row[cidict[key]]
-                            if zp:
-                                photodict[PHOTOMETRY.ZERO_POINT] = zp
-                            set_pd_mag_from_counts(
-                                photodict,
-                                c=row[cidict[PHOTOMETRY.COUNT_RATE]],
-                                ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
-                                zp=zp)
+                            if cm_sel == 2:
+                                if zp:
+                                    photodict[PHOTOMETRY.ZERO_POINT] = zp
+                                set_pd_mag_from_counts(
+                                    photodict,
+                                    c=row[cidict[PHOTOMETRY.COUNT_RATE]],
+                                    ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
+                                    zp=zp)
                             entry.add_photometry(**photodict)
 
                         entry.sanitize()

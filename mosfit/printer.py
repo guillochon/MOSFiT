@@ -252,7 +252,7 @@ class Printer(object):
 
         inp_text = fill(
             prompt_txt[-1], wl, replace_whitespace=False) + " "
-        if colorify and choices == '':
+        if colorify and options is None:
             inp_text = self.colorify(color + inp_text + "!e")
         user_input = input(inp_text)
 
