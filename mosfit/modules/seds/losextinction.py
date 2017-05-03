@@ -79,12 +79,12 @@ class LOSExtinction(SED):
                     extinct_cache[bi] = np.zeros_like(
                         self._band_rest_wavelengths[bi])
                     ind = self._ext_indices[bi]
-                    if np.count_nonzero(ind) > 0:
+                    if len(ind) > 0:
                         extinct_cache[bi][ind] = odonnell94(
                             self._band_rest_wavelengths[bi][ind],
                             av_host, self._rv_host)
                     ind = self._x_indices[bi]
-                    if np.count_nonzero(ind) > 0:
+                    if len(ind) > 0:
                         extinct_cache[bi][ind] = self.mm83(
                             self._nh_host,
                             self._band_rest_wavelengths[bi][ind])
@@ -121,11 +121,11 @@ class LOSExtinction(SED):
             self._x_indices.append(
                 (self._sample_wavelengths[si] >= self._min_wavelength) &
                 (self._sample_wavelengths[si] < self.LYMAN))
-            if np.count_nonzero(self._ext_indices[si]) > 0:
+            if len(self._ext_indices[si]) > 0:
                 self._mw_extinct[si][self._ext_indices[si]] = odonnell94(
                     self._sample_wavelengths[si][self._ext_indices[si]],
                     self._av_mw, self.MW_RV)
-            if np.count_nonzero(self._x_indices[si]) > 0:
+            if len(self._x_indices[si]) > 0:
                 self._mw_extinct[si][self._x_indices[si]] = self.mm83(
                     self._nh_mw,
                     self._sample_wavelengths[si][self._x_indices[si]])
