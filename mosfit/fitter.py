@@ -539,7 +539,7 @@ class Fitter(object):
 
         new_event_list = []
         for event in event_list:
-            lcritical_keys = critical_keys.copy()
+            lcritical_keys = list(critical_keys)
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
                 with open(event, 'r') as f:
