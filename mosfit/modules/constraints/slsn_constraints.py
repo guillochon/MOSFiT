@@ -61,6 +61,12 @@ class SLSNConstraints(Constraint):
                 self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
                     2 * self._neutrino_energy ** 2)
 
+        if (self._Ek < E_rad or self._Ek < self._neutrino_energy):
+            self._score_modifier += -(
+                self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
+                    2 * self._neutrino_energy ** 2)
+
+
         # Time from explosion at which optical depth in ejecta reaches tau=1
         t_nebular = np.sqrt(3 * self._kappa * self._mejecta / (
             4 * np.pi * self._vejecta ** 2)) / DAY_CGS
