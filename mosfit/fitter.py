@@ -1116,8 +1116,10 @@ class Fitter(object):
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
+        prt.prt()
+        prt.message('constructing')
+
         if write:
-            prt.message('saving_output')
             if self._speak:
                 speak(prt._strings['saving_output'], self._speak)
 
@@ -1278,13 +1280,16 @@ class Fitter(object):
                             photodict[PHOTOMETRY.MODE] = output[
                                 'modes'][i]
                         entry.add_photometry(
-                            compare_to_existing=False, **photodict)
+                            compare_to_existing=False, check_for_dupes=False,
+                            **photodict)
 
                         if upload_this:
                             uphotodict = deepcopy(photodict)
                             uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                             uentry.add_photometry(
-                                compare_to_existing=False, **uphotodict)
+                                compare_to_existing=False,
+                                check_for_dupes=False,
+                                **uphotodict)
                 else:
                     output = model.run_stack(y, root='objective')
 
