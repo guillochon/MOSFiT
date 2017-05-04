@@ -100,6 +100,7 @@ class Photometry(Module):
         self._band_xu = np.full(self._n_bands, u.Angstrom.cgs.scale)
         self._band_yu = np.full(self._n_bands, 1.0)
         self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
+        self._band_index_cache = {}
 
         for i, band in enumerate(self._unique_bands):
             self._band_xunits[i] = band.get('xunit', 'Angstrom')
@@ -116,7 +117,6 @@ class Photometry(Module):
 
         if self._pool.is_master():
             vo_tabs = OrderedDict()
-            prt.prt('')
 
         per = 0.0
         bc = 0
@@ -282,6 +282,10 @@ class Photometry(Module):
         """Find the index corresponding to the provided band information."""
         bmatch = 0
         bbi = None
+        cache_key = ':'.join([
+            band, telescope, instrument, mode, bandset, system])
+        if cache_key in self._band_index_cache:
+            return self._band_index_cache[cache_key]
         for bi, bnd in enumerate(self._unique_bands):
             matches = [band == bnd['name'],
                        system == self._band_systs[bi],
@@ -303,6 +307,7 @@ class Photometry(Module):
             if lmatch == 6 and nbmatch > 0:
                 break
         if bbi is not None:
+            self._band_index_cache[cache_key] = bbi
             return bbi
         raise ValueError(
             'Cannot find band index for `{}` band of bandset `{}` '
