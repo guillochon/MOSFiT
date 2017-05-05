@@ -1,11 +1,11 @@
-"""Definitions for the `Likelihood` class."""
+"""Definitions for the `Kernel` class."""
 from collections import OrderedDict
 from math import isnan
 
 import numpy as np
 from six import string_types
 
-from mosfit.constants import ANG_CGS, C_CGS, LIKELIHOOD_FLOOR
+from mosfit.constants import ANG_CGS, C_CGS
 from mosfit.modules.module import Module
 from mosfit.utils import flux_density_unit
 
@@ -13,7 +13,7 @@ from mosfit.utils import flux_density_unit
 # Important: Only define one ``Module`` class per file.
 
 
-class Likelihood(Module):
+class Kernel(Module):
     """Calculate the maximum likelihood score for a model."""
 
     MIN_COV_TERM = 1.0e-30
