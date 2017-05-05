@@ -101,8 +101,8 @@
     "constraint":{
         "kind":"constraint"
     },
-    "likelihood":{
-        "kind":"objective",
+    "kernel":{
+        "kind":"kernel",
         "inputs":[
             "transient",
             "variance",
@@ -117,6 +117,12 @@
             "average_wavelengths": "photometry",
             "variance_bands": "photometry"
         }
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "kernel"
+        ]
     },
     "alltimes":{
         "kind":"array",
@@ -145,7 +151,8 @@
         "kind":"output",
         "inputs":[
             "transient",
-            "photometry"
+            "photometry",
+            "kernel"
         ],
         "class":"lightcurve"
     }
