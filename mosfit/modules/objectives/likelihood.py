@@ -279,14 +279,14 @@ class Likelihood(Module):
             for x, y in zip(self._e_l_fds, self._u_fds)
         ]
 
-        # Time deltas (radial distance) for covariance matrix.
         self._o_times = self._times[self._observed]
-        # Wavelength deltas (radial distance) for covariance matrix.
         self._o_waves = self._all_band_avgs[self._observed]
 
+        # Time deltas (radial distance) for covariance matrix.
         self._dtmat = self._o_times[:, None] - self._o_times[None, :]
         self._dt2mat = -0.5 * self._dtmat ** 2
 
+        # Wavelength deltas (radial distance) for covariance matrix.
         self._dlmat = self._o_waves[:, None] - self._o_waves[None, :]
         self._dl2mat = -0.5 * self._dlmat ** 2
 
