@@ -101,7 +101,7 @@
     "constraint":{
         "kind":"constraint"
     },
-    "kernel":{
+    "fitkernel":{
         "kind":"kernel",
         "inputs":[
             "transient",
@@ -110,18 +110,19 @@
             "codeltalambda",
             "photometry",
             "default_upper_limit_error",
-            "default_no_error_bar_error",
-            "constraint"
+            "default_no_error_bar_error"
         ],
         "requests":{
             "average_wavelengths": "photometry",
             "variance_bands": "photometry"
-        }
+        },
+        "class":"kernel"
     },
     "likelihood":{
         "kind":"objective",
         "inputs":[
-            "kernel"
+            "fitkernel",
+            "constraint"
         ]
     },
     "alltimes":{
@@ -147,12 +148,30 @@
             "resttimes"
         ]
     },
+    "lckernel":{
+        "kind":"kernel",
+        "inputs":[
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        },
+        "full":true,
+        "class":"kernel"
+    },
     "fitlc":{
         "kind":"output",
         "inputs":[
             "transient",
             "photometry",
-            "kernel"
+            "lckernel"
         ],
         "class":"lightcurve"
     }

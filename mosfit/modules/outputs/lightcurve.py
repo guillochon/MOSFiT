@@ -1,6 +1,8 @@
 """Definitions for the `LightCurve` class."""
 from collections import OrderedDict
 
+import numpy as np
+
 from mosfit.modules.outputs.output import Output
 
 
@@ -26,6 +28,7 @@ class LightCurve(Output):
 
     def process(self, **kwargs):
         """Process module."""
+        # First, rename some keys.
         output = OrderedDict()
         for key in sorted(kwargs.keys()):
             if key in self._dense_keys:
@@ -33,5 +36,13 @@ class LightCurve(Output):
             output[key] = kwargs[key]
         for key in self._dense_keys:
             output[key.replace('all_', '')] = kwargs[key]
+
+        # Then, apply GP predictions, if available.
+        if 'kmat' in kwargs:
+            kmat = kwargs['kmat']
+            mo = kwargs['model_observations']
+            print(kmat.shape, mo.shape)
+            # np.random.randn(len(kwargs['model_observations']))
+            # output['model_observations'] = mo + np.dot(kmat)
 
         return output
