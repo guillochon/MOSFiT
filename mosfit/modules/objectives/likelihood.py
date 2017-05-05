@@ -114,10 +114,10 @@ class Likelihood(Module):
             kn = len(self._o_times)
 
             if self._codeltatime >= 0:
-                kmat *= np.exp(self._dtmat / self._codeltatime ** 2)
+                kmat *= np.exp(self._dt2mat / self._codeltatime ** 2)
 
             if self._codeltalambda >= 0:
-                kmat *= np.exp(self._dlmat / self._codeltalambda ** 2)
+                kmat *= np.exp(self._dl2mat / self._codeltalambda ** 2)
 
             # Add observed errors to diagonal
             for i in range(kn):
@@ -284,12 +284,10 @@ class Likelihood(Module):
         # Wavelength deltas (radial distance) for covariance matrix.
         self._o_waves = self._all_band_avgs[self._observed]
 
-        self._dtmat = -0.5 * (
-            np.repeat(self._o_times[:, np.newaxis], self._n_obs, 1) -
-            np.repeat(self._o_times[np.newaxis, :], self._n_obs, 0)) ** 2
+        self._dtmat = self._o_times[:, None] - self._o_times[None, :]
+        self._dt2mat = -0.5 * self._dtmat ** 2
 
-        self._dlmat = -0.5 * (
-            np.repeat(self._o_waves[:, np.newaxis], self._n_obs, 1) -
-            np.repeat(self._o_waves[np.newaxis, :], self._n_obs, 0)) ** 2
+        self._dlmat = self._o_waves[:, None] - self._o_waves[None, :]
+        self._dl2mat = -0.5 * self._dlmat ** 2
 
         self._preprocessed = True
