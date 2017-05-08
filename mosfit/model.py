@@ -439,7 +439,7 @@ class Model(object):
                 'input loop in `{}`.'.format(leaf))
         for tag in d:
             entry = deepcopy(d[tag])
-            new_roots = roots.copy()
+            new_roots = list(roots)
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 if entry['kind'] in kinds:

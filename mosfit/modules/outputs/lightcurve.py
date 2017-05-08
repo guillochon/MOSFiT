@@ -38,7 +38,10 @@ class LightCurve(Output):
             output[key.replace('all_', '')] = kwargs[key]
 
         # Then, apply GP predictions, if available.
-        if all([x in kwargs for x in ['kmat', 'kfmat', 'koamat', 'kaomat']]):
+        if (all([x in kwargs
+                 for x in ['kmat', 'kfmat', 'koamat', 'kaomat']]) and not
+            any([kwargs[x] is None
+                 for x in ['kmat', 'kfmat', 'koamat', 'kaomat']])):
             kmat = kwargs['kmat'] + np.diag(kwargs['kdiagonal'])
             kfmat = kwargs['kfmat']
             koamat = kwargs['koamat']

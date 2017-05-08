@@ -40,7 +40,7 @@ class Likelihood(Module):
         if diag is None or residuals is None:
             return ret
 
-        if 'kmat' in kwargs:
+        if kwargs.get('kmat', None) is not None:
             kmat = kwargs['kmat']
 
             kn = len(diag)

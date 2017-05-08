@@ -25,7 +25,9 @@ class Kernel(Module):
     def process(self, **kwargs):
         """Process module."""
         self.preprocess(**kwargs)
-        ret = {}
+
+        ret = {'kmat': None}
+
         if self._type == 'full':
             kskey = 'kfmat'
         elif self._type == 'oa':
@@ -34,6 +36,7 @@ class Kernel(Module):
             kskey = 'kaomat'
         else:
             kskey = 'kmat'
+
         self._codeltatime = kwargs.get(self.key('codeltatime'), -1)
         self._codeltalambda = kwargs.get(self.key('codeltalambda'), -1)
 
