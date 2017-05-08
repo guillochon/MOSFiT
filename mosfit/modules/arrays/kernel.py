@@ -89,6 +89,7 @@ class Kernel(Array):
 
             ret[kskey] = kmat
         else:
+            ret['abandvs'] = self._band_vs
             ret['obandvs'] = self._o_band_vs
 
         return ret
