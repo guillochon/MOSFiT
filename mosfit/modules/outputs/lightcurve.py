@@ -47,12 +47,8 @@ class LightCurve(Output):
             koamat = kwargs['koamat']
             kaomat = kwargs['kaomat']
             ikmat = np.linalg.inv(kmat)
-            # Needs to be written more general to support counts/fluxes.
-            # output['model_observations'] = np.matmul(
-            #     np.matmul(koamat, ikmat), kwargs[
-            #         'model_observations'][kwargs['observed']])
-            output['model_variances'] = np.diagonal(kfmat - np.matmul(
-                np.matmul(kaomat, ikmat), koamat))
+            output['model_variances'] = np.sqrt(np.diagonal(kfmat - np.matmul(
+                np.matmul(kaomat, ikmat), koamat)))
         else:
             output['model_variances'] = np.full(
                 len(output['model_observations']), kwargs['abandvs'])

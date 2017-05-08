@@ -1264,11 +1264,45 @@ class Fitter(object):
                             photodict[PHOTOMETRY.FLUX_DENSITY] = output[
                                 'model_observations'][
                                     i] * flux_density_unit('µJy')
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_FLUX_DENSITY] = (
+                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.FLUX_DENSITY]) -
+                                            output['model_variances'][
+                                                i] / 2.5)) *
+                                    flux_density_unit('µJy'))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.FLUX_DENSITY]) +
+                                    output['model_variances'][i] / 2.5) *
+                                    flux_density_unit('µJy') -
+                                    photodict[PHOTOMETRY.FLUX_DENSITY])
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                         if output['observation_types'][i] == 'countrate':
                             photodict[PHOTOMETRY.COUNT_RATE] = output[
                                 'model_observations'][i]
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_COUNT_RATE] = (
+                                    photodict[PHOTOMETRY.COUNT_RATE] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.COUNT_RATE]) -
+                                            output['model_variances'][
+                                                i] / 2.5)))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_COUNT_RATE] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.COUNT_RATE]) +
+                                    output['model_variances'][i] / 2.5) -
+                                    photodict[PHOTOMETRY.COUNT_RATE])
                             photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
