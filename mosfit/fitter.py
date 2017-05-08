@@ -999,7 +999,7 @@ class Fitter(object):
                         kmat = model.run_stack(
                             p[np.unravel_index(
                                 np.argmax(lnprob), lnprob.shape)],
-                            root='objective')['kmat']
+                            root='objective').get('kmat', None)
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),

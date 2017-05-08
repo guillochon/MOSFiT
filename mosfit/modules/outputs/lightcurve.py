@@ -55,6 +55,6 @@ class LightCurve(Output):
                 np.matmul(kaomat, ikmat), koamat))
         else:
             output['model_variances'] = np.full(
-                len(output['model_observations']), kwargs['variance'])
+                len(output['model_observations']), kwargs['obandvs'])
 
         return output

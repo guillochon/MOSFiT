@@ -26,7 +26,7 @@ class Kernel(Array):
         """Process module."""
         self.preprocess(**kwargs)
 
-        ret = {'kmat': None}
+        ret = {}
 
         if self._type == 'full':
             kskey = 'kfmat'

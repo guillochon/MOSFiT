@@ -213,6 +213,7 @@
         "inputs":[
             "transient",
             "photometry",
+            "fitkernel",
             "oakernel",
             "aokernel",
             "fullkernel",
