@@ -5,13 +5,13 @@ import numpy as np
 from six import string_types
 
 from mosfit.constants import ANG_CGS, C_CGS
-from mosfit.modules.module import Module
+from mosfit.modules.arrays.array import Array
 
 
 # Important: Only define one ``Module`` class per file.
 
 
-class Kernel(Module):
+class Kernel(Array):
     """Calculate the maximum likelihood score for a model."""
 
     MIN_COV_TERM = 1.0e-30

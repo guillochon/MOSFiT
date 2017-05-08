@@ -3,14 +3,14 @@ from math import isnan
 
 import numpy as np
 
-from mosfit.modules.module import Module
+from mosfit.modules.arrays.array import Array
 from mosfit.utils import flux_density_unit
 
 
 # Important: Only define one ``Module`` class per file.
 
 
-class Diagonal(Module):
+class Diagonal(Array):
     """Calculate the diagonal/residuals for a model kernel."""
 
     MIN_COV_TERM = 1.0e-30
