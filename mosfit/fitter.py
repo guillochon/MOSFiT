@@ -1256,6 +1256,8 @@ class Fitter(object):
                             photodict[PHOTOMETRY.BAND] = output['bands'][i]
                             photodict[PHOTOMETRY.MAGNITUDE] = output[
                                 'model_observations'][i]
+                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                                'model_variances'][i]
                         if output['observation_types'][i] == 'fluxdensity':
                             photodict[PHOTOMETRY.FREQUENCY] = output[
                                 'frequencies'][i] * frequency_unit('GHz')

@@ -177,7 +177,7 @@
     "likelihood":{
         "kind":"objective",
         "inputs":[
-            "fitkernel",
+            "diagonal",
             "slsn_constraints"
         ]
     }

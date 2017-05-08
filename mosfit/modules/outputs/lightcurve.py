@@ -38,10 +38,22 @@ class LightCurve(Output):
             output[key.replace('all_', '')] = kwargs[key]
 
         # Then, apply GP predictions, if available.
-        if 'ksmat' in kwargs:
-            ksmat = np.sqrt(kwargs['ksmat'])
-            mo = kwargs['model_observations']
-            output['model_observations'] = np.random.multivariate_normal(
-                mo, ksmat)
+        print(list(kwargs.keys()))
+        if all([x in kwargs for x in ['kmat', 'kfmat', 'koamat', 'kaomat']]):
+            print('hello')
+            kmat = kwargs['kmat'] + np.diag(kwargs['kdiagonal'])
+            kfmat = kwargs['kfmat']
+            koamat = kwargs['koamat']
+            kaomat = kwargs['kaomat']
+            ikmat = np.linalg.inv(kmat)
+            # Needs to be written more general to support counts/fluxes.
+            # output['model_observations'] = np.matmul(
+            #     np.matmul(koamat, ikmat), kwargs[
+            #         'model_observations'][kwargs['observed']])
+            output['model_variances'] = np.diagonal(kfmat - np.matmul(
+                np.matmul(koamat, ikmat), kaomat))
+        else:
+            output['model_variances'] = np.full(
+                len(output['model_observations']), kwargs['variance'])
 
         return output

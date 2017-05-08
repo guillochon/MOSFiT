@@ -20,14 +20,18 @@ class Kernel(Module):
         """Initialize module."""
         super(Kernel, self).__init__(**kwargs)
         self._times = np.array([])
-        self._full = kwargs.get('full', False)
+        self._type = kwargs.get('full', False)
 
     def process(self, **kwargs):
         """Process module."""
         self.preprocess(**kwargs)
         ret = {}
-        if self._full:
-            kskey = 'ksmat'
+        if self._type == 'full':
+            kskey = 'kfmat'
+        elif self._type == 'oa':
+            kskey = 'koamat'
+        elif self._type == 'ao':
+            kskey = 'kaomat'
         else:
             kskey = 'kmat'
         self._codeltatime = kwargs.get(self.key('codeltatime'), -1)
@@ -58,8 +62,21 @@ class Kernel(Module):
 
         self._o_band_vs = self._band_vs[self._observed]
 
+        if self._type == 'full':
+            self._band_vs_1 = self._band_vs
+            self._band_vs_2 = self._band_vs
+        elif self._type == 'oa':
+            self._band_vs_1 = self._o_band_vs
+            self._band_vs_2 = self._band_vs
+        elif self._type == 'ao':
+            self._band_vs_1 = self._band_vs
+            self._band_vs_2 = self._o_band_vs
+        else:
+            self._band_vs_1 = self._o_band_vs
+            self._band_vs_2 = self._o_band_vs
+
         if self._codeltatime >= 0 or self._codeltalambda >= 0:
-            kmat = np.outer(self._o_band_vs, self._o_band_vs)
+            kmat = np.outer(self._band_vs_1, self._band_vs_2)
 
             if self._codeltatime >= 0:
                 kmat *= np.exp(self._dt2mat / self._codeltatime ** 2)
@@ -86,31 +103,42 @@ class Kernel(Module):
         self._times = new_times
         self._all_band_indices = kwargs.get('all_band_indices', [])
         self._are_bands = np.array(self._all_band_indices) >= 0
-        self._all_band_avgs = np.array([
+        self._waves = np.array([
             self._average_wavelengths[bi] if bi >= 0 else
             C_CGS / self._freqs[i] / ANG_CGS for i, bi in
             enumerate(self._all_band_indices)])
-        if self._full:
-            self._observed = np.full(len(self._times), True)
-        else:
-            self._observed = np.array(kwargs.get('observed', []), dtype=bool)
+        self._observed = np.array(kwargs.get('observed', []), dtype=bool)
         self._n_obs = len(self._observed)
 
         self._o_times = self._times[self._observed]
-        self._o_waves = self._all_band_avgs[self._observed]
-        if self._full:
-            self._s_times = self._times
-            self._s_waves = self._all_band_avgs
+        self._o_waves = self._waves[self._observed]
+        if self._type == 'full':
+            self._times_1 = self._times
+            self._times_2 = self._times
+            self._waves_1 = self._waves
+            self._waves_2 = self._waves
+        elif self._type == 'ao':
+            self._times_1 = self._o_times
+            self._times_2 = self._times
+            self._waves_1 = self._o_waves
+            self._waves_2 = self._waves
+        elif self._type == 'oa':
+            self._times_1 = self._times
+            self._times_2 = self._o_times
+            self._waves_1 = self._waves
+            self._waves_2 = self._o_waves
         else:
-            self._s_times = self._o_times
-            self._s_waves = self._o_waves
+            self._times_1 = self._o_times
+            self._times_2 = self._o_times
+            self._waves_1 = self._o_waves
+            self._waves_2 = self._o_waves
 
         # Time deltas (radial distance) for covariance matrix.
-        self._dtmat = self._o_times[:, None] - self._s_times[None, :]
+        self._dtmat = self._times_1[:, None] - self._times_2[None, :]
         self._dt2mat = -0.5 * self._dtmat ** 2
 
         # Wavelength deltas (radial distance) for covariance matrix.
-        self._dlmat = self._o_waves[:, None] - self._s_waves[None, :]
+        self._dlmat = self._waves_1[:, None] - self._waves_2[None, :]
         self._dl2mat = -0.5 * self._dlmat ** 2
 
         self._preprocessed = True
