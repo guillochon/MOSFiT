@@ -1230,6 +1230,10 @@ class Fitter(object):
         for xi, x in enumerate(pout):
             for yi, y in enumerate(pout[xi]):
                 # Only produce LCs for end walker state.
+                wcnt = xi * nwalkers + yi
+                if wcnt > 0:
+                    prt.message('outputting_walker', [
+                        wcnt, nwalkers * ntemps], inline=True)
                 if yi <= nwalkers:
                     output = model.run_stack(y, root='output')
                     if extra_outputs:
@@ -1327,6 +1331,7 @@ class Fitter(object):
                 if upload_this:
                     uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
+        prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
         oentry = entry._ordered(entry)

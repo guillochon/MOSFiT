@@ -189,7 +189,8 @@ class Model(object):
             else:
                 max_depth = -1
                 for tag2 in self._trees:
-                    roots.extend(self._trees[tag2]['roots'])
+                    if self.in_tree(tag, self._trees[tag2]):
+                        roots.extend(self._trees[tag2]['roots'])
                     depth = self.get_max_depth(tag, self._trees[tag2],
                                                max_depth)
                     if depth > max_depth:
@@ -438,7 +439,7 @@ class Model(object):
                 'input loop in `{}`.'.format(leaf))
         for tag in d:
             entry = deepcopy(d[tag])
-            new_roots = roots
+            new_roots = roots.copy()
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 if entry['kind'] in kinds:
@@ -518,6 +519,16 @@ class Model(object):
                 if new_max > max_depth:
                     max_depth = new_max
         return max_depth
+
+    def in_tree(self, tag, parent):
+        """Return the maximum depth a given task is found in a tree."""
+        for child in parent.get('children', []):
+            if child == tag:
+                return True
+            else:
+                if self.in_tree(tag, parent['children'][child]):
+                    return True
+        return False
 
     def pool(self):
         """Return processing pool."""

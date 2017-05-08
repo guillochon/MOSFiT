@@ -1,4 +1,5 @@
 {
+    "all_walkers_written": "All walkers written.",
     "band_load_complete": "Loading bands complete.",
     "bands_used": "Bands being used for current transient:",
     "burning": "Burning",
@@ -51,6 +52,7 @@
     "no_processes": "MPI was unable to find any processes. This suggests that `mpi4py` was installed while another MPI library other than the one presently installed was active. Try re-installing either openmpi or mpich. Continuing in serial mode.",
     "no_ul_token": "No upload token found! Please visit {} to obtain an upload token for MOSFiT.",
     "omit_offline": "Try omitting the `--offline` flag.",
+    "outputting_walker": "Wrote walker [ {}/{} ]...",
     "paste_token": "Please paste your Dropbox token, then hit enter:",
     "pef_ext_search": "Could not find event, performing extended name search...",
     "progress": "Progress",

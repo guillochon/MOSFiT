@@ -126,6 +126,8 @@ class Likelihood(Module):
                     np.matmul(np.matmul(residuals.T,
                                         scipy.linalg.inv(kmat)),
                               residuals) + np.log(scipy.linalg.det(kmat)))
+        elif 'ksmat' in kwargs:
+            raise RuntimeError('Should not have ksmat in likelihood!')
         else:
             # Shortcut when matrix is diagonal.
             self._o_band_vs = kwargs['obandvs']

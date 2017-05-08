@@ -26,6 +26,10 @@ class Kernel(Module):
         """Process module."""
         self.preprocess(**kwargs)
         ret = {}
+        if self._full:
+            kskey = 'ksmat'
+        else:
+            kskey = 'kmat'
         self._codeltatime = kwargs.get(self.key('codeltatime'), -1)
         self._codeltalambda = kwargs.get(self.key('codeltalambda'), -1)
 
@@ -63,7 +67,7 @@ class Kernel(Module):
             if self._codeltalambda >= 0:
                 kmat *= np.exp(self._dl2mat / self._codeltalambda ** 2)
 
-            ret['kmat'] = kmat
+            ret[kskey] = kmat
         else:
             ret['obandvs'] = self._o_band_vs
 
@@ -94,13 +98,19 @@ class Kernel(Module):
 
         self._o_times = self._times[self._observed]
         self._o_waves = self._all_band_avgs[self._observed]
+        if self._full:
+            self._s_times = self._times
+            self._s_waves = self._all_band_avgs
+        else:
+            self._s_times = self._o_times
+            self._s_waves = self._o_waves
 
         # Time deltas (radial distance) for covariance matrix.
-        self._dtmat = self._o_times[:, None] - self._o_times[None, :]
+        self._dtmat = self._o_times[:, None] - self._s_times[None, :]
         self._dt2mat = -0.5 * self._dtmat ** 2
 
         # Wavelength deltas (radial distance) for covariance matrix.
-        self._dlmat = self._o_waves[:, None] - self._o_waves[None, :]
+        self._dlmat = self._o_waves[:, None] - self._s_waves[None, :]
         self._dl2mat = -0.5 * self._dlmat ** 2
 
         self._preprocessed = True

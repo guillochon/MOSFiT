@@ -38,11 +38,10 @@ class LightCurve(Output):
             output[key.replace('all_', '')] = kwargs[key]
 
         # Then, apply GP predictions, if available.
-        if 'kmat' in kwargs:
-            kmat = kwargs['kmat']
+        if 'ksmat' in kwargs:
+            ksmat = np.sqrt(kwargs['ksmat'])
             mo = kwargs['model_observations']
-            print(kmat.shape, mo.shape)
-            # np.random.randn(len(kwargs['model_observations']))
-            # output['model_observations'] = mo + np.dot(kmat)
+            output['model_observations'] = np.random.multivariate_normal(
+                mo, ksmat)
 
         return output
