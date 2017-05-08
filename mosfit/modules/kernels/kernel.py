@@ -20,7 +20,7 @@ class Kernel(Module):
         """Initialize module."""
         super(Kernel, self).__init__(**kwargs)
         self._times = np.array([])
-        self._type = kwargs.get('full', False)
+        self._type = kwargs.get('type', False)
 
     def process(self, **kwargs):
         """Process module."""
@@ -117,12 +117,12 @@ class Kernel(Module):
             self._times_2 = self._times
             self._waves_1 = self._waves
             self._waves_2 = self._waves
-        elif self._type == 'ao':
+        elif self._type == 'oa':
             self._times_1 = self._o_times
             self._times_2 = self._times
             self._waves_1 = self._o_waves
             self._waves_2 = self._waves
-        elif self._type == 'oa':
+        elif self._type == 'ao':
             self._times_1 = self._times
             self._times_2 = self._o_times
             self._waves_1 = self._waves
