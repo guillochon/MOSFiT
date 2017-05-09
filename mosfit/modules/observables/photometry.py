@@ -234,7 +234,7 @@ class Photometry(Module):
                 xscale = (c.h * c.c /
                           u.Angstrom).cgs.value / self._band_xu[i]
                 self._band_energies[
-                    i], self._band_areas[i] = xvals, yvals
+                    i], self._band_areas[i] = xvals, yvals / xvals
                 self._band_wavelengths[i] = xscale / self._band_energies[i]
                 self._average_wavelengths[i] = np.trapz([
                     x * y
@@ -352,7 +352,7 @@ class Photometry(Module):
                     yvals = (np.interp(
                         wavs, self._band_wavelengths[bi], self._band_areas[
                             bi]) * kwargs['seds'][li] / zp1 / (
-                                self.H_C_ANG_CGS / wavs))
+                                self.H_C_ANG_CGS / wavs) / self.ANG_CGS)
                     eff_fluxes[li] = np.trapz(yvals, wavs)
                 else:
                     raise RuntimeError('Unknown observation kind.')
