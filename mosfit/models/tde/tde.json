@@ -10,20 +10,20 @@
     },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e18,
+        "value":1.0e21,
         "class":"parameter",
         "latex":"n_{\\rm H,host}",
         "derived_keys":"avhost"
     },
     "texplosion":{
         "kind":"parameter",
-        "value":0.0,
+        "value":15.0,
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
     "b":{
         "kind":"parameter",
-        "value":1.0,
+        "value": 0.1,
         "class":"parameter",
         "latex":"b\\ (scaled\\ \\beta)"
     },
@@ -41,13 +41,13 @@
     },
     "starmass":{
         "kind":"parameter",
-        "value":1.0,
+        "value":1,
         "class":"parameter",
         "latex":"M_{star} (M_{odot})"
     },
     "Rph0":{
         "kind":"parameter",
-        "value": 0.17,
+        "value":0.17,
         "class":"parameter",
         "latex": "log(R_{ph0})"
     },

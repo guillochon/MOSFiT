@@ -298,18 +298,16 @@ class Fallback(Engine):
             gfrac = (kwargs['starmass'] - 15.)/(22. - 15.)
 
         # try decoupling gamma from starmass for testing
-
         '''
         self._scaled_gamma = kwargs['scaledgamma']
-        #print (self._scaled_gamma)
-        if self._scaled_gamma == 0.0 : gammas = [self._gammas[0]]
-        elif self._scaled_gamma == 1.0 : gammas = [self._gammas[1]]
+        # print (self._scaled_gamma)
+        if self._scaled_gamma == 0.0: gammas = [self._gammas[0]]
+        elif self._scaled_gamma == 1.0: gammas = [self._gammas[1]]
         else:
             gamma_interp = True
             gammas = self._gammas
             gfrac = self._scaled_gamma
         '''
-
         timedict = {}  # will hold time arrays for each g in gammas
         dmdtdict = {}  # will hold dmdt arrays for each g in gammas
 
