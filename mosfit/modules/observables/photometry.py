@@ -92,6 +92,7 @@ class Photometry(Module):
         self._band_areas = [[] for i in range(self._n_bands)]
         self._min_waves = np.full(self._n_bands, 0.0)
         self._max_waves = np.full(self._n_bands, 0.0)
+        self._imp_waves = [[0.0, 1.0] for i in range(self._n_bands)]
         self._filter_integrals = np.full(self._n_bands, 0.0)
         self._average_wavelengths = np.full(self._n_bands, 0.0)
         self._band_offsets = np.full(self._n_bands, 0.0)
@@ -271,6 +272,15 @@ class Photometry(Module):
 
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
+            self._imp_waves[i] = [self._min_waves[i], self._max_waves[i]]
+            if len(self._transmissions[i]):
+                new_wave = self._band_wavelengths[i][
+                    np.argmax(self._transmissions[i])]
+                self._imp_waves[i].append(new_wave)
+            elif len(self._band_areas[i]):
+                new_wave = self._band_wavelengths[i][
+                    np.argmax(self._band_areas[i])]
+                self._imp_waves[i].append(new_wave)
             bc = bc + 1
 
         if self._pool.is_master():
@@ -341,12 +351,11 @@ class Photometry(Module):
                 if self._observation_types[li] == 'magnitude':
                     offsets[li] = self._band_offsets[bi]
                     wavs = kwargs['sample_wavelengths'][bi]
-                    dx = wavs[1] - wavs[0]
                     yvals = np.interp(
                         wavs, self._band_wavelengths[bi],
                         self._transmissions[bi]) * kwargs['seds'][li] / zp1
                     eff_fluxes[li] = np.trapz(
-                        yvals, dx=dx) / self._filter_integrals[bi]
+                        yvals, wavs) / self._filter_integrals[bi]
                 elif self._observation_types[li] == 'countrate':
                     wavs = np.array(kwargs['sample_wavelengths'][bi])
                     yvals = (np.interp(
@@ -424,7 +433,7 @@ class Photometry(Module):
         if request == 'photometry':
             return self
         elif request == 'band_wave_ranges':
-            return list(map(list, zip(*[self._min_waves, self._max_waves])))
+            return self._imp_waves
         elif request == 'average_wavelengths':
             return self._average_wavelengths
         elif request == 'variance_bands':

@@ -2,7 +2,9 @@
 import numpy as np
 from astropy import constants as c
 from astropy import units as u
+
 from mosfit.modules.module import Module
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -30,10 +32,30 @@ class SED(Module):
             wave_ranges = requests.get('band_wave_ranges', [])
             if not wave_ranges:
                 return
+            max_len = 0
             for rng in wave_ranges:
-                self._sample_wavelengths.append(
-                    np.linspace(rng[0], rng[1], self.N_PTS))
-            self._sample_wavelengths = np.array(self._sample_wavelengths)
+                min_wav, max_wav = min(rng), max(rng)
+                rngc = list(rng)
+                rngc.remove(min_wav)
+                rngc.remove(max_wav)
+                self._sample_wavelengths.append(np.unique(np.concatenate(
+                    (np.linspace(min_wav, max_wav,
+                                 self.N_PTS - len(rngc)), np.array(rngc)))))
+                llen = len(self._sample_wavelengths[-1])
+                if llen > max_len:
+                    max_len = llen
+            for wi, wavs in enumerate(self._sample_wavelengths):
+                if len(wavs) != max_len:
+                    self._sample_wavelengths[wi] = np.unique(np.concatenate(
+                        (wavs, (max(wavs) - min(wavs)) * 1.0 / np.exp(
+                            np.arange(1, 1 + max_len - len(
+                                wavs))) + min(wavs))))
+                    if len(self._sample_wavelengths[wi]) != max_len:
+                        raise RuntimeError(
+                            'Could not construct wavelengths for bandpass.')
+
+            self._sample_wavelengths = np.array(self._sample_wavelengths,
+                                                dtype=float)
         self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
 
     def add_to_existing_seds(self, new_seds, **kwargs):
