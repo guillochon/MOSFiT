@@ -140,7 +140,7 @@ class Printer(object):
             tspl = ntspl
         return tspl
 
-    def prt(self, text, **kwargs):
+    def prt(self, text='', **kwargs):
         """Print text without modification."""
         warning = kwargs.get('warning', False)
         error = kwargs.get('error', False)

@@ -32,20 +32,22 @@ class Diffusion(Transform):
         td2, A = self._tau_diff ** 2, self._trap_coeff  # noqa: F841
 
         new_lums = np.zeros_like(self._times_to_process)
+        if len(self._dense_times_since_exp) < 2:
+            return {self.dense_key('luminosities'): new_lums}
         min_te = min(self._dense_times_since_exp)
         tb = max(0.0, min_te)
         linterp = interp1d(
             self._dense_times_since_exp, self._dense_luminosities, copy=False,
-            assume_sorted=True, kind=(
-                'linear' if len(self._dense_times_since_exp) > 1
-                else 'nearest'))
+            assume_sorted=True)
 
         uniq_times = np.unique(self._times_to_process[
-            self._times_to_process > tb])
+            (self._times_to_process >= tb) & (
+                self._times_to_process <= self._dense_times_since_exp[-1])])
         lu = len(uniq_times)
 
         xm = np.linspace(0, 1, self.N_INT_TIMES)
-        int_times = tb + (uniq_times.reshape(lu, 1) - tb) * xm
+        int_times = np.clip(tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
+                            self._dense_times_since_exp[-1])
 
         dts = int_times[:, 1] - int_times[:, 0]
         int_te2s = int_times[:, -1] ** 2

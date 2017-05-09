@@ -339,6 +339,7 @@ class Fitter(object):
                                     shutil.copyfileobj(response, f)
                         path = name_path
 
+                    prt.prt()
                     if os.path.exists(path):
                         if open_in_browser:
                             webbrowser.open(
@@ -533,6 +534,10 @@ class Fitter(object):
                   walker_data=[]):
         """Load the data for the specified event."""
         prt = self._printer
+
+        prt.prt()
+        prt.message('loading_data', inline=True)
+
         self._walker_data = walker_data
         fixed_parameters = []
         for task in self._model._call_stack:
@@ -581,6 +586,8 @@ class Fitter(object):
 
         self._model.exchange_requests()
 
+        prt.message('finding_bands', inline=True)
+
         # Run through once to set all inits.
         for root in ['output', 'objective']:
             outputs = self._model.run_stack(
@@ -610,6 +617,7 @@ class Fitter(object):
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
+            prt.prt()
             prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
@@ -735,6 +743,7 @@ class Fitter(object):
         redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
+        prt.prt()
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
@@ -1107,8 +1116,10 @@ class Fitter(object):
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
+        prt.prt()
+        prt.message('constructing')
+
         if write:
-            prt.message('saving_output')
             if self._speak:
                 speak(prt._strings['saving_output'], self._speak)
 
@@ -1269,13 +1280,16 @@ class Fitter(object):
                             photodict[PHOTOMETRY.MODE] = output[
                                 'modes'][i]
                         entry.add_photometry(
-                            compare_to_existing=False, **photodict)
+                            compare_to_existing=False, check_for_dupes=False,
+                            **photodict)
 
                         if upload_this:
                             uphotodict = deepcopy(photodict)
                             uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                             uentry.add_photometry(
-                                compare_to_existing=False, **uphotodict)
+                                compare_to_existing=False,
+                                check_for_dupes=False,
+                                **uphotodict)
                 else:
                     output = model.run_stack(y, root='objective')
 
