@@ -35,7 +35,7 @@ class SED(Module):
             max_len = 0
             for rng in wave_ranges:
                 min_wav, max_wav = min(rng), max(rng)
-                rngc = rng.copy()
+                rngc = list(rng)
                 rngc.remove(min_wav)
                 rngc.remove(max_wav)
                 self._sample_wavelengths.append(np.unique(np.concatenate(
