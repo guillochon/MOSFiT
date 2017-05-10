@@ -42,7 +42,8 @@ class LightCurve(Output):
                  for x in ['kmat', 'kfmat', 'koamat', 'kaomat']]) and not
             any([kwargs[x] is None
                  for x in ['kmat', 'kfmat', 'koamat', 'kaomat']])):
-            ikmat = (kwargs['kmat'] + np.diag(kwargs['kdiagonal'])).I
+            ikmat = np.linalg.inv(
+                kwargs['kmat'] + np.diag(kwargs['kdiagonal']))
             kfmatd = np.diagonal(kwargs['kfmat'])
             koamat = kwargs['koamat']
             kaomat = kwargs['kaomat']
