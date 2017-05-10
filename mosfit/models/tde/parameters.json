@@ -1,8 +1,12 @@
-{
+{    
     "nhhost":{
         "min_value":1.0e16,
         "max_value":1.0e23,
         "log":true
+    },
+    "rvhost":{
+        "min_value":2,
+        "max_value":10
     },
     "b":{
         "min_value":0.0,

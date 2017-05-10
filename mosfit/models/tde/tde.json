@@ -8,6 +8,12 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
+    "rvhost":{
+        "kind":"parameter",
+        "value":6.5,
+        "class":"parameter",
+        "latex":"R_{\\rm V, host}"
+    },
     "nhhost":{
         "kind":"parameter",
         "value":1.0e21,
@@ -23,25 +29,25 @@
     },
     "b":{
         "kind":"parameter",
-        "value": 0.1,
+        "value": 0.576,
         "class":"parameter",
         "latex":"b\\ (scaled\\ \\beta)"
     },
     "efficiency":{
         "kind":"parameter",
-        "value":0.05,
+        "value":0.1,
         "class":"parameter",
         "latex":"\\epsilon\\ (efficiency)"
     },
     "bhmass":{
         "kind":"parameter",
-        "value":1.0e6,
+        "value":1.78e7,
         "class":"parameter",
         "latex":"M_{h} (M_{odot})"
     },
     "starmass":{
         "kind":"parameter",
-        "value":1,
+        "value":3.78,
         "class":"parameter",
         "latex":"M_{star} (M_{odot})"
     },
@@ -56,11 +62,6 @@
         "value": 2.7,
         "class": "parameter",
         "latex": "photosphere exponent 'l' "
-    },
-    "lumdist":{
-        "kind":"parameter",
-        "value":10.0,
-        "class":"parameter"
     },
     "fallback":{
         "kind":"engine",
