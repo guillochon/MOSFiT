@@ -87,6 +87,7 @@ class Model(object):
                             .format(claimed_type),
                             kind='select',
                             options=type_options,
+                            message=False,
                             none_string=('None of the above, skip this '
                                          'transient.'))
 
