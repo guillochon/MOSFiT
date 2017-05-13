@@ -231,9 +231,12 @@ class Printer(object):
                 carr += [
                     '[n].' + selpad + none_string
                 ]
+            n_opts = len(options) + (0 if none_string is None else 1)
             carr += ['Enter selection (' + (
-                '1-' if len(options) > 1 else '') + str(
-                    len(options)) + '/[n]):']
+                '1-' if n_opts > 2 else
+                '1/' if n_opts == 2 else '') + str(
+                    len(options)) + (
+                        '):' if none_string is None else '/[n]):')]
             choices = '\n' + '\n'.join(carr)
         elif kind == 'string':
             choices = ''

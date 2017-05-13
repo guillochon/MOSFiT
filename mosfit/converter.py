@@ -8,6 +8,8 @@ import numpy as np
 from astrocats.catalog.entry import Entry
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
 from astrocats.catalog.utils import is_number
+from astropy.io.ascii import Cds, Latex, read
+from six import string_types
 
 from mosfit.utils import entabbed_json_dump
 
@@ -45,11 +47,12 @@ class Converter(object):
                     list(i for s in [
                         list(permutations(['upper'] + x.split()))
                         for x in emagstrs] for i in s))],
-            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit'],
+            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit', 'l_mag'],
             PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
             PHOTOMETRY.E_COUNT_RATE: [
                 'e_counts', 'count error', 'count rate error'],
-            PHOTOMETRY.ZERO_POINT: ['zero point', 'self._zp']
+            PHOTOMETRY.ZERO_POINT: ['zero point', 'self._zp'],
+            'reference': ['reference', 'bibcode', 'source', 'origin']
         }
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.BAND,
@@ -58,6 +61,8 @@ class Converter(object):
             PHOTOMETRY.ZERO_POINT]
         self._optional_keys = [PHOTOMETRY.ZERO_POINT]
         self._mc_keys = [PHOTOMETRY.BAND]
+        self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
+        self._specify_keys = [PHOTOMETRY.BAND]
         for key in self._header_keys.keys():
             for val in self._header_keys[key]:
                 for i in range(val.count(' ')):
@@ -80,28 +85,53 @@ class Converter(object):
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
                 prt.message('converting_to_json', [event])
+
                 with open(event, 'r') as f:
-                    fsplit = f.read().splitlines()
-                fsplit = [x.replace(',', '\t') for x in fsplit]
-                flines = [
-                    [y.replace('"', '').replace("'", '') for y in
-                     re.split(
-                         '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
-                    for x in fsplit]
-                flines = [[
-                    x.strip().strip('#') for x in y] for y in flines]
-                flines = [list(filter(None, x)) for x in flines]
+                    ftxt = f.read()
 
-                # Find the most frequent column count. These are probably the
-                # tables we wish to read.
-                flens = [len(x) for x in flines]
-                ncols = Counter(flens).most_common(1)[0][0]
+                # Try a couple of table formats from astropy.
+                table = None
+                try:
+                    table = read(ftxt, Reader=Cds, guess=False)
+                except Exception:
+                    pass
+                else:
+                    prt.message('convert_cds')
+                    flines = [table.colnames] + [
+                        list(x) for x in np.array(table).tolist()]
 
-                newlines = []
-                for fi, fl in enumerate(flines):
-                    if flens[fi] == ncols:
-                        newlines.append(list(fl))
-                flines = newlines
+                try:
+                    table = read(ftxt, Reader=Latex, guess=False)
+                except Exception:
+                    pass
+                else:
+                    prt.message('convert_latex')
+                    flines = [table.colnames] + [
+                        list(x) for x in np.array(table).tolist()]
+
+                if table is None:
+                    fsplit = ftxt.splitlines()
+                    fsplit = [x.replace(',', '\t').replace('&', '\t')
+                              for x in fsplit]
+                    flines = [
+                        [y.replace('"', '').replace("'", '') for y in
+                         re.split(
+                             '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
+                        for x in fsplit]
+                    flines = [[
+                        x.strip(' #$()') for x in y] for y in flines]
+                    flines = [list(filter(None, x)) for x in flines]
+
+                    # Find the most frequent column count. These are probably
+                    # the tables we wish to read.
+                    flens = [len(x) for x in flines]
+                    ncols = Counter(flens).most_common(1)[0][0]
+
+                    newlines = []
+                    for fi, fl in enumerate(flines):
+                        if flens[fi] == ncols:
+                            newlines.append(list(fl))
+                    flines = newlines
 
                 # If none of the rows contain numeric data, the file
                 # is likely a list of transients.
@@ -123,14 +153,16 @@ class Converter(object):
                             'Number of columns in each row not '
                             'consistent!')
                     new_event_name = '.'.join(event.split(
-                        '.')[:-2]).split('/')[-1]
+                        '.')[:-1]).split('/')[-1]
                     text = prt.message(
                         'is_event_name', [new_event_name], prt=False)
                     is_name = prt.prompt(text, message=False,
                                          kind='bool', color='!m')
                     if not is_name:
-                        new_event_name = prt.prompt(
-                            'enter_name', kind='string', color='!m')
+                        new_event_name = ''
+                        while new_event_name.strip() == '':
+                            new_event_name = prt.prompt(
+                                'enter_name', kind='string', color='!m')
                     new_events = [new_event_name + '.json']
 
                     if len(cidict) and len(new_event_list):
@@ -150,20 +182,46 @@ class Converter(object):
                     # Create a new event, populate the photometry, and dump
                     # to a JSON file in the run directory.
                     entry = Entry(name=new_event_name)
-                    source = entry.add_source(name='MOSFiT paper')
                     perms = 1
                     for key in cidict:
                         if type(cidict[key]) == 'list':
                             perms = len(cidict[key])
 
-                    for row in flines[1:]:
-                        photodict = {PHOTOMETRY.SOURCE: source}
+                    for row in flines[self._first_data:]:
+                        photodict = {}
                         for pi in range(perms):
+                            sources = set()
                             for key in cidict:
+                                if key in self._bool_keys:
+                                    rval = row[cidict[key]]
+                                    if type(rval) != 'bool':
+                                        try:
+                                            rval = bool(float(rval))
+                                        except Exception:
+                                            rval = True
+                                    if not rval:
+                                        continue
+                                    row[cidict[key]] = rval
+                                elif key == 'reference':
+                                    if (isinstance(cidict[key],
+                                                   string_types) and
+                                            len(cidict[key]) == 19):
+                                        new_src = entry.add_source(
+                                            bibcode=cidict[key])
+                                        sources.update(new_src)
+                                        row[
+                                            cidict[key]] = new_src
                                 if type(cidict[key]) == 'list':
-                                    photodict[key] = row[cidict[key][pi]]
+                                    if isinstance(
+                                            cidict[key][pi], string_types):
+                                        photodict[key] = cidict[key][pi]
+                                    else:
+                                        photodict[key] = row[cidict[key][pi]]
                                 else:
-                                    photodict[key] = row[cidict[key]]
+                                    if isinstance(cidict[key], string_types):
+                                        photodict[key] = cidict[key]
+                                    else:
+                                        photodict[key] = row[cidict[key]]
                             if self._data_type == 2:
                                 if self._zp:
                                     photodict[PHOTOMETRY.ZERO_POINT] = self._zp
@@ -172,6 +230,10 @@ class Converter(object):
                                     c=row[cidict[PHOTOMETRY.COUNT_RATE]],
                                     ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
                                     zp=self._zp)
+                            if not len(sources):
+                                photodict[
+                                    PHOTOMETRY.SOURCE] = entry.add_source(
+                                        name='MOSFiT paper')
                             entry.add_photometry(**photodict)
 
                     entry.sanitize()
@@ -210,7 +272,7 @@ class Converter(object):
                                 used_cis[ci] = key
                             break
             else:
-                first_data = fi
+                self._first_data = fi
                 break
 
         # See which keys we collected. If we are missing any
@@ -226,11 +288,12 @@ class Converter(object):
               PHOTOMETRY.COUNT_RATE in cidict):
             self._data_type = 2
         else:
-            self._data_type = False
-            while self._data_type is False:
+            self._data_type = None
+            while self._data_type is None:
                 self._data_type = prt.prompt(
                     'counts_or_mags', kind='option',
                     options=['Magnitudes', 'Counts (fluxes)'],
+                    none_string=None,
                     color='!m')
         if self._data_type == 1:
             ckeys.remove(PHOTOMETRY.COUNT_RATE)
@@ -243,12 +306,13 @@ class Converter(object):
             ckeys.remove(PHOTOMETRY.MAGNITUDE)
             ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
-        columns = np.array(flines[first_data:]).T.tolist()
+        columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:2]) + ', ...' for x in columns])
         colinds = np.setdiff1d(np.arange(len(colstrs)),
                                list(cidict.values()))
         ignore = prt.message('ignore_column', prt=False)
+        specify = prt.message('specify_column', prt=False)
         for key in ckeys:
             if key not in cidict:
                 select = False
@@ -259,20 +323,23 @@ class Converter(object):
                         text = prt.message(
                             'one_per_line', [key, key, key], color='!m',
                             prt=False)
-                        mc = prt.prompt(
-                            text, kind='option', message=False,
-                            options=[
-                                'One `{}` per row'.format(key),
-                                'Multiple `{}s` per row'.format(
-                                    key)], color='!m')
+                        mc = None
+                        while mc is None:
+                            mc = prt.prompt(
+                                text, kind='option', message=False,
+                                none_string=None,
+                                options=[
+                                    'One `{}` per row'.format(key),
+                                    'Multiple `{}s` per row'.format(
+                                        key)], color='!m')
                     if mc == 1:
                         text = prt.message(
                             'no_matching_column', [key], prt=False)
                         select = prt.prompt(
                             text, message=False,
                             kind='option', none_string=(
-                                ignore if key in
-                                self._optional_keys
+                                ignore if key in self._optional_keys else
+                                specify if key in self._specify_keys
                                 else None),
                             options=colstrs[colinds], color='!m')
                     else:
@@ -299,6 +366,12 @@ class Converter(object):
                         colinds[s - 1] for s in selects]
                     for s in selects:
                         colinds = np.delete(colinds, s - 1)
+                elif key in self._specify_keys:
+                    text = prt.message('specify_value', [key], prt=False)
+                    cidict[key] = ''
+                    while cidict[key].strip() is '':
+                        cidict[key] = prt.prompt(
+                            text, message=False, kind='string', color='!m')
 
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
