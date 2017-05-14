@@ -6,6 +6,7 @@ from itertools import permutations
 
 import numpy as np
 from astrocats.catalog.entry import Entry
+from astrocats.catalog.key import KEY_TYPES
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
 from astrocats.catalog.utils import is_number
 from astropy.io.ascii import Cds, Latex, read
@@ -52,7 +53,8 @@ class Converter(object):
             PHOTOMETRY.E_COUNT_RATE: [
                 'e_counts', 'count error', 'count rate error'],
             PHOTOMETRY.ZERO_POINT: ['zero point', 'self._zp'],
-            'reference': ['reference', 'bibcode', 'source', 'origin']
+            'reference': ['reference', 'bibcode', 'source', 'origin'],
+            'event': ['event', 'transient', 'name', 'supernova']
         }
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.BAND,
@@ -60,7 +62,8 @@ class Converter(object):
             PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.ZERO_POINT]
         self._optional_keys = [PHOTOMETRY.ZERO_POINT]
-        self._mc_keys = [PHOTOMETRY.BAND]
+        self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
+        self._dep_keys = [PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [PHOTOMETRY.BAND]
         for key in self._header_keys.keys():
@@ -78,6 +81,7 @@ class Converter(object):
         """Generate a list of events and/or convert events to JSON format."""
         prt = self._printer
         cidict = {}
+        metadict = {}
 
         new_event_list = []
         for event in event_list:
@@ -174,10 +178,11 @@ class Converter(object):
                                              kind='bool', color='!m')
                         if not is_same:
                             cidict = {}
+                            metadict = {}
 
                     # If the first row has no numbers it is likely a header.
                     if not len(cidict):
-                        self.assign_columns(cidict, flines)
+                        self.assign_columns(cidict, flines, metadict)
 
                     # Create a new event, populate the photometry, and dump
                     # to a JSON file in the run directory.
@@ -234,6 +239,13 @@ class Converter(object):
                                 photodict[
                                     PHOTOMETRY.SOURCE] = entry.add_source(
                                         name='MOSFiT paper')
+
+                            # Skip placeholder values.
+                            if float(photodict.get(
+                                    PHOTOMETRY.MAGNITUDE, 0.0)) > 50.0:
+                                continue
+
+                            # Add the photometry.
                             entry.add_photometry(**photodict)
 
                     entry.sanitize()
@@ -250,14 +262,17 @@ class Converter(object):
 
         return new_event_list
 
-    def assign_columns(self, cidict, flines):
+    def assign_columns(self, cidict, flines, metadict):
         """Assign columns based on header."""
         used_cis = {}
         ckeys = list(self._critical_keys)
+        dkeys = list(self._dep_keys)
+        hkeys = np.array([])
         prt = self._printer
 
         for fi, fl in enumerate(flines):
             if not any([is_number(x) for x in fl]):
+                hkeys = np.array(fl)
                 # Try to associate column names with common header
                 # keys.
                 for ci, col in enumerate(fl):
@@ -302,76 +317,105 @@ class Converter(object):
             if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
                     PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
                 ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
         else:
             ckeys.remove(PHOTOMETRY.MAGNITUDE)
             ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
-            ', '.join(x[:2]) + ', ...' for x in columns])
+            ', '.join(x[:3]) + ', ...' for x in columns])
         colinds = np.setdiff1d(np.arange(len(colstrs)),
                                list(cidict.values()))
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
         for key in ckeys:
-            if key not in cidict:
-                select = False
-                selects = []
-                while select is False:
-                    mc = 1
-                    if key in self._mc_keys:
+            if key in cidict:
+                continue
+            if key.type == KEY_TYPES.NUMERIC:
+                lcolinds = [x for xi, x in enumerate(colinds)
+                            if any(is_number(y) for y in columns[x])]
+            else:
+                lcolinds = colinds
+            select = False
+            selects = []
+            while select is False:
+                mc = 1
+                if key in self._mc_keys:
+                    text = prt.message(
+                        'one_per_line', [key, key, key], color='!m',
+                        prt=False)
+                    mc = None
+                    while mc is None:
+                        mc = prt.prompt(
+                            text, kind='option', message=False,
+                            none_string=None,
+                            options=[
+                                'One `{}` per row'.format(key),
+                                'Multiple `{}s` per row'.format(
+                                    key)], color='!m')
+                if mc == 1:
+                    text = prt.message(
+                        'no_matching_column', [key], prt=False)
+                    select = prt.prompt(
+                        text, message=False,
+                        kind='option', none_string=(
+                            ignore if key in self._optional_keys else
+                            specify if key in self._specify_keys
+                            else None),
+                        options=colstrs[lcolinds], color='!m')
+                else:
+                    select = False
+                    llcolinds = np.array(lcolinds)
+                    selmap = np.array(range(1, len(lcolinds) + 1))
+                    while select is not None:
                         text = prt.message(
-                            'one_per_line', [key, key, key], color='!m',
-                            prt=False)
-                        mc = None
-                        while mc is None:
-                            mc = prt.prompt(
-                                text, kind='option', message=False,
-                                none_string=None,
-                                options=[
-                                    'One `{}` per row'.format(key),
-                                    'Multiple `{}s` per row'.format(
-                                        key)], color='!m')
-                    if mc == 1:
-                        text = prt.message(
-                            'no_matching_column', [key], prt=False)
+                            'select_mc_column', [key], prt=False)
                         select = prt.prompt(
                             text, message=False,
-                            kind='option', none_string=(
-                                ignore if key in self._optional_keys else
-                                specify if key in self._specify_keys
-                                else None),
-                            options=colstrs[colinds], color='!m')
-                    else:
-                        select = None
-                        while select is not False:
-                            text = prt.message(
-                                'select_mc_column', [key], prt=False)
-                            select = prt.prompt(
-                                text, message=False,
-                                kind='option', none_string=(
-                                    ignore if key in
-                                    self._optional_keys
-                                    else None),
-                                options=colstrs[colinds], color='!m')
-                            if select is not False:
-                                selects.append(select)
-                        select = None
+                            kind='option',
+                            none_string='No more `{}` columns.'.format(key),
+                            options=colstrs[llcolinds], color='!m')
+                        if select is not None:
+                            selects.append(selmap[select])
+                            selmap = np.delete(selmap, select - 1)
+                            llcolinds = np.delete(llcolinds, select - 1)
+                        for dk in dkeys:
+                            dksel = False
+                            while dksel is not None:
+                                text = prt.message(
+                                    'select_dep_column', [dk, key], prt=False)
+                                dksel = prt.prompt(
+                                    text, message=False,
+                                    kind='option',
+                                    none_string=None,
+                                    options=colstrs[llcolinds], color='!m')
+                                if select is not None:
+                                    selects.append(selmap[select])
+                                    selmap = np.delete(selmap, select - 1)
+                                    llcolinds = np.delete(
+                                        llcolinds, select - 1)
 
-                if select is not None:
-                    cidict[key] = colinds[select - 1]
-                    colinds = np.delete(colinds, select - 1)
-                elif len(selects):
-                    cidict[key] = [
-                        colinds[s - 1] for s in selects]
-                    for s in selects:
-                        colinds = np.delete(colinds, s - 1)
-                elif key in self._specify_keys:
-                    text = prt.message('specify_value', [key], prt=False)
-                    cidict[key] = ''
-                    while cidict[key].strip() is '':
-                        cidict[key] = prt.prompt(
-                            text, message=False, kind='string', color='!m')
+            if select is not None:
+                cidict[key] = colinds[select - 1]
+                colinds = np.delete(colinds, select - 1)
+            elif len(selects):
+                allk = [key] + self._dep_keys
+                for ki, k in enumerate(allk):
+                    cidict[k] = [
+                        colinds[s - 1] for s in selects[ki::len(allk)]]
+                    if k not in self._dep_keys:
+                        metadict.setdefault(k, []).extend(hkeys[
+                            np.array(cidict[k])])
+                for s in selects:
+                    colinds = np.delete(colinds, s - 1)
+            elif key in self._specify_keys:
+                text = prt.message('specify_value', [key], prt=False)
+                cidict[key] = ''
+                while cidict[key].strip() is '':
+                    cidict[key] = prt.prompt(
+                        text, message=False, kind='string', color='!m')
 
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
