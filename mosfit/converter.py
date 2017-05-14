@@ -63,9 +63,11 @@ class Converter(object):
             PHOTOMETRY.ZERO_POINT]
         self._optional_keys = [PHOTOMETRY.ZERO_POINT]
         self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
-        self._dep_keys = [PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE]
+        self._dep_keys = [
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [PHOTOMETRY.BAND]
+        self._use_mc = False
         for key in self._header_keys.keys():
             for val in self._header_keys[key]:
                 for i in range(val.count(' ')):
@@ -216,17 +218,19 @@ class Converter(object):
                                         sources.update(new_src)
                                         row[
                                             cidict[key]] = new_src
-                                if type(cidict[key]) == 'list':
-                                    if isinstance(
-                                            cidict[key][pi], string_types):
-                                        photodict[key] = cidict[key][pi]
+                                val = cidict[key]
+                                if isinstance(val, list) and not isinstance(
+                                        val, string_types):
+                                    val = val[pi]
+                                    if isinstance(val, string_types):
+                                        photodict[key] = val
                                     else:
-                                        photodict[key] = row[cidict[key][pi]]
+                                        photodict[key] = row[val]
                                 else:
-                                    if isinstance(cidict[key], string_types):
-                                        photodict[key] = cidict[key]
+                                    if isinstance(val, string_types):
+                                        photodict[key] = val
                                     else:
-                                        photodict[key] = row[cidict[key]]
+                                        photodict[key] = row[val]
                             if self._data_type == 2:
                                 if self._zp:
                                     photodict[PHOTOMETRY.ZERO_POINT] = self._zp
@@ -333,6 +337,8 @@ class Converter(object):
         for key in ckeys:
             if key in cidict:
                 continue
+            if key in dkeys and self._use_mc:
+                continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for xi, x in enumerate(colinds)
                             if any(is_number(y) for y in columns[x])]
@@ -366,6 +372,7 @@ class Converter(object):
                             else None),
                         options=colstrs[lcolinds], color='!m')
                 else:
+                    self._use_mc = True
                     select = False
                     llcolinds = np.array(lcolinds)
                     selmap = np.array(range(1, len(lcolinds) + 1))
@@ -381,34 +388,50 @@ class Converter(object):
                             selects.append(selmap[select])
                             selmap = np.delete(selmap, select - 1)
                             llcolinds = np.delete(llcolinds, select - 1)
+                        else:
+                            break
                         for dk in dkeys:
-                            dksel = False
-                            while dksel is not None:
+                            dksel = None
+                            while dksel is None:
                                 text = prt.message(
                                     'select_dep_column', [dk, key], prt=False)
+                                sk = dk in self._specify_keys
                                 dksel = prt.prompt(
                                     text, message=False,
                                     kind='option',
-                                    none_string=None,
+                                    none_string=specify if sk else None,
                                     options=colstrs[llcolinds], color='!m')
-                                if select is not None:
-                                    selects.append(selmap[select])
-                                    selmap = np.delete(selmap, select - 1)
+                                if dksel is None and sk:
+                                    spectext = prt.message(
+                                        'specify_value', [dk], prt=False)
+                                    val = ''
+                                    while val.strip() is '':
+                                        val = prt.prompt(
+                                            spectext, message=False,
+                                            kind='string', color='!m')
+                                    selects.append(val)
+                                    break
+                                elif dksel is not None:
+                                    selects.append(selmap[dksel])
+                                    selmap = np.delete(selmap, dksel - 1)
                                     llcolinds = np.delete(
-                                        llcolinds, select - 1)
+                                        llcolinds, dksel - 1)
 
             if select is not None:
                 cidict[key] = colinds[select - 1]
                 colinds = np.delete(colinds, select - 1)
             elif len(selects):
-                allk = [key] + self._dep_keys
+                allk = [key] + dkeys
                 for ki, k in enumerate(allk):
                     cidict[k] = [
-                        colinds[s - 1] for s in selects[ki::len(allk)]]
-                    if k not in self._dep_keys:
-                        metadict.setdefault(k, []).extend(hkeys[
-                            np.array(cidict[k])])
+                        colinds[s - 1] if isinstance(s, int) else s
+                        for s in selects[ki::len(allk)]]
+                ind = np.array(cidict[key])
+                if len(hkeys):
+                    metadict.setdefault(key, []).extend(hkeys[ind])
                 for s in selects:
+                    if not isinstance(s, int):
+                        continue
                     colinds = np.delete(colinds, s - 1)
             elif key in self._specify_keys:
                 text = prt.message('specify_value', [key], prt=False)

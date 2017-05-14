@@ -231,7 +231,7 @@ class Printer(object):
                 carr += [
                     '[n].' + selpad + none_string
                 ]
-            n_opts = len(options) + (0 if none_string is None else 1)
+            n_opts = len(options)
             carr += ['Enter selection (' + (
                 '1-' if n_opts > 2 else
                 '1/' if n_opts == 2 else '') + str(
