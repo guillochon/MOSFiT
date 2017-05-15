@@ -130,13 +130,13 @@ class Printer(object):
                 text = '!r' + self._strings['error'] + ': ' + text + '!e'
         if color:
             text = color + text + '!e'
-        tspl = (text + '\n').splitlines()
+        tspl = text.split('\n')
         if wrapped:
             if not wrap_length or not is_integer(wrap_length):
                 wrap_length = self._wrap_length
             ntspl = []
             for line in tspl:
-                ntspl.extend(fill(line, wrap_length).splitlines())
+                ntspl.extend(fill(line, wrap_length).split('\n'))
             tspl = ntspl
         return tspl
 
@@ -243,7 +243,7 @@ class Printer(object):
         else:
             raise ValueError('Unknown prompt kind.')
 
-        if message:
+        if message and text in self._strings:
             text = self.message(text, prt=False)
         textchoices = text + choices
         if translate:

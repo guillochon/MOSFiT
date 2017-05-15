@@ -332,7 +332,6 @@ class Fitter(object):
                                     shutil.copyfileobj(response, f)
                         path = name_path
 
-                    prt.prt()
                     if os.path.exists(path):
                         if open_in_browser:
                             webbrowser.open(
@@ -528,7 +527,6 @@ class Fitter(object):
         """Load the data for the specified event."""
         prt = self._printer
 
-        prt.prt()
         prt.message('loading_data', inline=True)
 
         self._walker_data = walker_data
@@ -610,7 +608,6 @@ class Fitter(object):
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            prt.prt()
             prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
@@ -736,7 +733,6 @@ class Fitter(object):
         redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        prt.prt()
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
@@ -1109,7 +1105,6 @@ class Fitter(object):
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
-        prt.prt()
         prt.message('constructing')
 
         if write:
