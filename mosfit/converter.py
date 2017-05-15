@@ -1,7 +1,7 @@
 """A class for converting ASCII inputs to JSON."""
 import os
 import re
-from collections import Counter
+from collections import Counter, OrderedDict
 from itertools import permutations
 
 import numpy as np
@@ -18,6 +18,32 @@ from mosfit.utils import entabbed_json_dump
 
 class Converter(object):
     """Convert ASCII formats to Open Catalog JSON schemas."""
+
+    _MONTH_IDS = OrderedDict((
+        ('January', '01'),
+        ('February', '02'),
+        ('March', '03'),
+        ('April', '04'),
+        ('June', '06'),
+        ('July', '07'),
+        ('August', '08'),
+        ('September', '09'),
+        ('October', '10'),
+        ('November', '11'),
+        ('December', '12'),
+        ('Jan', '01'),
+        ('Feb', '02'),
+        ('Mar', '03'),
+        ('Apr', '04'),
+        ('May', '05'),
+        ('Jun', '06'),
+        ('Jul', '07'),
+        ('Aug', '08'),
+        ('Sep', '09'),
+        ('Oct', '10'),
+        ('Nov', '11'),
+        ('Dec', '12')
+    ))
 
     def __init__(self, printer, **kwargs):
         """Initialize."""
@@ -71,6 +97,8 @@ class Converter(object):
         self._request_keys = [
             PHOTOMETRY.SYSTEM, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._use_mc = False
+        self._month_rep = re.compile(
+            r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
         for key in self._header_keys.keys():
             for val in self._header_keys[key]:
                 for i in range(val.count(' ')):
@@ -234,7 +262,10 @@ class Converter(object):
                                         cidict[key][0] == 'j'):
                                     tval = np.array(row)[
                                         np.array(cidict[key][1:], dtype=int)]
-                                    date = '-'.join(tval)
+                                    date = '-'.join([x.zfill(2) for x in tval])
+                                    date = self._month_rep.sub(
+                                        lambda x: self._MONTH_IDS[x.group()],
+                                        date)
                                     photodict[key] = str(
                                         astrotime(date, format='isot').mjd)
                                     continue
@@ -452,20 +483,22 @@ class Converter(object):
                                         text, message=False,
                                         kind='option', none_string=None,
                                         options=colstrs[lcolinds])
-                                elif dksel is not None:
-                                    selects.append(selmap[dksel - 1] - 1)
-                                    selmap = np.delete(selmap, dksel - 1)
-                                    lcolinds = np.delete(
-                                        lcolinds, dksel - 1)
+                                    if dksel is not None:
+                                        selects.append(selmap[dksel - 1] - 1)
+                                        selmap = np.delete(selmap, dksel - 1)
+                                        lcolinds = np.delete(
+                                            lcolinds, dksel - 1)
                                 else:
                                     spectext = prt.message(
-                                        'specify_value', [dk], prt=False)
+                                        'specify_mc_value', [dk, key],
+                                        prt=False)
                                     val = ''
                                     while val.strip() is '':
                                         val = prt.prompt(
                                             spectext, message=False,
                                             kind='string')
                                     selects.append(val)
+                                    break
 
             if select is not None:
                 cidict[key] = colinds[select - 1]
