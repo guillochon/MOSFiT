@@ -12,7 +12,7 @@ Using MOSFiT
    installation.rst
    getting_started.rst
    command_line.rst
-   creating_model.rst
+   models.rst
    api.rst
 
 Indices and tables
