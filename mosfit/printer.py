@@ -222,7 +222,8 @@ class Printer(object):
         if kind in ['select', 'option', 'bool']:
             if kind == 'bool':
                 options = [('', 'y'), ('', 'n')]
-                default = 'n'
+                if default is None:
+                    default = 'n'
                 single = True
                 none_string = None
             if none_string is not None:
@@ -297,17 +298,21 @@ class Printer(object):
                 inp_text = self.colorify(color + inp_text + "!e")
             user_input = input(inp_text)
 
-            nos = ['n', 'no', 'nope', '']
+            yes = ['y', 'yes', 'yep']
+            nos = ['n', 'no', 'nope']
 
             uil = user_input.lower()
             if kind == 'bool':
-                if user_input.lower() in ['y', 'yes', 'yep']:
+                if uil == '':
+                    return default in yes
+                if uil in yes:
                     return True
-                if user_input.lower() in (nos + ['']):
+                if uil in nos:
                     return False
                 continue
             elif kind == 'select':
-                if none_string is not None and uil in nos:
+                if (none_string is not None and default == 'n' and
+                        uil in nos + ['']):
                     return None
                 if uil == '' and default in new_opts:
                     return new_opts[default]
@@ -315,7 +320,8 @@ class Printer(object):
                     return new_opts[uil]
                 continue
             elif kind == 'option':
-                if none_string is not None and uil in nos:
+                if (none_string is not None and default == 'n' and
+                        uil in nos + ['']):
                     return None
                 if uil == '' and default in new_opts:
                     return int(default) if is_integer(default) else default

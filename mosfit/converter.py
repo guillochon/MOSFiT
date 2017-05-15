@@ -95,8 +95,6 @@ class Converter(object):
             PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [PHOTOMETRY.BAND]
-        self._request_keys = [
-            PHOTOMETRY.SYSTEM, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -201,7 +199,7 @@ class Converter(object):
                     text = prt.message(
                         'is_event_name', [new_event_name], prt=False)
                     is_name = prt.prompt(text, message=False,
-                                         kind='bool')
+                                         kind='bool', default='y')
                     if not is_name:
                         new_event_name = ''
                         while new_event_name.strip() == '':
@@ -325,6 +323,11 @@ class Converter(object):
                                     PHOTOMETRY.MAGNITUDE, 0.0)) > 50.0:
                                 continue
 
+                            # Add system if specified by user.
+                            if (self._system is not None and
+                                    PHOTOMETRY.SYSTEM not in photodict):
+                                photodict[PHOTOMETRY.SYSTEM] = self._system
+
                             # Remove keys not in the `PHOTOMETRY` class.
                             for key in list(photodict.keys()):
                                 if key not in PHOTOMETRY.vals():
@@ -357,9 +360,7 @@ class Converter(object):
 
         for fi, fl in enumerate(flines):
             if not any([is_number(x) for x in fl]):
-                hkeys = np.array(fl)
-                # Try to associate column names with common header
-                # keys.
+                # Try to associate column names with common header keys.
                 for ci, col in enumerate(fl):
                     for key in self._header_keys:
                         if any([(x[0] if isinstance(x, tuple)
@@ -382,11 +383,10 @@ class Converter(object):
                 self._first_data = fi
                 break
 
-        # See which keys we collected. If we are missing any
-        # critical keys, ask the user which column they are.
+        # See which keys we collected. If we are missing any critical keys, ask
+        # the user which column they are.
 
-        # First ask the user if this data is in magnitudes or
-        # in counts.
+        # First ask the user if this data is in magnitudes or in counts.
         self._data_type = 1
         if (PHOTOMETRY.MAGNITUDE in cidict and
                 PHOTOMETRY.COUNT_RATE not in cidict):
@@ -548,5 +548,18 @@ class Converter(object):
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
             while not is_number(self._zp):
-                self._zp = prt.prompt(
-                    'zeropoint', kind='string')
+                self._zp = prt.prompt('zeropoint', kind='string')
+
+        self._system = None
+        if self._data_type == 1 and PHOTOMETRY.SYSTEM not in cidict:
+            systems = ['AB', 'Vega']
+            self._system = prt.prompt(
+                'system', kind='option', options=systems,
+                none_string='Use default for all bands.',
+                default='n')
+            if self._system is not None:
+                self._system = systems[int(self._system) - 1]
+
+        if (PHOTOMETRY.INSTRUMENT not in cidict and
+                PHOTOMETRY.TELESCOPE not in cidict):
+            prt.message('instrument_recommended', warning=True)
