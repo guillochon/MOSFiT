@@ -2,13 +2,14 @@
 import os
 import re
 from collections import Counter, OrderedDict
+from decimal import Decimal
 from itertools import permutations
 
 import numpy as np
 from astrocats.catalog.entry import Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
-from astrocats.catalog.utils import is_number
+from astrocats.catalog.utils import is_number, jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
@@ -50,9 +51,9 @@ class Converter(object):
         self._printer = printer
         emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr']
+            'mag err', 'magerr', 'mag error']
         self._header_keys = {
-            PHOTOMETRY.TIME: ['time', 'mjd', 'jd'],
+            PHOTOMETRY.TIME: ['time', 'mjd', ('jd', 'jd')],
             PHOTOMETRY.SYSTEM: ['system'],
             PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
             PHOTOMETRY.E_MAGNITUDE: emagstrs,
@@ -157,10 +158,11 @@ class Converter(object):
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
                          re.split(
-                             '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''', x)]
+                             '''[( \()\t](?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+                             x)]
                         for x in fsplit]
                     flines = [[
-                        x.strip(' #$()') for x in y] for y in flines]
+                        x.strip(' #$()\\') for x in y] for y in flines]
                     flines = [list(filter(None, x)) for x in flines]
 
                     # Find the most frequent column count. These are probably
@@ -258,16 +260,20 @@ class Converter(object):
                                         key.type == KEY_TYPES.TIME and
                                         isinstance(cidict[key], list) and not
                                         isinstance(cidict[key],
-                                                   string_types) and
-                                        cidict[key][0] == 'j'):
-                                    tval = np.array(row)[
-                                        np.array(cidict[key][1:], dtype=int)]
-                                    date = '-'.join([x.zfill(2) for x in tval])
-                                    date = self._month_rep.sub(
-                                        lambda x: self._MONTH_IDS[x.group()],
-                                        date)
-                                    photodict[key] = str(
-                                        astrotime(date, format='isot').mjd)
+                                                   string_types)):
+                                    tval = np.array(row)[np.array(cidict[key][
+                                        1:], dtype=int)]
+                                    if cidict[key][0] == 'j':
+                                        date = '-'.join([x.zfill(2) for x in
+                                                         tval])
+                                        date = self._month_rep.sub(
+                                            lambda x: self._MONTH_IDS[
+                                                x.group()], date)
+                                        photodict[key] = str(
+                                            astrotime(date, format='isot').mjd)
+                                    elif cidict[key][0] == 'jd':
+                                        photodict[key] = str(
+                                            jd_to_mjd(Decimal(tval[-1])))
                                     continue
 
                                 val = cidict[key]
@@ -318,6 +324,11 @@ class Converter(object):
                                     PHOTOMETRY.MAGNITUDE, 0.0)) > 50.0:
                                 continue
 
+                            # Remove keys not in the `PHOTOMETRY` class.
+                            for key in list(photodict.keys()):
+                                if key not in PHOTOMETRY.vals():
+                                    del(photodict[key])
+
                             # Add the photometry.
                             entry.add_photometry(**photodict)
 
@@ -350,13 +361,20 @@ class Converter(object):
                 # keys.
                 for ci, col in enumerate(fl):
                     for key in self._header_keys:
-                        if any([x == col.lower()
+                        if any([(x[0] if isinstance(x, tuple)
+                                 else x) == col.lower()
                                 for x in self._header_keys[key]]):
                             if ci in used_cis:
                                 # There is a conflict, ask user.
                                 del(cidict[used_cis[ci]])
                             else:
-                                cidict[key] = ci
+                                ind = [
+                                    (x[0] if isinstance(x, tuple) else x)
+                                    for x in self._header_keys[key]].index(
+                                        col.lower())
+                                match = self._header_keys[key][ind]
+                                cidict[key] = [match[-1], ci] if isinstance(
+                                    match, tuple) else ci
                                 used_cis[ci] = key
                             break
             else:
@@ -380,7 +398,6 @@ class Converter(object):
                 'counts_or_mags', kind='option',
                 options=['Magnitudes', 'Counts (fluxes)'],
                 none_string=None)
-        print(type(self._data_type), self._data_type)
         if self._data_type == 1:
             ckeys.remove(PHOTOMETRY.COUNT_RATE)
             ckeys.remove(PHOTOMETRY.E_COUNT_RATE)
@@ -398,7 +415,8 @@ class Converter(object):
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
         colinds = np.setdiff1d(np.arange(len(colstrs)),
-                               list(cidict.values()))
+                               list([x[-1] if isinstance(x, list)
+                                     else x for x in cidict.values()]))
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
         for key in ckeys:
@@ -436,9 +454,12 @@ class Converter(object):
                     select = prt.prompt(
                         text, message=False,
                         kind='option', none_string=ns,
-                        default='j' if ns is None else None,
-                        options=colstrs[lcolinds].tolist() + [
-                            ('Multiple columns need to be joined.', 'j')])
+                        default=('j' if ns is None and
+                                 len(colstrs[lcolinds]) > 1
+                                 else None if ns is None else 'n'),
+                        options=colstrs[lcolinds].tolist() + (
+                            [('Multiple columns need to be joined.', 'j')]
+                            if len(colstrs[lcolinds]) > 1 else []))
                     if select == 'j':
                         select = None
                         jsel = None
