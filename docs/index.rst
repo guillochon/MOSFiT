@@ -12,6 +12,7 @@ Using MOSFiT
    installation.rst
    getting_started.rst
    command_line.rst
+   creating_model.rst
    api.rst
 
 Indices and tables
@@ -24,6 +25,6 @@ Indices and tables
 License & Attribution
 ---------------------
 
-Copyright 2016+, James Guillochon, Matt Nicholl, and contributors.
+Copyright 2016-2017, James Guillochon, Matt Nicholl, and contributors.
 
 The source code is made available under the terms of the MIT license.
