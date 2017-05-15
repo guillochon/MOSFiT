@@ -10,7 +10,7 @@
     },
     "rvhost":{
         "kind":"parameter",
-        "value":6.5,
+        "value":3.1,
         "class":"parameter",
         "latex":"R_{\\rm V, host}"
     },
@@ -23,13 +23,13 @@
     },
     "texplosion":{
         "kind":"parameter",
-        "value":15.0,
+        "value":-15.0,
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
     "b":{
         "kind":"parameter",
-        "value": 0.576,
+        "value": 0.98,
         "class":"parameter",
         "latex":"b\\ (scaled\\ \\beta)"
     },
@@ -53,13 +53,13 @@
     },
     "Rph0":{
         "kind":"parameter",
-        "value":0.17,
+        "value":0.6,
         "class":"parameter",
         "latex": "log(R_{ph0})"
     },
     "lphoto":{
         "kind": "parameter",
-        "value": 2.7,
+        "value": 1.5,
         "class": "parameter",
         "latex": "photosphere exponent 'l' "
     },
@@ -113,5 +113,29 @@
             "losextinction",
             "lumdist"
         ]
+    },
+    "tde_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "bhmass",
+            "tde_photosphere"
+        ]
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error",
+            "tde_constraints"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        }
     }
 }

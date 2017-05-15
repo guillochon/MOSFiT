@@ -31,56 +31,9 @@ class Fallback(Engine):
         super(Fallback, self).__init__(**kwargs)
 
         G = c.G.cgs.value  # 6.67259e-8 cm3 g-1 s-2
-        Msolar = c.M_sun.cgs.value  # 1.989e33 grams
-        Mhbase = 1.0e6*Msolar  # this is the generic size of bh used
+        Mhbase = 1.0e6*M_SUN_CGS  # this is the generic size of bh used
 
         self.EXTRAPOLATE = True
-        self.TESTING = False
-
-        # ------- FOR TESTING -------
-        if self.TESTING:
-            self.testnum = 0
-            filestodelete = os.listdir('test_dir/test_fallback/' +
-                                       'pregammainterp/g5-3')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/pregammainterp/g5-3/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/' +
-                                       'pregammainterp/g4-3')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/pregammainterp/g4-3/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/' +
-                                       'postgammainterp')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/postgammainterp/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/endfallback')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/endfallback/' + f)
-            filestodelete = os.listdir('test_dir/test_viscous/endviscous')
-            for f in filestodelete:
-                os.remove('test_dir/test_viscous/endviscous/' + f)
-            filestodelete = os.listdir('test_dir/test_photosphere/' +
-                                       'end_photosphere')
-            for f in filestodelete:
-                os.remove('test_dir/test_photosphere/end_photosphere/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/' +
-                                       'postdmdtscaling')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/postdmdtscaling/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/' +
-                                       'pregammainterp/g4-3')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/pregammainterp/g4-3/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/' +
-                                       'pregammainterp/g5-3')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/pregammainterp/g5-3/' + f)
-            filestodelete = os.listdir('test_dir/test_fallback/postLeddcut')
-            for f in filestodelete:
-                os.remove('test_dir/test_fallback/postLeddcut/' + f)
-            filestodelete = os.listdir('test_dir/test_photosphere/' +
-                                       'precut_photosphere')
-            for f in filestodelete:
-                os.remove('test_dir/test_photosphere/precut_photosphere/' + f)
 
         # ------ DIRECTORY PARAMETERS -------
 
@@ -265,12 +218,12 @@ class Fallback(Engine):
             # 0.9 is full disruption beta for gamma = 5/3
             beta53 = 0.5 + 0.4*self._b  # 0.5 + (0.9 - 0.5)*b
 
-            self._beta = {'4-3': beta43, '5-3': beta53}
+            self._betas = {'4-3': beta43, '5-3': beta53}
 
         elif 1 <= self._b <= 2:
             beta43 = 1.85 + 2.15*(self._b - 1)
             beta53 = 0.9 + 1.6*(self._b - 1)
-            self._beta = {'4-3': beta43, '5-3': beta53}
+            self._betas = {'4-3': beta43, '5-3': beta53}
 
         else:
             print('b outside range, bmin = 0; bmax = 2; b =', self._b)
@@ -282,14 +235,19 @@ class Fallback(Engine):
 
         if kwargs['starmass'] <= 0.3 or kwargs['starmass'] >= 22:
             gammas = [self._gammas[1]]  # gamma = ['5-3']
+            self._beta = self._betas['5-3']
         elif 1 <= kwargs['starmass'] <= 15:
             gammas = [self._gammas[0]]  # gamma = ['4-3']
+            self._beta = self._betas['4-3']
         elif 0.3 < kwargs['starmass'] < 1:
             # region going from gamma = 5/3 to gamma = 4/3 as mass increases
             gamma_interp = True
             gammas = self._gammas
             # gfrac should == 0 for 4/3; == 1 for 5/3
             gfrac = (kwargs['starmass'] - 1.)/(0.3 - 1.)
+            # beta_43 is always larger than beta_53
+            self._beta = self._betas['5-3'] + (
+                self._betas['4-3'] - self._betas['5-3']) * (1. - gfrac)
         elif 15 < kwargs['starmass'] < 22:
             # region going from gamma = 4/3 to gamma = 5/3 as mass increases
             gamma_interp = True
@@ -297,7 +255,11 @@ class Fallback(Engine):
             # gfrac should == 0 for 4/3; == 1 for 5/3
             gfrac = (kwargs['starmass'] - 15.)/(22. - 15.)
 
-        # try decoupling gamma from starmass for testing
+            # beta_43 is always larger than beta_53
+            self._beta = self._betas['5-3'] + (
+                self._betas['4-3'] - self._betas['5-3']) * (1. - gfrac)
+
+        # try decoupling gamma from starmass for
         '''
         self._scaled_gamma = kwargs['scaledgamma']
         # print (self._scaled_gamma)
@@ -314,13 +276,13 @@ class Fallback(Engine):
         for g in gammas:
             # find simulation betas to interpolate between
             for i in range(len(self._sim_beta[g])):
-                if self._beta[g] == self._sim_beta[g][i]:
+                if self._betas[g] == self._sim_beta[g][i]:
                     # no need to interp, already have dmdt & t for this beta
                     beta_interp = False
                     interp_index_low = i
                     break
 
-                if self._beta[g] < self._sim_beta[g][i]:
+                if self._betas[g] < self._sim_beta[g][i]:
                     interp_index_high = i
                     interp_index_low = i-1
                     beta_interp = True
@@ -334,9 +296,9 @@ class Fallback(Engine):
                 # (slope[0] corresponds to between beta[0] and beta[1] etc.)
                 dmdt = np.array([
                     self._beta_yinter[g][interp_index_low][0] +
-                    self._beta_slope[g][interp_index_low][0] * self._beta[g],
+                    self._beta_slope[g][interp_index_low][0] * self._betas[g],
                     self._beta_yinter[g][interp_index_low][1] +
-                    self._beta_slope[g][interp_index_low][1] * self._beta[g]])
+                    self._beta_slope[g][interp_index_low][1] * self._betas[g]])
 
                 # map mapped_times back to actual times, requires interpolation
                 # in time
@@ -359,7 +321,7 @@ class Fallback(Engine):
 
                     time.append(
                         time_betalo + (time_betahi - time_betalo) *
-                        (self._beta[g] - self._sim_beta[g][interp_index_low]) /
+                        (self._betas[g]-self._sim_beta[g][interp_index_low]) /
                         (self._sim_beta[g][interp_index_high] -
                          self._sim_beta[g][interp_index_low]))
 
@@ -371,23 +333,6 @@ class Fallback(Engine):
             elif not beta_outside_range and not beta_interp:
                 timedict[g] = np.copy(self._premaptime[g][interp_index_low])
                 dmdtdict[g] = np.copy(self._premapdmdt[g][interp_index_low])
-
-        # ----------------TESTING ----------------
-
-        if gamma_interp and self.TESTING:
-
-            np.savetxt('test_dir/test_fallback/pregammainterp/g4-3/time+dmdt' +
-                       '{:08d}'.format(self.testnum)+'g'+gammas[0]+'b' +
-                       str(self._b)+'.txt',
-                       (np.append(timedict['4-3'][0], timedict['4-3'][1]),
-                        np.append(dmdtdict['4-3'][0], dmdtdict['4-3'][1])))
-            np.savetxt('test_dir/test_fallback/pregammainterp/g5-3/time+dmdt' +
-                       '{:08d}'.format(self.testnum)+'g'+gammas[1]+'b' +
-                       str(self._b)+'.txt',
-                       (np.append(timedict['5-3'][0], timedict['5-3'][1]),
-                        np.append(dmdtdict['5-3'][0], dmdtdict['5-3'][1])))
-
-        # ----------------------------------------
 
         # ---------------- GAMMA INTERPOLATION -------------------
 
@@ -466,16 +411,6 @@ class Fallback(Engine):
         dmdt = np.array(dmdt)
         unscaleddmdt = np.copy(dmdt)
         unscaledtime = np.copy(time)
-        # ----------------TESTING ----------------
-        if self.TESTING:
-            if gamma_interp:
-                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt' +
-                           '{:08d}'.format(self.testnum)+'gfrac'+str(gfrac) +
-                           'b'+str(self._b)+'.txt', (time, dmdt))
-            else:
-                np.savetxt('test_dir/test_fallback/postgammainterp/time+dmdt' +
-                           '{:08d}'.format(self.testnum)+'g'+str(g)+'b' +
-                           str(self._b)+'.txt', (time, dmdt))
 
         # ----------- SCALE dm/dt TO BH & STAR MASS & STAR RADIUS -------------
 
@@ -634,11 +569,6 @@ class Fallback(Engine):
 
         tpeak = time[np.argmax(dmdt)]
 
-        if self.TESTING:
-            np.savetxt('test_dir/test_fallback/postdmdtscaling/time+dmdt' +
-                       '{:08d}'.format(self.testnum)+'b'+str(self._b)+'.txt',
-                       (time, dmdt))
-
         timeinterpfunc = interp1d(time, dmdt)
 
         lengthpretimes = len(np.where(self._times < time[0])[0])
@@ -675,19 +605,9 @@ class Fallback(Engine):
         #    luminosities)
         luminosities = (luminosities * Ledd/(luminosities + Ledd))
 
-        # ----------------TESTING ----------------
-        if self.TESTING:
-            np.savetxt(
-                'test_dir/test_fallback/endfallback/time+dmdt+lum+Ledd' +
-                '{:08d}'.format(self.testnum)+'.txt',
-                (self._times, dmdtnew, luminosities,
-                 Ledd*np.ones(len(luminosities))))
-            self.testnum += 1
-
-        # ----------------------------------------
-
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'unscaleddmdt': unscaleddmdt,
+                'tpeak': tpeak, 'beta': self._beta,
+                'unscaleddmdt': unscaleddmdt,
                 'unscaledtime': unscaledtime, 'dmdtbeforeextrap':
                 dmdtbeforeextrap, 'timebeforeextrap': timebeforeextrap,
                 'dmdtafterextrap': dmdtafterextrap,

@@ -17,8 +17,6 @@ class TdePhotosphere(Photosphere):
 
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
-    TESTING = False
-    testnum = 0
 
     def process(self, **kwargs):
         """Process module."""
@@ -36,7 +34,11 @@ class TdePhotosphere(Photosphere):
         # Can easily get 'b' -- scaled constant that is linearly related
         # to beta but beta itself is not well defined.
         # -- what does this mean exactly? beta = rt/rp
-        # self._beta = kwargs['beta']
+        # self._beta = 1  # set to this for now, eventually need to get
+        # from scaled beta 'b'
+        # this should still help with general size of rphotmax
+        self._beta = kwargs['beta']  # for now linearly interp between
+        # beta43 and beta53 for a given 'b' if Mstar is in transition region
 
         Rsolar = c.R_sun.cgs.value
         self._Rstar = kwargs['Rstar'] * Rsolar
@@ -47,11 +49,9 @@ class TdePhotosphere(Photosphere):
 
         Ledd = (4 * np.pi * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
-        self._beta = 1  # set to this for now, eventually need to get
-        # from scaled beta 'b'
-        # this should still help with general size of rphotmax
+
         rt = (self._Mh / self._Mstar)**(1./3.) * self._Rstar
-        rp = rt/self._beta
+        self._rp = rt/self._beta
 
         r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS)
         rphotmin = r_isco  # 2*rp #r_isco
@@ -65,18 +65,13 @@ class TdePhotosphere(Photosphere):
                self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
         a_t[self._times < self._rest_t_explosion] = 0.0
 
-        rphotmax = rp + 2 * a_t
+        rphotmax = self._rp + 2 * a_t
 
         # adding rphotmin on to rphot so that there's a soft minimum
         # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
         # this means the new max is rphotmax/2
         rphot = self._Rph_0 * a_p * (self._luminosities/Ledd)**self._l
         rphotbeforecut = np.copy(rphot)
-
-        if self.TESTING:
-            np.savetxt('test_dir/test_photosphere/precut_photosphere/' +
-                       'time+rphot'+'{:08d}'.format(self.testnum)+'.txt',
-                       (self._times, rphot))
 
         rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin
 
@@ -87,18 +82,10 @@ class TdePhotosphere(Photosphere):
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
-        # ----------------TESTING ----------------
-        if self.TESTING:
-            np.savetxt('test_dir/test_photosphere/end_photosphere/' +
-                       'time+Tphot+rphot'+'{:08d}'.format(self.testnum)+'.txt',
-                       (self._times, Tphot, rphot, rphotmax))
-            # , header = 'M_h = '+str(self._Mh)+ '; ilumzero = '+str(ilumzero))
-
-            self.testnum += 1
-        # ----------------------------------------
-
         return {'radiusphot': rphot, 'temperaturephot': Tphot,
+                'rp': self._rp,
                 'rphotbeforecut': rphotbeforecut, 'rphotmax': rphotmax,
                 'rphotmin': rphotmin,
                 'sparse_luminosities': self._luminosities,
-                'nan_error': nan_error}
+                'nan_error': nan_error
+                }
