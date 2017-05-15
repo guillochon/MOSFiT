@@ -154,16 +154,17 @@ class Converter(object):
                 if table is None:
                     fsplit = ftxt.splitlines()
                     fsplit = [x.replace(',', '\t').replace('&', '\t')
+                              .strip(' ()')
                               for x in fsplit]
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
                          re.split(
-                             '''[( \()\t](?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+                             '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
                              x)]
                         for x in fsplit]
+
                     flines = [[
                         x.strip(' #$()\\') for x in y] for y in flines]
-                    flines = [list(filter(None, x)) for x in flines]
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -179,7 +180,7 @@ class Converter(object):
                 # If none of the rows contain numeric data, the file
                 # is likely a list of transients.
                 if (len(flines) and
-                    (not any(any([is_number(x) for x in y])
+                    (not any(any([is_number(x) or x == '' for x in y])
                              for y in flines) or
                      len(flines) == 1)):
                     new_events = [
@@ -430,7 +431,7 @@ class Converter(object):
             else:
                 lcolinds = colinds
             select = False
-            selmap = np.array(range(1, len(lcolinds) + 1))
+            selmap = np.array(range(len(lcolinds)))
             selects = []
             while select is False:
                 mc = 1
@@ -473,7 +474,7 @@ class Converter(object):
                                      'have been selected.', 'd')
                                 ])
                             if jsel != 'd':
-                                selects.append(selmap[jsel - 1] - 1)
+                                selects.append(lcolinds[jsel - 1])
                                 selmap = np.delete(selmap, jsel - 1)
                                 lcolinds = np.delete(lcolinds, jsel - 1)
                 else:
@@ -488,7 +489,7 @@ class Converter(object):
                             none_string='No more `{}` columns.'.format(key),
                             options=colstrs[lcolinds].tolist())
                         if select is not None and select is not False:
-                            selects.append(selmap[select - 1] - 1)
+                            selects.append(lcolinds[select - 1])
                             selmap = np.delete(selmap, select - 1)
                             lcolinds = np.delete(lcolinds, select - 1)
                         else:
@@ -505,7 +506,7 @@ class Converter(object):
                                         kind='option', none_string=None,
                                         options=colstrs[lcolinds].tolist())
                                     if dksel is not None:
-                                        selects.append(selmap[dksel - 1] - 1)
+                                        selects.append(lcolinds[dksel - 1])
                                         selmap = np.delete(selmap, dksel - 1)
                                         lcolinds = np.delete(
                                             lcolinds, dksel - 1)
