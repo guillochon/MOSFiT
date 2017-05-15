@@ -53,12 +53,12 @@ class Converter(object):
             'mag err', 'magerr']
         self._header_keys = {
             PHOTOMETRY.TIME: ['time', 'mjd', 'jd'],
-            PHOTOMETRY.BAND: ['passband', 'band', 'filter'],
-            PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
-            PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
             PHOTOMETRY.SYSTEM: ['system'],
             PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
             PHOTOMETRY.E_MAGNITUDE: emagstrs,
+            PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
+            PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
+            PHOTOMETRY.BAND: ['passband', 'band', 'filter'],
             PHOTOMETRY.E_LOWER_MAGNITUDE: [
                 ' '.join(y) for y in (
                     list(i for s in [
@@ -376,12 +376,11 @@ class Converter(object):
               PHOTOMETRY.COUNT_RATE in cidict):
             self._data_type = 2
         else:
-            self._data_type = None
-            while self._data_type is None:
-                self._data_type = prt.prompt(
-                    'counts_or_mags', kind='option',
-                    options=['Magnitudes', 'Counts (fluxes)'],
-                    none_string=None)
+            self._data_type = prt.prompt(
+                'counts_or_mags', kind='option',
+                options=['Magnitudes', 'Counts (fluxes)'],
+                none_string=None)
+        print(type(self._data_type), self._data_type)
         if self._data_type == 1:
             ckeys.remove(PHOTOMETRY.COUNT_RATE)
             ckeys.remove(PHOTOMETRY.E_COUNT_RATE)
@@ -420,38 +419,39 @@ class Converter(object):
                 if key in self._mc_keys:
                     text = prt.message(
                         'one_per_line', [key, key, key], prt=False)
-                    mc = None
-                    while mc is None:
-                        mc = prt.prompt(
-                            text, kind='option', message=False,
-                            none_string=None,
-                            options=[
-                                'One `{}` per row'.format(key),
-                                'Multiple `{}s` per row'.format(
-                                    key)])
+                    mc = prt.prompt(
+                        text, kind='option', message=False,
+                        none_string=None,
+                        options=[
+                            'One `{}` per row'.format(key),
+                            'Multiple `{}s` per row'.format(
+                                key)])
                 if mc == 1:
                     text = prt.message(
                         'no_matching_column', [key], prt=False)
+                    ns = (
+                        ignore if key in self._optional_keys else
+                        specify if key in self._specify_keys
+                        else None)
                     select = prt.prompt(
                         text, message=False,
-                        kind='option', none_string=(
-                            ignore if key in self._optional_keys else
-                            specify if key in self._specify_keys
-                            else None),
+                        kind='option', none_string=ns,
+                        default='j' if ns is None else None,
                         options=colstrs[lcolinds].tolist() + [
-                            'Multiple columns need to be joined.'])
-                    if select == len(colstrs[lcolinds]) + 1:
+                            ('Multiple columns need to be joined.', 'j')])
+                    if select == 'j':
                         select = None
-                        jsel = False
+                        jsel = None
                         selects.append('j')
-                        while jsel is not None and len(lcolinds):
+                        while jsel != 'd' and len(lcolinds):
                             jsel = prt.prompt(
-                                'join_which_columns',
-                                kind='option', none_string=(
-                                    'All columns to be joined '
-                                    'have been selected.'),
-                                options=colstrs[lcolinds])
-                            if jsel is not None:
+                                'join_which_columns', default='d',
+                                kind='option', none_string=None,
+                                options=colstrs[lcolinds].tolist() + [
+                                    ('All columns to be joined '
+                                     'have been selected.', 'd')
+                                ])
+                            if jsel != 'd':
                                 selects.append(selmap[jsel - 1] - 1)
                                 selmap = np.delete(selmap, jsel - 1)
                                 lcolinds = np.delete(lcolinds, jsel - 1)
@@ -463,10 +463,10 @@ class Converter(object):
                             'select_mc_column', [key], prt=False)
                         select = prt.prompt(
                             text, message=False,
-                            kind='option',
+                            kind='option', default='n',
                             none_string='No more `{}` columns.'.format(key),
-                            options=colstrs[lcolinds])
-                        if select is not None:
+                            options=colstrs[lcolinds].tolist())
+                        if select is not None and select is not False:
                             selects.append(selmap[select - 1] - 1)
                             selmap = np.delete(selmap, select - 1)
                             lcolinds = np.delete(lcolinds, select - 1)
@@ -482,7 +482,7 @@ class Converter(object):
                                     dksel = prt.prompt(
                                         text, message=False,
                                         kind='option', none_string=None,
-                                        options=colstrs[lcolinds])
+                                        options=colstrs[lcolinds].tolist())
                                     if dksel is not None:
                                         selects.append(selmap[dksel - 1] - 1)
                                         selmap = np.delete(selmap, dksel - 1)

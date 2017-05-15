@@ -41,7 +41,7 @@
     "initial_draws": "Initial draws completed!",
     "is_event_name": "Is `{}` this transient's name?",
     "is_event_same": "Does this event have the same format as `{}`?",
-    "join_which_columns": "Select the columns to be joined, in the order that they should be joined:",
+    "join_which_columns": "\nSelect the columns to be joined, in the order that they should be joined:",
     "loading_bands": "Loading bands [ {0:.0f}% ]",
     "loading_data": "\nLoading data...",
     "mc_interrupted": "You have interrupted the Monte Carlo. Do you wish to save the incomplete run to disk? Previous results will be overwritten.",
