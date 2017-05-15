@@ -79,8 +79,8 @@ format and immediately exit, but if run with the other standard arguments
 ``MOSFiT`` will read in the newly created JSON files and begin processing
 them.
 
-Sharing MOSFiT outputs with the community
------------------------------------------
+Sharing data and outputs with the community
+-------------------------------------------
 
 To upload fits back to the Open Catalogs, users can simply pass
 the ``-u`` flag:
@@ -89,15 +89,16 @@ the ``-u`` flag:
 
     python -m mosfit -e LSQ12dlf -m slsn -u
 
-After running ``MOSFiT`` to completion, and if the fits satisfy some
-quality checks, the model fits will be displayed on the open catalogs
-within 24 hours of their submission.
+Upon completing the fitting process, and if the fits satisfy some
+quality checks, the model fits will uploaded to the Open Catalogs,
+where they will be ingested and available approximately 24 hours
+after their submission.
 
 If the data was read from a file (rather than a name), and if the ``-u``
 option was provided, ``MOSFiT`` will offer the user the option of uploading
-the *observed* data to the Open Catalogs, in addition to the model fits.
-Because of the possibility that the data passed to MOSFiT is private,
-the user will be prompted for each event before it is uploaded. Users
+the *observed* data to the Open Catalogs as well, in addition to the model fits.
+Because of the possibility that local data passed to ``MOSFiT`` is private,
+the user will be asked if they wish to upload each event before they are uploaded. Users
 should immediately contact the maintainers of ``MOSFiT`` if they believe
 they have uploaded private data in error (because of the 24 hour waiting
 period, the inadvertantly uploaded data can be purged before becoming public).
