@@ -1398,7 +1398,7 @@ class Fitter(object):
                 text = prt.message('ul_devent', [ce[0]], prt=False)
                 ul_devent = prt.prompt(text, kind='bool', message=False)
                 if ul_devent:
-                    dpath = '/' + ce[0] + '_' + dentry.get(
+                    dpath = '/' + ce[0] + '_' + dentry[ENTRY.SOURCES].get(
                         'bibcode', dentry.get('name', 'NOSOURCE')) + '.json'
                     try:
                         dbx = dropbox.Dropbox(upload_token)
