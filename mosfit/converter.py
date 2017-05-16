@@ -148,6 +148,8 @@ class Converter(object):
                     prt.message('convert_cds')
                     flines = [table.colnames] + [
                         list(x) for x in np.array(table).tolist()]
+                    for i in range(len(flines)):
+                        flines[i] = [str(x) for x in flines[i]]
 
                 try:
                     table = read(ftxt, Reader=Latex, guess=False)
