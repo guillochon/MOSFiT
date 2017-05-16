@@ -22,7 +22,7 @@ be modified by the user!
 
 For this example, we'll presume that the user will be modifying the ``slsn`` model.
 First, the user should create a new run directory and run ``MOSFiT`` there once
-to copy the model JSON files to that run directory.
+to copy the model JSON files to that run directory::
 
     mkdir slsn_run
     cd slsn_run
@@ -30,7 +30,7 @@ to copy the model JSON files to that run directory.
 
 After running, the user will notice three directories will have been copied to the run
 directory: ``models``, ``jupyter``, and ``products``. Change into the ``models/slsn`` directory
-and edit the ``parameters.json`` file in your favorite text editor:
+and edit the ``parameters.json`` file in your favorite text editor::
 
     cd models/slsn
     vim parameters.json
