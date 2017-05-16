@@ -39,24 +39,36 @@ class LightCurve(Output):
             output[key.replace('all_', '')] = kwargs[key]
 
         if self._limiting_magnitude is not None:
+            ls = 0.0
+            if isinstance(self._limiting_magnitude, list):
+                lm = float(self._limiting_magnitude[0])
+                if len(self._limiting_magnitude) > 1:
+                    ls = float(self._limiting_magnitude[1])
+            else:
+                lm = self._limiting_magnitude
+
+            lmo = len(output['model_observations'])
+
             omags = output['observation_types'] == 'magnitude'
             output['model_variances'] = np.zeros_like(output[
                 'model_observations'])
-            output['model_upper_limits'] = np.full(len(output[
-                'model_observations']), False)
-            varias = 10.0 ** (-self._limiting_magnitude / 2.5)
+            output['model_upper_limits'] = np.full(lmo, False)
+            lms = lm + ls * np.random.randn(lmo)
+            varias = 10.0 ** (-lms / 2.5)
             mods = 10.0 ** (
                 -np.array(output['model_observations'][omags]) / 2.5)
             output['model_observations'][omags] = -2.5 * np.log10(
-                varias * np.random.randn(len(omags)) + mods)
+                varias[omags] * np.random.randn(len(omags)) + mods)
             obsas = 10.0 ** (
-                -np.array(output['model_observations'][omags]) / 2.5)
+                -np.array(output['model_observations']) / 2.5)
             output['model_variances'][omags] = np.abs(-output[
                 'model_observations'][omags] - 2.5 * (
-                    np.log10(varias + obsas)))
+                    np.log10(varias[omags] + obsas)))
             ul_mask = omags & (obsas < 3.0 * varias)
             output['model_upper_limits'] = ul_mask
-            # output['model_observations'][ul_mask] = self._limiting_magnitude
+            output['model_observations'][ul_mask] = lms[ul_mask]
+            output['model_variances'][ul_mask] = 2.5 * (
+                np.log10(2.0 * varias[ul_mask]) - np.log10(varias[ul_mask]))
             return output
 
         # Then, apply GP predictions, if available.
