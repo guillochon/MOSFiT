@@ -120,6 +120,7 @@ class Fitter(object):
                    walker_paths=[],
                    catalogs=[],
                    open_in_browser=False,
+                   limiting_magnitude=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model

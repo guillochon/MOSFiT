@@ -97,6 +97,18 @@ def get_parser():
               "until."))
 
     parser.add_argument(
+        '--limiting-magnitude',
+        '-l',
+        dest='limiting_magnitude',
+        type=float,
+        const=20.,
+        default=None,
+        nargs='?',
+        help=("Assumed limiting magnitude of a simulated survey. When "
+              "enabled, model light curves will be randomly drawn and "
+              "assigned error bars."))
+
+    parser.add_argument(
         '--band-list',
         '--extra-bands',
         dest='band_list',
