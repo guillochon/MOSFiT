@@ -29,7 +29,7 @@ if [ "$1" = -c ]; then
 fi
 
 $RUNNER -m mosfit --test -i 0
-$RUNNER -m mosfit -i 0 -m default -P parameters_test.json
+$RUNNER -m mosfit -i 0 -m default -P parameters_test.json -l 23 0.5
 $TRUNNER test.py
 
 if [ "$1" = -c ]; then
