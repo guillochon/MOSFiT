@@ -11,8 +11,8 @@ Using MOSFiT
 
    installation.rst
    getting_started.rst
-   command_line.rst
    models.rst
+   command_line.rst
    api.rst
 
 Indices and tables
