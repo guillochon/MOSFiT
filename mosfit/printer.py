@@ -275,7 +275,9 @@ class Printer(object):
                                     else:
                                         sel_str += '-' + opt_nops[oi]
                         else:
-                            sel_str += '/' + opt_nops[oi]
+                            if oi != 0:
+                                sel_str += '/'
+                            sel_str += opt_nops[oi]
                     carr += ['Enter selection (' + sel_str + '):']
                     choices = '\n' + '\n'.join(carr)
             elif kind == 'string':

@@ -148,6 +148,8 @@ class Converter(object):
                     prt.message('convert_cds')
                     flines = [table.colnames] + [
                         list(x) for x in np.array(table).tolist()]
+                    for i in range(len(flines)):
+                        flines[i] = [str(x) for x in flines[i]]
 
                 try:
                     table = read(ftxt, Reader=Latex, guess=False)
@@ -336,7 +338,7 @@ class Converter(object):
                                             self._rsource[
                                                 SOURCE.NAME] = (
                                                     last_name.strip().title() +
-                                                    'et al., in preparation')
+                                                    ' et al., in preparation')
 
                                 photodict[
                                     PHOTOMETRY.SOURCE] = entry.add_source(

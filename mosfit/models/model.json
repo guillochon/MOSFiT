@@ -34,7 +34,7 @@
                 "realization":"exclude"
             },
             "ebv":{
-                "value":"required"
+                "value":"optional"
             },
             "lumdist":{
                 "value":"optional"
@@ -53,6 +53,16 @@
         "kind":"parameter",
         "value":1.0,
         "class":"constant"
+    },
+    "ebv":{
+        "kind":"parameter",
+        "min_value":0.0,
+        "max_value":5.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B}-{\\rm V})"
     },
     "lumdist":{
         "kind":"parameter",
