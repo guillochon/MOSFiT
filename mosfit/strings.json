@@ -1,4 +1,5 @@
 {
+    "all_walkers_written": "All walkers written.",
     "band_load_complete": "Loading bands complete.",
     "bands_used": "\nBands being used for current transient:",
     "bibcode": "Please enter the 19-character ADS bibcode associated with this data:",
@@ -65,6 +66,7 @@
     "no_ul_waic": "WAIC score `{}` below 0.0, not uploading this fit.",
     "no_walker_data": "Could not find walker data.",
     "omit_offline": "Try omitting the `--offline` flag.",
+    "outputting_walker": "Wrote walker [ {}/{} ]...",
     "one_per_line": "\nDoes each row contain a single `{}`, or multiple `{}s` (e.g. a single row reports magnitudes for different `{}s` in different columns)?",
     "paste_token": "Please paste your Dropbox token, then hit enter:",
     "pef_ext_search": "Could not find event, performing extended name search...",
