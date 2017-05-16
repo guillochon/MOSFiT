@@ -25,6 +25,7 @@ from emcee.autocorr import AutocorrError
 from schwimmbad import MPIPool, SerialPool
 from six import string_types
 
+from mosfit.converter import Converter
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
@@ -172,19 +173,11 @@ class Fitter(object):
 
         data = {}
 
-        new_event_list = []
-        for event in event_list:
-            if '.' in event and not event.endswith('.json'):
-                with open(event, 'r') as f:
-                    new_events = [
-                        it for s in [
-                            [y.strip("\" ") for y in x.replace(
-                                '\t', ',').split(',')]
-                            for x in f.read().splitlines()] for it in s]
-                new_event_list.extend(new_events)
-            else:
-                new_event_list.append(event)
-        event_list = new_event_list
+        # If the input is not a JSON file, assume it is either a list of
+        # transients or that it is the data from a single transient in tabular
+        # form. Try to guess the format first, and if that fails ask the user.
+        self._converter = Converter(prt, require_source=upload)
+        event_list = self._converter.generate_event_list(event_list)
 
         event_list = [x.replace('‑', '-') for x in event_list]
 
@@ -339,7 +332,6 @@ class Fitter(object):
                                     shutil.copyfileobj(response, f)
                         path = name_path
 
-                    prt.prt()
                     if os.path.exists(path):
                         if open_in_browser:
                             webbrowser.open(
@@ -535,7 +527,6 @@ class Fitter(object):
         """Load the data for the specified event."""
         prt = self._printer
 
-        prt.prt()
         prt.message('loading_data', inline=True)
 
         self._walker_data = walker_data
@@ -617,7 +608,6 @@ class Fitter(object):
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            prt.prt()
             prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
@@ -709,7 +699,7 @@ class Fitter(object):
         model = self._model
         prt = self._printer
 
-        upload_this = upload and iterations > 0
+        upload_model = upload and iterations > 0
 
         if upload:
             try:
@@ -743,7 +733,6 @@ class Fitter(object):
         redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        prt.prt()
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
@@ -1116,7 +1105,6 @@ class Fitter(object):
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
-        prt.prt()
         prt.message('constructing')
 
         if write:
@@ -1164,6 +1152,7 @@ class Fitter(object):
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
              (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
 
+        WAIC = None
         if iterations > 0:
             WAIC = calculate_WAIC(scores)
             modeldict[MODEL.SCORE] = {
@@ -1197,9 +1186,10 @@ class Fitter(object):
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
-                if WAIC < 0.0:
-                    prt.message('no_ul_waic', [pretty_num(WAIC)])
-                    upload_this = False
+                if WAIC is None or WAIC < 0.0:
+                    prt.message('no_ul_waic', ['' if WAIC is None
+                                               else pretty_num(WAIC)])
+                    upload_model = False
 
         modelnum = entry.add_model(**modeldict)
 
@@ -1323,7 +1313,7 @@ class Fitter(object):
                             compare_to_existing=False, check_for_dupes=False,
                             **photodict)
 
-                        if upload_this:
+                        if upload_model:
                             uphotodict = deepcopy(photodict)
                             uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                             uentry.add_photometry(
@@ -1364,7 +1354,7 @@ class Fitter(object):
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
-                if upload_this:
+                if upload_model:
                     uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
         prt.message('all_walkers_written', inline=True)
@@ -1412,7 +1402,7 @@ class Fitter(object):
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
                     entabbed_json_dump(extras, feven, separators=(',', ':'))
 
-        if upload_this:
+        if upload_model:
             uentry.sanitize()
             prt.message('ul_fit', [entryhash, modelhash])
             upath = '/' + '_'.join(
@@ -1431,6 +1421,37 @@ class Fitter(object):
                     pass
                 else:
                     raise
+
+        if upload:
+            for ce in self._converter.get_converted():
+                dentry = Entry.init_from_file(
+                    catalog=None,
+                    name=ce[0],
+                    path=ce[1],
+                    merge=False,
+                    pop_schema=False,
+                    ignore_keys=[ENTRY.MODELS],
+                    compare_to_existing=False)
+
+                dentry.sanitize()
+                odentry = {ce[0]: uentry._ordered(dentry)}
+                dpayload = entabbed_json_dumps(odentry, separators=(',', ':'))
+                text = prt.message('ul_devent', [ce[0]], prt=False)
+                ul_devent = prt.prompt(text, kind='bool', message=False)
+                if ul_devent:
+                    dpath = '/' + ce[0] + '.json'
+                    try:
+                        dbx = dropbox.Dropbox(upload_token)
+                        dbx.files_upload(
+                            dpayload.encode(),
+                            dpath,
+                            mode=dropbox.files.WriteMode.overwrite)
+                        prt.message('ul_complete')
+                    except Exception:
+                        if self._test:
+                            pass
+                        else:
+                            raise
 
         return (entry, pout, lnprobout)
 

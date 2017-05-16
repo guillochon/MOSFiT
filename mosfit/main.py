@@ -608,7 +608,8 @@ def main():
             else:
                 sys.exit()
 
-        if args.upload and not args.test and args.num_walkers < 100:
+        if (args.upload and not args.test and
+                args.num_walkers is not None and args.num_walkers < 100):
             response = prt.prompt('ul_warning_few_walkers')
             if response:
                 args.upload = False

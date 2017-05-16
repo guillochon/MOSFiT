@@ -19,7 +19,7 @@ if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
 
     def print(*args, **kwargs):
-        """Replacement for print function in Python 2.x."""
+        """Replace print function in Python 2.x."""
         flush = kwargs.pop('flush', False)
         old_print(*args, **kwargs)
         file = kwargs.get('file', sys.stdout)
@@ -130,13 +130,13 @@ class Printer(object):
                 text = '!r' + self._strings['error'] + ': ' + text + '!e'
         if color:
             text = color + text + '!e'
-        tspl = (text + '\n').splitlines()
+        tspl = text.split('\n')
         if wrapped:
             if not wrap_length or not is_integer(wrap_length):
                 wrap_length = self._wrap_length
             ntspl = []
             for line in tspl:
-                ntspl.extend(fill(line, wrap_length).splitlines())
+                ntspl.extend(fill(line, wrap_length).split('\n'))
             tspl = ntspl
         return tspl
 
@@ -148,7 +148,7 @@ class Printer(object):
         inline = kwargs.get('inline', False)
         center = kwargs.get('center', False)
         width = kwargs.get('width', None)
-        colorify = kwargs.get('colorify', False)
+        colorify = kwargs.get('colorify', True)
         tspl = self._lines(text, **kwargs)
         if warning or error or color:
             colorify = True
@@ -210,55 +210,131 @@ class Printer(object):
                 warning=warning, error=error, color=color)
         return text
 
-    def prompt(self, text, wrap_length=None, kind='bool',
-               none_string='None of the above.', colorify=True,
-               options=None, translate=True, message=True):
+    def prompt(self, text, wrap_length=None, kind='bool', default=None,
+               none_string='None of the above.', colorify=True, single=False,
+               options=None, translate=True, message=True, color='',
+               allow_blank=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
         else:
             wl = self._wrap_length
 
-        if kind == 'bool':
-            choices = ' (y/[n])'
-        elif kind == 'select':
-            selpad = ''.join([' ' for x in str(len(options))])
-            choices = '\n' + '\n'.join([
-                ' ' + str(i + 1) + '. ' + selpad[len(str(i + 1)) - 1:] +
-                options[i] for i in range(len(options))
-            ] + [
-                '[n].' + selpad + none_string + '\n' +
-                'Enter selection (' + ('1-' if len(options) > 1 else '') + str(
-                    len(options)) + '/[n]):'
-            ])
-        elif kind == 'string':
-            choices = ''
-        else:
-            raise ValueError('Unknown prompt kind.')
+        if kind in ['select', 'option', 'bool']:
+            if kind == 'bool':
+                options = [('', 'y'), ('', 'n')]
+                if default is None:
+                    default = 'n'
+                single = True
+                none_string = None
+            if none_string is not None:
+                options.append((none_string, 'n'))
+            if default is None and none_string is None:
+                default = (
+                    str(options[0][-1]) if isinstance(options[0], tuple)
+                    else '1')
 
-        if message:
-            text = self.string(
-                self.message(text, prt=False), wrap_length=wrap_length)
-        textchoices = text + choices
-        if translate:
-            textchoices = self.translate(textchoices)
-        prompt_txt = (textchoices).split('\n')
-        for txt in prompt_txt[:-1]:
-            ptxt = fill(txt, wl, replace_whitespace=False)
-            self.prt(ptxt)
+        while True:
+            if kind in ['select', 'option', 'bool']:
+                opt_sels = [
+                    (str(x[-1]) if isinstance(x, tuple) else str(xi + 1))
+                    for xi, x in enumerate(options)]
+                opt_strs = [
+                    (('[' + str(x) + '.]') if x == default else x + '.')
+                    for x in opt_sels]
+                opt_nops = [(('[' + str(x) + ']') if x == default else x)
+                            for x in opt_sels]
+                opt_labs = [(opt[0] if isinstance(opt, tuple) else opt)
+                            for opt in options]
+                new_opts = dict(zip(*(opt_sels, opt_labs)))
 
-        user_input = input(
-            fill(
-                prompt_txt[-1], wl, replace_whitespace=False) + " ")
-        if kind == 'bool':
-            return user_input in ["Y", "y", "Yes", "yes"]
-        elif kind == 'select':
-            if (is_integer(user_input) and
-                    int(user_input) in list(range(1, len(options) + 1))):
-                return options[int(user_input) - 1]
-            return False
-        elif kind == 'string':
-            return user_input
+                if single:
+                    choices = ' (' + '/'.join(opt_nops) + ')'
+                else:
+                    msp = max([len(x) for x in opt_strs])
+                    carr = [
+                        opt_strs[i].rjust(
+                            (msp + 1) if opt_sels[i] == default
+                            else msp) + (' ' if opt_sels[i] == default
+                                         else '  ') + opt_labs[i]
+                        for i in range(len(options))
+                    ]
+                    sel_str = ''
+                    beg_range = None
+                    for oi, opt in enumerate(opt_sels):
+                        if is_integer(opt):
+                            if beg_range is None:
+                                sel_str += opt_nops[oi]
+                                beg_range = opt
+                            else:
+                                if (oi + 1 >= len(opt_sels) or
+                                        not is_integer(opt_sels[oi + 1])):
+                                    if (oi > 0 and
+                                            opt_sels[oi - 1] == beg_range):
+                                        sel_str += '/' + opt_nops[oi]
+                                    else:
+                                        sel_str += '-' + opt_nops[oi]
+                        else:
+                            sel_str += '/' + opt_nops[oi]
+                    carr += ['Enter selection (' + sel_str + '):']
+                    choices = '\n' + '\n'.join(carr)
+            elif kind == 'string':
+                choices = ''
+            else:
+                raise ValueError('Unknown prompt kind.')
+
+            if message and text in self._strings:
+                text = self.message(text, prt=False)
+            textchoices = text + choices
+            if translate:
+                textchoices = self.translate(textchoices)
+            prompt_txt = (textchoices).split('\n')
+            for txt in prompt_txt[:-1]:
+                ptxt = fill(txt, wl, replace_whitespace=False)
+                self.prt(ptxt, color=color)
+
+            inp_text = fill(
+                prompt_txt[-1], wl, replace_whitespace=False) + " "
+            if colorify:
+                inp_text = self.colorify(color + inp_text + "!e")
+            user_input = input(inp_text)
+
+            yes = ['y', 'yes', 'yep']
+            nos = ['n', 'no', 'nope']
+
+            uil = user_input.lower()
+            if kind == 'bool':
+                if uil == '':
+                    return default in yes
+                if uil in yes:
+                    return True
+                if uil in nos:
+                    return False
+                continue
+            elif kind == 'select':
+                if (none_string is not None and default == 'n' and
+                        uil in nos + ['']):
+                    return None
+                if uil == '' and default in new_opts:
+                    return new_opts[default]
+                if uil in opt_sels:
+                    return new_opts[uil]
+                continue
+            elif kind == 'option':
+                if (none_string is not None and default == 'n' and
+                        uil in nos + ['']):
+                    return None
+                if uil == '' and default in new_opts:
+                    return int(default) if is_integer(default) else default
+                if is_integer(user_input) and user_input in opt_sels:
+                    return int(user_input)
+                if uil in opt_sels:
+                    return uil
+                continue
+            elif kind == 'string':
+                if not allow_blank and user_input == '':
+                    continue
+                return user_input
 
     def status(self,
                desc='',

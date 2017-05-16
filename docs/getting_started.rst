@@ -33,6 +33,9 @@ quotation marks):
 
     python -m mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 
+Parallel execution
+------------------
+
 ``MOSFiT`` is parallelized and can be run in parallel by prepending
 ``mpirun -np #``, where ``#`` is the number of processors in your
 machine +1 for the master process. So, if you computer has 4 processors,
@@ -59,13 +62,43 @@ output is visualized via an example Jupyter notebook (``mosfit.ipynb``),
 which is copied to the ``products`` folder in the run directory, and by default shows
 output from the last ``MOSFiT`` run.
 
-To upload fits back to the open astronomy catalogs, users simply pass
-the ``-u`` to the the code:
+Using your own data
+-------------------
+
+``MOSFiT`` has a built-in converter that can take input data in a number
+of formats and convert that data to the Open Catalog JSON format. Using
+the converter is straightforward, simply pass the path to the file(s) using
+the same ``-e`` flag:
+
+.. code:: bash
+
+    python -m mosfit -e my_ascii_data_file.csv
+
+When run with no other arguments, ``MOSFiT`` will convert the files to JSON
+format and immediately exit, but if run with the other standard arguments
+``MOSFiT`` will read in the newly created JSON files and begin processing
+them.
+
+Sharing data and outputs with the community
+-------------------------------------------
+
+To upload fits back to the Open Catalogs, users can simply pass
+the ``-u`` flag:
 
 .. code:: bash
 
     python -m mosfit -e LSQ12dlf -m slsn -u
 
-After running ``MOSFiT`` to completion, and if the fits satisfy some
-quality checks, the model fits will be displayed on the open catalogs
-within 24 hours of their submission.
+Upon completing the fitting process, and if the fits satisfy some
+quality checks, the model fits will uploaded to the Open Catalogs,
+where they will be ingested and available approximately 24 hours
+after their submission.
+
+If the data was read from a file (rather than a name), and if the ``-u``
+option was provided, ``MOSFiT`` will offer the user the option of uploading
+the *observed* data to the Open Catalogs as well, in addition to the model fits.
+Because of the possibility that local data passed to ``MOSFiT`` is private,
+the user will be asked if they wish to upload each event before they are uploaded. Users
+should immediately contact the maintainers of ``MOSFiT`` if they believe
+they have uploaded private data in error (because of the 24 hour waiting
+period, the inadvertantly uploaded data can be purged before becoming public).
