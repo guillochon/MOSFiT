@@ -212,7 +212,8 @@ class Printer(object):
 
     def prompt(self, text, wrap_length=None, kind='bool', default=None,
                none_string='None of the above.', colorify=True, single=False,
-               options=None, translate=True, message=True, color=''):
+               options=None, translate=True, message=True, color='',
+               allow_blank=True):
         """Prompt the user for input and return a value based on response."""
         if wrap_length and is_integer(wrap_length):
             wl = wrap_length
@@ -294,7 +295,7 @@ class Printer(object):
 
             inp_text = fill(
                 prompt_txt[-1], wl, replace_whitespace=False) + " "
-            if colorify and options is None:
+            if colorify:
                 inp_text = self.colorify(color + inp_text + "!e")
             user_input = input(inp_text)
 
@@ -331,6 +332,8 @@ class Printer(object):
                     return uil
                 continue
             elif kind == 'string':
+                if not allow_blank and user_input == '':
+                    continue
                 return user_input
 
     def status(self,

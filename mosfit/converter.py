@@ -10,6 +10,7 @@ from astrocats.catalog.entry import Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
 from astrocats.catalog.utils import is_number, jd_to_mjd
+from astrocats.catalog.source import SOURCE
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
@@ -46,9 +47,15 @@ class Converter(object):
         ('Dec', '12')
     ))
 
-    def __init__(self, printer, **kwargs):
+    _DEFAULT_SOURCE = 'MOSFiT paper'
+
+    def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
         self._printer = printer
+        self._require_source = require_source
+
+        self._rsource = {SOURCE.NAME: self._DEFAULT_SOURCE}
+
         emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
             'mag err', 'magerr', 'mag error']
@@ -98,6 +105,8 @@ class Converter(object):
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
+        self._converted = []
+
         for key in self._header_keys.keys():
             for val in self._header_keys[key]:
                 for i in range(val.count(' ')):
@@ -297,9 +306,41 @@ class Converter(object):
                                     ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
                                     zp=self._zp)
                             if not len(sources):
+                                if self._require_source:
+                                    if (self._rsource.get(SOURCE.NAME, '') ==
+                                            self._DEFAULT_SOURCE):
+                                        self._rsource = {}
+                                        sopts = [
+                                            ('Bibcode', 'b'), ('Name', 'n')]
+                                        text = prt.message(
+                                            'select_source', [new_event_name],
+                                            prt=False)
+                                        skind = prt.prompt(
+                                            text, kind='option',
+                                            options=sopts, default='b',
+                                            none_string=None)
+                                        if skind == 'b':
+                                            bibcode = ''
+                                            while len(bibcode) != 19:
+                                                bibcode = prt.prompt(
+                                                    'bibcode',
+                                                    kind='string',
+                                                    allow_blank=False
+                                                )
+                                            self._rsource[
+                                                SOURCE.BIBCODE] = bibcode
+                                        elif skind == 'n':
+                                            last_name = prt.prompt(
+                                                'last_name', kind='string'
+                                            )
+                                            self._rsource[
+                                                SOURCE.NAME] = (
+                                                    last_name.strip().title() +
+                                                    'et al., in preparation')
+
                                 photodict[
                                     PHOTOMETRY.SOURCE] = entry.add_source(
-                                        name='MOSFiT paper')
+                                        **self._rsource)
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
@@ -344,6 +385,8 @@ class Converter(object):
                             {new_event_name: oentry}, f,
                             separators=(',', ':'))
 
+                    self._converted.append([new_event_name, new_events[0]])
+
                 new_event_list.extend(new_events)
             else:
                 new_event_list.append(event)
@@ -355,7 +398,6 @@ class Converter(object):
         used_cis = {}
         ckeys = list(self._critical_keys)
         dkeys = list(self._dep_keys)
-        hkeys = np.array([])
         prt = self._printer
 
         for fi, fl in enumerate(flines):
@@ -563,3 +605,7 @@ class Converter(object):
         if (PHOTOMETRY.INSTRUMENT not in cidict and
                 PHOTOMETRY.TELESCOPE not in cidict):
             prt.message('instrument_recommended', warning=True)
+
+    def get_converted(self):
+        """Get a list of events that were converted from ASCII to JSON."""
+        return self._converted
