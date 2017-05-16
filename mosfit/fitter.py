@@ -989,7 +989,7 @@ class Fitter(object):
                         kmat = model.run_stack(
                             p[np.unravel_index(
                                 np.argmax(lnprob), lnprob.shape)],
-                            root='objective')['kmat']
+                            root='objective').get('kmat', None)
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
@@ -1221,6 +1221,10 @@ class Fitter(object):
         for xi, x in enumerate(pout):
             for yi, y in enumerate(pout[xi]):
                 # Only produce LCs for end walker state.
+                wcnt = xi * nwalkers + yi
+                if wcnt > 0:
+                    prt.message('outputting_walker', [
+                        wcnt, nwalkers * ntemps], inline=True)
                 if yi <= nwalkers:
                     output = model.run_stack(y, root='output')
                     if extra_outputs:
@@ -1243,17 +1247,53 @@ class Fitter(object):
                             photodict[PHOTOMETRY.BAND] = output['bands'][i]
                             photodict[PHOTOMETRY.MAGNITUDE] = output[
                                 'model_observations'][i]
+                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                                'model_variances'][i]
                         if output['observation_types'][i] == 'fluxdensity':
                             photodict[PHOTOMETRY.FREQUENCY] = output[
                                 'frequencies'][i] * frequency_unit('GHz')
                             photodict[PHOTOMETRY.FLUX_DENSITY] = output[
                                 'model_observations'][
                                     i] * flux_density_unit('µJy')
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_FLUX_DENSITY] = (
+                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.FLUX_DENSITY]) -
+                                            output['model_variances'][
+                                                i] / 2.5)) *
+                                    flux_density_unit('µJy'))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.FLUX_DENSITY]) +
+                                    output['model_variances'][i] / 2.5) *
+                                    flux_density_unit('µJy') -
+                                    photodict[PHOTOMETRY.FLUX_DENSITY])
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                         if output['observation_types'][i] == 'countrate':
                             photodict[PHOTOMETRY.COUNT_RATE] = output[
                                 'model_observations'][i]
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_COUNT_RATE] = (
+                                    photodict[PHOTOMETRY.COUNT_RATE] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.COUNT_RATE]) -
+                                            output['model_variances'][
+                                                i] / 2.5)))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_COUNT_RATE] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.COUNT_RATE]) +
+                                    output['model_variances'][i] / 2.5) -
+                                    photodict[PHOTOMETRY.COUNT_RATE])
                             photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
@@ -1318,6 +1358,7 @@ class Fitter(object):
                 if upload_model:
                     uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
+        prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
         oentry = entry._ordered(entry)
