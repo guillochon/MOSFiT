@@ -21,17 +21,17 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.utils import is_number
+from astrocats.catalog.source import SOURCE
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.converter import Converter
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          listify, open_atomic, pretty_num, speak)
+                          listify, open_atomic, pretty_num, slugify, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -1186,7 +1186,9 @@ class Fitter(object):
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
-                if WAIC is None or WAIC < 0.0:
+                if WAIC is None:
+                    upload_model = False
+                elif WAIC is not None and WAIC < 0.0:
                     prt.message('no_ul_waic', ['' if WAIC is None
                                                else pretty_num(WAIC)])
                     upload_model = False
@@ -1398,8 +1400,10 @@ class Fitter(object):
                 text = prt.message('ul_devent', [ce[0]], prt=False)
                 ul_devent = prt.prompt(text, kind='bool', message=False)
                 if ul_devent:
-                    dpath = '/' + ce[0] + '_' + dentry[ENTRY.SOURCES].get(
-                        'bibcode', dentry.get('name', 'NOSOURCE')) + '.json'
+                    dpath = '/' + slugify(
+                        ce[0] + '_' + dentry[ENTRY.SOURCES][0].get(
+                            SOURCE.BIBCODE, dentry[ENTRY.SOURCES][0].get(
+                                SOURCE.NAME, 'NOSOURCE'))) + '.json'
                     try:
                         dbx = dropbox.Dropbox(upload_token)
                         dbx.files_upload(

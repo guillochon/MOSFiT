@@ -9,7 +9,7 @@ import os
 import re
 import sys
 import tempfile
-from builtins import bytes
+from builtins import bytes, str
 from collections import OrderedDict
 from contextlib import contextmanager
 from math import floor, isnan, log10
@@ -314,6 +314,25 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
               "Currently only \'neighbour\', \'nearest\',\'linear\',"
               "and \'spline\' are supported.")
         return None
+
+
+# From Django
+def slugify(value, allow_unicode=False):
+    """Slugify string to make it a valid filename.
+
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces to hyphens.
+    Remove characters that aren't alphanumerics, underscores, or hyphens.
+    Also strip leading and trailing whitespace.
+    """
+    import unicodedata
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode(
+            'ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value).strip()
+    return re.sub(r'[-\s]+', '-', value)
 
 
 # Below from

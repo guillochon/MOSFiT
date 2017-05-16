@@ -338,7 +338,7 @@ class Converter(object):
                                             self._rsource[
                                                 SOURCE.NAME] = (
                                                     last_name.strip().title() +
-                                                    'et al., in preparation')
+                                                    ' et al., in preparation')
 
                                 photodict[
                                     PHOTOMETRY.SOURCE] = entry.add_source(
