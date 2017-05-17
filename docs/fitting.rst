@@ -14,7 +14,7 @@ Public data
 
 ``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient:
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -m slsn -e PTF11dij
     mosfit -m slsn -e CSS110406:135058+261642
@@ -40,7 +40,7 @@ In some cases, if the ASCII file is in a simple form with columns that match all
 
 If the user so chooses, they may *optionally* upload their data directly to the Open Catalogs with the ``-u`` flag. This will make their observational data publicly accessible on the Open Catalogs:
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -e path/to/my/ascii/file/my_transient.dat -u
 

@@ -22,7 +22,7 @@ as your Python environment.
 
 After installing conda, ``MOSFiT`` can be installed via::
 
-.. code_block:: bash
+.. code-block:: bash
 
     conda install -c conda-forge mosfit
 
@@ -34,6 +34,6 @@ Installing with pip
 
 Installing ``MOSFiT`` with pip is straightforward::
 
-.. code_block:: bash
+.. code-block:: bash
 
     pip install mosfit

@@ -16,21 +16,21 @@ convenient to make a new directory for your project.
 the ``-e`` flag (the default model is a simple Nickel-Cobalt decay with
 diffusion):
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -e LSQ12dlf
 
 Different models (several are distributed with ``MOSFiT``) can be fit to
 supernovae using the model flag ``-m``::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -e LSQ12dlf -m slsn
 
 Multiple events can be fit in succession by passing a list of names separated
 by spaces (names containing spaces can be specified using quotation marks)::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 
@@ -49,7 +49,7 @@ Parallel execution
 machine +1 for the master process. So, if you computer has 4 processors,
 the above command would be::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mpirun -np 5 mosfit -e LSQ12dlf
 
@@ -59,7 +59,7 @@ the possible combinations of input parameters specified in the
 ``parameters.json`` file. This is useful for determining the range of possible
 outcomes for a given theoretical model::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mpirun -np 5 mosfit -i 0 -m magnetar
 
@@ -72,7 +72,7 @@ formats and convert that data to the Open Catalog JSON format. Using the
 converter is straightforward, simply pass the path to the file(s) using the
 same ``-e`` flag::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -e my_ascii_data_file.csv
 
@@ -99,7 +99,7 @@ Sharing data and outputs with the community
 To upload fits back to the Open Catalogs, users can simply pass
 the ``-u`` flag::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mosfit -e LSQ12dlf -m slsn -u
 

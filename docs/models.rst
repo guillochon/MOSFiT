@@ -26,7 +26,7 @@ For this example, we'll presume that the user will be modifying the ``slsn``
 model. First, the user should create a new run directory and run ``MOSFiT``
 there once to copy the model JSON files to that run directory::
 
-.. code_block:: bash
+.. code-block:: bash
 
     mkdir slsn_run
     cd slsn_run
@@ -37,7 +37,7 @@ the run directory: ``models``, ``jupyter``, and ``products``. Change into the
 ``models/slsn`` directory and edit the ``parameters.json`` file in your
 favorite text editor::
 
-.. code_block:: bash
+.. code-block:: bash
 
     cd models/slsn
     vim parameters.json
@@ -95,19 +95,19 @@ the model they wish to create.
 
 If you go this route, we highly recommend that you `fork MOSFiT <https://github.com/guillochon/MOSFiT#fork-destination-box>`_ on GitHub and clone your fork, with development being done in the cloned ``mosfit`` directory::
 
-.. code_block:: bash
+.. code-block:: bash
 
     git clone https://github.com/your_github_username/MOSFiT.git
     cd mosfit
 
 Copy one of the existing models as a starting point::
 
-.. code_block:: bash
+.. code-block:: bash
 
     cp -R models/slsn models/my_model_that_explains_everything
 
 And invoke the model::
 
-.. code_block:: bash
+.. code-block:: bash
 
     python -m my_model_that_explains_everything
