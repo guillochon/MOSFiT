@@ -120,6 +120,7 @@ class Fitter(object):
                    walker_paths=[],
                    catalogs=[],
                    open_in_browser=False,
+                   limiting_magnitude=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -130,6 +131,7 @@ class Fitter(object):
         self._maximum_memory = maximum_memory
         self._debug = False
         self._speak = speak
+        self._limiting_magnitude = limiting_magnitude
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
@@ -1296,6 +1298,12 @@ class Fitter(object):
                                     output['model_variances'][i] / 2.5) -
                                     photodict[PHOTOMETRY.COUNT_RATE])
                             photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
+                        if ('model_upper_limits' in output and
+                                output['model_upper_limits'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
+                                'model_upper_limits'][i])
+                        if self._limiting_magnitude is not None:
+                            photodict[PHOTOMETRY.SIMULATED] = True
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]

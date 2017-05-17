@@ -246,6 +246,8 @@ class Printer(object):
                             for x in opt_sels]
                 opt_labs = [(opt[0] if isinstance(opt, tuple) else opt)
                             for opt in options]
+                opt_labs = [x.decode('utf-8') if not isinstance(x, str)
+                            else x for x in opt_labs]
                 new_opts = dict(zip(*(opt_sels, opt_labs)))
 
                 if single:
@@ -255,8 +257,8 @@ class Printer(object):
                     carr = [
                         opt_strs[i].rjust(
                             (msp + 1) if opt_sels[i] == default
-                            else msp) + (' ' if opt_sels[i] == default
-                                         else '  ') + opt_labs[i]
+                            else msp) + (u' ' if opt_sels[i] == default
+                                         else u'  ') + opt_labs[i]
                         for i in range(len(options))
                     ]
                     sel_str = ''

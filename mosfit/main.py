@@ -97,6 +97,19 @@ def get_parser():
               "until."))
 
     parser.add_argument(
+        '--limiting-magnitude',
+        '-l',
+        dest='limiting_magnitude',
+        default=None,
+        nargs='+',
+        help=("Assumed limiting magnitude of a simulated survey. When "
+              "enabled, model light curves will be randomly drawn and "
+              "assigned error bars. If passed one argument, that number "
+              "will be used as the limiting magnitude (default: `20`). "
+              "If provided a second argument, that number will be used "
+              "for observation-to-observation variance in the limit."))
+
+    parser.add_argument(
         '--band-list',
         '--extra-bands',
         dest='band_list',
@@ -547,6 +560,9 @@ def main():
     prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
 
     args.start_time = time.time()
+
+    if args.limiting_magnitude == []:
+        args.limiting_magnitude = 20.0
 
     args.return_fits = False
 

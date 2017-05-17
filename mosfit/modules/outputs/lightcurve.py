@@ -25,7 +25,7 @@ class LightCurve(Output):
         """Initialize module."""
         super(LightCurve, self).__init__(**kwargs)
         self._dense_keys = self._lc_keys
-        self._n_times = kwargs.get('ntimes', 0)
+        self._limiting_magnitude = self._model._fitter._limiting_magnitude
 
     def process(self, **kwargs):
         """Process module."""
@@ -37,6 +37,39 @@ class LightCurve(Output):
             output[key] = kwargs[key]
         for key in self._dense_keys:
             output[key.replace('all_', '')] = kwargs[key]
+
+        if self._limiting_magnitude is not None:
+            ls = 0.0
+            if isinstance(self._limiting_magnitude, list):
+                lm = float(self._limiting_magnitude[0])
+                if len(self._limiting_magnitude) > 1:
+                    ls = float(self._limiting_magnitude[1])
+            else:
+                lm = self._limiting_magnitude
+
+            lmo = len(output['model_observations'])
+
+            omags = output['observation_types'] == 'magnitude'
+            output['model_variances'] = np.zeros_like(output[
+                'model_observations'])
+            output['model_upper_limits'] = np.full(lmo, False)
+            lms = lm + ls * np.random.randn(lmo)
+            varias = 10.0 ** (-lms / 2.5)
+            mods = 10.0 ** (
+                -np.array(output['model_observations'][omags]) / 2.5)
+            output['model_observations'][omags] = -2.5 * np.log10(
+                varias[omags] * np.random.randn(len(omags)) + mods)
+            obsas = 10.0 ** (
+                -np.array(output['model_observations']) / 2.5)
+            output['model_variances'][omags] = np.abs(-output[
+                'model_observations'][omags] - 2.5 * (
+                    np.log10(varias[omags] + obsas)))
+            ul_mask = omags & (obsas < 3.0 * varias)
+            output['model_upper_limits'] = ul_mask
+            output['model_observations'][ul_mask] = lms[ul_mask]
+            output['model_variances'][ul_mask] = 2.5 * (
+                np.log10(2.0 * varias[ul_mask]) - np.log10(varias[ul_mask]))
+            return output
 
         # Then, apply GP predictions, if available.
         if (all([x in kwargs
