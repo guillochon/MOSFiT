@@ -1302,6 +1302,8 @@ class Fitter(object):
                                 output['model_upper_limits'][i]):
                             photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
                                 'model_upper_limits'][i])
+                        if self._limiting_magnitude is not None:
+                            photodict[PHOTOMETRY.SIMULATED] = True
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]

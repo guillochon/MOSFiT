@@ -96,6 +96,7 @@ class Converter(object):
             PHOTOMETRY.E_MAGNITUDE,
             PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.ZERO_POINT]
+        self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._optional_keys = [PHOTOMETRY.ZERO_POINT]
         self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
         self._dep_keys = [
@@ -162,13 +163,14 @@ class Converter(object):
 
                 if table is None:
                     fsplit = ftxt.splitlines()
-                    fsplit = [x.replace(',', '\t').replace('&', '\t')
+                    fsplit = [x.replace('$', '').replace(',', '\t')
+                              .replace('&', '\t').replace('\\pm', '\t')
                               .strip(' ()')
                               for x in fsplit]
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
                          re.split(
-                             '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+                             '''\s+(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
                              x)]
                         for x in fsplit]
 
@@ -398,7 +400,7 @@ class Converter(object):
     def assign_columns(self, cidict, flines):
         """Assign columns based on header."""
         used_cis = {}
-        ckeys = list(self._critical_keys)
+        akeys = list(self._critical_keys) + list(self._helpful_keys)
         dkeys = list(self._dep_keys)
         prt = self._printer
 
@@ -444,16 +446,16 @@ class Converter(object):
                 options=['Magnitudes', 'Counts (fluxes)'],
                 none_string=None)
         if self._data_type == 1:
-            ckeys.remove(PHOTOMETRY.COUNT_RATE)
-            ckeys.remove(PHOTOMETRY.E_COUNT_RATE)
-            ckeys.remove(PHOTOMETRY.ZERO_POINT)
+            akeys.remove(PHOTOMETRY.COUNT_RATE)
+            akeys.remove(PHOTOMETRY.E_COUNT_RATE)
+            akeys.remove(PHOTOMETRY.ZERO_POINT)
             if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
                     PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
-                ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
+                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
         else:
-            ckeys.remove(PHOTOMETRY.MAGNITUDE)
-            ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            akeys.remove(PHOTOMETRY.MAGNITUDE)
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
@@ -464,7 +466,7 @@ class Converter(object):
                                      else x for x in cidict.values()]))
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
-        for key in ckeys:
+        for key in akeys:
             if key in cidict:
                 continue
             if key in dkeys and self._use_mc:
@@ -493,7 +495,8 @@ class Converter(object):
                     text = prt.message(
                         'no_matching_column', [key], prt=False)
                     ns = (
-                        ignore if key in self._optional_keys else
+                        ignore if key in (
+                            self._optional_keys + self._helpful_keys) else
                         specify if key in self._specify_keys
                         else None)
                     select = prt.prompt(
