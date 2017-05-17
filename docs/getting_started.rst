@@ -66,7 +66,7 @@ same ``-e`` flag::
 
 When run with no other arguments, ``MOSFiT`` will convert the files to JSON
 format and immediately exit, but if run with the other standard arguments
-``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the `Fitting private data`_ section.
+``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the `private data`_ section.
 
 -------------------------------------------
 Sharing data and outputs with the community

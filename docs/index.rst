@@ -1,8 +1,10 @@
+======
 MOSFiT
 ======
 
 Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients)! Please see the links below for information on how to install and run the package.
 
+------------
 Using MOSFiT
 ------------
 
@@ -17,13 +19,15 @@ Using MOSFiT
    command_line.rst
    api.rst
 
+------------------
 Indices and tables
-==================
+------------------
 
 * :ref:`genindex`
 * :ref:`modindex`
 * :ref:`search`
 
+---------------------
 License & Attribution
 ---------------------
 

@@ -1,5 +1,6 @@
 .. _installation:
 
+============
 Installation
 ============
 
@@ -9,6 +10,7 @@ Several installation methods for ``MOSFiT`` are outlined below. If you run into
 issues, `open a new issue <https://github.com/guillochon/mosfit/issues>`_ on
 GitHub.
 
+-------------------------------
 Setting up MOSFiT with Anaconda
 -------------------------------
 
@@ -22,6 +24,7 @@ After installing conda, ``MOSFiT`` can be installed via::
 
     conda install -c conda-forge mosfit
 
+-------------------
 Installing with pip
 -------------------
 

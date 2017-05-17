@@ -1,5 +1,6 @@
 .. _models:
 
+================
 Models in MOSFiT
 ================
 
@@ -9,7 +10,8 @@ of observed transients. On this page we walk through some basics on how a user
 might alter an existing model shipped with the code, and how they could
 go about creating their own model.
 
-Altering an Existing Model
+--------------------------
+Altering an existing model
 --------------------------
 
 .. _altering_model
@@ -77,7 +79,8 @@ Now, change the range of allowed neutron star masses to something else:
 **default model, distinguishing it from any other models that might have been
 **uploaded by other users using the default settings.
 
-Creating a New Model
+--------------------
+Creating a new model
 --------------------
 
 .. _creating_model

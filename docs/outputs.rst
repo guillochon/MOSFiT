@@ -1,11 +1,13 @@
 .. _outputs:
 
+=======
 Outputs
 =======
 
 The model structure used in ``MOSFiT`` makes it ammenable to producing outputs from models that need not be fit against any particular transient. In this section we walk through how the user can extract various data products.
 
-Light Curve Predictions
+-----------------------
+Light curve predictions
 -----------------------
 
 .. _light-curve
@@ -18,7 +20,8 @@ By default, these light curves will be the *exact* model predictions, they will 
 
     mosfit -m slsn -l 23 0.5 --extra-bands u g r i z y --extra-instruments LSST
 
-Saving the Chain
+----------------
+Saving the chain
 ----------------
 
 .. _chain
