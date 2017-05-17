@@ -44,4 +44,4 @@ If the user so chooses, they may *optionally* upload their data directly to the 
 
     mosfit -e path/to/my/ascii/file/my_transient.dat -u
 
-Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`maintainers`.
+Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`Maintainers <maintainers>`.
