@@ -1,4 +1,9 @@
-{    
+{
+    "Tviscous":{
+        "min_value":1.0e-3,
+        "max_value":1.0e3,
+        "log":true
+    },
     "nhhost":{
         "min_value":1.0e16,
         "max_value":1.0e23,
@@ -38,5 +43,5 @@
     "Rph0":{
         "min_value":-4.0,
         "max_value":4.0
-    } 
+    }
 }

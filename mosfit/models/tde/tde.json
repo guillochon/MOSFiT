@@ -23,7 +23,7 @@
     },
     "texplosion":{
         "kind":"parameter",
-        "value":-15.0,
+        "value":-12.0,
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
@@ -39,6 +39,12 @@
         "class":"parameter",
         "latex":"\\epsilon\\ (efficiency)"
     },
+    "Tviscous":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"\\tau\\ (\\T_{vis}\\/peaktime)"
+    },
     "bhmass":{
         "kind":"parameter",
         "value":1.78e7,
@@ -47,13 +53,13 @@
     },
     "starmass":{
         "kind":"parameter",
-        "value":3.78,
+        "value":0.1,
         "class":"parameter",
         "latex":"M_{star} (M_{odot})"
     },
     "Rph0":{
         "kind":"parameter",
-        "value":0.6,
+        "value":0.8,
         "class":"parameter",
         "latex": "log(R_{ph0})"
     },
@@ -74,6 +80,14 @@
             "texplosion"
         ]
     },
+    "viscous":{
+        "kind":"transform",
+        "inputs":[
+            "fallback",
+            "texplosion",
+            "Tviscous"
+        ]
+    },
     "tde_photosphere":{
         "kind":"photosphere",
         "inputs":[
@@ -81,7 +95,7 @@
             "starmass",
             "lphoto",
             "Rph0",
-			"fallback"
+			"viscous"
         ]
     },
     "blackbody":{
