@@ -529,7 +529,8 @@ class Fitter(object):
         """Load the data for the specified event."""
         prt = self._printer
 
-        prt.message('loading_data', inline=True)
+        if pool.is_master():
+            prt.message('loading_data', inline=True)
 
         self._walker_data = walker_data
         fixed_parameters = []
@@ -579,7 +580,8 @@ class Fitter(object):
 
         self._model.exchange_requests()
 
-        prt.message('finding_bands', inline=True)
+        if pool.is_master():
+            prt.message('finding_bands', inline=True)
 
         # Run through once to set all inits.
         for root in ['output', 'objective']:
