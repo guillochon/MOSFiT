@@ -28,6 +28,12 @@ by spaces (names containing spaces can be specified using quotation marks)::
 
     mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 
+The code outputs JSON files for each event/model combination that each contain
+a set of walkers that have been relaxed into an equilibrium about the posterior
+parameter distributions. This output is visualized via an example Jupyter
+notebook (``mosfit.ipynb``), which is copied to the ``products`` folder in the
+run directory, and by default shows output from the last ``MOSFiT`` run.
+
 ------------------
 Parallel execution
 ------------------
@@ -47,12 +53,6 @@ outcomes for a given theoretical model::
 
     mpirun -np 5 mosfit -i 0 -m magnetar
 
-The code outputs JSON files for each event/model combination that each contain
-a set of walkers that have been relaxed into an equilibrium about the posterior
-parameter distributions. This output is visualized via an example Jupyter
-notebook (``mosfit.ipynb``), which is copied to the ``products`` folder in the
-run directory, and by default shows output from the last ``MOSFiT`` run.
-
 -------------------
 Using your own data
 -------------------
@@ -67,6 +67,18 @@ same ``-e`` flag::
 When run with no other arguments, ``MOSFiT`` will convert the files to JSON
 format and immediately exit, but if run with the other standard arguments
 ``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the `Private data`_ section.
+
+-----------------
+Producing outputs
+-----------------
+
+All outputs (except for converted observational data) are stored in the ``products`` directory, which is created by ``MOSFiT`` automatically in the current run directory. By default, a single file with the transient's name, e.g. ``LSQ12dlf.json``, will be produced; this file contains all of the information originally available in the input JSON file and the results of the fitting. An exact copy of this file is stored under the name ``walkers.json`` for convenience.
+
+Additional outputs can be produced via some optional flags that can be passed to ``MOSFiT``. Please see the `Additional outputs`_ section.
+
+-------------------
+Visualizing outputs
+-------------------
 
 -------------------------------------------
 Sharing data and outputs with the community
