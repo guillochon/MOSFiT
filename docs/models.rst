@@ -24,7 +24,7 @@ need to be modified by the user!
 
 For this example, we'll presume that the user will be modifying the ``slsn``
 model. First, the user should create a new run directory and run ``MOSFiT``
-there once to copy the model JSON files to that run directory::
+there once to copy the model JSON files to that run directory:
 
 .. code-block:: bash
 
@@ -35,7 +35,7 @@ there once to copy the model JSON files to that run directory::
 After running, the user will notice three directories will have been copied to
 the run directory: ``models``, ``jupyter``, and ``products``. Change into the
 ``models/slsn`` directory and edit the ``parameters.json`` file in your
-favorite text editor::
+favorite text editor:
 
 .. code-block:: bash
 
@@ -43,7 +43,7 @@ favorite text editor::
     vim parameters.json
 
 You'll notice that ``parameters.json`` file is fairly bare-bones, containing
-only a list of model parameters and their allowed value ranges::
+only a list of model parameters and their allowed value ranges:
 
 .. highlight:: json
 
@@ -93,20 +93,20 @@ If users would like to create a brand new model for the ``MOSFiT`` platform, it
 is easiest to duplicate one of the existing models that most closely resembles
 the model they wish to create.
 
-If you go this route, we highly recommend that you `fork MOSFiT <https://github.com/guillochon/MOSFiT#fork-destination-box>`_ on GitHub and clone your fork, with development being done in the cloned ``mosfit`` directory::
+If you go this route, we highly recommend that you `fork MOSFiT <https://github.com/guillochon/MOSFiT#fork-destination-box>`_ on GitHub and clone your fork, with development being done in the cloned ``mosfit`` directory:
 
 .. code-block:: bash
 
     git clone https://github.com/your_github_username/MOSFiT.git
     cd mosfit
 
-Copy one of the existing models as a starting point::
+Copy one of the existing models as a starting point:
 
 .. code-block:: bash
 
     cp -R models/slsn models/my_model_that_explains_everything
 
-And invoke the model::
+And invoke the model:
 
 .. code-block:: bash
 

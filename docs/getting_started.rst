@@ -21,14 +21,14 @@ diffusion):
     mosfit -e LSQ12dlf
 
 Different models (several are distributed with ``MOSFiT``) can be fit to
-supernovae using the model flag ``-m``::
+supernovae using the model flag ``-m``:
 
 .. code-block:: bash
 
     mosfit -e LSQ12dlf -m slsn
 
 Multiple events can be fit in succession by passing a list of names separated
-by spaces (names containing spaces can be specified using quotation marks)::
+by spaces (names containing spaces can be specified using quotation marks):
 
 .. code-block:: bash
 
@@ -47,7 +47,7 @@ Parallel execution
 ``MOSFiT`` is parallelized and can be run in parallel by prepending
 ``mpirun -np #``, where ``#`` is the number of processors in your
 machine +1 for the master process. So, if you computer has 4 processors,
-the above command would be::
+the above command would be:
 
 .. code-block:: bash
 
@@ -57,7 +57,7 @@ the above command would be::
 collection of light curves for the specified model described by the priors on
 the possible combinations of input parameters specified in the
 ``parameters.json`` file. This is useful for determining the range of possible
-outcomes for a given theoretical model::
+outcomes for a given theoretical model:
 
 .. code-block:: bash
 
@@ -70,7 +70,7 @@ Using your own data
 ``MOSFiT`` has a built-in converter that can take input data in a number of
 formats and convert that data to the Open Catalog JSON format. Using the
 converter is straightforward, simply pass the path to the file(s) using the
-same ``-e`` flag::
+same ``-e`` flag:
 
 .. code-block:: bash
 
@@ -97,7 +97,7 @@ Sharing data and outputs with the community
 -------------------------------------------
 
 To upload fits back to the Open Catalogs, users can simply pass
-the ``-u`` flag::
+the ``-u`` flag:
 
 .. code-block:: bash
 

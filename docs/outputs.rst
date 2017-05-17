@@ -12,7 +12,9 @@ Light curve predictions
 
 .. _light-curve:
 
-Generating a light curve from a model in ``MOSFiT`` is achieved by simply not passing any event to the code with the ``-e`` flag. The command below will dump out a default number of parameter draws to a ``walkers.json`` file in the ``products`` folder::
+Generating a light curve from a model in ``MOSFiT`` is achieved by simply not passing any event to the code with the ``-e`` flag. The command below will dump out a default number of parameter draws to a ``walkers.json`` file in the ``products`` folder:
+
+.. code-block:: bash
 
     mosfit -m slsn
 
@@ -28,7 +30,7 @@ Saving the chain
 
 .. _chain:
 
-Because the chain can be quite large (a full chain for a model with 15 free parameters, 100 walkers, and 20000 iterations will occupy ~120 MB of disk space), by default ``MOSFiT`` does not output the full chain to disk. Doing so is achieved by passing ``MOSFiT`` the ``-c`` flag
+Because the chain can be quite large (a full chain for a model with 15 free parameters, 100 walkers, and 20000 iterations will occupy ~120 MB of disk space), by default ``MOSFiT`` does not output the full chain to disk. Doing so is achieved by passing ``MOSFiT`` the ``-c`` flag:
 
 .. code-block:: bash
 
