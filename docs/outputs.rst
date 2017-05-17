@@ -10,7 +10,7 @@ The model structure used in ``MOSFiT`` makes it ammenable to producing outputs f
 Light curve predictions
 -----------------------
 
-.. _light-curve
+.. _light-curve:
 
 Generating a light curve from a model in ``MOSFiT`` is achieved by simply not passing any event to the code with the ``-e`` flag. The command below will dump out a default number of parameter draws to a ``walkers.json`` file in the ``products`` folder::
 
@@ -26,7 +26,7 @@ By default, these light curves will be the *exact* model predictions, they will 
 Saving the chain
 ----------------
 
-.. _chain
+.. _chain:
 
 Because the chain can be quite large (a full chain for a model with 15 free parameters, 100 walkers, and 20000 iterations will occupy ~120 MB of disk space), by default ``MOSFiT`` does not output the full chain to disk. Doing so is achieved by passing ``MOSFiT`` the ``-c`` flag
 
@@ -46,7 +46,7 @@ Memory can be quite scarce on some systems, and storing the chain in memory can 
 Arbitrary outputs
 -----------------
 
-.. _arbitrary
+.. _arbitrary:
 
 Internally, ``MOSFiT`` is storing the outputs of each module in a single dictionary that is handed down through the execution tree like a hot potato. This dictionary behaves like a list of global variables, and when a model is executed from start to finish, it will be filled with values that were produced by all modules included in that module.
 

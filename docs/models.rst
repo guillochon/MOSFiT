@@ -14,7 +14,7 @@ go about creating their own model.
 Altering an existing model
 --------------------------
 
-.. _altering_model
+.. _altering:
 
 For many simple alterations to a model, such as adjusting input priors, setting
 variables remain free and which should be fixed, and adding/removing modules to
@@ -87,7 +87,7 @@ Now, change the range of allowed neutron star masses to something else:
 Creating a new model
 --------------------
 
-.. _creating_model
+.. _creating:
 
 If users would like to create a brand new model for the ``MOSFiT`` platform, it
 is easiest to duplicate one of the existing models that most closely resembles

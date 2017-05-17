@@ -10,7 +10,7 @@ The primary purpose of ``MOSFiT`` is to fit models of transients to observed dat
 Public data
 -----------
 
-.. _public
+.. _public:
 
 ``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient:
 
@@ -25,7 +25,7 @@ While the Open Catalogs do their best to maintain the integrity of the data they
 Private data
 ------------
 
-.. _private
+.. _private:
 
 If you have private data you would like to fit, the most robust way to load the data into ``MOSFiT`` is to directly construct a JSON file from your data that conforms to the `Open Catalog Schema <https://github.com/astrocatalogs/supernovae/blob/master/SCHEMA.md>`_. This way, the user can specify all the data that ``MOSFiT`` can use for every single observation in a precise way. All data provided by the Open Catalogs is provided in this form, and if the user open up a typical JSON file downloaded from one of these catalogs, they will find that each observation is tagged with all the information necessary to model it.
 

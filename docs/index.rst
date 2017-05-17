@@ -31,7 +31,7 @@ Indices and tables
 License & Attribution
 ---------------------
 
-.. _maintainers
+.. _maintainers:
 
 Copyright 2016-2017, `James Guillochon <mailto:guillochon@gmail.com>`_, Matt Nicholl, and contributors.
 
