@@ -19,7 +19,7 @@ if [ "$1" = -c ]; then
 else
     $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic
 fi
-echo -ne 'y\n\n4\n2\n4\n4\nu\n\n\n\n1234567890123456789\ny\n' | $RUNNER -m mosfit -m slsn -e mosfit/tests/PTF10hgi.txt -i 1 --no-write -u
+echo -ne 'y\n\n4\n2\n4\n4\nu\n\n\n\n1234567890123456789\ny\n' | $RUNNER -m mosfit -m slsn -e mosfit/tests/PTF10hgi.txt -i 1 --no-write -u --test
 $RUNNER -m mosfit -e 09do --test -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0 -g -c --no-copy-at-launch -x radiusphot
 $RUNNER -m mosfit -e mosfit/tests/SN2006le.json --test -i 5 --no-fracking -m csmni --extra-bands u g --extra-instruments LSST -L 55540 55560 --exclude-bands B -s test --quiet -u --offline
 
