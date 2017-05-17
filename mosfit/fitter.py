@@ -20,13 +20,13 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
-from astrocats.catalog.utils import is_number
 from astrocats.catalog.source import SOURCE
+from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
 from mosfit.converter import Converter
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
-from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
+from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
                           listify, open_atomic, pretty_num, slugify, speak)
@@ -1233,8 +1233,7 @@ class Fitter(object):
                     if extra_outputs:
                         for key in extra_outputs:
                             new_val = output.get(key, [])
-                            if type(new_val).__module__ == 'numpy':
-                                new_val = new_val.tolist()
+                            new_val = all_to_list(new_val)
                             extras.setdefault(key, []).append(new_val)
                     for i in range(len(output['times'])):
                         if not np.isfinite(output['model_observations'][i]):

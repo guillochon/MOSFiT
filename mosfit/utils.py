@@ -316,6 +316,12 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
         return None
 
 
+def all_to_list(array):
+    """Recursively convert list of numpy arrays to lists."""
+    return [x.tolist() if type(x).__module__ == 'numpy'
+            else all_to_list(x) if type(x) == 'list' else x for x in array]
+
+
 # From Django
 def slugify(value, allow_unicode=False):
     """Slugify string to make it a valid filename.
