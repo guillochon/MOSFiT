@@ -1,4 +1,4 @@
 ===
 API
 ===
-.. automodapi:: mosfit
+.. automodapi:: mosfit.modules
