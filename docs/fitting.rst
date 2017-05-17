@@ -27,7 +27,7 @@ Private data
 
 If you have private data you would like to fit, the most robust way to load the data into ``MOSFiT`` is to directly construct a JSON file from your data that conforms to the `Open Catalog Schema <https://github.com/astrocatalogs/supernovae/blob/master/SCHEMA.md>`_. This way, the user can specify all the data that ``MOSFiT`` can use for every single observation in a precise way. All data provided by the Open Catalogs is provided in this form, and if the user open up a typical JSON file downloaded from one of these catalogs, they will find that each observation is tagged with all the information necessary to model it.
 
-Of course, it is more likely, that the data a user will have handy will be in another form, typically an ASCII table where each row presents a single (or multiple) observations. ``MOSFiT`` includes a conversion feature where the user can simply pass the path to the file(s) to convert::
+Of course, it is more likely, that the data a user will have handy will be in another form, typically an ASCII table where each row presents a single (or multiple) observations. ``MOSFiT`` includes a conversion feature where the user can simply pass the path to the file(s) to convert:
 
 .. code-block:: bash
 
