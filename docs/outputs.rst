@@ -36,13 +36,14 @@ Memory can be quite scarce on some systems, and storing the chain in memory can 
 
     mosfit -m slsn -e LSQ12dlf -M 1000
 
-Arbitrary Outputs
+-----------------
+Arbitrary outputs
 -----------------
 
 .. _arbitrary
 
 Internally, ``MOSFiT`` is storing the outputs of each module in a single dictionary that is handed down through the execution tree like a hot potato. This dictionary behaves like a list of global variables, and when a model is executed from start to finish, it will be filled with values that were produced by all modules included in that module.
 
-The user can dump any of these variables to a supplementary file ``extras.json`` by using the ``-x`` flag, followed by the name of the variable of interest. For instance, if the user is interested in the bolometric luminosity of the SLSN model, they can simply pass the ``seds`` and ``dense_luminosities`` keys to ``-x``::
+The user can dump any of these variables to a supplementary file ``extras.json`` by using the ``-x`` flag, followed by the name of the variable of interest. For instance, if the user is interested in the spectral energy distributions and bolometric luminosities associated with the SLSN model of a transient, they can simply pass the ``seds`` and ``dense_luminosities`` keys to ``-x``::
 
     mosfit -m slsn -x seds dense_luminosities
