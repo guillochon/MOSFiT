@@ -6,22 +6,22 @@ Fitting models to data
 
 The primary purpose of ``MOSFiT`` is to fit models of transients to observed data. In this section we cover "how" of fitting, and how the user should interpret their results.
 
----------------------------------
-Fitting publically available data
----------------------------------
+-----------
+Public data
+-----------
 
 .. _public
 
-``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store multiple names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient::
+``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store multiple names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient:: bash
 
     mosfit -m slsn -e PTF11dij
     mosfit -m slsn -e CSS110406:135058+261642
 
 While the Open Catalogs do their best to maintain the integrity of the data they contain, there is always the possibility that the data contains errors, so users are encouraged to spot check the data they download before using it for any scientific purpose. A very common error is that the data has been tagged with the wrong photometric system, or has not been tagged with a photometric system at all and uses a different system from what is commonly used for a given telescope/instrument/band. Users are encouraged to immediately report any issues with the public data on the GitHub issues page assocated with that catalog (e.g. the Open Supernova Catalog's `issue page <https://github.com/astrocatalogs/supernovae/issues>`_).
 
---------------------
-Fitting private data
---------------------
+------------
+Private data
+------------
 
 .. _private
 
