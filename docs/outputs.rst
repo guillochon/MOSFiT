@@ -1,4 +1,4 @@
-.. _foward:
+.. _outputs:
 
 Outputs
 =======
@@ -12,11 +12,11 @@ Light Curve Predictions
 
 Generating a light curve from a model in ``MOSFiT`` is achieved by simply not passing any event to the code with the ``-e`` flag. The command below will dump out a default number of parameter draws to a ``walkers.json`` file in the ``products`` folder::
 
-    python -m mosfit -m slsn
+    mosfit -m slsn
 
 By default, these light curves will be the *exact* model predictions, they will not account for any observational error. If Gaussian Processes were used (by default they are enabled for all models), the output predictions will include an ``e_magnitude`` value that is set by the variance predicted by the GP model; if not, the ``variance`` parameter from maximum likelihood is used. If the user wishes to produce mock observations for a given instrument, they should use the ``-l`` flag, which sets a limiting magnitude and then randomly draws observations based upon the flux error implied by that limiting magnitude (the second argument to ``-l`` sets the variance of the limiting magnitude from observation to observation). For example, if the user wishes to generate mock light curves as they might be observed by LSST, they would execute::
 
-    python -m mosfit -m slsn -l 23 0.5 --extra-bands u g r i z y --extra-instruments LSST
+    mosfit -m slsn -l 23 0.5 --extra-bands u g r i z y --extra-instruments LSST
 
 Saving the Chain
 ----------------
@@ -25,13 +25,13 @@ Saving the Chain
 
 Because the chain can be quite large (a full chain for a model with 15 free parameters, 100 walkers, and 20000 iterations will occupy ~120 MB of disk space), by default ``MOSFiT`` does not output the full chain to disk. Doing so is achieved by passing ``MOSFiT`` the ``-c`` flag::
 
-    python -m mosfit -m slsn -e LSQ12dlf -c
+    mosfit -m slsn -e LSQ12dlf -c
 
 Note that the outputted chain includes both the burn-in and post-burn-in phases of the fitting procedure. The position of each walker in the chain as a function of time can be visualized using the included ``mosfit.ipynb`` Jupyter notebook.
 
 Memory can be quite scarce on some systems, and storing the chain in memory can sometimes lead to out of memory errors (it is the dominant user of memory in ``MOSFiT``). This can be mitigated to some extent by automatically thinning the chain if it gets too large with the ``-M`` flag, where the argument to ``-M`` is in MB. Below, we limit the chain to a gigabyte, which should be sufficient for most modern systems::
 
-    python -m mosfit -m slsn -e LSQ12dlf -M 1000
+    mosfit -m slsn -e LSQ12dlf -M 1000
 
 Arbitrary Outputs
 -----------------
@@ -42,4 +42,4 @@ Internally, ``MOSFiT`` is storing the outputs of each module in a single diction
 
 The user can dump any of these variables to a supplementary file ``extras.json`` by using the ``-x`` flag, followed by the name of the variable of interest. For instance, if the user is interested in the bolometric luminosity of the SLSN model, they can simply pass the ``seds`` and ``dense_luminosities`` keys to ``-x``::
 
-    python -m mosfit -m slsn -x seds dense_luminosities
+    mosfit -m slsn -x seds dense_luminosities
