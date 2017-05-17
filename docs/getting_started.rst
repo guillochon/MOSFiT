@@ -1,4 +1,5 @@
-Getting Started
+===============
+Getting started
 ===============
 .. toctree::
 
@@ -27,6 +28,7 @@ by spaces (names containing spaces can be specified using quotation marks)::
 
     mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 
+------------------
 Parallel execution
 ------------------
 
@@ -51,6 +53,7 @@ parameter distributions. This output is visualized via an example Jupyter
 notebook (``mosfit.ipynb``), which is copied to the ``products`` folder in the
 run directory, and by default shows output from the last ``MOSFiT`` run.
 
+-------------------
 Using your own data
 -------------------
 
@@ -63,8 +66,9 @@ same ``-e`` flag::
 
 When run with no other arguments, ``MOSFiT`` will convert the files to JSON
 format and immediately exit, but if run with the other standard arguments
-``MOSFiT`` will read in the newly created JSON files and begin processing them.
+``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the `Fitting private data`_ section.
 
+-------------------------------------------
 Sharing data and outputs with the community
 -------------------------------------------
 

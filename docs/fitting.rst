@@ -1,11 +1,13 @@
 .. _fitting:
 
-Fitting Models to Data
+======================
+Fitting models to data
 ======================
 
 The primary purpose of ``MOSFiT`` is to fit models of transients to observed data. In this section we cover "how" of fitting, and how the user should interpret their results.
 
-Fitting Publically-Available Data
+---------------------------------
+Fitting publically available data
 ---------------------------------
 
 .. _public
@@ -17,7 +19,8 @@ Fitting Publically-Available Data
 
 While the Open Catalogs do their best to maintain the integrity of the data they contain, there is always the possibility that the data contains errors, so users are encouraged to spot check the data they download before using it for any scientific purpose. A very common error is that the data has been tagged with the wrong photometric system, or has not been tagged with a photometric system at all and uses a different system from what is commonly used for a given telescope/instrument/band. Users are encouraged to immediately report any issues with the public data on the GitHub issues page assocated with that catalog (e.g. the Open Supernova Catalog's `issue page <https://github.com/astrocatalogs/supernovae/issues>`_).
 
-Fitting Private Data
+--------------------
+Fitting private data
 --------------------
 
 .. _private
