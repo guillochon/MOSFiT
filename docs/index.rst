@@ -27,11 +27,11 @@ Indices and tables
 * :ref:`modindex`
 * :ref:`search`
 
+.. _maintainers:
+
 ---------------------
 License & Attribution
 ---------------------
-
-.. _maintainers:
 
 Copyright 2016-2017, `James Guillochon <mailto:guillochon@gmail.com>`_, Matt Nicholl, and contributors.
 

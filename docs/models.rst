@@ -45,7 +45,7 @@ favorite text editor:
 You'll notice that ``parameters.json`` file is fairly bare-bones, containing
 only a list of model parameters and their allowed value ranges:
 
-.. highlight:: json
+.. code-block:: json
 
     {
         "nhhost":{
