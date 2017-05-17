@@ -12,6 +12,7 @@ Using MOSFiT
    installation.rst
    getting_started.rst
    models.rst
+   outputs.rst
    command_line.rst
    api.rst
 
