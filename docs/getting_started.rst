@@ -92,6 +92,18 @@ Additional outputs can be produced via some optional flags that can be passed to
 Visualizing outputs
 -------------------
 
+The outputs from ``MOSFiT`` can be visualized using the Jupyter notebook ``mosfit.ipynb`` copied by the code into a ``jupyter`` directory within the current run directory. This notebook is intended to be a simple demonstration of how to visualize the output data, and can be modified by the users to their own needs.
+
+First, the user should make sure that Jupyter is installed, then execute the Jupyter notebook from the run directory:
+
+.. code-block:: bash
+
+    jupyter notebook jupyter/mosfit.ipynb
+
+In this notebook, there are four cells. The first cell imports modules and loads the data output from the last run (store in ``walkers.json``). The second cell displays the ensemble of light curve fits and the data the model was fitted to:
+
+.. image:: images/light-curve.png
+
 -------------------------------------------
 Sharing data and outputs with the community
 -------------------------------------------
