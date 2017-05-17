@@ -29,6 +29,8 @@ If you have private data you would like to fit, the most robust way to load the 
 
 Of course, it is more likely, that the data a user will have handy will be in another form, typically an ASCII table where each row presents a single (or multiple) observations. ``MOSFiT`` includes a conversion feature where the user can simply pass the path to the file(s) to convert::
 
+.. highlight:: bash
+
     mosfit -e path/to/my/ascii/file/my_transient.dat
     mosfit -e path/to/my/folder/of/ascii/files/*.dat
 

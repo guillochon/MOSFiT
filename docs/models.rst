@@ -39,9 +39,9 @@ favorite text editor::
     vim parameters.json
 
 You'll notice that ``parameters.json`` file is fairly bare-bones, containing
-only a list of model parameters and their allowed value ranges.
+only a list of model parameters and their allowed value ranges::
 
-.. code-block:: json
+.. highlight:: json
 
     {
         "nhhost":{
@@ -88,3 +88,16 @@ Creating a new model
 If users would like to create a brand new model for the ``MOSFiT`` platform, it
 is easiest to duplicate one of the existing models that most closely resembles
 the model they wish to create.
+
+If you go this route, we highly recommend that you `fork MOSFiT <https://github.com/guillochon/MOSFiT#fork-destination-box>`_ on GitHub and clone your fork, with development being done in the cloned ``mosfit`` directory::
+
+    git clone https://github.com/your_github_username/MOSFiT.git
+    cd mosfit
+
+Copy one of the existing models as a starting point::
+
+    cp -R models/slsn models/my_model_that_explains_everything
+
+And invoke the model::
+
+    python -m my_model_that_explains_everything
