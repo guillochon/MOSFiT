@@ -47,7 +47,8 @@ __version__ = mo.group(1)
 extensions = [
     'sphinx.ext.autodoc', 'sphinx.ext.mathjax', 'sphinx.ext.viewcode',
     'sphinx_automodapi.automodapi', 'sphinx_automodapi.smart_resolver',
-    'sphinx.ext.coverage', 'sphinxcontrib.autoprogram', 'numpydoc.numpydoc'
+    'sphinx.ext.coverage', 'sphinxcontrib.autoprogram', 'numpydoc.numpydoc',
+    'sphinx.ext.autosectionlabel'
 ]
 
 intersphinx_mapping = {
@@ -119,7 +120,7 @@ autosummary_generate = True
 # documentation.
 #
 html_theme_options = {
-    "collapse_navigation" : False
+    "collapse_navigation": False
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

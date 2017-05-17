@@ -12,7 +12,9 @@ Public data
 
 .. _public
 
-``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient:: bash
+``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient:
+
+.. code_block:: bash
 
     mosfit -m slsn -e PTF11dij
     mosfit -m slsn -e CSS110406:135058+261642
@@ -36,8 +38,10 @@ Of course, it is more likely, that the data a user will have handy will be in an
 
 In some cases, if the ASCII file is in a simple form with columns that match all the required columns, ``MOSFiT`` will silently convert the input files into JSON files, a copy of which will be saved to the current run directory. In most cases however, the user will be prompted to answer a series of questions about the data in a "choose your own adventure" style. If passed a list of files, ``MOSFiT`` will assume all the files share the same format and the user will only be asked questions about the first file.
 
-If the user so chooses, they may *optionally* upload their data directly to the Open Catalogs with the ``-u`` flag. This will make their observational data publicly accessible on the Open Catalogs::
+If the user so chooses, they may *optionally* upload their data directly to the Open Catalogs with the ``-u`` flag. This will make their observational data publicly accessible on the Open Catalogs:
+
+.. code_block:: bash
 
     mosfit -e path/to/my/ascii/file/my_transient.dat -u
 
-Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the maintainers_.
+Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`Maintainers`.
