@@ -604,6 +604,7 @@ class Fallback(Engine):
         #    luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * Ledd,
         #    luminosities)
         luminosities = (luminosities * Ledd/(luminosities + Ledd))
+        Leddarray = np.array([Ledd])
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta,
@@ -612,4 +613,4 @@ class Fallback(Engine):
                 dmdtbeforeextrap, 'timebeforeextrap': timebeforeextrap,
                 'dmdtafterextrap': dmdtafterextrap,
                 'timeafterextrap': timeafterextrap,
-                'precutlums': precutlums, 'Ledd': Ledd}
+                'precutlums': precutlums, 'Ledd': [Ledd]}
