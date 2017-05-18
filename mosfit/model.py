@@ -318,11 +318,11 @@ class Model(object):
                     variance_bands.append([awav, band])
                 if needs_general_variance:
                     new_call_stack[task] = deepcopy(cur_task)
-                self._printer.prt(
-                    'Anchoring variances for the following filters '
-                    '(interpolating variances for the rest): ' +
-                    (', '.join([x[1] for x in variance_bands])),
-                    wrapped=True)
+                if self._pool.is_master():
+                    self._printer.message(
+                        'anchoring_variances',
+                        [', '.join([x[1] for x in variance_bands])],
+                        wrapped=True)
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = deepcopy(cur_task)

@@ -1,5 +1,6 @@
 {
     "all_walkers_written": "All walkers written.",
+    "anchoring_variances": "Anchoring variances for the following filters (interpolating variances for the rest): {}",
     "band_load_complete": "Loading bands complete.",
     "bands_used": "\nBands being used for current transient:",
     "bibcode": "Please enter the 19-character ADS bibcode associated with this data:",
