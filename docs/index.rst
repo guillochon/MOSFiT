@@ -16,6 +16,8 @@ Using MOSFiT
    models.rst
    fitting.rst
    outputs.rst
+   evaluation.rst
+   error.rst
    command_line.rst
    api.rst
 
