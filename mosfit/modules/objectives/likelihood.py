@@ -63,19 +63,21 @@ class Likelihood(Module):
             #     float(full_size - np.count_nonzero(kmat)) / full_size))
 
             # try:
-            #     import skcuda.linalg as skla
             #     import pycuda.gpuarray as gpuarray
+            #     import skcuda.linalg as skla
             #
-            #     chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
-            #     chol_kmat_gpu = gpuarray.to_gpu(
-            #         np.asarray(chol_kmat, np.float64))
-            #     value = -np.log(skla.det(chol_kmat_gpu, lib='cusolver'))
+            #     kmat_gpu = gpuarray.to_gpu(np.asarray(kmat, np.float64))
+            #     # kmat will now contain the cholesky decomp.
+            #     skla.cholesky(kmat_gpu, lib='cusolver')
+            #     value = -np.log(skla.det(kmat_gpu, lib='cusolver'))
             #     res_gpu = gpuarray.to_gpu(np.asarray(residuals.reshape(
             #         len(residuals), 1), np.float64))
-            #     # Right now cho_solve not working with cusolver lib.
+            #     # Right now cho_solve not working with cusolver lib. This is
+            #     # the one function we are missing before we can get
+            #     # everything on the GPU.
             #     cho_mat_gpu = gpuarray.to_gpu(
             #         np.asarray(scipy.linalg.cho_solve(
-            #             (chol_kmat, False), residuals,
+            #             (kmat_gpu.get(), False), residuals,
             #             check_finite=False), np.float64))
             #     value -= (0.5 * (
             #         skla.mdot(skla.transpose(res_gpu), cho_mat_gpu))).get()
