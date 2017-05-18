@@ -989,10 +989,14 @@ class Fitter(object):
 
                     scores = [np.array(x) for x in lnprob]
                     if emim1 % kmat_chunk == 0:
-                        kmat = model.run_stack(
+                        sout = model.run_stack(
                             p[np.unravel_index(
                                 np.argmax(lnprob), lnprob.shape)],
-                            root='objective').get('kmat', None)
+                            root='objective')
+                        kmat = sout.get('kmat', None)
+                        kdiag = sout.get('kdiagonal', None)
+                        if kdiag is not None and kmat is not None:
+                            kmat[np.diag_indices_from(kmat)] += kdiag
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),

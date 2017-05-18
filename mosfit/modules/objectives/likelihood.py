@@ -47,11 +47,8 @@ class Likelihood(Module):
         if kwargs.get('kmat', None) is not None:
             kmat = kwargs['kmat']
 
-            kn = len(diag)
-
             # Add observed errors to diagonal
-            for i in range(kn):
-                kmat[i, i] += diag[i]
+            kmat[np.diag_indices_from(kmat)] += diag
 
             # full_size = np.count_nonzero(kmat)
 
