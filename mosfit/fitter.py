@@ -20,17 +20,18 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
+from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
+from mosfit.converter import Converter
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
-from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
+from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          listify, open_atomic, pretty_num, speak)
+                          listify, open_atomic, pretty_num, slugify, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -119,6 +120,7 @@ class Fitter(object):
                    walker_paths=[],
                    catalogs=[],
                    open_in_browser=False,
+                   limiting_magnitude=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -129,6 +131,7 @@ class Fitter(object):
         self._maximum_memory = maximum_memory
         self._debug = False
         self._speak = speak
+        self._limiting_magnitude = limiting_magnitude
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
@@ -172,19 +175,11 @@ class Fitter(object):
 
         data = {}
 
-        new_event_list = []
-        for event in event_list:
-            if '.' in event and not event.endswith('.json'):
-                with open(event, 'r') as f:
-                    new_events = [
-                        it for s in [
-                            [y.strip("\" ") for y in x.replace(
-                                '\t', ',').split(',')]
-                            for x in f.read().splitlines()] for it in s]
-                new_event_list.extend(new_events)
-            else:
-                new_event_list.append(event)
-        event_list = new_event_list
+        # If the input is not a JSON file, assume it is either a list of
+        # transients or that it is the data from a single transient in tabular
+        # form. Try to guess the format first, and if that fails ask the user.
+        self._converter = Converter(prt, require_source=upload)
+        event_list = self._converter.generate_event_list(event_list)
 
         event_list = [x.replace('‑', '-') for x in event_list]
 
@@ -339,7 +334,6 @@ class Fitter(object):
                                     shutil.copyfileobj(response, f)
                         path = name_path
 
-                    prt.prt()
                     if os.path.exists(path):
                         if open_in_browser:
                             webbrowser.open(
@@ -535,8 +529,8 @@ class Fitter(object):
         """Load the data for the specified event."""
         prt = self._printer
 
-        prt.prt()
-        prt.message('loading_data', inline=True)
+        if pool.is_master():
+            prt.message('loading_data', inline=True)
 
         self._walker_data = walker_data
         fixed_parameters = []
@@ -586,7 +580,8 @@ class Fitter(object):
 
         self._model.exchange_requests()
 
-        prt.message('finding_bands', inline=True)
+        if pool.is_master():
+            prt.message('finding_bands', inline=True)
 
         # Run through once to set all inits.
         for root in ['output', 'objective']:
@@ -617,7 +612,6 @@ class Fitter(object):
 
         # Collect observed band info
         if pool.is_master() and 'photometry' in self._model._modules:
-            prt.prt()
             prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
@@ -709,7 +703,7 @@ class Fitter(object):
         model = self._model
         prt = self._printer
 
-        upload_this = upload and iterations > 0
+        upload_model = upload and iterations > 0
 
         if upload:
             try:
@@ -743,7 +737,6 @@ class Fitter(object):
         redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
-        prt.prt()
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
         if model._num_measurements <= ndim:
             prt.message('too_few_walkers', warning=True)
@@ -996,10 +989,14 @@ class Fitter(object):
 
                     scores = [np.array(x) for x in lnprob]
                     if emim1 % kmat_chunk == 0:
-                        kmat = model.run_stack(
+                        sout = model.run_stack(
                             p[np.unravel_index(
                                 np.argmax(lnprob), lnprob.shape)],
-                            root='objective')['kmat']
+                            root='objective')
+                        kmat = sout.get('kmat', None)
+                        kdiag = sout.get('kdiagonal', None)
+                        if kdiag is not None and kmat is not None:
+                            kmat[np.diag_indices_from(kmat)] += kdiag
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
@@ -1116,7 +1113,6 @@ class Fitter(object):
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
-        prt.prt()
         prt.message('constructing')
 
         if write:
@@ -1164,6 +1160,7 @@ class Fitter(object):
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
              (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
 
+        WAIC = None
         if iterations > 0:
             WAIC = calculate_WAIC(scores)
             modeldict[MODEL.SCORE] = {
@@ -1197,9 +1194,12 @@ class Fitter(object):
                 umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
             umodelnum = uentry.add_model(**umodeldict)
             if check_upload_quality:
-                if WAIC < 0.0:
-                    prt.message('no_ul_waic', [pretty_num(WAIC)])
-                    upload_this = False
+                if WAIC is None:
+                    upload_model = False
+                elif WAIC is not None and WAIC < 0.0:
+                    prt.message('no_ul_waic', ['' if WAIC is None
+                                               else pretty_num(WAIC)])
+                    upload_model = False
 
         modelnum = entry.add_model(**modeldict)
 
@@ -1230,13 +1230,16 @@ class Fitter(object):
         for xi, x in enumerate(pout):
             for yi, y in enumerate(pout[xi]):
                 # Only produce LCs for end walker state.
+                wcnt = xi * nwalkers + yi
+                if wcnt > 0:
+                    prt.message('outputting_walker', [
+                        wcnt, nwalkers * ntemps], inline=True)
                 if yi <= nwalkers:
                     output = model.run_stack(y, root='output')
                     if extra_outputs:
                         for key in extra_outputs:
                             new_val = output.get(key, [])
-                            if type(new_val).__module__ == 'numpy':
-                                new_val = new_val.tolist()
+                            new_val = all_to_list(new_val)
                             extras.setdefault(key, []).append(new_val)
                     for i in range(len(output['times'])):
                         if not np.isfinite(output['model_observations'][i]):
@@ -1252,18 +1255,60 @@ class Fitter(object):
                             photodict[PHOTOMETRY.BAND] = output['bands'][i]
                             photodict[PHOTOMETRY.MAGNITUDE] = output[
                                 'model_observations'][i]
+                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                                'model_variances'][i]
                         if output['observation_types'][i] == 'fluxdensity':
                             photodict[PHOTOMETRY.FREQUENCY] = output[
                                 'frequencies'][i] * frequency_unit('GHz')
                             photodict[PHOTOMETRY.FLUX_DENSITY] = output[
                                 'model_observations'][
                                     i] * flux_density_unit('µJy')
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_FLUX_DENSITY] = (
+                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.FLUX_DENSITY]) -
+                                            output['model_variances'][
+                                                i] / 2.5)) *
+                                    flux_density_unit('µJy'))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.FLUX_DENSITY]) +
+                                    output['model_variances'][i] / 2.5) *
+                                    flux_density_unit('µJy') -
+                                    photodict[PHOTOMETRY.FLUX_DENSITY])
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                         if output['observation_types'][i] == 'countrate':
                             photodict[PHOTOMETRY.COUNT_RATE] = output[
                                 'model_observations'][i]
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_COUNT_RATE] = (
+                                    photodict[PHOTOMETRY.COUNT_RATE] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.COUNT_RATE]) -
+                                            output['model_variances'][
+                                                i] / 2.5)))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_COUNT_RATE] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.COUNT_RATE]) +
+                                    output['model_variances'][i] / 2.5) -
+                                    photodict[PHOTOMETRY.COUNT_RATE])
                             photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
+                        if ('model_upper_limits' in output and
+                                output['model_upper_limits'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
+                                'model_upper_limits'][i])
+                        if self._limiting_magnitude is not None:
+                            photodict[PHOTOMETRY.SIMULATED] = True
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]
@@ -1283,7 +1328,7 @@ class Fitter(object):
                             compare_to_existing=False, check_for_dupes=False,
                             **photodict)
 
-                        if upload_this:
+                        if upload_model:
                             uphotodict = deepcopy(photodict)
                             uphotodict[PHOTOMETRY.SOURCE] = umodelnum
                             uentry.add_photometry(
@@ -1324,9 +1369,10 @@ class Fitter(object):
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
-                if upload_this:
+                if upload_model:
                     uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
+        prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
         oentry = entry._ordered(entry)
@@ -1371,7 +1417,7 @@ class Fitter(object):
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
                     entabbed_json_dump(extras, feven, separators=(',', ':'))
 
-        if upload_this:
+        if upload_model:
             uentry.sanitize()
             prt.message('ul_fit', [entryhash, modelhash])
             upath = '/' + '_'.join(
@@ -1390,6 +1436,40 @@ class Fitter(object):
                     pass
                 else:
                     raise
+
+        if upload:
+            for ce in self._converter.get_converted():
+                dentry = Entry.init_from_file(
+                    catalog=None,
+                    name=ce[0],
+                    path=ce[1],
+                    merge=False,
+                    pop_schema=False,
+                    ignore_keys=[ENTRY.MODELS],
+                    compare_to_existing=False)
+
+                dentry.sanitize()
+                odentry = {ce[0]: uentry._ordered(dentry)}
+                dpayload = entabbed_json_dumps(odentry, separators=(',', ':'))
+                text = prt.message('ul_devent', [ce[0]], prt=False)
+                ul_devent = prt.prompt(text, kind='bool', message=False)
+                if ul_devent:
+                    dpath = '/' + slugify(
+                        ce[0] + '_' + dentry[ENTRY.SOURCES][0].get(
+                            SOURCE.BIBCODE, dentry[ENTRY.SOURCES][0].get(
+                                SOURCE.NAME, 'NOSOURCE'))) + '.json'
+                    try:
+                        dbx = dropbox.Dropbox(upload_token)
+                        dbx.files_upload(
+                            dpayload.encode(),
+                            dpath,
+                            mode=dropbox.files.WriteMode.overwrite)
+                        prt.message('ul_complete')
+                    except Exception:
+                        if self._test:
+                            pass
+                        else:
+                            raise
 
         return (entry, pout, lnprobout)
 

@@ -72,7 +72,7 @@ class AllTimes(Array):
             ], dtype=object)
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observation_types'] = self._observation_types
-        outputs['observed'] = self._observed
+        outputs['observed'] = np.array(self._observed, dtype=bool)
         return outputs
 
     def receive_requests(self, **requests):
