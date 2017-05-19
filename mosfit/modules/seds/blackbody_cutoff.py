@@ -3,6 +3,7 @@ from math import pi
 
 import numexpr as ne
 import numpy as np
+from astrocats.catalog.source import SOURCE
 from astropy import constants as c
 from astropy import units as u
 
@@ -19,6 +20,10 @@ class BlackbodyCutoff(SED):
     Blackbody spectral energy dist. for given temperature and radius,
     with a linear absorption function bluewards of a cutoff wavelength.
     """
+
+    _REFERENCES = [
+        {SOURCE.NAME: 'Nicholl et al. 2017'}
+    ]
 
     C_CONST = c.c.cgs.value
     FLUX_CONST = FOUR_PI * (

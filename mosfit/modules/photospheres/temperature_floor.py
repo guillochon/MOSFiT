@@ -1,9 +1,11 @@
 """Definitions for the `TemperatureFloor` class."""
 import numpy as np
+from astrocats.catalog.source import SOURCE
 from astropy import constants as c
 
 from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS
 from mosfit.modules.photospheres.photosphere import Photosphere
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -14,6 +16,10 @@ class TemperatureFloor(Photosphere):
     Photosphere that expands and cools with ejecta then recedes at constant
     final temperature.
     """
+
+    _REFERENCES = [
+        {SOURCE.NAME: 'Nicholl et al. 2017'}
+    ]
 
     STEF_CONST = (FOUR_PI * c.sigma_sb).cgs.value
     RAD_CONST = KM_CGS * DAY_CGS
