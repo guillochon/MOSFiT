@@ -16,6 +16,10 @@ class Diffusion(Transform):
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS ** 2)
 
+    _REFERENCES = [
+        {'bibcode': '1982ApJ...253..785A'}
+    ]
+
     def process(self, **kwargs):
         """Process module."""
         super(Diffusion, self).process(**kwargs)

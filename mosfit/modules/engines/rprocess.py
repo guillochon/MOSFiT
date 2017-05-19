@@ -2,6 +2,7 @@
 from math import isnan
 
 import numpy as np
+from astrocats.catalog.source import SOURCE
 
 from mosfit.modules.engines.engine import Engine
 
@@ -17,6 +18,10 @@ class RProcess(Engine):
     For 'red' kilonovae, use kappa ~ 10.
     For 'blue' kilonovae, use kappa ~1.
     """
+
+    _REFERENCES = [
+        {SOURCE.BIBCODE: '2016arXiv161009381M'}
+    ]
 
     M_sun = 1.99e33
 

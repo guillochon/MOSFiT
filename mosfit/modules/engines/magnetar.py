@@ -2,6 +2,7 @@
 from math import isnan
 
 import numpy as np
+from astrocats.catalog.source import SOURCE
 
 from mosfit.constants import DAY_CGS
 from mosfit.modules.engines.engine import Engine
@@ -12,6 +13,10 @@ from mosfit.modules.engines.engine import Engine
 
 class Magnetar(Engine):
     """Magnetar spin-down engine."""
+
+    _REFERENCES = [
+        {SOURCE.BIBCODE: '1971ApJ...164L..95O'}
+    ]
 
     def process(self, **kwargs):
         """Process module."""

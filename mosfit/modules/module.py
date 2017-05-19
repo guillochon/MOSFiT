@@ -3,11 +3,14 @@ import json
 from collections import OrderedDict
 
 import numpy as np
+
 from mosfit.printer import Printer
 
 
 class Module(object):
     """Base ``Module`` class."""
+
+    _REFERENCES = []
 
     def __init__(self, name, model, **kwargs):
         """Initialize module.

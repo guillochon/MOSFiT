@@ -47,6 +47,7 @@ class Model(object):
         self._print_trees = print_trees
         self._inflect = inflect.engine()
         self._inflections = {}
+        self._references = []
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -231,6 +232,7 @@ class Model(object):
                 self._instruments = self._modules[task].instruments()
                 self._bands = self._modules[task].bands()
             self._modules[task].set_attributes(cur_task)
+
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
             # mod_name = cur_task.get('class', task)
@@ -612,11 +614,20 @@ class Model(object):
                     "Failed to execute module `{}`\'s process().".format(task),
                     wrapped=True)
                 raise
+
             outputs.update(new_outs)
+
+            # Append module references
+            self._references.extend(self._modules[task]._REFERENCES)
+
             if '_delete_keys' in outputs:
                 for key in outputs['_delete_keys']:
                     del(outputs[key])
                 del(outputs['_delete_keys'])
 
             if cur_task['kind'] == root:
+                # Make sure references are unique.
+                self._references = list(map(
+                    dict, set(tuple(sorted(d.items()))
+                              for d in self._references)))
                 return outputs
