@@ -138,18 +138,8 @@
     "likelihood":{
         "kind":"objective",
         "inputs":[
-            "transient",
-            "variance",
-            "codeltatime",
-            "codeltalambda",
-            "photometry",
-            "default_upper_limit_error",
-            "default_no_error_bar_error",
+            "diagonal",
             "tde_constraints"
-        ],
-        "requests":{
-            "average_wavelengths": "photometry",
-            "variance_bands": "photometry"
-        }
+        ]
     }
 }
