@@ -111,3 +111,15 @@ And invoke the model:
 .. code-block:: bash
 
     python -m my_model_that_explains_everything
+
+.. _model-list:
+
+------------------------
+List of available models
+------------------------
+
++-----------------------------+---------------------------+
+| Model name                  | Description               |
++=============================+===========================+
+| ``default``                 | Nickel-cobalt decay       |
++-----------------------------+---------------------------+
