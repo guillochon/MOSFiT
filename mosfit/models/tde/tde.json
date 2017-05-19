@@ -37,7 +37,7 @@
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"\\tau\\ (T_{\\rm vis}\\/peaktime)"
+        "latex":"T_{\\rm viscous}"
     },
     "efficiency":{
         "kind":"parameter",
