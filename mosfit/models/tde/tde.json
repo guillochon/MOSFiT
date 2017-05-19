@@ -33,17 +33,17 @@
         "class":"parameter",
         "latex":"b\\ (scaled\\ \\beta)"
     },
-    "efficiency":{
-        "kind":"parameter",
-        "value":0.1,
-        "class":"parameter",
-        "latex":"\\epsilon\\ (efficiency)"
-    },
     "Tviscous":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
         "latex":"\\tau\\ (\\T_{vis}\\/peaktime)"
+    },
+    "efficiency":{
+        "kind":"parameter",
+        "value":0.1,
+        "class":"parameter",
+        "latex":"\\epsilon\\ (efficiency)"
     },
     "bhmass":{
         "kind":"parameter",
