@@ -3,16 +3,14 @@ Getting started
 ===============
 .. toctree::
 
-Once installed, ``MOSFiT`` can be run from any directory, and it's typically
-convenient to make a new directory for your project.
+Once installed, ``MOSFiT`` can be run from any directory, and it's typically convenient to make a new directory for your project.
 
 .. code:: bash
 
     mkdir mosfit_runs
     cd mosfit_runs
 
-``MOSFiT`` can be invoked either via either :code:`python -m mosfit` or simply
-:code:`mosfit`. Then, to run ``MOSFiT``, pass an event name to the program via
+``MOSFiT`` can be invoked either via either :code:`python -m mosfit` or simply :code:`mosfit`. Then, to run ``MOSFiT``, pass an event name to the program via
 the ``-e`` flag (the default model is a simple Nickel-Cobalt decay with
 diffusion):
 
@@ -20,15 +18,13 @@ diffusion):
 
     mosfit -e LSQ12dlf
 
-Different models (several are distributed with ``MOSFiT``) can be fit to
-supernovae using the model flag ``-m``:
+Different models (several are distributed with ``MOSFiT``) can be fit to transients using the model flag ``-m``:
 
 .. code-block:: bash
 
     mosfit -e LSQ12dlf -m slsn
 
-Multiple events can be fit in succession by passing a list of names separated
-by spaces (names containing spaces can be specified using quotation marks):
+Multiple events can be fit in succession by passing a list of names separated by spaces (names containing spaces can be specified using quotation marks):
 
 .. code-block:: bash
 
