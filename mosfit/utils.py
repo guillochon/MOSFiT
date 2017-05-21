@@ -317,8 +317,12 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
 
 def all_to_list(array):
     """Recursively convert list of numpy arrays to lists."""
-    return [x.tolist() if type(x).__module__ == 'numpy'
-            else all_to_list(x) if type(x) == 'list' else x for x in array]
+    try:
+        return ([x.tolist() if type(x).__module__ == 'numpy'
+                else all_to_list(x) if type(x) == 'list' else
+                x for x in array])
+    except TypeError:  # array is not iterable
+        return [array]
 
 
 # From Django
