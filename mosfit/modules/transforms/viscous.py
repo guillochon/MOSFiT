@@ -36,9 +36,8 @@ class Viscous(Transform):
         if self.logsteps:
             num = int(self.N_INT_TIMES/2.0)
             xm = np.unique(np.concatenate(
-                (np.logspace(-7, 0, num),
+                (0, np.logspace(-7, 0, num),
                  1 - np.logspace(-7, 0, num))))
-            # print(xm)
         else:
             xm = np.linspace(0, 1, self.N_INT_TIMES)
 
@@ -52,25 +51,20 @@ class Viscous(Transform):
             int_args = int_lums * np.exp(
                 (int_times - int_tes.reshape(lu, 1)) / tvisc)
         else:
-            # int_args = int_lums * int_times * np.exp(
-            #    (int_times - int_tes.reshape(lu, 1)) / tvisc)
             int_args = int_lums * np.exp(
                 (int_times - int_tes.reshape(lu, 1)) / tvisc)
         int_args[np.isnan(int_args)] = 0.0
 
         if self.logsteps:
             uniq_lums = np.trapz(int_args, int_times)/tvisc
-            # new_lums = uniq_lums
-            # new_lums = np.trapz(int_args, int_times)/tvisc
-            # if len(new_lums)!= len()
-            # new_lums = uniq_lums
-
         else:
             dts = int_times[:, 1] - int_times[:, 0]
             uniq_lums = np.sum(int_args[:, 2:-1], axis=1) + 0.5 * (
                 int_args[:, 0] + int_args[:, -1])
             uniq_lums *= 2.0 * dts / tvisc
         new_lums = uniq_lums[np.searchsorted(uniq_times,
-                                                 self._times_to_process)]
-
-        return {self.dense_key('luminosities'): new_lums}
+                                             self._times_to_process)]
+        postviscous_lums = new_lums  # for testing
+        return {self.dense_key('luminosities'): new_lums,
+                'postviscous_lums': postviscous_lums,
+                'viscous_times': self._times_to_process}
