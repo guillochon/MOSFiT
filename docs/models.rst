@@ -4,27 +4,51 @@
 Models in MOSFiT
 ================
 
-``MOSFiT`` has been designed to be modular and easily modifiable by users
-to alter, combine, and create physical models to approximate the behavior
-of observed transients. On this page we walk through some basics on how a user
-might alter an existing model shipped with the code, and how they could
-go about creating their own model.
+``MOSFiT`` has been designed to be modular and easily modifiable by users to alter, combine, and create physical models to approximate the behavior of observed transients. On this page we walk through some basics on how a user might alter an existing model shipped with the code, and how they could go about creating their own model.
+
+.. _model-list:
+
+-----------------------
+List of built-in models
+-----------------------
+
++--------------+---------------------------------------+---------------------------+
+| Model name   | Description                           | Reference(s)              |
++==============+=======================================+===========================+
+| ``default``  | Nickel-cobalt decay                   | 1994ApJS...92..527N       |
++--------------+---------------------------------------+---------------------------+
+| ``csm``      | Interacting CSM-SNe                   | 2013ApJ...773...76C       |
++--------------+---------------------------------------+---------------------------+
+| ``csmni``    | CSM + NiCo decay                      | See ``default`` & ``csm`` |
++--------------+---------------------------------------+---------------------------+
+| ``exppow``   | Analytical engine                     |                           |
++--------------+---------------------------------------+---------------------------+
+| ``ia``       | NiCo decay + I-band                   |                           |
++--------------+---------------------------------------+---------------------------+
+| ``ic``       | NiCo decay + radio                    |                           |
++--------------+---------------------------------------+---------------------------+
+| ``magnetar`` | Magnetar engine w/ simple SED         | Nicholl+ 2017             |
++--------------+---------------------------------------+---------------------------+
+| ``magni``    | Above + NiCo decay                    |                           |
++--------------+---------------------------------------+---------------------------+
+| ``rprocess`` | Kilonovae                             | 2016arXiv161009381M       |
++--------------+---------------------------------------+---------------------------+
+| ``slsn``     | Magnetar + modified SED + constraints | Nicholl+ 2017             |
++--------------+---------------------------------------+---------------------------+
+| ``tde`` [*]_ | Tidal disruption events               | Mockler+ 2017             |
++--------------+---------------------------------------+---------------------------+
+
+.. [*] In development.
+
+.. _altering:
 
 --------------------------
 Altering an existing model
 --------------------------
 
-.. _altering:
+For many simple alterations to a model, such as adjusting input priors, setting variables remain free and which should be fixed, and adding/removing modules to the call stack, the user only needs to modify the JSON files that are copied to their run directory. For these sorts of minor changes, no Python code should need to be modified by the user!
 
-For many simple alterations to a model, such as adjusting input priors, setting
-variables remain free and which should be fixed, and adding/removing modules to
-the call stack, the user only needs to modify the JSON files that are copied to
-their run directory. For these sorts of minor changes, no Python code should
-need to be modified by the user!
-
-For this example, we'll presume that the user will be modifying the ``slsn``
-model. First, the user should create a new run directory and run ``MOSFiT``
-there once to copy the model JSON files to that run directory:
+For this example, we'll presume that the user will be modifying the ``slsn`` model. First, the user should create a new run directory and run ``MOSFiT`` there once to copy the model JSON files to that run directory:
 
 .. code-block:: bash
 
@@ -32,18 +56,14 @@ there once to copy the model JSON files to that run directory:
     cd slsn_run
     python -m mosfit -m slsn
 
-After running, the user will notice three directories will have been copied to
-the run directory: ``models``, ``jupyter``, and ``products``. Change into the
-``models/slsn`` directory and edit the ``parameters.json`` file in your
-favorite text editor:
+After running, the user will notice three directories will have been copied to the run directory: ``models``, ``jupyter``, and ``products``. Change into the ``models/slsn`` directory and edit the ``parameters.json`` file in your favorite text editor:
 
 .. code-block:: bash
 
     cd models/slsn
     vim parameters.json
 
-You'll notice that ``parameters.json`` file is fairly bare-bones, containing
-only a list of model parameters and their allowed value ranges:
+You'll notice that ``parameters.json`` file is fairly bare-bones, containing only a list of model parameters and their allowed value ranges:
 
 .. code-block:: json
 
@@ -77,20 +97,14 @@ Now, change the range of allowed neutron star masses to something else:
         "max_value":2.5
     }
 
-**Congratulations!** You have just modified your first MOSFiT model. It should
-**be noted that even this very minor change, which affects the range of a
-**single parameter, would generate a completely different model hash than the
-**default model, distinguishing it from any other models that might have been
-**uploaded by other users using the default settings.
+**Congratulations!** You have just modified your first MOSFiT model. It should be noted that even this very minor change, which affects the range of a single parameter, would generate a completely different model hash than the default model, distinguishing it from any other models that might have been uploaded by other users using the default settings.
+
+.. _creating:
 
 --------------------
 Creating a new model
 --------------------
-
-.. _creating:
-
-If users would like to create a brand new model for the ``MOSFiT`` platform, it
-is easiest to duplicate one of the existing models that most closely resembles
+If users would like to create a brand new model for the ``MOSFiT`` platform, it is easiest to duplicate one of the existing models that most closely resembles
 the model they wish to create.
 
 If you go this route, we highly recommend that you `fork MOSFiT <https://github.com/guillochon/MOSFiT#fork-destination-box>`_ on GitHub and clone your fork, with development being done in the cloned ``mosfit`` directory:

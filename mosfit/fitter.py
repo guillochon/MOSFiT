@@ -67,6 +67,7 @@ class Fitter(object):
 
     _MAX_ACORC = 5
     _REPLACE_AGE = 20
+    _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
 
     def __init__(self):
         """Initialize `Fitter`."""
@@ -1139,7 +1140,6 @@ class Fitter(object):
 
         if upload:
             uentry = Entry(name=self._event_name)
-            usource = uentry.add_source(name='MOSFiT paper')
             data_keys = set()
             for task in model._call_stack:
                 if model._call_stack[task]['kind'] == 'data':
@@ -1147,7 +1147,22 @@ class Fitter(object):
                         list(model._call_stack[task].get('keys', {}).keys()))
             entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
 
-        source = entry.add_source(name='MOSFiT paper')
+        # Accumulate all the sources and add them to each entry.
+        sources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                sources.append(entry.add_source(**ref))
+        sources.append(entry.add_source(**self._DEFAULT_SOURCE))
+        source = ','.join(sources)
+
+        if upload:
+            usources = []
+            if len(self._model._references):
+                for ref in self._model._references:
+                    usources.append(uentry.add_source(**ref))
+            usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
+            usource = ','.join(usources)
+
         model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
             task_copy = deepcopy(model._call_stack[task])

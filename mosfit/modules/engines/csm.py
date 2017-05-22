@@ -2,9 +2,11 @@
 from math import isnan
 
 import numpy as np
+from astrocats.catalog.source import SOURCE
+from scipy import interpolate
+
 from mosfit.constants import AU_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
-from scipy import interpolate
 
 
 # Important: Only define one ``Module`` class per file.
@@ -25,7 +27,10 @@ class CSM(Engine):
     2. you can fit/choose an efficiency factor between KE and luminosity
     """
 
-    REFERENCES = ['2012ApJ...746..121C']
+    _REFERENCES = [
+        {SOURCE.BIBCODE: '2012ApJ...746..121C'},
+        {SOURCE.BIBCODE: '2013ApJ...773...76C'}
+    ]
 
     def process(self, **kwargs):
         """Process module."""

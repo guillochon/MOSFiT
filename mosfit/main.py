@@ -32,7 +32,7 @@ def get_parser():
     """Retrieve MOSFiT's `argparse.ArgumentParser` object."""
     parser = argparse.ArgumentParser(
         prog='mosfit',
-        description='Fit astrophysical light curves using AstroCats data.',
+        description='Fit astrophysical transients.',
         formatter_class=SortingHelpFormatter)
 
     parser.add_argument(

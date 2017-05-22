@@ -3,7 +3,6 @@
 
 import codecs
 import hashlib
-import io
 import json
 import os
 import re
@@ -115,7 +114,7 @@ def calculate_WAIC(scores):
 
 
 def flux_density_unit(unit):
-    """Return coeffiecent to convert µJy to Jy."""
+    u"""Return coeffiecent to convert µJy to Jy."""
     if unit == 'µJy':
         return 1.0 / (1.0e-6 * 1.0e-23)
     return 1.0
@@ -182,10 +181,10 @@ def is_master():
 def speak(text, lang='es'):
     """Text to speech. For funp."""
     try:
+        from googletrans import Translator
         from gtts import gTTS
         from pygame import mixer
         from tempfile import TemporaryFile
-        from googletrans import Translator
 
         translator = Translator()
         tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
@@ -318,8 +317,12 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
 
 def all_to_list(array):
     """Recursively convert list of numpy arrays to lists."""
-    return [x.tolist() if type(x).__module__ == 'numpy'
-            else all_to_list(x) if type(x) == 'list' else x for x in array]
+    try:
+        return ([x.tolist() if type(x).__module__ == 'numpy'
+                else all_to_list(x) if type(x) == 'list' else
+                x for x in array])
+    except TypeError:  # array is not iterable
+        return [array]
 
 
 # From Django
@@ -356,6 +359,7 @@ def temp_atomic(suffix='', dir=None):
         optional file suffix
     dir : string
         optional directory to save temporary file in
+
     """
     tf = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir)
     tf.file.close()
@@ -389,6 +393,7 @@ def open_atomic(filepath, *args, **kwargs):
         Any valid arguments for :code:`open`
     **kwargs : mixed
         Any valid keyword arguments for :code:`open`
+
     """
     fsync = kwargs.get('fsync', False)
 

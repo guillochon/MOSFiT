@@ -28,6 +28,16 @@ class LOSExtinction(SED):
         """Initialize module."""
         super(LOSExtinction, self).__init__(**kwargs)
 
+        self._ref_table = {
+            '1': [
+                {'bibcode': '1994ApJ...422..158O'}
+            ],
+            '2': [
+                {'bibcode': '1983ApJ...270..119M'},
+                {'bibcode': '1994AJ....107.2108R'}
+            ]
+        }
+
         self._mm83 = np.array(
             [[0.03, 17.3, 608.1, -2150.0],
              [0.1, 34.6, 267.9, -476.1],
@@ -115,6 +125,7 @@ class LOSExtinction(SED):
         self._mw_extinct = np.zeros_like(self._sample_wavelengths)
         self._ext_indices = []
         self._x_indices = []
+        add_refs = set()
         for si, sw in enumerate(self._sample_wavelengths):
             self._ext_indices.append(
                 self._sample_wavelengths[si] >= self.LYMAN)
@@ -125,10 +136,14 @@ class LOSExtinction(SED):
                 self._mw_extinct[si][self._ext_indices[si]] = odonnell94(
                     self._sample_wavelengths[si][self._ext_indices[si]],
                     self._av_mw, self.MW_RV)
+                add_refs.add('1')
             if len(self._x_indices[si]) > 0:
                 self._mw_extinct[si][self._x_indices[si]] = self.mm83(
                     self._nh_mw,
                     self._sample_wavelengths[si][self._x_indices[si]])
+                add_refs.add('2')
+        for ref in list(add_refs):
+            self._REFERENCES.extend(self._ref_table[ref])
         self._preprocessed = True
 
     def mm83(self, nh, waves):
