@@ -33,9 +33,12 @@ class Viscous(Transform):
         lu = len(uniq_times)
 
         num = int(self.N_INT_TIMES/2.0)
+        expstart = np.log10(tvisc) - 3
+        if expstart > -1:
+            expstart = -1
         xm = np.unique(np.concatenate(
-            (0, np.logspace(-7, 0, num),
-             1 - np.logspace(-7, 0, num))))
+            (np.array([0]), np.logspace(expstart, 0, num),
+             1 - np.logspace(expstart, 0, num))))
 
         int_times = np.clip(tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
                             self._dense_times_since_exp[-1])
