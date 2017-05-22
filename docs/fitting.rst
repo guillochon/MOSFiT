@@ -60,7 +60,7 @@ As an example, the following will run the burn-in phase for 2000 iterations, the
 
     mosfit -e LSQ12dlf -m slsn -f 100 -i 5000 -b 2000
 
-All convergence_ metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the convergence_ criteria are met beyond the burn-in phase.
+All :ref:`convergence` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence` criteria are met beyond the burn-in phase.
 
 ------------------
 Inputs and outputs
