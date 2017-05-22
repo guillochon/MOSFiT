@@ -6,11 +6,42 @@ Outputs
 
 The model structure used in ``MOSFiT`` makes it ammenable to producing outputs from models that need not be fit against any particular transient. In this section we walk through how the user can extract various data products.
 
------------------------
-Light curve predictions
------------------------
+-------------------
+Light curve options
+-------------------
 
-.. _light-curve:
+.. _light-curve-options:
+
+By default, ``MOSFiT`` will only compute model observations at the times a particular transient was observed using the instrument for which it was observed at those times. If a transient is sparsely sampled, this will likely result in a choppy light curve with no prediction for intra-observation magnitudes/fluxes.
+
+Smooth light curves
+===================
+
+.. _smooth:
+
+A smooth output light curve can be produced using the ``-S`` option, which when passed no argument returns the light curve with *every* instrument's predicted observation at all times. If given an argument (e.g. ``-S 100``), ``MOSFiT`` will return every instrument's predicted observation at all times *plus* an additional :math:`S` observations between the first and last observation.
+
+Extrapolated light curves
+=========================
+
+.. _extrapolated:
+
+If the user wishes to extrapolate beyond the first and last observations, the ``-E`` option will extend the predicted observations by :math:`E` days both before and after the first/last detections.
+
+Predicted observations that were not observed
+=============================================
+
+.. _unobserved:
+
+The user may wish to generate light curves for a transient in instruments/bands for which the transient was not observed; this can be accomplished using the ``--extra-bands`` and ``extra-instruments`` options. For instance, to generate LCs in Hubble's UVIS filter F218W in addition to the observed bands, the user would enter:
+
+    mosfit -e LSQ12dlf -m slsn --extra-instruments UVIS --extra-bands F218W
+
+-----------------------------------------------
+Mock light curves in a magnitude-limited survey
+-----------------------------------------------
+
+.. _mock:
 
 Generating a light curve from a model in ``MOSFiT`` is achieved by simply not passing any event to the code with the ``-e`` flag. The command below will dump out a default number of parameter draws to a ``walkers.json`` file in the ``products`` folder:
 
@@ -18,7 +49,9 @@ Generating a light curve from a model in ``MOSFiT`` is achieved by simply not pa
 
     mosfit -m slsn
 
-By default, these light curves will be the *exact* model predictions, they will not account for any observational error. If Gaussian Processes were used (by default they are enabled for all models), the output predictions will include an ``e_magnitude`` value that is set by the variance predicted by the GP model; if not, the ``variance`` parameter from maximum likelihood is used. If the user wishes to produce mock observations for a given instrument, they should use the ``-l`` flag, which sets a limiting magnitude and then randomly draws observations based upon the flux error implied by that limiting magnitude (the second argument to ``-l`` sets the variance of the limiting magnitude from observation to observation). For example, if the user wishes to generate mock light curves as they might be observed by LSST, they would execute:
+By default, these light curves will be the *exact* model predictions, they will not account for any observational error. If Gaussian Processes were used (by default they are enabled for all models), the output predictions will include an ``e_magnitude`` value that is set by the variance predicted by the GP model; if not, the ``variance`` parameter from maximum likelihood is used.
+
+If the user wishes to produce mock observations for a given instrument, they should use the ``-l`` flag, which sets a limiting magnitude and then randomly draws observations based upon the flux error implied by that limiting magnitude (the second argument to ``-l`` sets the variance of the limiting magnitude from observation to observation). For example, if the user wishes to generate mock light curves as they might be observed by LSST assuming a limiting magnitude of 23 for all bands, they would execute:
 
 .. code-block:: bash
 

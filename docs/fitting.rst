@@ -60,15 +60,19 @@ As an example, the following will run the burn-in phase for 2000 iterations, the
 
     mosfit -e LSQ12dlf -m slsn -f 100 -i 5000 -b 2000
 
-All :ref:`convergence` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence` criteria are met beyond the burn-in phase.
+All :ref:`convergence <convergence>` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence <convergence>` criteria are met beyond the burn-in phase.
 
-------------------
-Inputs and outputs
-------------------
+--------------------------
+Input and output locations
+--------------------------
 
 .. _io:
 
-The paths of the various inputs and outputs are set by a few different flags in ``MOSFiT``. ``MOSFiT`` outputs are always written to a local ``products`` directory, with the default filename being set to the name of the transient being fit (e.g. ``LSQ12dlf.json`` for LSQ12dlf). The user can append a suffix to the output filename using the ``-s`` option, e.g.:
+The paths of the various inputs and outputs are set by a few different flags in ``MOSFiT``. The first time ``MOSFiT`` runs in a directory, it will make local copies of the ``models`` and ``jupyter`` folders distributed with the code (unless ``--no-copy-at-launch`` option is passed), and will *not* copy the files again unless they are deleted or the user passes the ``--force-copy-at-launch`` option.
+
+By default, ``MOSFiT`` searches the local ``models`` folder copied to the run directory to find model JSON and their corresponding parameter JSON files to use for runs. If the user wishes to use custom parameter files for their runs instead, they can specify the paths to these files using the ``-P`` option.
+
+``MOSFiT`` outputs are always written to a local ``products`` directory, with the default filename being set to the name of the transient being fit (e.g. ``LSQ12dlf.json`` for LSQ12dlf). The user can append a suffix to the output filename using the ``-s`` option, e.g.:
 
 .. code-block:: bash
 
@@ -121,7 +125,7 @@ with the following:
         "max_value":1.0e5
     },
 
-Flat, log flat, gaussian, and power-law priors are available in ``MOSFiT``; see the `parameters_test.json <https://github.com/guillochon/MOSFiT/blob/master/mosfit/models/default/parameters_test.json>`_ file in the `default` model for examples on how to set each prior type.
+Flat, log flat, gaussian, and power-law priors are available in ``MOSFiT``; see the `parameters_test.json <https://github.com/guillochon/MOSFiT/blob/master/mosfit/models/default/parameters_test.json>`_ file in the ``default`` model for examples on how to set each prior type.
 
 -------------------------------
 Initializing from previous runs
