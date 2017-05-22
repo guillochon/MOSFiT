@@ -13,22 +13,13 @@ class Diffusion(Transform):
     """Photon diffusion transform."""
 
     N_INT_TIMES = 1000
-    MIN_LOG_SPACING = -5
+    MIN_LOG_SPACING = -3
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS ** 2)
 
     _REFERENCES = [
         {'bibcode': '1982ApJ...253..785A'}
     ]
-
-    def __init__(self, **kwargs):
-        """Initialize module."""
-        super(Diffusion, self).__init__(**kwargs)
-
-        num = int((self.N_INT_TIMES - 2) / 2.0)
-        self._xm = np.unique(np.concatenate(
-            (np.array([0.0, 1.0]), np.logspace(self.MIN_LOG_SPACING, 0, num),
-             1 - np.logspace(self.MIN_LOG_SPACING, 0, num))))
 
     def process(self, **kwargs):
         """Process module."""
@@ -59,8 +50,13 @@ class Diffusion(Transform):
                 self._times_to_process <= self._dense_times_since_exp[-1])])
         lu = len(uniq_times)
 
+        num = int(round(self.N_INT_TIMES / 2.0))
+        lsp = np.logspace(
+            np.log10(self._tau_diff) + self.MIN_LOG_SPACING, 0, num)
+        xm = np.unique(np.concatenate((lsp, 1 - lsp)))
+
         int_times = np.clip(
-            tb + (uniq_times.reshape(lu, 1) - tb) * self._xm, tb,
+            tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
             self._dense_times_since_exp[-1])
 
         int_te2s = int_times[:, -1] ** 2
@@ -75,4 +71,5 @@ class Diffusion(Transform):
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]
 
-        return {self.dense_key('luminosities'): new_lums}
+        return {self.key('tau_diffusion'): self._tau_diff,
+                self.dense_key('luminosities'): new_lums}
