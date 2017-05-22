@@ -11,14 +11,14 @@ Once installed, ``MOSFiT`` can be run from any directory, and it's typically con
     cd mosfit_runs
 
 ``MOSFiT`` can be invoked either via either :code:`python -m mosfit` or simply :code:`mosfit`. Then, to run ``MOSFiT``, pass an event name to the program via
-the ``-e`` flag (the default model is a simple Nickel-Cobalt decay with
+the ``-e`` option (the default model is a simple Nickel-Cobalt decay with
 diffusion):
 
 .. code-block:: bash
 
     mosfit -e LSQ12dlf
 
-Different models (several are distributed with ``MOSFiT``) can be fit to transients using the model flag ``-m``:
+Different models (several are distributed with ``MOSFiT``) can be fit to transients using the model option ``-m``:
 
 .. code-block:: bash
 
@@ -52,7 +52,7 @@ Parallel execution
 Using your own data
 -------------------
 
-``MOSFiT`` has a built-in converter that can take input data in a number of formats and convert that data to the Open Catalog JSON format. Using the converter is straightforward, simply pass the path to the file(s) using the same ``-e`` flag:
+``MOSFiT`` has a built-in converter that can take input data in a number of formats and convert that data to the Open Catalog JSON format. Using the converter is straightforward, simply pass the path to the file(s) using the same ``-e`` option:
 
 .. code-block:: bash
 
@@ -66,7 +66,7 @@ Producing outputs
 
 All outputs (except for converted observational data) are stored in the ``products`` directory, which is created by ``MOSFiT`` automatically in the current run directory. By default, a single file with the transient's name, e.g. ``LSQ12dlf.json``, will be produced; this file contains all of the information originally available in the input JSON file and the results of the fitting. An exact copy of this file is stored under the name ``walkers.json`` for convenience.
 
-Additional outputs can be produced via some optional flags that can be passed to ``MOSFiT``. Please see the :ref:`arbitrary outputs <arbitrary>`_ section.
+Additional outputs can be produced via some optional options that can be passed to ``MOSFiT``. Please see the :ref:`arbitrary outputs <arbitrary>`_ section.
 
 -------------------
 Visualizing outputs
@@ -94,7 +94,7 @@ The last cell produces a corner plot using the `corner package <https://corner.r
 Sharing data and outputs with the community
 -------------------------------------------
 
-To upload fits back to the Open Catalogs, users can simply pass the ``-u`` flag:
+To upload fits back to the Open Catalogs, users can simply pass the ``-u`` option:
 
 .. code-block:: bash
 

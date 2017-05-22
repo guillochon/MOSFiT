@@ -38,13 +38,48 @@ Of course, it is more likely that the data a user will have handy will be in ano
 
 In some cases, if the ASCII file is in a simple form with columns that match all the required columns, ``MOSFiT`` will silently convert the input files into JSON files, a copy of which will be saved to the current run directory. In most cases however, the user will be prompted to answer a series of questions about the data in a "choose your own adventure" style. If passed a list of files, ``MOSFiT`` will assume all the files share the same format and the user will only be asked questions about the first file.
 
-If the user so chooses, they may *optionally* upload their data directly to the Open Catalogs with the ``-u`` flag. This will make their observational data publicly accessible on the Open Catalogs:
+If the user so chooses, they may *optionally* upload their data directly to the Open Catalogs with the ``-u`` option. This will make their observational data publicly accessible on the Open Catalogs:
 
 .. code-block:: bash
 
     mosfit -e path/to/my/ascii/file/my_transient.dat -u
 
 Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``, however it is the fastest way for your data to appear on the Open Catalogs. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`maintainers <maintainers>`.
+
+--------------
+Initialization
+--------------
+
+.. _initialization:
+
+When initializing, walkers are drawn randomly from the prior distributions of all free parameters, unless the ``-w`` option was passed to initialize from a previous run (see :ref:`previous <previous>`). By default, any drawn walker that has a defined, non-infinite score will be retained, unless the ``-d`` option is used, which by default only draws walkers above the average walker score drawn so far, or the numeric value specified by the user (warning: this option can often make the initial drawing phase last a *long* time).
+
+Restricting the data used
+=========================
+
+.. _restricting:
+
+By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, and specific photometric bands using the ``--exclude-bands`` option. To exclude times from a fit, the user can specify a range of MJDs that will be included using the ``-L`` option, e.g.:
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -L 55000 56000
+
+will limit the data fitted for LSQ12dlf to lie between MJD 55000 and MJD 56000.
+
+Number of walkers
+=================
+
+.. _number:
+
+The sampler used in ``MOSFiT`` is a variant of ``emcee``'s multi-temperature sampler ``PTSampler``, and thus the user can pass both a number of temperatures to use with ``-T`` in addition to the number of walkers ``-N`` per temperature. If one temperature is used (the default), the total number of walkers is simply whatever is passed to ``-N``, otherwise it is :math:`N*T`.
+
+Duration of fitting
+===================
+
+.. _duration:
+
+The duration of the ``MOSFiT`` run is set with the ``-i`` option, unless the ``-R`` or ``-U`` options are used (see :ref:`convergence <convergence>`). Generally, unless the model has only a few free parameters or was initialized very close to the solution of highest-likelihood, the user should not expect good results unless ``-i`` is set to a few thousand or more.
 
 ------------------
 Burning in a model
@@ -68,7 +103,7 @@ Input and output locations
 
 .. _io:
 
-The paths of the various inputs and outputs are set by a few different flags in ``MOSFiT``. The first time ``MOSFiT`` runs in a directory, it will make local copies of the ``models`` and ``jupyter`` folders distributed with the code (unless ``--no-copy-at-launch`` option is passed), and will *not* copy the files again unless they are deleted or the user passes the ``--force-copy-at-launch`` option.
+The paths of the various inputs and outputs are set by a few different options in ``MOSFiT``. The first time ``MOSFiT`` runs in a directory, it will make local copies of the ``models`` and ``jupyter`` folders distributed with the code (unless ``--no-copy-at-launch`` option is passed), and will *not* copy the files again unless they are deleted or the user passes the ``--force-copy-at-launch`` option.
 
 By default, ``MOSFiT`` searches the local ``models`` folder copied to the run directory to find model JSON and their corresponding parameter JSON files to use for runs. If the user wishes to use custom parameter files for their runs instead, they can specify the paths to these files using the ``-P`` option.
 
@@ -133,7 +168,7 @@ Initializing from previous runs
 
 .. _previous:
 
-The user can use the ensemble parameters from a prior ``MOSFiT`` run to draw their initial conditions for a new run using the ``-w`` flag. Assuming that ``LSQ12dlf-mysuffix.json`` contains results from a previous run, the user can draw walker positions from it by passing it to the ``-w`` option:
+The user can use the ensemble parameters from a prior ``MOSFiT`` run to draw their initial conditions for a new run using the ``-w`` option. Assuming that ``LSQ12dlf-mysuffix.json`` contains results from a previous run, the user can draw walker positions from it by passing it to the ``-w`` option:
 
 .. code-block:: bash
 
