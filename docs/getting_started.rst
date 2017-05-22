@@ -94,12 +94,8 @@ The last cell produces a corner plot using the `corner package <https://corner.r
 Sharing data and outputs with the community
 -------------------------------------------
 
-To upload fits back to the Open Catalogs, users can simply pass the ``-u`` option:
-
-.. code-block:: bash
-
-    mosfit -e LSQ12dlf -m slsn -u
+To upload fits back to the Open Catalogs, users can simply pass the ``-u`` option. The first time ``-u`` is used, MOSFiT will request a Dropbox token, which is provided on the Open Astronomy Catalogs on the pages describing ``MOSFiT``, e.g. `https://sne.space/mosfit/`_. These tokens can be revoked at any time, so a user may be occaisionally asked to enter a new token if the old one has expired.
 
 Upon completing the fitting process, and if the fits satisfy some quality checks, the model fits will uploaded to the Open Catalogs, where they will be ingested and available approximately 24 hours after their submission.
 
-If the data was read from a file (rather than a name), and if the ``-u`` option was provided, ``MOSFiT`` will offer the user the option of uploading the *observed* data to the Open Catalogs as well, in addition to the model fits. Because of the possibility that local data passed to ``MOSFiT`` is private, the user will be asked if they wish to upload each event before they are uploaded. Users should immediately contact the maintainers of ``MOSFiT`` if they believe they have uploaded private data in error (because of the 24 hour waiting period, the inadvertantly uploaded data can be purged before becoming public).
+If the data was read from a file (rather than from one of the Open Astronomy Catalogs), and if the ``-u`` option was provided, ``MOSFiT`` will offer the user the option of uploading the *observed* data to the Open Catalogs as well, in addition to the model fits. Because of the possibility that local data passed to ``MOSFiT`` is private, the user will be asked if they wish to upload each event before they are uploaded. Users should immediately contact the maintainers of ``MOSFiT`` if they believe they have uploaded private data in error (because of the 24 hour waiting period, the inadvertantly uploaded data can be purged before becoming public if the maintainers are given enough notice).
