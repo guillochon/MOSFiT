@@ -1,3 +1,5 @@
+.. _getting-started:
+
 ===============
 Getting started
 ===============
@@ -32,6 +34,8 @@ Multiple events can be fit in succession by passing a list of names separated by
 
 The code outputs JSON files for each event/model combination that each contain a set of walkers that have been relaxed into an equilibrium about the posterior parameter distributions. This output is visualized via an example Jupyter notebook (``mosfit.ipynb``), which is copied to the ``products`` folder in the run directory, and by default shows output from the last ``MOSFiT`` run.
 
+.. _parallel:
+
 ------------------
 Parallel execution
 ------------------
@@ -48,6 +52,8 @@ Parallel execution
 
     mpirun -np 5 mosfit -i 0 -m magnetar
 
+.. _own-data:
+
 -------------------
 Using your own data
 -------------------
@@ -60,6 +66,8 @@ Using your own data
 
 When run with no other arguments, ``MOSFiT`` will convert the files to JSON format and immediately exit, but if run with the other standard arguments ``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the :ref:`Private data` section.
 
+.. _producing-outputs:
+
 -----------------
 Producing outputs
 -----------------
@@ -67,6 +75,8 @@ Producing outputs
 All outputs (except for converted observational data) are stored in the ``products`` directory, which is created by ``MOSFiT`` automatically in the current run directory. By default, a single file with the transient's name, e.g. ``LSQ12dlf.json``, will be produced; this file contains all of the information originally available in the input JSON file and the results of the fitting. An exact copy of this file is stored under the name ``walkers.json`` for convenience.
 
 Additional outputs can be produced via some optional options that can be passed to ``MOSFiT``. Please see the :ref:`arbitrary outputs <arbitrary>`_ section.
+
+.. _visualizing:
 
 -------------------
 Visualizing outputs
@@ -89,6 +99,8 @@ The third cell shows X-ray observations, if the transient had any.
 The fourth cell shows the evolution of free parameters as a function of time (the Monte Carlo chain).
 
 The last cell produces a corner plot using the `corner package <https://corner.readthedocs.io>`_.
+
+.. _sharing:
 
 -------------------------------------------
 Sharing data and outputs with the community

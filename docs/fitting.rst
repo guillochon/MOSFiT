@@ -6,11 +6,11 @@ Fitting models to data
 
 The primary purpose of ``MOSFiT`` is to fit models of transients to observed data. In this section we cover "how" of fitting, and how the user should interpret their results.
 
+.. _public:
+
 -----------
 Public data
 -----------
-
-.. _public:
 
 ``MOSFiT`` is deeply connected to the Open Catalogs (The Open Supernova Catalog, the Open Tidal Disruption Catalog, etc.), and the user can directly fit their model against any data provided by those catalogs. The Open Catalogs store names for each transient, and the user can access any transient by any known name of that transient. As an example, both of the commands below will fit the same transient:
 
@@ -21,11 +21,11 @@ Public data
 
 While the Open Catalogs do their best to maintain the integrity of the data they contain, there is always the possibility that the data contains errors, so users are encouraged to spot check the data they download before using it for any scientific purpose. A common error is that the data has been tagged with the wrong photometric system, or has not been tagged with a photometric system at all and uses a different system from what is commonly used for a given telescope/instrument/band. Users are encouraged to immediately report any issues with the public data on the GitHub issues page assocated with that catalog (e.g. the Open Supernova Catalog's `issue page <https://github.com/astrocatalogs/supernovae/issues>`_).
 
+.. _private:
+
 ------------
 Private data
 ------------
-
-.. _private:
 
 If you have private data you would like to fit, the most robust way to load the data into ``MOSFiT`` is to directly construct a JSON file from your data that conforms to the `Open Catalog Schema <https://github.com/astrocatalogs/supernovae/blob/master/SCHEMA.md>`_. This way, the user can specify all the data that ``MOSFiT`` can use for every single observation in a precise way. All data provided by the Open Catalogs is provided in this form, and if the user open up a typical JSON file downloaded from one of these catalogs, they will find that each observation is tagged with all the information necessary to model it.
 
@@ -46,18 +46,18 @@ If the user so chooses, they may *optionally* upload their data directly to the 
 
 Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``, however it is the fastest way for your data to appear on the Open Catalogs. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`maintainers <maintainers>`.
 
+.. _initialization:
+
 --------------
 Initialization
 --------------
 
-.. _initialization:
-
 When initializing, walkers are drawn randomly from the prior distributions of all free parameters, unless the ``-w`` option was passed to initialize from a previous run (see :ref:`previous <previous>`). By default, any drawn walker that has a defined, non-infinite score will be retained, unless the ``-d`` option is used, which by default only draws walkers above the average walker score drawn so far, or the numeric value specified by the user (warning: this option can often make the initial drawing phase last a *long* time).
+
+.. _restricting:
 
 Restricting the data used
 =========================
-
-.. _restricting:
 
 By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, and specific photometric bands using the ``--exclude-bands`` option. To exclude times from a fit, the user can specify a range of MJDs that will be included using the ``-L`` option, e.g.:
 
@@ -67,25 +67,25 @@ By default, ``MOSFiT`` will attempt to use all available data when fitting a mod
 
 will limit the data fitted for LSQ12dlf to lie between MJD 55000 and MJD 56000.
 
+.. _number:
+
 Number of walkers
 =================
 
-.. _number:
-
 The sampler used in ``MOSFiT`` is a variant of ``emcee``'s multi-temperature sampler ``PTSampler``, and thus the user can pass both a number of temperatures to use with ``-T`` in addition to the number of walkers ``-N`` per temperature. If one temperature is used (the default), the total number of walkers is simply whatever is passed to ``-N``, otherwise it is :math:`N*T`.
+
+.. _duration:
 
 Duration of fitting
 ===================
 
-.. _duration:
-
 The duration of the ``MOSFiT`` run is set with the ``-i`` option, unless the ``-R`` or ``-U`` options are used (see :ref:`convergence <convergence>`). Generally, unless the model has only a few free parameters or was initialized very close to the solution of highest-likelihood, the user should not expect good results unless ``-i`` is set to a few thousand or more.
+
+.. _burning:
 
 ------------------
 Burning in a model
 ------------------
-
-.. _burning:
 
 Unless the solution for a given dataset is known in advance, the initial period of searching for the true posterior distribution involves finding the locations of the solutions of highest likelihood. In ``MOSFiT``, various ``scipy`` routines are employed in an alernating fashion with a Gibbs-like affine-invariant ensemble evolution, which we have found more robustly locates the true global likelihood minimas. The period of alternation between optimization (called "fracking" in ``MOSFiT``) and sampling (called "walking" in ``MOSFiT``) is controlled by the ``-f`` option, with the total burn-in duration being controlled by the ``-b``/``-p`` options. If ``-b``/``-p`` are not set, the burn-in is set to run for half the total number of iterations specified by ``-i``.
 
@@ -97,11 +97,11 @@ As an example, the following will run the burn-in phase for 2000 iterations, the
 
 All :ref:`convergence <convergence>` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence <convergence>` criteria are met beyond the burn-in phase.
 
+.. _io:
+
 --------------------------
 Input and output locations
 --------------------------
-
-.. _io:
 
 The paths of the various inputs and outputs are set by a few different options in ``MOSFiT``. The first time ``MOSFiT`` runs in a directory, it will make local copies of the ``models`` and ``jupyter`` folders distributed with the code (unless ``--no-copy-at-launch`` option is passed), and will *not* copy the files again unless they are deleted or the user passes the ``--force-copy-at-launch`` option.
 
@@ -115,11 +115,11 @@ By default, ``MOSFiT`` searches the local ``models`` folder copied to the run di
 
 will write to the file ``LSQ12dlf-mysuffix.json``. A copy of the output will also always be dumped to ``walkers.json`` in the same directory. The same suffix will applied to any additional outputs requested by the user, such as the ``chain.json`` and ``extras.json`` files.
 
+.. _fixing:
+
 -----------------------
 Fixing model parameters
 -----------------------
-
-.. _fixing:
 
 Individual parameters can be locked to fixed values with the ``-F`` option, which will either assume the default specified in the model JSON file (if no value is provided):
 
@@ -162,11 +162,11 @@ with the following:
 
 Flat, log flat, gaussian, and power-law priors are available in ``MOSFiT``; see the `parameters_test.json <https://github.com/guillochon/MOSFiT/blob/master/mosfit/models/default/parameters_test.json>`_ file in the ``default`` model for examples on how to set each prior type.
 
+.. _previous:
+
 -------------------------------
 Initializing from previous runs
 -------------------------------
-
-.. _previous:
 
 The user can use the ensemble parameters from a prior ``MOSFiT`` run to draw their initial conditions for a new run using the ``-w`` option. Assuming that ``LSQ12dlf-mysuffix.json`` contains results from a previous run, the user can draw walker positions from it by passing it to the ``-w`` option:
 

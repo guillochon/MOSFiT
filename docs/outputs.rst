@@ -6,32 +6,32 @@ Outputs
 
 The model structure used in ``MOSFiT`` makes it ammenable to producing outputs from models that need not be fit against any particular transient. In this section we walk through how the user can extract various data products.
 
+.. _light-curve-options:
+
 -------------------
 Light curve options
 -------------------
 
-.. _light-curve-options:
-
 By default, ``MOSFiT`` will only compute model observations at the times a particular transient was observed using the instrument for which it was observed at those times. If a transient is sparsely sampled, this will likely result in a choppy light curve with no prediction for intra-observation magnitudes/fluxes.
+
+.. _smooth:
 
 Smooth light curves
 ===================
 
-.. _smooth:
-
 A smooth output light curve can be produced using the ``-S`` option, which when passed no argument returns the light curve with *every* instrument's predicted observation at all times. If given an argument (e.g. ``-S 100``), ``MOSFiT`` will return every instrument's predicted observation at all times *plus* an additional :math:`S` observations between the first and last observation.
+
+.. _extrapolated:
 
 Extrapolated light curves
 =========================
 
-.. _extrapolated:
-
 If the user wishes to extrapolate beyond the first and last observations, the ``-E`` option will extend the predicted observations by :math:`E` days both before and after the first/last detections.
+
+.. _unobserved:
 
 Predicted observations that were not observed
 =============================================
-
-.. _unobserved:
 
 The user may wish to generate light curves for a transient in instruments/bands for which the transient was not observed; this can be accomplished using the ``--extra-bands``, ``extra-instruments``, ``extra-bandsets``, and ``extra-systems`` options. For instance, to generate LCs in Hubble's UVIS filter F218W in the Vega system in addition to the observed bands, the user would enter:
 
@@ -39,11 +39,11 @@ The user may wish to generate light curves for a transient in instruments/bands 
 
     mosfit -e LSQ12dlf -m slsn --extra-instruments UVIS --extra-bands F218W --extra-systems Vega
 
+.. _mock:
+
 -----------------------------------------------
 Mock light curves in a magnitude-limited survey
 -----------------------------------------------
-
-.. _mock:
 
 Generating a light curve from a model in ``MOSFiT`` is achieved by simply not passing any event to the code with the ``-e`` option. The command below will dump out a default number of parameter draws to a ``walkers.json`` file in the ``products`` folder:
 
@@ -59,11 +59,11 @@ If the user wishes to produce mock observations for a given instrument, they sho
 
     mosfit -m slsn -l 23 0.5 --extra-bands u g r i z y --extra-instruments LSST
 
+.. _chain:
+
 ----------------
 Saving the chain
 ----------------
-
-.. _chain:
 
 Because the chain can be quite large (a full chain for a model with 15 free parameters, 100 walkers, and 20000 iterations will occupy ~120 MB of disk space), by default ``MOSFiT`` does not output the full chain to disk. Doing so is achieved by passing ``MOSFiT`` the ``-c`` option:
 
@@ -79,11 +79,11 @@ Memory can be quite scarce on some systems, and storing the chain in memory can 
 
     mosfit -m slsn -e LSQ12dlf -M 1000
 
+.. _arbitrary:
+
 -----------------
 Arbitrary outputs
 -----------------
-
-.. _arbitrary:
 
 Internally, ``MOSFiT`` is storing the outputs of each module in a single dictionary that is handed down through the execution tree like a hot potato. This dictionary behaves like a list of global variables, and when a model is executed from start to finish, it will be filled with values that were produced by all modules included in that module.
 

@@ -18,11 +18,11 @@ Another measure of convergence is the autocorrelation time :math:`\tau_{\rm auto
 
 The fact that ``acor`` does not yield a value until the PSRF ~ 1 means that the number of independent draws from the posterior is significantly constrained unless the user chooses to run their chains for much longer. ``MOSFiT`` can be instructed to run until a certain number of independent samples are available via the ``-U`` option.
 
+.. _scoring:
+
 -------
 Scoring
 -------
-
-.. _scoring:
 
 Model compatibility with a given dataset is measured using the "Watanabe-Akaike information criterion" (WAIC, also known as the "widely applicable information criterion", [WAT2010]_), which is simply the score of the parameter combination with the highest likelihood minus the variance of the scores within the fully-converged posterior. Ideally, one prefers models with the fewest free parameters, the WAIC estimates the *effective* number of free parameters for a given model and adjusts the score accordingly. In principle, two models with the same score for their best fits may have wildly different WAIC scores depending on the distribution of scores within their posteriors. This criterion is less sensitive to overfitting than simply comparing the best scores yielded by two models, and should also provide a fair comparisson between models with different numbers of free parameters.
 
