@@ -1085,7 +1085,7 @@ class Fitter(object):
                                   convergence_criteria is not None else
                                   iterations],
                         convergence_type=convergence_type,
-                        convergence_critera=convergence_criteria)
+                        convergence_criteria=convergence_criteria)
                     tft = tft + time.time() - sft
                     if s_exception:
                         break
