@@ -45,3 +45,94 @@ If the user so chooses, they may *optionally* upload their data directly to the 
     mosfit -e path/to/my/ascii/file/my_transient.dat -u
 
 Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``, however it is the fastest way for your data to appear on the Open Catalogs. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`maintainers <maintainers>`.
+
+------------------
+Burning in a model
+------------------
+
+.. _burning:
+
+Unless the solution for a given dataset is known in advance, the initial period of searching for the true posterior distribution involves finding the locations of the solutions of highest likelihood. In ``MOSFiT``, various ``scipy`` routines are employed in an alernating fashion with a Gibbs-like affine-invariant ensemble evolution, which we have found more robustly locates the true global likelihood minimas. The period of alternation between optimization (called "fracking" in ``MOSFiT``) and sampling (called "walking" in ``MOSFiT``) is controlled by the ``-f`` option, with the total burn-in duration being controlled by the ``-b``/``-p`` options. If ``-b``/``-p`` are not set, the burn-in is set to run for half the total number of iterations specified by ``-i``.
+
+As an example, the following will run the burn-in phase for 2000 iterations, the post burn-in for 3000 iterations more (for a total of 5000), fracking every 100th iteration:
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -f 100 -i 5000 -b 2000
+
+All convergence_ metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the convergence_ criteria are met beyond the burn-in phase.
+
+------------------
+Inputs and outputs
+------------------
+
+.. _io:
+
+The paths of the various inputs and outputs are set by a few different flags in ``MOSFiT``. ``MOSFiT`` outputs are always written to a local ``products`` directory, with the default filename being set to the name of the transient being fit (e.g. ``LSQ12dlf.json`` for LSQ12dlf). The user can append a suffix to the output filename using the ``-s`` option, e.g.:
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -s mysuffix
+
+will write to the file ``LSQ12dlf-mysuffix.json``. A copy of the output will also always be dumped to ``walkers.json`` in the same directory. The same suffix will applied to any additional outputs requested by the user, such as the ``chain.json`` and ``extras.json`` files.
+
+-----------------------
+Fixing model parameters
+-----------------------
+
+.. _fixing:
+
+Individual parameters can be locked to fixed values with the ``-F`` option, which will either assume the default specified in the model JSON file (if no value is provided):
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -F kappa
+
+Or, will assume the value specified by the user:
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -F mejecta 3.0
+
+Multiple fixed variables can be specified by chaining them together, with any user-prescribed variables following the variable names:
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -F kappa mejecta 3.0
+
+If you have a prior for a given variable (not a single value), it is best to modify your local ``parameters.json`` file. For instance, to place a Gaussian prior on ``vejecta`` in the SLSN model, replace the default ``parameters.json`` snippet, which looks like this:
+
+.. code-block:: json
+
+    "vejecta":{
+        "min_value":5.0e3,
+        "max_value":2.0e4
+    },
+
+with the following:
+
+.. code-block:: json
+
+    "vejecta":{
+        "class":"gaussian",
+        "mu":1.0e4,
+        "sigma":0.5e3,
+        "min_value":1.0e3,
+        "max_value":1.0e5
+    },
+
+Flat, log flat, gaussian, and power-law priors are available in ``MOSFiT``; see the `parameters_test.json <https://github.com/guillochon/MOSFiT/blob/master/mosfit/models/default/parameters_test.json>`_ file in the `default` model for examples on how to set each prior type.
+
+-------------------------------
+Initializing from previous runs
+-------------------------------
+
+.. _previous:
+
+The user can use the ensemble parameters from a prior ``MOSFiT`` run to draw their initial conditions for a new run using the ``-w`` flag. Assuming that ``LSQ12dlf-mysuffix.json`` contains results from a previous run, the user can draw walker positions from it by passing it to the ``-w`` option:
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -w LSQ12dlf-suffix.json
+
+If the file contains more walkers than requested by the new run, walker positions will be drawn verbatim from the input file, otherwise walker positions will be "jittered" by a small amount so no two walkers share identical parameters.
