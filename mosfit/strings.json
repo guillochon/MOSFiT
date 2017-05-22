@@ -72,7 +72,7 @@
     "paste_token": "Please paste your Dropbox token, then hit enter:",
     "pef_ext_search": "Could not find event, performing extended name search...",
     "progress": "Progress",
-    "run_until_converged": "Running until convergence",
+    "run_until_converged": "Running until convergence ({} = {})",
     "score_ranges": "Score ranges",
     "select_dep_column": "\nSelect column reporting `{}` for last selected `{}`:",
     "select_mc_column": "\nSelect a column that has a `{}`:",
