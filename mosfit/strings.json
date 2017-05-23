@@ -81,6 +81,7 @@
     "specify_column": "None of the above, use the same value for all rows.",
     "specify_mc_value": "\nPlease specify `{}` for this set of `{}s`:",
     "specify_value": "\nPlease specify `{}`, which will be assumed for all rows:",
+    "specify_value_blank": "\nPlease specify `{}`, which will be assumed for all rows (leave blank if not known):",
     "system": "\nPhotometric system not specified, please specify a photometric system:",
     "too_few_walkers": "Number of free parameters exceeds number of measurements. Please treat results with caution.",
     "ul_complete": "\n!gUploading complete!!e",

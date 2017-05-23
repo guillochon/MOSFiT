@@ -643,11 +643,12 @@ class Converter(object):
                             continue
                         colinds = np.delete(colinds, s - 1)
             elif key in self._specify_keys:
-                text = prt.message('specify_value', [key], prt=False)
-                cidict[key] = ''
-                while cidict[key].strip() is '':
-                    cidict[key] = prt.prompt(
-                        text, message=False, kind='string')
+                msg = ('specify_value_blank' if key in self._helpful_keys else
+                       'specify_value')
+                text = prt.message(msg, [key], prt=False)
+                cidict[key] = prt.prompt(
+                    text, message=False, kind='string', allow_blank=(
+                        key in self._helpful_keys))
 
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
