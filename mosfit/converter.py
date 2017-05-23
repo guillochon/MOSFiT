@@ -262,6 +262,39 @@ class Converter(object):
                             if cidict[key][0] != 'j':
                                 perms = len(cidict[key])
 
+                    # Clean up the data a bit now that we know the column
+                    # identities.
+
+                    # Strip common prefixes/suffixes from band names
+                    if PHOTOMETRY.BAND in cidict:
+                        bi = cidict[PHOTOMETRY.BAND]
+                        for d in [True, False]:
+                            strip_cols = []
+                            lens = [len(x[bi])
+                                    for x in flines[self._first_data:]]
+                            llen = min(lens)
+                            ra = range(llen) if d else range(-1, -llen - 1, -1)
+                            for li in ra:
+                                letter = None
+                                for row in list(flines[self._first_data:]):
+                                    print(letter, row[bi][li])
+                                    if letter is None:
+                                        letter = row[bi][li]
+                                    elif row[bi][li] != letter:
+                                        letter = None
+                                        break
+                                if letter is not None:
+                                    strip_cols.append(li)
+                                else:
+                                    break
+                            for ri in range(len(flines[self._first_data:])):
+                                flines[self._first_data + ri][bi] = ''.join(
+                                    [c for i, c in enumerate(flines[
+                                        self._first_data + ri][bi])
+                                     if (i if d else i - len(flines[
+                                         self._first_data + ri][bi])) not in
+                                     strip_cols])
+
                     for row in flines[self._first_data:]:
                         photodict = {}
                         for pi in range(perms):
@@ -636,7 +669,6 @@ class Converter(object):
                                     break
 
             if select is not None:
-                print(select - 1, lcolinds)
                 cidict[key] = lcolinds[select - 1]
                 colinds = np.delete(colinds, np.argwhere(
                     colinds == lcolinds[select - 1]))
@@ -661,7 +693,6 @@ class Converter(object):
                 cidict[key] = prt.prompt(
                     text, message=False, kind='string', allow_blank=(
                         key in self._helpful_keys))
-            print(cidict, colinds)
 
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
