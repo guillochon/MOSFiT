@@ -15,7 +15,7 @@ from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
 
-from mosfit.utils import entabbed_json_dump
+from mosfit.utils import entabbed_json_dump, is_date
 
 
 class Converter(object):
@@ -311,12 +311,14 @@ class Converter(object):
                                         isinstance(val, string_types)):
                                     val = val[pi]
                                     if isinstance(val, string_types):
-                                        photodict[key] = val
+                                        if val != '':
+                                            photodict[key] = val
                                     else:
                                         photodict[key] = row[val]
                                 else:
                                     if isinstance(val, string_types):
-                                        photodict[key] = val
+                                        if val != '':
+                                            photodict[key] = val
                                     else:
                                         photodict[key] = row[val]
                             if self._data_type == 2:
@@ -529,10 +531,17 @@ class Converter(object):
             if key in dkeys and self._use_mc:
                 continue
             if key.type == KEY_TYPES.NUMERIC:
-                lcolinds = [x for xi, x in enumerate(colinds)
+                lcolinds = [x for x in colinds
                             if any(is_number(y) for y in columns[x])]
+            elif key.type == KEY_TYPES.TIME:
+                lcolinds = [x for x in colinds
+                            if any(is_date(y) or is_number(y)
+                                   for y in columns[x])]
+            elif key.type == KEY_TYPES.STRING:
+                lcolinds = [x for x in colinds
+                            if any(not is_number(y) for y in columns[x])]
             else:
-                lcolinds = colinds
+                lcolinds = list(colinds)
             select = False
             selmap = np.array(range(len(lcolinds)))
             selects = []
@@ -627,8 +636,10 @@ class Converter(object):
                                     break
 
             if select is not None:
-                cidict[key] = colinds[select - 1]
-                colinds = np.delete(colinds, select - 1)
+                print(select - 1, lcolinds)
+                cidict[key] = lcolinds[select - 1]
+                colinds = np.delete(colinds, np.argwhere(
+                    colinds == lcolinds[select - 1]))
             elif len(selects):
                 if selects[0] == 'j':
                     cidict[key] = selects
@@ -636,12 +647,13 @@ class Converter(object):
                     allk = [key] + dkeys
                     for ki, k in enumerate(allk):
                         cidict[k] = [
-                            colinds[s - 1] if isinstance(s, int) else s
+                            lcolinds[s - 1] if isinstance(s, int) else s
                             for s in selects[ki::len(allk)]]
                     for s in selects:
                         if not isinstance(s, int):
                             continue
-                        colinds = np.delete(colinds, s - 1)
+                        colinds = np.delete(colinds, np.argwhere(
+                            colinds == lcolinds[s - 1]))
             elif key in self._specify_keys:
                 msg = ('specify_value_blank' if key in self._helpful_keys else
                        'specify_value')
@@ -649,6 +661,7 @@ class Converter(object):
                 cidict[key] = prt.prompt(
                     text, message=False, kind='string', allow_blank=(
                         key in self._helpful_keys))
+            print(cidict, colinds)
 
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
