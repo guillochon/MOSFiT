@@ -9,8 +9,8 @@ import numpy as np
 from astrocats.catalog.entry import Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
-from astrocats.catalog.utils import is_number, jd_to_mjd
 from astrocats.catalog.source import SOURCE
+from astrocats.catalog.utils import is_number, jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
@@ -56,14 +56,14 @@ class Converter(object):
 
         self._rsource = {SOURCE.NAME: self._DEFAULT_SOURCE}
 
-        emagstrs = [
+        self._emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr', 'mag error']
+            'mag err', 'magerr', 'mag error', 'err']
         self._header_keys = {
             PHOTOMETRY.TIME: ['time', 'mjd', ('jd', 'jd')],
             PHOTOMETRY.SYSTEM: ['system'],
             PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
-            PHOTOMETRY.E_MAGNITUDE: emagstrs,
+            PHOTOMETRY.E_MAGNITUDE: self._emagstrs,
             PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
             PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
             PHOTOMETRY.BAND: ['passband', 'band', 'filter'],
@@ -71,18 +71,18 @@ class Converter(object):
                 ' '.join(y) for y in (
                     list(i for s in [
                         list(permutations(['minus'] + x.split()))
-                        for x in emagstrs] for i in s) +
+                        for x in self._emagstrs] for i in s) +
                     list(i for s in [
                         list(permutations(['lower'] + x.split()))
-                        for x in emagstrs] for i in s))],
+                        for x in self._emagstrs] for i in s))],
             PHOTOMETRY.E_UPPER_MAGNITUDE: [
                 ' '.join(y) for y in (
                     list(i for s in [
                         list(permutations(['plus'] + x.split()))
-                        for x in emagstrs] for i in s) +
+                        for x in self._emagstrs] for i in s) +
                     list(i for s in [
                         list(permutations(['upper'] + x.split()))
-                        for x in emagstrs] for i in s))],
+                        for x in self._emagstrs] for i in s))],
             PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit', 'l_mag'],
             PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
             PHOTOMETRY.E_COUNT_RATE: [
@@ -102,7 +102,12 @@ class Converter(object):
         self._dep_keys = [
             PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
-        self._specify_keys = [PHOTOMETRY.BAND]
+        self._specify_keys = [
+            PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
+        self._band_names = [
+            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'u', 'g', 'r', 'i', 'z',
+            'y', 'W1', 'W2', 'M2'
+        ]
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -176,6 +181,19 @@ class Converter(object):
 
                     flines = [[
                         x.strip(' #$()\\') for x in y] for y in flines]
+
+                    # Find band columns if they exist and insert error columns
+                    # if they don't exist.
+                    for fi, fl in enumerate(list(flines)):
+                        flcopy = list(fl)
+                        offset = 0
+                        for fci, fc in enumerate(fl):
+                            if (fc in self._band_names and
+                                (fci == len(fl) - 1 or
+                                 fl[fci + 1].lower() not in self._emagstrs)):
+                                flcopy.insert(fci + 1 + offset, 'e mag')
+                                offset += 1
+                        flines[fi] = flcopy
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -407,14 +425,17 @@ class Converter(object):
         for fi, fl in enumerate(flines):
             if not any([is_number(x) for x in fl]):
                 # Try to associate column names with common header keys.
+                conflict_keys = []
+                conflict_cis = []
                 for ci, col in enumerate(fl):
                     for key in self._header_keys:
                         if any([(x[0] if isinstance(x, tuple)
                                  else x) == col.lower()
                                 for x in self._header_keys[key]]):
-                            if ci in used_cis:
+                            if key in cidict or ci in used_cis:
                                 # There is a conflict, ask user.
-                                del(cidict[used_cis[ci]])
+                                conflict_keys.append(key)
+                                conflict_cis.append(ci)
                             else:
                                 ind = [
                                     (x[0] if isinstance(x, tuple) else x)
@@ -425,9 +446,45 @@ class Converter(object):
                                     match, tuple) else ci
                                 used_cis[ci] = key
                             break
+
+                for cki, ck in enumerate(conflict_keys):
+                    if ck in cidict:
+                        ci = cidict[ck]
+                        del(cidict[ck])
+                        del(used_cis[ci])
             else:
                 self._first_data = fi
                 break
+
+        # Look for columns that are band names if no magnitude column was
+        # found.
+        if PHOTOMETRY.MAGNITUDE not in cidict:
+            # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
+            # for each column).
+            key = PHOTOMETRY.MAGNITUDE
+            ekey = PHOTOMETRY.E_MAGNITUDE
+            bkey = PHOTOMETRY.BAND
+            if ekey in cidict:
+                ci = cidict[ekey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            if bkey in cidict:
+                ci = cidict[bkey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            for fi, fl in enumerate(flines):
+                if not any([is_number(x) for x in fl]):
+                    # Try to associate column names with common header keys.
+                    for ci, col in enumerate(fl):
+                        if ci in used_cis:
+                            continue
+                        if col in self._band_names:
+                            cidict.setdefault(key, []).append(ci)
+                            used_cis[ci] = key
+                            cidict.setdefault(bkey, []).append(col)
+                        elif col.lower() in self._emagstrs:
+                            cidict.setdefault(ekey, []).append(ci)
+                            used_cis[ci] = ekey
 
         # See which keys we collected. If we are missing any critical keys, ask
         # the user which column they are.
