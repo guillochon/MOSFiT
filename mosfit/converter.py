@@ -269,6 +269,8 @@ class Converter(object):
                     if PHOTOMETRY.BAND in cidict:
                         bi = cidict[PHOTOMETRY.BAND]
                         for d in [True, False]:
+                            if not isinstance(bi, int):
+                                break
                             strip_cols = []
                             lens = [len(x[bi])
                                     for x in flines[self._first_data:]]
