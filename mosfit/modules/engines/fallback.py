@@ -588,7 +588,8 @@ class Fallback(Engine):
 
         self._efficiency = kwargs['efficiency']
         # luminosities in erg/s
-        luminosities = self._efficiency * dmdtnew * c.c.cgs.value * c.c.cgs.value
+        luminosities = (self._efficiency * dmdtnew *
+                        c.c.cgs.value * c.c.cgs.value)
         precutlums = np.copy(luminosities)
         # -------------- EDDINGTON LUMINOSITY CUT -------------------
         # Assume solar metallicity for now
