@@ -357,8 +357,22 @@ def get_parser():
         '-R',
         dest='run_until_converged',
         type=float,
-        default=False,
-        const=10.0,
+        default=None,
+        const=1.1,
+        nargs='?',
+        help=("Run each model until the autocorrelation time is measured "
+              "accurately and chain has burned in for the specified number "
+              "of autocorrelation times [Default: 10.0]. This will run "
+              "beyond the specified number of iterations, and is recommended "
+              "when the `--upload/-u` flag is set."))
+
+    parser.add_argument(
+        '--run-until-uncorrelated',
+        '-U',
+        dest='run_until_uncorrelated',
+        type=int,
+        default=None,
+        const=5,
         nargs='?',
         help=("Run each model until the autocorrelation time is measured "
               "accurately and chain has burned in for the specified number "
@@ -513,7 +527,7 @@ def get_parser():
 
 
 def main():
-    """Main function for MOSFiT."""
+    """Run MOSFiT."""
     # try:
     #     import pycuda.autoinit  # noqa: F401
     #     import skcuda.linalg as linalg
@@ -580,13 +594,25 @@ def main():
             changed_iterations = True
             args.iterations = 0
         else:
-            args.iterations = 1000
+            args.iterations = 5000
 
     if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))
 
     if args.frack_step == 0:
         args.fracking = False
+
+    if (args.run_until_uncorrelated is not None and
+            args.run_until_converged is not None):
+        raise ValueError(
+            '`-R` and `-U` options are incompatible, please use one or the '
+            'other.')
+    elif args.run_until_uncorrelated is not None:
+        args.convergence_type = 'acor'
+        args.convergence_criteria = args.run_until_uncorrelated
+    elif args.run_until_converged is not None:
+        args.convergence_type = 'psrf'
+        args.convergence_criteria = args.run_until_converged
 
     if is_master():
         # Get hash of ourselves

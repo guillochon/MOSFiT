@@ -13,6 +13,8 @@ from collections import OrderedDict
 from contextlib import contextmanager
 from math import floor, isnan, log10
 
+from dateutil.parser import parse
+
 import numpy as np
 import scipy.interpolate
 import scipy.ndimage
@@ -28,6 +30,15 @@ def get_url_file_handle(url, timeout=10):
     else:
         from urllib2 import urlopen
     return urlopen(url, timeout=timeout)
+
+
+def is_date(s):
+    """Check if input is a valid date."""
+    try:
+        parse(s)
+        return True
+    except ValueError:
+        return False
 
 
 def is_integer(s):
@@ -317,8 +328,12 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
 
 def all_to_list(array):
     """Recursively convert list of numpy arrays to lists."""
-    return [x.tolist() if type(x).__module__ == 'numpy'
-            else all_to_list(x) if type(x) == 'list' else x for x in array]
+    try:
+        return ([x.tolist() if type(x).__module__ == 'numpy'
+                else all_to_list(x) if type(x) == 'list' else
+                x for x in array])
+    except TypeError:  # array is not iterable
+        return [array]
 
 
 # From Django

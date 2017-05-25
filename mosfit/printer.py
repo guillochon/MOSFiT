@@ -350,7 +350,9 @@ class Printer(object):
                fracking=False,
                messages=[],
                kmat=None,
-               make_space=False):
+               make_space=False,
+               convergence_type='',
+               convergence_criteria=''):
         """Print status message showing state of fitting process."""
         if self._quiet:
             return
@@ -400,7 +402,9 @@ class Printer(object):
                     self._strings['progress'] + ': [ {} ]'.format(progress[0]))
             outarr.append(progressstring)
         if fitter._emcee_est_t < 0.0:
-            outarr.append(self._strings['run_until_converged'])
+            txt = self.message('run_until_converged', [
+                convergence_type, convergence_criteria], prt=False)
+            outarr.append(txt)
         elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
             if fitter._bh_est_t > 0.0 or not fitter._fracking:
                 tott = fitter._emcee_est_t + fitter._bh_est_t

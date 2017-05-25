@@ -18,6 +18,7 @@ Using MOSFiT
    outputs.rst
    evaluation.rst
    error.rst
+   accessibility.rst
    command_line.rst
    api.rst
 

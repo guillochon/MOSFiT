@@ -67,6 +67,7 @@ class Fitter(object):
 
     _MAX_ACORC = 5
     _REPLACE_AGE = 20
+    _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
 
     def __init__(self):
         """Initialize `Fitter`."""
@@ -81,7 +82,7 @@ class Fitter(object):
                    band_systems=[],
                    band_instruments=[],
                    band_bandsets=[],
-                   iterations=1000,
+                   iterations=5000,
                    num_walkers=None,
                    num_temps=1,
                    parameter_paths=[''],
@@ -106,7 +107,8 @@ class Fitter(object):
                    check_upload_quality=False,
                    variance_for_each=[],
                    user_fixed_parameters=[],
-                   run_until_converged=False,
+                   convergence_type='psrf',
+                   convergence_criteria=None,
                    save_full_chain=False,
                    draw_above_likelihood=False,
                    maximum_walltime=False,
@@ -483,7 +485,8 @@ class Fitter(object):
                             upload=upload,
                             upload_token=upload_token,
                             check_upload_quality=check_upload_quality,
-                            run_until_converged=run_until_converged,
+                            convergence_type=convergence_type,
+                            convergence_criteria=convergence_criteria,
                             save_full_chain=save_full_chain,
                             extra_outputs=extra_outputs)
                         if return_fits:
@@ -689,7 +692,8 @@ class Fitter(object):
                  upload=False,
                  upload_token='',
                  check_upload_quality=True,
-                 run_until_converged=False,
+                 convergence_type='psrf',
+                 convergence_criteria=None,
                  save_full_chain=False,
                  extra_outputs=[]):
         """Fit the data for a given event.
@@ -825,12 +829,14 @@ class Fitter(object):
                     ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
                 st = time.time()
             while (iterations > 0 and (
-                    run_until_converged or ici < len(iter_arr))):
+                    convergence_criteria is not None or ici < len(iter_arr))):
                 slr = int(np.round(sli))
-                ic = max_chunk if run_until_converged else iter_arr[ici]
+                ic = (max_chunk if convergence_criteria is not None else
+                      iter_arr[ici])
                 if exceeded_walltime:
                     break
-                if run_until_converged and converged and emi > iterations:
+                if (convergence_criteria is not None and converged and
+                        emi > iterations):
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
@@ -942,6 +948,17 @@ class Fitter(object):
                                 break
                         acor = [aacort, aa, ams]
 
+                        actc = int(np.ceil(aacort / sli))
+                        actn = np.int(float(emi - ams) / actc)
+
+                        if (convergence_type == 'acor' and
+                            convergence_criteria is not None and
+                            actn >= convergence_criteria and
+                                emi > iterations):
+                            prt.message('converged')
+                            converged = True
+                            break
+
                     # Calculate the PSRF (Gelman-Rubin statistic).
                     if li > 1 and emi > self._burn_in + 2:
                         cur_chain = (np.concatenate(
@@ -967,13 +984,15 @@ class Fitter(object):
                         if np.isnan(psrf):
                             psrf = np.inf
 
-                        if (run_until_converged and psrf < 1.1 and
+                        if (convergence_type == 'psrf' and
+                            convergence_criteria is not None and
+                            psrf < convergence_criteria and
                                 emi > iterations):
                             prt.message('converged')
                             converged = True
                             break
 
-                    if run_until_converged:
+                    if convergence_criteria is not None:
                         self._emcee_est_t = -1.0
                     else:
                         self._emcee_est_t = float(
@@ -1004,11 +1023,14 @@ class Fitter(object):
                         kmat=kmat,
                         accepts=accepts,
                         progress=[emi, None if
-                                  run_until_converged else iterations],
+                                  convergence_criteria is not None else
+                                  iterations],
                         acor=acor,
                         psrf=[psrf, self._burn_in],
                         messages=messages,
-                        make_space=emim1 == 0)
+                        make_space=emim1 == 0,
+                        convergence_type=convergence_type,
+                        convergence_criteria=convergence_criteria)
 
                     if s_exception:
                         break
@@ -1060,7 +1082,10 @@ class Fitter(object):
                         kmat=kmat,
                         fracking=True,
                         progress=[emi, None if
-                                  run_until_converged else iterations])
+                                  convergence_criteria is not None else
+                                  iterations],
+                        convergence_type=convergence_type,
+                        convergence_criteria=convergence_criteria)
                     tft = tft + time.time() - sft
                     if s_exception:
                         break
@@ -1139,7 +1164,6 @@ class Fitter(object):
 
         if upload:
             uentry = Entry(name=self._event_name)
-            usource = uentry.add_source(name='MOSFiT paper')
             data_keys = set()
             for task in model._call_stack:
                 if model._call_stack[task]['kind'] == 'data':
@@ -1147,7 +1171,22 @@ class Fitter(object):
                         list(model._call_stack[task].get('keys', {}).keys()))
             entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
 
-        source = entry.add_source(name='MOSFiT paper')
+        # Accumulate all the sources and add them to each entry.
+        sources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                sources.append(entry.add_source(**ref))
+        sources.append(entry.add_source(**self._DEFAULT_SOURCE))
+        source = ','.join(sources)
+
+        if upload:
+            usources = []
+            if len(self._model._references):
+                for ref in self._model._references:
+                    usources.append(uentry.add_source(**ref))
+            usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
+            usource = ','.join(usources)
+
         model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
             task_copy = deepcopy(model._call_stack[task])
@@ -1176,7 +1215,6 @@ class Fitter(object):
                     }
                 )
             if acor and aacort > 0:
-                actc = int(np.ceil(aacort))
                 acortimes = '<' if aa < self._MAX_ACORC else ''
                 acortimes += str(np.int(float(emi - ams) / actc))
                 modeldict[MODEL.CONVERGENCE].append(
@@ -1217,7 +1255,6 @@ class Fitter(object):
         # upon the value of acort (the autocorrelation timescale).
         if acor and aacort > 0 and aa == self._MAX_ACORC:
             actc0 = int(np.ceil(aacort))
-            actc = int(np.ceil(aacort / sli))
             for i in range(1, np.int(float(emi - ams) / actc0)):
                 pout = np.concatenate(
                     (all_chain[:, :, -i * actc, :], pout), axis=1)

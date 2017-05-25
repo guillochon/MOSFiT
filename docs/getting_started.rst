@@ -1,3 +1,5 @@
+.. _getting-started:
+
 ===============
 Getting started
 ===============
@@ -11,14 +13,14 @@ Once installed, ``MOSFiT`` can be run from any directory, and it's typically con
     cd mosfit_runs
 
 ``MOSFiT`` can be invoked either via either :code:`python -m mosfit` or simply :code:`mosfit`. Then, to run ``MOSFiT``, pass an event name to the program via
-the ``-e`` flag (the default model is a simple Nickel-Cobalt decay with
+the ``-e`` option (the default model is a simple Nickel-Cobalt decay with
 diffusion):
 
 .. code-block:: bash
 
     mosfit -e LSQ12dlf
 
-Different models (several are distributed with ``MOSFiT``) can be fit to transients using the model flag ``-m``:
+Different models (several are distributed with ``MOSFiT``) can be fit to transients using the model option ``-m``:
 
 .. code-block:: bash
 
@@ -31,6 +33,8 @@ Multiple events can be fit in succession by passing a list of names separated by
     mosfit -e LSQ12dlf SN2015bn "SDSS-II SN 5751"
 
 The code outputs JSON files for each event/model combination that each contain a set of walkers that have been relaxed into an equilibrium about the posterior parameter distributions. This output is visualized via an example Jupyter notebook (``mosfit.ipynb``), which is copied to the ``products`` folder in the run directory, and by default shows output from the last ``MOSFiT`` run.
+
+.. _parallel:
 
 ------------------
 Parallel execution
@@ -48,11 +52,13 @@ Parallel execution
 
     mpirun -np 5 mosfit -i 0 -m magnetar
 
+.. _own-data:
+
 -------------------
 Using your own data
 -------------------
 
-``MOSFiT`` has a built-in converter that can take input data in a number of formats and convert that data to the Open Catalog JSON format. Using the converter is straightforward, simply pass the path to the file(s) using the same ``-e`` flag:
+``MOSFiT`` has a built-in converter that can take input data in a number of formats and convert that data to the Open Catalog JSON format. Using the converter is straightforward, simply pass the path to the file(s) using the same ``-e`` option:
 
 .. code-block:: bash
 
@@ -60,13 +66,17 @@ Using your own data
 
 When run with no other arguments, ``MOSFiT`` will convert the files to JSON format and immediately exit, but if run with the other standard arguments ``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the :ref:`Private data` section.
 
+.. _producing-outputs:
+
 -----------------
 Producing outputs
 -----------------
 
 All outputs (except for converted observational data) are stored in the ``products`` directory, which is created by ``MOSFiT`` automatically in the current run directory. By default, a single file with the transient's name, e.g. ``LSQ12dlf.json``, will be produced; this file contains all of the information originally available in the input JSON file and the results of the fitting. An exact copy of this file is stored under the name ``walkers.json`` for convenience.
 
-Additional outputs can be produced via some optional flags that can be passed to ``MOSFiT``. Please see the `Additional outputs`_ section.
+Additional outputs can be produced via some optional options that can be passed to ``MOSFiT``. Please see the :ref:`arbitrary outputs <arbitrary>` section.
+
+.. _visualizing:
 
 -------------------
 Visualizing outputs
@@ -90,19 +100,17 @@ The fourth cell shows the evolution of free parameters as a function of time (th
 
 The last cell produces a corner plot using the `corner package <https://corner.readthedocs.io>`_.
 
+.. _sharing:
+
 -------------------------------------------
 Sharing data and outputs with the community
 -------------------------------------------
 
-To upload fits back to the Open Catalogs, users can simply pass the ``-u`` flag:
-
-.. code-block:: bash
-
-    mosfit -e LSQ12dlf -m slsn -u
+To upload fits back to the Open Catalogs, users can simply pass the ``-u`` option. The first time ``-u`` is used, MOSFiT will request a Dropbox token, which is provided on the Open Astronomy Catalogs on the pages describing ``MOSFiT``, e.g. `https://sne.space/mosfit/`_. These tokens can be revoked at any time, so a user may be occaisionally asked to enter a new token if the old one has expired.
 
 Upon completing the fitting process, and if the fits satisfy some quality checks, the model fits will uploaded to the Open Catalogs, where they will be ingested and available approximately 24 hours after their submission.
 
-If the data was read from a file (rather than a name), and if the ``-u`` option was provided, ``MOSFiT`` will offer the user the option of uploading the *observed* data to the Open Catalogs as well, in addition to the model fits. Because of the possibility that local data passed to ``MOSFiT`` is private, the user will be asked if they wish to upload each event before they are uploaded. Users should immediately contact the maintainers of ``MOSFiT`` if they believe they have uploaded private data in error (because of the 24 hour waiting period, the inadvertantly uploaded data can be purged before becoming public).
+If the data was read from a file (rather than from one of the Open Astronomy Catalogs), and if the ``-u`` option was provided, ``MOSFiT`` will offer the user the option of uploading the *observed* data to the Open Catalogs as well, in addition to the model fits. Because of the possibility that local data passed to ``MOSFiT`` is private, the user will be asked if they wish to upload each event before they are uploaded. Users should immediately contact the maintainers of ``MOSFiT`` if they believe they have uploaded private data in error (because of the 24 hour waiting period, the inadvertantly uploaded data can be purged before becoming public if the maintainers are given enough notice).
 
 .. _troubleshooting:
 
