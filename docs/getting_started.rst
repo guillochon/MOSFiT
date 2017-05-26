@@ -111,3 +111,11 @@ To upload fits back to the Open Catalogs, users can simply pass the ``-u`` optio
 Upon completing the fitting process, and if the fits satisfy some quality checks, the model fits will uploaded to the Open Catalogs, where they will be ingested and available approximately 24 hours after their submission.
 
 If the data was read from a file (rather than from one of the Open Astronomy Catalogs), and if the ``-u`` option was provided, ``MOSFiT`` will offer the user the option of uploading the *observed* data to the Open Catalogs as well, in addition to the model fits. Because of the possibility that local data passed to ``MOSFiT`` is private, the user will be asked if they wish to upload each event before they are uploaded. Users should immediately contact the maintainers of ``MOSFiT`` if they believe they have uploaded private data in error (because of the 24 hour waiting period, the inadvertantly uploaded data can be purged before becoming public if the maintainers are given enough notice).
+
+.. _troubleshooting:
+
+---------------
+Troubleshooting
+---------------
+
+If you are having trouble getting ``MOSFiT`` working, please first consult our :ref:`FAQ` page, which addresses many common issues. We also have a Slack channel available for assistance in the AstroCats Slack team, which you can request to join by `clicking this link <https://astrochats.slack.com/messages/#mosfit>`_.
