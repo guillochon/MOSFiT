@@ -134,12 +134,18 @@ class Model(object):
 
         # Load model parameter file.
         model_pp = os.path.join(
-            os.path.split(model_path)[0], 'parameters.json')
+            self._dir_path, 'models', model_dir, 'parameters.json')
 
         pp = ''
 
-        selected_pp = os.path.join(
-            os.path.split(model_path)[0], parameter_path)
+        local_pp = (parameter_path if '/' in parameter_path
+                    else os.path.join('models', model_dir, parameter_path))
+
+        if os.path.isfile(local_pp):
+            selected_pp = local_pp
+        else:
+            selected_pp = os.path.join(
+                self._dir_path, 'models', model_dir, parameter_path)
 
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
@@ -266,11 +272,15 @@ class Model(object):
         if not call_stack:
             call_stack = self._call_stack
         cur_task = call_stack[task]
+        kinds = self._inflect.plural(cur_task['kind'])
         mod_name = cur_task.get('class', task).lower()
-        mod = importlib.import_module(
-            '.' + 'modules.' + self._inflect.plural(
-                cur_task['kind'].lower()) + '.' + mod_name,
-            package='mosfit')
+        mod_path = os.path.join('modules', kinds, mod_name + '.py')
+        if not os.path.isfile(mod_path):
+            mod_path = os.path.join(self._dir_path, 'modules', kinds,
+                                    mod_name + '.py')
+        mod_name = 'mosfit.modules.' + kinds + mod_name
+        mod = importlib.machinery.SourceFileLoader(mod_name,
+                                                   mod_path).load_module()
         class_name = [
             x[0] for x in
             inspect.getmembers(mod, inspect.isclass)

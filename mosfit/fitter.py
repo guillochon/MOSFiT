@@ -85,7 +85,7 @@ class Fitter(object):
                    iterations=5000,
                    num_walkers=None,
                    num_temps=1,
-                   parameter_paths=[''],
+                   parameter_paths=['parameters.json'],
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
