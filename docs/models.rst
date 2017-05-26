@@ -92,16 +92,17 @@ You'll notice that ``parameters.json`` file is fairly bare-bones, containing onl
             "min_value":1.0,
             "max_value":2.0
         },
-
     }
 
 Now, change the range of allowed neutron star masses to something else:
 
 .. code-block:: json
 
-    "Mns":{
-        "min_value":1.5,
-        "max_value":2.5
+    {
+        "Mns":{
+            "min_value":1.5,
+            "max_value":2.5
+        },
     }
 
 **Congratulations!** You have just modified your first MOSFiT model. It should be noted that even this very minor change, which affects the range of a single parameter, would generate a completely different model hash than the default model, distinguishing it from any other models that might have been uploaded by other users using the default settings.
@@ -123,90 +124,94 @@ To swap ``diffusion`` for ``viscous``, the user would remove the blocks of JSON 
 
 .. code-block:: json
 
-    "kappagamma":{
-        "kind":"parameter",
-        "value":10.0,
-        "class":"parameter",
-        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
-    },
-    "diffusion":{
-        "kind":"transform",
-        "inputs":[
-            "magnetar",
-            "kappa",
-            "kappagamma",
-            "mejecta",
-            "texplosion",
-            "vejecta"
-        ]
-    },
-    "temperature_floor":{
-        "kind":"photosphere",
-        "inputs":[
-            "texplosion",
-            "diffusion",
-            "temperature"
-        ]
-    },
-    "slsn_constraints":{
-        "kind":"constraint",
-        "inputs":[
-            "mejecta",
-            "vejecta",
-            "kappa",
-            "tnebular_min",
-            "Pspin",
-            "Mns",
-            "diffusion",
-            "texplosion",
-            "redshift",
-            "alltimes",
-            "neutrino_energy"
-        ]
-    },
+    {
+        "kappagamma":{
+            "kind":"parameter",
+            "value":10.0,
+            "class":"parameter",
+            "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+        },
+        "diffusion":{
+            "kind":"transform",
+            "inputs":[
+                "magnetar",
+                "kappa",
+                "kappagamma",
+                "mejecta",
+                "texplosion",
+                "vejecta"
+            ]
+        },
+        "temperature_floor":{
+            "kind":"photosphere",
+            "inputs":[
+                "texplosion",
+                "diffusion",
+                "temperature"
+            ]
+        },
+        "slsn_constraints":{
+            "kind":"constraint",
+            "inputs":[
+                "mejecta",
+                "vejecta",
+                "kappa",
+                "tnebular_min",
+                "Pspin",
+                "Mns",
+                "diffusion",
+                "texplosion",
+                "redshift",
+                "alltimes",
+                "neutrino_energy"
+            ]
+        },
+    }
 
 and replace them with blocks appropriate for ``viscous``:
 
 .. code-block:: json
 
-    "Tviscous":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"T_{\\rm viscous}"
-    },
-    "viscous":{
-        "kind":"transform",
-        "inputs":[
-            "magnetar",
-            "texplosion",
-            "Tviscous"
-        ]
-    },
-    "temperature_floor":{
-        "kind":"photosphere",
-        "inputs":[
-            "texplosion",
-            "viscous",
-            "temperature"
-        ]
-    },
-    "slsn_constraints":{
-        "kind":"constraint",
-        "inputs":[
-            "mejecta",
-            "vejecta",
-            "kappa",
-            "tnebular_min",
-            "Pspin",
-            "Mns",
-            "viscous",
-            "texplosion",
-            "redshift",
-            "alltimes",
-            "neutrino_energy"
-        ]
-    },
+    {
+        "Tviscous":{
+            "kind":"parameter",
+            "value":1.0,
+            "class":"parameter",
+            "latex":"T_{\\rm viscous}"
+        },
+        "viscous":{
+            "kind":"transform",
+            "inputs":[
+                "magnetar",
+                "texplosion",
+                "Tviscous"
+            ]
+        },
+        "temperature_floor":{
+            "kind":"photosphere",
+            "inputs":[
+                "texplosion",
+                "viscous",
+                "temperature"
+            ]
+        },
+        "slsn_constraints":{
+            "kind":"constraint",
+            "inputs":[
+                "mejecta",
+                "vejecta",
+                "kappa",
+                "tnebular_min",
+                "Pspin",
+                "Mns",
+                "viscous",
+                "texplosion",
+                "redshift",
+                "alltimes",
+                "neutrino_energy"
+            ]
+        },
+    }
 
 As can be seen above, this involved removal of definitions of free parameters that only applied to ``diffusion`` (``kappagamma``), the addition of a new free parameter for ``viscous`` (``Tviscous``), and replacement of various ``inputs`` that depended on ``diffusion`` with ``viscous``.
 
@@ -214,21 +219,25 @@ The user should also modify the ``parameters.json`` file to remove free paramete
 
 .. code-block:: json
 
-    "kappagamma":{
-        "min_value":0.1,
-        "max_value":1.0e4,
-        "log":true
-    },
+    {
+        "kappagamma":{
+            "min_value":0.1,
+            "max_value":1.0e4,
+            "log":true
+        },
+    }
 
 and to the define the priors of their new free parameters:
 
 .. code-block:: json
 
-    "Tviscous":{
-        "min_value":1.0e-3,
-        "max_value":1.0e5,
-        "log":true
-    },
+    {
+        "Tviscous":{
+            "min_value":1.0e-3,
+            "max_value":1.0e5,
+            "log":true
+        },
+    }
 
 .. _creating:
 
