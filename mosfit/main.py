@@ -735,6 +735,7 @@ def main():
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
                     txt = prt.message('readme-modules', [
+                        os.path.join(dir_path, 'modules', 'mdir'),
                         os.path.join(dir_path, 'modules')], prt=False)
                     with open(readme_path, 'w') as f:
                         f.write(txt)
@@ -753,6 +754,7 @@ def main():
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
                     txt = prt.message('readme-models', [
+                        os.path.join(dir_path, 'models', mdir),
                         os.path.join(dir_path, 'models')], prt=False)
                     with open(readme_path, 'w') as f:
                         f.write(txt)

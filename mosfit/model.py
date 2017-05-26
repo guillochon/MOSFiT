@@ -279,8 +279,13 @@ class Model(object):
             mod_path = os.path.join(self._dir_path, 'modules', kinds,
                                     mod_name + '.py')
         mod_name = 'mosfit.modules.' + kinds + mod_name
-        mod = importlib.machinery.SourceFileLoader(mod_name,
-                                                   mod_path).load_module()
+        try:
+            mod = importlib.machinery.SourceFileLoader(mod_name,
+                                                       mod_path).load_module()
+        except AttributeError:
+            import imp
+            mod = imp.load_source(mod_name, mod_path)
+
         class_name = [
             x[0] for x in
             inspect.getmembers(mod, inspect.isclass)
