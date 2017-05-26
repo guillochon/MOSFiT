@@ -189,7 +189,58 @@ class Fitter(object):
         ps = [[] for x in range(len(event_list))]
         lnprobs = [[] for x in range(len(event_list))]
 
+        # Load walker data if provided a list of walker paths.
         walker_data = []
+
+        if len(walker_paths):
+            try:
+                pool = MPIPool()
+            except ValueError:
+                pool = SerialPool()
+            if pool.is_master():
+                for walker_path in walker_paths:
+                    if os.path.exists(walker_path):
+                        with open(walker_path, 'r') as f:
+                            all_walker_data = json.load(
+                                f, object_pairs_hook=OrderedDict)
+                        prt.message('walker_file', [
+                                    walker_path], wrapped=True)
+                        models = all_walker_data.get(ENTRY.MODELS, [])
+                        choice = None
+                        if len(models) > 1:
+                            model_opts = [
+                                '{}-{}-{}'.format(
+                                    x['code'], x['name'], x['date'])
+                                for x in models]
+                            choice = prt.prompt(
+                                'select_model_walkers', kind='select',
+                                message=True, options=model_opts)
+                            choice = model_opts.index(choice)
+                        elif len(models) == 1:
+                            choice = 0
+
+                        if choice is not None:
+                            walker_data.extend([
+                                x[REALIZATION.PARAMETERS]
+                                for x in models[choice][
+                                    MODEL.REALIZATIONS]])
+
+                        if not len(walker_data):
+                            prt.message('no_walker_data')
+                    else:
+                        prt.message('no_walker_data')
+                        if offline:
+                            prt.message('omit_offline')
+                        raise RuntimeError
+
+                for rank in range(1, pool.size + 1):
+                    pool.comm.send(walker_data, dest=rank, tag=3)
+            else:
+                walker_data = pool.comm.recv(source=0, tag=3)
+                pool.wait()
+
+            if pool.is_master():
+                pool.close()
 
         self._event_name = 'Batch'
         self._event_catalog = ''
@@ -355,50 +406,10 @@ class Fitter(object):
                         pool.comm.send(self._event_name, dest=rank, tag=0)
                         pool.comm.send(path, dest=rank, tag=1)
                         pool.comm.send(data, dest=rank, tag=2)
-
-                    if len(walker_paths):
-                        walker_path = walker_paths[ei]
-                        if os.path.exists(walker_path):
-                            with open(walker_path, 'r') as f:
-                                all_walker_data = json.load(
-                                    f, object_pairs_hook=OrderedDict)
-                            prt.message('walker_file', [
-                                        walker_path], wrapped=True)
-                            models = all_walker_data.get(ENTRY.MODELS, [])
-                            choice = None
-                            if len(models) > 1:
-                                model_opts = [
-                                    '{}-{}-{}'.format(
-                                        x['code'], x['name'], x['date'])
-                                    for x in models]
-                                choice = prt.prompt(
-                                    'select_model_walkers', kind='select',
-                                    message=True, options=model_opts)
-                                choice = model_opts.index(choice)
-                            elif len(models) == 1:
-                                choice = 0
-
-                            if choice is not None:
-                                walker_data = [
-                                    x[REALIZATION.PARAMETERS]
-                                    for x in models[choice][
-                                        MODEL.REALIZATIONS]]
-
-                            if not len(walker_data):
-                                prt.message('no_walker_data')
-                        else:
-                            prt.message('no_walker_data')
-                            if offline:
-                                prt.message('omit_offline')
-                            raise RuntimeError
-
-                    for rank in range(1, pool.size + 1):
-                        pool.comm.send(walker_data, dest=rank, tag=3)
                 else:
                     self._event_name = pool.comm.recv(source=0, tag=0)
                     path = pool.comm.recv(source=0, tag=1)
                     data = pool.comm.recv(source=0, tag=2)
-                    walker_data = pool.comm.recv(source=0, tag=3)
                     pool.wait()
 
                 self._event_path = path
