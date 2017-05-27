@@ -1,8 +1,8 @@
 .. _fitting:
 
-======================
-Fitting models to data
-======================
+============
+Fitting data
+============
 
 The primary purpose of ``MOSFiT`` is to fit models of transients to observed data. In this section we cover "how" of fitting, and how the user should interpret their results.
 

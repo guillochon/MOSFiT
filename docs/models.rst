@@ -1,8 +1,8 @@
 .. _models:
 
-================
-Models in MOSFiT
-================
+======
+Models
+======
 
 ``MOSFiT`` has been designed to be modular and easily modifiable by users to alter, combine, and create physical models to approximate the behavior of observed transients. On this page we walk through some basics on how a user might alter an existing model shipped with the code, and how they could go about creating their own model.
 
