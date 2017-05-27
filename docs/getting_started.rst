@@ -118,4 +118,4 @@ If the data was read from a file (rather than from one of the Open Astronomy Cat
 Troubleshooting
 ---------------
 
-If you are having trouble getting ``MOSFiT`` working, please first consult our :ref:`FAQ` page, which addresses many common issues. We also have a Slack channel available for assistance in the AstroCats Slack team, which you can request to join by `clicking this link <https://astrochats.slack.com/messages/#mosfit>`_.
+If you are having trouble getting ``MOSFiT`` working, please first consult our :ref:`FAQ` page, which addresses many common issues. If the answers there do not answer your questions, feel free to join our `MOSFiT Slack channel<https://astrochats.slack.com/messages/mosfit>`_ and ask for assistance.
