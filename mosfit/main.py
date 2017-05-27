@@ -63,7 +63,7 @@ def get_parser():
         '--parameter-paths',
         '-P',
         dest='parameter_paths',
-        default=[''],
+        default=['parameters.json'],
         nargs='+',
         help=("Paths to parameter files corresponding to each model file; "
               "length of this list should be equal to the length of the list "
@@ -723,15 +723,22 @@ def main():
                     os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
 
             # Disabled for now as external modules don't work with MPI.
-            # if not os.path.exists('modules'):
-            #     os.mkdir(os.path.join('modules'))
-            # module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
-            # for mdir in module_dirs:
-            #     if mdir.startswith('__'):
-            #         continue
-            #     mdir_path = os.path.join('modules', mdir)
-            #     if not os.path.exists(mdir_path):
-            #         os.mkdir(mdir_path)
+            if not os.path.exists('modules'):
+                os.mkdir(os.path.join('modules'))
+            module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
+            for mdir in module_dirs:
+                if mdir.startswith('__'):
+                    continue
+                mdir_path = os.path.join('modules', mdir)
+                if not os.path.exists(mdir_path):
+                    os.mkdir(mdir_path)
+                readme_path = os.path.join(mdir_path, 'README')
+                if not os.path.exists(readme_path):
+                    txt = prt.message('readme-modules', [
+                        os.path.join(dir_path, 'modules', 'mdir'),
+                        os.path.join(dir_path, 'modules')], prt=False)
+                    with open(readme_path, 'w') as f:
+                        f.write(txt)
 
             if not os.path.exists('models'):
                 os.mkdir(os.path.join('models'))
@@ -744,8 +751,17 @@ def main():
                     os.mkdir(mdir_path)
                 model_files = next(
                     os.walk(os.path.join(dir_path, 'models', mdir)))[2]
+                readme_path = os.path.join(mdir_path, 'README')
+                if not os.path.exists(readme_path):
+                    txt = prt.message('readme-models', [
+                        os.path.join(dir_path, 'models', mdir),
+                        os.path.join(dir_path, 'models')], prt=False)
+                    with open(readme_path, 'w') as f:
+                        f.write(txt)
                 for mfil in model_files:
-                    fil_path = os.path.join(os.getcwd(), 'models', mdir, mfil)
+                    if 'parameters.json' not in mfil:
+                        continue
+                    fil_path = os.path.join(mdir_path, mfil)
                     if os.path.isfile(fil_path) and not fc:
                         continue
                     shutil.copy(

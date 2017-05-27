@@ -9,7 +9,7 @@ Using MOSFiT
 ------------
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    installation.rst
    getting_started.rst
@@ -19,6 +19,7 @@ Using MOSFiT
    evaluation.rst
    error.rst
    accessibility.rst
+   faq.rst
    command_line.rst
    api.rst
 
