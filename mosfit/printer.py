@@ -111,7 +111,12 @@ class Printer(object):
         """Add colors to text."""
         output = text
         for code in self.ansi.codes:
-            output = output.replace(code, self.ansi.codes[code])
+            # Windows doesn't support ANSI codes in Python, simple delete color
+            # commands if on Windows.
+            if os.name == 'nt':
+                output = output.replace(code, '')
+            else:
+                output = output.replace(code, self.ansi.codes[code])
         return output
 
     def _lines(
