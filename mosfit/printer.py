@@ -8,6 +8,7 @@ import os
 import re
 import sys
 from builtins import input, str
+from collections import OrderedDict
 from textwrap import fill
 
 import numpy as np
@@ -73,7 +74,7 @@ class Printer(object):
         """Set pre-defined list of strings."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'strings.json')) as f:
-            strings = json.load(f)
+            strings = json.load(f, object_pairs_hook=OrderedDict)
         if self._language == 'en':
             self._strings = strings
             return
@@ -96,7 +97,7 @@ class Printer(object):
             self.prt(self.translate(
                 'Building strings for `{}`, please wait...'
                 .format(self._language)), wrapped=True)
-            self._strings = {}
+            self._strings = OrderedDict()
             for key in strings:
                 self._strings[key] = self.translate(strings[key])
             with open_atomic(lsf, 'w') as f:
