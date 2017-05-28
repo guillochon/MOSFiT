@@ -71,7 +71,12 @@ class Fitter(object):
 
     def __init__(self):
         """Initialize `Fitter`."""
-        pass
+        try:
+            import pycuda.autoinit  # noqa: F401
+            import skcuda.linalg as linalg
+            linalg.init()
+        except ImportError:
+            pass
 
     def fit_events(self,
                    events=[],

@@ -528,13 +528,6 @@ def get_parser():
 
 def main():
     """Run MOSFiT."""
-    # try:
-    #     import pycuda.autoinit  # noqa: F401
-    #     import skcuda.linalg as linalg
-    #     linalg.init()
-    # except ImportError:
-    #     pass
-
     parser = get_parser()
 
     args = parser.parse_args()
