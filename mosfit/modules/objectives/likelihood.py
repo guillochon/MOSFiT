@@ -66,20 +66,17 @@ class Likelihood(Module):
                     import pycuda.gpuarray as gpuarray
                     import skcuda.linalg as skla
 
-                    kmat_gpu = gpuarray.to_gpu(np.asarray(kmat, np.float64))
+                    kmat_gpu = gpuarray.to_gpu(kmat)
                     # kmat will now contain the cholesky decomp.
                     skla.cholesky(kmat_gpu, lib='cusolver')
                     value = -np.log(skla.det(kmat_gpu, lib='cusolver'))
-                    res_gpu = gpuarray.to_gpu(np.asarray(residuals.reshape(
-                        len(residuals), 1), np.float64))
-                    cho_mat_gpu = res_gpu
+                    res_gpu = gpuarray.to_gpu(residuals.reshape(
+                        len(residuals), 1))
+                    cho_mat_gpu = res_gpu.copy()
                     skla.cho_solve(kmat_gpu, cho_mat_gpu, lib='cusolver')
                     value -= (0.5 * (
-                        skla.mdot(skla.transpose(res_gpu), cho_mat_gpu))).get()
-                    print(value)
-                    # value -= 0.5 * (
-                    #     skla.mdot(skla.transpose(res_gpu), skla.cho_solve(
-                    #         chol_kmat_gpu, res_gpu, lib='cusolver')))
+                        skla.mdot(skla.transpose(res_gpu), cho_mat_gpu)).get())[
+                            0][0]
                 except ImportError:
                     use_cpu = True
 
