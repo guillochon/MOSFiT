@@ -69,15 +69,6 @@ class Fitter(object):
     _REPLACE_AGE = 20
     _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
 
-    def __init__(self):
-        """Initialize `Fitter`."""
-        try:
-            import pycuda.autoinit  # noqa: F401
-            import skcuda.linalg as linalg
-            linalg.init()
-        except ImportError:
-            pass
-
     def fit_events(self,
                    events=[],
                    models=[],
@@ -108,6 +99,7 @@ class Fitter(object):
                    upload=False,
                    write=False,
                    quiet=False,
+                   cuda=False,
                    upload_token='',
                    check_upload_quality=False,
                    variance_for_each=[],
@@ -139,6 +131,15 @@ class Fitter(object):
         self._debug = False
         self._speak = speak
         self._limiting_magnitude = limiting_magnitude
+
+        self._cuda = cuda
+        if cuda:
+            try:
+                import pycuda.autoinit  # noqa: F401
+                import skcuda.linalg as linalg
+                linalg.init()
+            except ImportError:
+                pass
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test

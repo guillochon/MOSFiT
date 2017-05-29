@@ -59,24 +59,31 @@ class Likelihood(Module):
             # print("Sparse frac: {:.2%}".format(
             #     float(full_size - np.count_nonzero(kmat)) / full_size))
 
-            try:
-                import pycuda.gpuarray as gpuarray
-                import skcuda.linalg as skla
+            use_cpu = True
+            if self._model._fitter._cuda:
+                use_cpu = False
+                try:
+                    import pycuda.gpuarray as gpuarray
+                    import skcuda.linalg as skla
 
-                kmat_gpu = gpuarray.to_gpu(np.asarray(kmat, np.float64))
-                # kmat will now contain the cholesky decomp.
-                skla.cholesky(kmat_gpu, lib='cusolver')
-                value = -np.log(skla.det(kmat_gpu, lib='cusolver'))
-                res_gpu = gpuarray.to_gpu(np.asarray(residuals.reshape(
-                    len(residuals), 1), np.float64))
-                cho_mat_gpu = res_gpu
-                skla.cho_solve(kmat_gpu, cho_mat_gpu, lib='cusolver')
-                value -= (0.5 * (
-                    skla.mdot(skla.transpose(res_gpu), cho_mat_gpu))).get()
-                # value -= 0.5 * (
-                #     skla.mdot(skla.transpose(res_gpu), skla.cho_solve(
-                #         chol_kmat_gpu, res_gpu, lib='cusolver')))
-            except ImportError:
+                    kmat_gpu = gpuarray.to_gpu(np.asarray(kmat, np.float64))
+                    # kmat will now contain the cholesky decomp.
+                    skla.cholesky(kmat_gpu, lib='cusolver')
+                    value = -np.log(skla.det(kmat_gpu, lib='cusolver'))
+                    res_gpu = gpuarray.to_gpu(np.asarray(residuals.reshape(
+                        len(residuals), 1), np.float64))
+                    cho_mat_gpu = res_gpu
+                    skla.cho_solve(kmat_gpu, cho_mat_gpu, lib='cusolver')
+                    value -= (0.5 * (
+                        skla.mdot(skla.transpose(res_gpu), cho_mat_gpu))).get()
+                    print(value)
+                    # value -= 0.5 * (
+                    #     skla.mdot(skla.transpose(res_gpu), skla.cho_solve(
+                    #         chol_kmat_gpu, res_gpu, lib='cusolver')))
+                except ImportError:
+                    use_cpu = True
+
+            if use_cpu:
                 try:
                     chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
 
