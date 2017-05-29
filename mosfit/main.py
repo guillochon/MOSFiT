@@ -284,6 +284,14 @@ def get_parser():
               "amazing logo :-("))
 
     parser.add_argument(
+        '--cuda',
+        dest='cuda',
+        default=False,
+        action='store_true',
+        help=("Enable CUDA for MOSFiT routines. Requires the `scikit-cuda` "
+              "package (and its dependencies) to be installed."))
+
+    parser.add_argument(
         '--no-copy-at-launch',
         dest='copy',
         default=True,
