@@ -75,8 +75,8 @@ class Likelihood(Module):
                     cho_mat_gpu = res_gpu.copy()
                     skla.cho_solve(kmat_gpu, cho_mat_gpu, lib='cusolver')
                     value -= (0.5 * (
-                        skla.mdot(skla.transpose(res_gpu), cho_mat_gpu)).get())[
-                            0][0]
+                        skla.mdot(skla.transpose(res_gpu),
+                                  cho_mat_gpu)).get())[0][0]
                 except ImportError:
                     use_cpu = True
 

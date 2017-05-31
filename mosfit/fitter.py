@@ -1031,8 +1031,11 @@ class Fitter(object):
                             root='objective')
                         kmat = sout.get('kmat', None)
                         kdiag = sout.get('kdiagonal', None)
+                        variance = sout.get('variance')
                         if kdiag is not None and kmat is not None:
                             kmat[np.diag_indices_from(kmat)] += kdiag
+                        elif kdiag is not None and kmat is None:
+                            kmat = np.diag(kdiag + variance)
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
