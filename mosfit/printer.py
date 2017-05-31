@@ -460,7 +460,7 @@ class Printer(object):
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
             smat = ndimage.filters.gaussian_filter(
-                kmat, 0.05 * len(kmat) / 7.0, mode='nearest')
+                kmat, 0.1 * len(kmat) / 7.0, mode='nearest', truncate=2.0)
             try:
                 kmat_scaled = congrid(smat, (14, 7), minusone=True,
                                       bounds_error=True)

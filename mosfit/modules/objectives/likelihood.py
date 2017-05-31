@@ -59,6 +59,10 @@ class Likelihood(Module):
             # print("Sparse frac: {:.2%}".format(
             #     float(full_size - np.count_nonzero(kmat)) / full_size))
 
+            condn = np.linalg.cond(kmat)
+            if condn > 1.0e10:
+                return ret
+
             use_cpu = True
             if self._model._fitter._cuda:
                 use_cpu = False
@@ -90,10 +94,15 @@ class Likelihood(Module):
                             (chol_kmat, False), residuals,
                             check_finite=False)))
                 except Exception:
-                    value = -0.5 * (
-                        np.matmul(np.matmul(residuals.T,
-                                            scipy.linalg.inv(kmat)),
-                                  residuals) + np.log(scipy.linalg.det(kmat)))
+                    try:
+                        value = -0.5 * (
+                            np.matmul(
+                                np.matmul(
+                                    residuals.T, scipy.linalg.inv(kmat)),
+                                residuals) + np.log(scipy.linalg.det(kmat)))
+                    except scipy.linalg.LinAlgError:
+                        return ret
+
             ret['kdiagonal'] = diag
             ret['kresiduals'] = residuals
         elif 'kfmat' in kwargs:
