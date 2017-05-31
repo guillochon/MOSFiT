@@ -59,38 +59,38 @@ class Converter(object):
         self._emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
             'mag err', 'magerr', 'mag error', 'err']
-        self._header_keys = {
-            PHOTOMETRY.TIME: ['time', 'mjd', ('jd', 'jd')],
-            PHOTOMETRY.SYSTEM: ['system'],
-            PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
-            PHOTOMETRY.E_MAGNITUDE: self._emagstrs,
-            PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
-            PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
-            PHOTOMETRY.BAND: ['passband', 'band', 'filter'],
-            PHOTOMETRY.E_LOWER_MAGNITUDE: [
+        self._header_keys = OrderedDict((
+            (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd')]),
+            (PHOTOMETRY.SYSTEM, ['system']),
+            (PHOTOMETRY.MAGNITUDE, ['mag', 'magnitude']),
+            (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
+            (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
+            (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
+            (PHOTOMETRY.BAND, ['passband', 'band', 'filter']),
+            (PHOTOMETRY.E_LOWER_MAGNITUDE, [
                 ' '.join(y) for y in (
                     list(i for s in [
                         list(permutations(['minus'] + x.split()))
                         for x in self._emagstrs] for i in s) +
                     list(i for s in [
                         list(permutations(['lower'] + x.split()))
-                        for x in self._emagstrs] for i in s))],
-            PHOTOMETRY.E_UPPER_MAGNITUDE: [
+                        for x in self._emagstrs] for i in s))]),
+            (PHOTOMETRY.E_UPPER_MAGNITUDE, [
                 ' '.join(y) for y in (
                     list(i for s in [
                         list(permutations(['plus'] + x.split()))
                         for x in self._emagstrs] for i in s) +
                     list(i for s in [
                         list(permutations(['upper'] + x.split()))
-                        for x in self._emagstrs] for i in s))],
-            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit', 'l_mag'],
-            PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
-            PHOTOMETRY.E_COUNT_RATE: [
-                'e_counts', 'count error', 'count rate error'],
-            PHOTOMETRY.ZERO_POINT: ['zero point', 'self._zp'],
-            'reference': ['reference', 'bibcode', 'source', 'origin'],
-            'event': ['event', 'transient', 'name', 'supernova']
-        }
+                        for x in self._emagstrs] for i in s))]),
+            (PHOTOMETRY.UPPER_LIMIT, ['upper limit', 'upperlimit', 'l_mag']),
+            (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
+            (PHOTOMETRY.E_COUNT_RATE, [
+                'e_counts', 'count error', 'count rate error']),
+            (PHOTOMETRY.ZERO_POINT, ['zero point', 'self._zp']),
+            ('reference', ['reference', 'bibcode', 'source', 'origin']),
+            ('event', ['event', 'transient', 'name', 'supernova'])
+        ))
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.BAND,
             PHOTOMETRY.E_MAGNITUDE,
@@ -187,12 +187,14 @@ class Converter(object):
                     for fi, fl in enumerate(list(flines)):
                         flcopy = list(fl)
                         offset = 0
-                        for fci, fc in enumerate(fl):
-                            if (fc in self._band_names and
-                                (fci == len(fl) - 1 or
-                                 fl[fci + 1].lower() not in self._emagstrs)):
-                                flcopy.insert(fci + 1 + offset, 'e mag')
-                                offset += 1
+                        if not any([is_number(x) for x in fl]):
+                            for fci, fc in enumerate(fl):
+                                if (fc in self._band_names and
+                                    (fci == len(fl) - 1 or
+                                     fl[fci + 1].lower()
+                                     not in self._emagstrs)):
+                                    flcopy.insert(fci + 1 + offset, 'e mag')
+                                    offset += 1
                         flines[fi] = flcopy
 
                     # Find the most frequent column count. These are probably
@@ -279,7 +281,6 @@ class Converter(object):
                             for li in ra:
                                 letter = None
                                 for row in list(flines[self._first_data:]):
-                                    print(letter, row[bi][li])
                                     if letter is None:
                                         letter = row[bi][li]
                                     elif row[bi][li] != letter:
@@ -555,6 +556,7 @@ class Converter(object):
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
+        print(colstrs)
         colinds = np.setdiff1d(np.arange(len(colstrs)),
                                list([x[-1] if isinstance(x, list)
                                      else x for x in cidict.values()]))
@@ -600,15 +602,18 @@ class Converter(object):
                             self._optional_keys + self._helpful_keys) else
                         specify if key in self._specify_keys
                         else None)
-                    select = prt.prompt(
-                        text, message=False,
-                        kind='option', none_string=ns,
-                        default=('j' if ns is None and
-                                 len(colstrs[lcolinds]) > 1
-                                 else None if ns is None else 'n'),
-                        options=colstrs[lcolinds].tolist() + (
-                            [('Multiple columns need to be joined.', 'j')]
-                            if len(colstrs[lcolinds]) > 1 else []))
+                    if len(colstrs[lcolinds]):
+                        select = prt.prompt(
+                            text, message=False,
+                            kind='option', none_string=ns,
+                            default=('j' if ns is None and
+                                     len(colstrs[lcolinds]) > 1
+                                     else None if ns is None else 'n'),
+                            options=colstrs[lcolinds].tolist() + (
+                                [('Multiple columns need to be joined.', 'j')]
+                                if len(colstrs[lcolinds]) > 1 else []))
+                    else:
+                        select = None
                     if select == 'j':
                         select = None
                         jsel = None
