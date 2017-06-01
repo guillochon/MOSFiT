@@ -290,6 +290,9 @@ class Converter(object):
                                     strip_cols.append(li)
                                 else:
                                     break
+                            print(strip_cols)
+                            if len(strip_cols) == llen:
+                                break
                             for ri in range(len(flines[self._first_data:])):
                                 flines[self._first_data + ri][bi] = ''.join(
                                     [c for i, c in enumerate(flines[
@@ -676,9 +679,10 @@ class Converter(object):
                                     break
 
             if select is not None:
-                cidict[key] = lcolinds[select - 1]
+                iselect = int(select)
+                cidict[key] = lcolinds[iselect - 1]
                 colinds = np.delete(colinds, np.argwhere(
-                    colinds == lcolinds[select - 1]))
+                    colinds == lcolinds[iselect - 1]))
             elif len(selects):
                 if selects[0] == 'j':
                     cidict[key] = selects
