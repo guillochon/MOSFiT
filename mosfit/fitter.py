@@ -205,6 +205,15 @@ class Fitter(object):
                                 f, object_pairs_hook=OrderedDict)
                         prt.message('walker_file', [
                                     walker_path], wrapped=True)
+
+                        # Support both the format where all data stored in a
+                        # single-item dictionary (the OAC format) and the older
+                        # MOSFiT format where the data was stored in the
+                        # top-level dictionary.
+                        if ENTRY.NAME not in all_walker_data:
+                            all_walker_data = all_walker_data[
+                                list(all_walker_data.keys()[0])]
+
                         models = all_walker_data.get(ENTRY.MODELS, [])
                         choice = None
                         if len(models) > 1:
@@ -1178,14 +1187,13 @@ class Fitter(object):
         else:
             entry = Entry(name=self._event_name)
 
-        if upload:
-            uentry = Entry(name=self._event_name)
-            data_keys = set()
-            for task in model._call_stack:
-                if model._call_stack[task]['kind'] == 'data':
-                    data_keys.update(
-                        list(model._call_stack[task].get('keys', {}).keys()))
-            entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
+        uentry = Entry(name=self._event_name)
+        data_keys = set()
+        for task in model._call_stack:
+            if model._call_stack[task]['kind'] == 'data':
+                data_keys.update(
+                    list(model._call_stack[task].get('keys', {}).keys()))
+        entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
 
         # Accumulate all the sources and add them to each entry.
         sources = []
@@ -1195,13 +1203,12 @@ class Fitter(object):
         sources.append(entry.add_source(**self._DEFAULT_SOURCE))
         source = ','.join(sources)
 
-        if upload:
-            usources = []
-            if len(self._model._references):
-                for ref in self._model._references:
-                    usources.append(uentry.add_source(**ref))
-            usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
-            usource = ','.join(usources)
+        usources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                usources.append(uentry.add_source(**ref))
+        usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
+        usource = ','.join(usources)
 
         model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
@@ -1241,19 +1248,19 @@ class Fitter(object):
                 )
             modeldict[MODEL.STEPS] = str(emi)
 
-        if upload:
-            umodeldict = deepcopy(modeldict)
-            umodeldict[MODEL.SOURCE] = usource
-            modelhash = get_model_hash(
-                umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
-            umodelnum = uentry.add_model(**umodeldict)
-            if check_upload_quality:
-                if WAIC is None:
-                    upload_model = False
-                elif WAIC is not None and WAIC < 0.0:
+        umodeldict = deepcopy(modeldict)
+        umodeldict[MODEL.SOURCE] = usource
+        modelhash = get_model_hash(
+            umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
+        umodelnum = uentry.add_model(**umodeldict)
+        if check_upload_quality:
+            if WAIC is None:
+                upload_model = False
+            elif WAIC is not None and WAIC < 0.0:
+                if upload:
                     prt.message('no_ul_waic', ['' if WAIC is None
                                                else pretty_num(WAIC)])
-                    upload_model = False
+                upload_model = False
 
         modelnum = entry.add_model(**modeldict)
 
@@ -1381,13 +1388,12 @@ class Fitter(object):
                             compare_to_existing=False, check_for_dupes=False,
                             **photodict)
 
-                        if upload_model:
-                            uphotodict = deepcopy(photodict)
-                            uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                            uentry.add_photometry(
-                                compare_to_existing=False,
-                                check_for_dupes=False,
-                                **uphotodict)
+                        uphotodict = deepcopy(photodict)
+                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                        uentry.add_photometry(
+                            compare_to_existing=False,
+                            check_for_dupes=False,
+                            **uphotodict)
                 else:
                     output = model.run_stack(y, root='objective')
 
@@ -1422,19 +1428,23 @@ class Fitter(object):
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
-                if upload_model:
-                    uentry[ENTRY.MODELS][0].add_realization(**urealdict)
+                uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
         prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
-        oentry = {entry[ENTRY.NAME]: entry._ordered(entry)}
+        oentry = {self._event_name: entry._ordered(entry)}
+        uentry.sanitize()
+        ouentry = {self._event_name: uentry._ordered(uentry)}
+
+        uname = '_'.join(
+            [self._event_name, entryhash, modelhash])
 
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
         if write:
-            prt.message('writing_model')
+            prt.message('writing_complete')
             with open_atomic(
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                     'w') as flast, open_atomic(os.path.join(
@@ -1470,18 +1480,24 @@ class Fitter(object):
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
                     entabbed_json_dump(extras, feven, separators=(',', ':'))
 
+            prt.message('writing_model')
+            with open_atomic(os.path.join(
+                model.MODEL_OUTPUT_DIR, 'upload.json'),
+                    'w') as flast, open_atomic(os.path.join(
+                        model.MODEL_OUTPUT_DIR,
+                        uname + (('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
+                entabbed_json_dump(ouentry, flast, separators=(',', ':'))
+                entabbed_json_dump(ouentry, feven, separators=(',', ':'))
+
         if upload_model:
-            uentry.sanitize()
             prt.message('ul_fit', [entryhash, modelhash])
-            upath = '/' + '_'.join(
-                [self._event_name, entryhash, modelhash]) + '.json'
-            ouentry = {self._event_name: uentry._ordered(uentry)}
             upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
             try:
                 dbx = dropbox.Dropbox(upload_token)
                 dbx.files_upload(
                     upayload.encode(),
-                    upath,
+                    '/' + uname + '.json',
                     mode=dropbox.files.WriteMode.overwrite)
                 prt.message('ul_complete')
             except Exception:
