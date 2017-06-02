@@ -906,7 +906,12 @@ class Fitter(object):
                                     tar_x = np.array(
                                         p[np.random.randint(ntemps)][
                                             np.random.randint(nwalkers)])
-                                    new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                    # Reflect if out of bounds.
+                                    new_x = np.clip(np.where(
+                                        np.where(tar_x + dxx < 1.0,
+                                                 tar_x + dxx,
+                                                 tar_x - dxx) > 0.0,
+                                        tar_x + dxx, tar_x - dxx), 0.0, 1.0)
                                     new_like = likelihood(new_x)
                                     new_prob = new_like + prior(new_x)
                                     if new_prob > wprob or np.isnan(wprob):
@@ -1423,7 +1428,7 @@ class Fitter(object):
         prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
-        oentry = entry._ordered(entry)
+        oentry = {entry[ENTRY.NAME]: entry._ordered(entry)}
 
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
