@@ -16,6 +16,7 @@ from mosfit.printer import Printer
 from mosfit.utils import listify
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
+# from scipy.optimize import basinhopping
 
 from astrocats.catalog.quantity import QUANTITY
 # from bayes_opt import BayesianOptimization
@@ -417,15 +418,13 @@ class Model(object):
         #     zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
         #
         # bh = differential_evolution(
-        #     self.fprob, bounds, disp=True, polish=False, maxiter=10)
+        #     self.fprob, bounds, disp=True, polish=False)
 
-        # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
         # bh = basinhopping(
         #     self.fprob,
         #     x,
         #     disp=True,
         #     niter=10,
-        #     take_step=take_step,
         #     minimizer_kwargs={'method': "L-BFGS-B",
         #                       'bounds': bounds})
 
