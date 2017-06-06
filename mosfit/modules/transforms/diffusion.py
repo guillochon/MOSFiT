@@ -12,7 +12,7 @@ from mosfit.modules.transforms.transform import Transform
 class Diffusion(Transform):
     """Photon diffusion transform."""
 
-    N_INT_TIMES = 1000
+    N_INT_TIMES = 100
     MIN_LOG_SPACING = -3
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS ** 2)

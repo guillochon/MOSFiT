@@ -8,9 +8,11 @@ import os
 import re
 import sys
 from builtins import input, str
+from collections import OrderedDict
 from textwrap import fill
 
 import numpy as np
+from scipy import ndimage
 
 from .utils import (calculate_WAIC, congrid, is_integer, open_atomic,
                     pretty_num, rebin)
@@ -73,7 +75,7 @@ class Printer(object):
         """Set pre-defined list of strings."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
         with open(os.path.join(dir_path, 'strings.json')) as f:
-            strings = json.load(f)
+            strings = json.load(f, object_pairs_hook=OrderedDict)
         if self._language == 'en':
             self._strings = strings
             return
@@ -96,7 +98,7 @@ class Printer(object):
             self.prt(self.translate(
                 'Building strings for `{}`, please wait...'
                 .format(self._language)), wrapped=True)
-            self._strings = {}
+            self._strings = OrderedDict()
             for key in strings:
                 self._strings[key] = self.translate(strings[key])
             with open_atomic(lsf, 'w') as f:
@@ -110,7 +112,12 @@ class Printer(object):
         """Add colors to text."""
         output = text
         for code in self.ansi.codes:
-            output = output.replace(code, self.ansi.codes[code])
+            # Windows doesn't support ANSI codes in Python, simple delete color
+            # commands if on Windows.
+            if os.name == 'nt':
+                output = output.replace(code, '')
+            else:
+                output = output.replace(code, self.ansi.codes[code])
         return output
 
     def _lines(
@@ -452,13 +459,15 @@ class Printer(object):
 
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
+            smat = ndimage.filters.gaussian_filter(
+                kmat, 0.1 * len(kmat) / 7.0, mode='nearest', truncate=2.0)
             try:
-                kmat_scaled = congrid(kmat, (14, 7), minusone=True,
+                kmat_scaled = congrid(smat, (14, 7), minusone=True,
                                       bounds_error=True)
             except Exception:
-                kmat_scaled = rebin(kmat, (14, 7))
+                kmat_scaled = rebin(smat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
-            kmat_scaled /= np.max(kmat_scaled)
+            kmat_scaled /= np.max(kmat_scaled) - np.min(kmat_scaled)
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
             kmat_dimi = range(len(kmat_scaled))
             kmat_dimj = range(len(kmat_scaled[0]))

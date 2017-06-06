@@ -1,8 +1,8 @@
 .. _models:
 
-================
-Models in MOSFiT
-================
+======
+Models
+======
 
 ``MOSFiT`` has been designed to be modular and easily modifiable by users to alter, combine, and create physical models to approximate the behavior of observed transients. On this page we walk through some basics on how a user might alter an existing model shipped with the code, and how they could go about creating their own model.
 
@@ -46,7 +46,7 @@ List of built-in models
 Altering an existing model
 --------------------------
 
-For many simple alterations to a model, such as adjusting input priors, setting variables remain free and which should be fixed, and adding/removing modules to the call stack, the user only needs to modify the JSON files that are copied to their run directory. For these sorts of minor changes, no Python code should need to be modified by the user!
+For many simple alterations to a model, such as adjusting input priors, setting variables remain free and which should be fixed, and adding/removing modules to the call stack, the user only needs to modify copies of the model JSON files. For these sorts of minor changes, no Python code should need to be modified by the user!
 
 For this example, we'll presume that the user will be modifying the ``slsn`` model. First, the user should create a new run directory and run ``MOSFiT`` there once to copy the model JSON files to that run directory:
 
@@ -56,7 +56,14 @@ For this example, we'll presume that the user will be modifying the ``slsn`` mod
     cd slsn_run
     python -m mosfit -m slsn
 
-After running, the user will notice three directories will have been copied to the run directory: ``models``, ``jupyter``, and ``products``. Change into the ``models/slsn`` directory and edit the ``parameters.json`` file in your favorite text editor:
+After running, the user will notice four directories will have been created in the run directory: ``models``, ``modules``, ``jupyter``, and ``products``. ``models`` will contain a clone of the ``models`` directory structure, with the ``parameters.json`` files for each model copied into each model folder, ``modules`` contains a clone of the ``modules`` directory structure, etc.
+
+.. _priors:
+
+Changing parameter priors
+=========================
+
+From your run directory, navigate into the ``models/slsn`` directory and edit the ``parameters.json`` file in your favorite text editor:
 
 .. code-block:: bash
 
@@ -85,19 +92,152 @@ You'll notice that ``parameters.json`` file is fairly bare-bones, containing onl
             "min_value":1.0,
             "max_value":2.0
         },
-
     }
 
 Now, change the range of allowed neutron star masses to something else:
 
 .. code-block:: json
 
-    "Mns":{
-        "min_value":1.5,
-        "max_value":2.5
+    {
+        "Mns":{
+            "min_value":1.5,
+            "max_value":2.5
+        },
     }
 
 **Congratulations!** You have just modified your first MOSFiT model. It should be noted that even this very minor change, which affects the range of a single parameter, would generate a completely different model hash than the default model, distinguishing it from any other models that might have been uploaded by other users using the default settings.
+
+.. _swapping:
+
+Swapping modules
+================
+
+Let's say you want to modify the SLSN model such that transform applied to the input engine luminosity is not diffusion, but instead viscosity (if the light of a SLSN was say filtered through an accretion disk rather than a dense envelope). To make this change, the user would want to swap out the ``diffusion`` module used by ``slsn`` for the ``viscous`` module. This can be accomplished by editing the ``slsn.json`` model file. The model files are not copied into the model directories by default (as they may change from version to version of ``MOSFiT``), but a ``README`` file with the full path to the model is copied to all model folders to make it easy for the user to copy the relevant JSON files:
+
+.. code-block:: bash
+
+    cd models/slsn
+    cp $(head -1 README)/* .
+    vim slsn.json
+
+To swap ``diffusion`` for ``viscous``, the user would remove the blocks of JSON that refer to the ``diffusion`` module:
+
+.. code-block:: json
+
+    {
+        "kappagamma":{
+            "kind":"parameter",
+            "value":10.0,
+            "class":"parameter",
+            "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+        },
+        "diffusion":{
+            "kind":"transform",
+            "inputs":[
+                "magnetar",
+                "kappa",
+                "kappagamma",
+                "mejecta",
+                "texplosion",
+                "vejecta"
+            ]
+        },
+        "temperature_floor":{
+            "kind":"photosphere",
+            "inputs":[
+                "texplosion",
+                "diffusion",
+                "temperature"
+            ]
+        },
+        "slsn_constraints":{
+            "kind":"constraint",
+            "inputs":[
+                "mejecta",
+                "vejecta",
+                "kappa",
+                "tnebular_min",
+                "Pspin",
+                "Mns",
+                "diffusion",
+                "texplosion",
+                "redshift",
+                "alltimes",
+                "neutrino_energy"
+            ]
+        },
+    }
+
+and replace them with blocks appropriate for ``viscous``:
+
+.. code-block:: json
+
+    {
+        "Tviscous":{
+            "kind":"parameter",
+            "value":1.0,
+            "class":"parameter",
+            "latex":"T_{\\rm viscous}"
+        },
+        "viscous":{
+            "kind":"transform",
+            "inputs":[
+                "magnetar",
+                "texplosion",
+                "Tviscous"
+            ]
+        },
+        "temperature_floor":{
+            "kind":"photosphere",
+            "inputs":[
+                "texplosion",
+                "viscous",
+                "temperature"
+            ]
+        },
+        "slsn_constraints":{
+            "kind":"constraint",
+            "inputs":[
+                "mejecta",
+                "vejecta",
+                "kappa",
+                "tnebular_min",
+                "Pspin",
+                "Mns",
+                "viscous",
+                "texplosion",
+                "redshift",
+                "alltimes",
+                "neutrino_energy"
+            ]
+        },
+    }
+
+As can be seen above, this involved removal of definitions of free parameters that only applied to ``diffusion`` (``kappagamma``), the addition of a new free parameter for ``viscous`` (``Tviscous``), and replacement of various ``inputs`` that depended on ``diffusion`` with ``viscous``.
+
+The user should also modify the ``parameters.json`` file to remove free parameters that are no longer in use:
+
+.. code-block:: json
+
+    {
+        "kappagamma":{
+            "min_value":0.1,
+            "max_value":1.0e4,
+            "log":true
+        },
+    }
+
+and to the define the priors of their new free parameters:
+
+.. code-block:: json
+
+    {
+        "Tviscous":{
+            "min_value":1.0e-3,
+            "max_value":1.0e5,
+            "log":true
+        },
+    }
 
 .. _creating:
 

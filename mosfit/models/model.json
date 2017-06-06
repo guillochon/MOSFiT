@@ -51,7 +51,7 @@
     },
     "default_no_error_bar_error":{
         "kind":"parameter",
-        "value":1.0,
+        "value":0.0,
         "class":"constant"
     },
     "ebv":{

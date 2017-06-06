@@ -14,11 +14,9 @@ class LightCurve(Output):
 
     _lc_keys = [
         'magnitudes', 'e_magnitudes', 'model_observations', 'countrates',
-        'e_countrates',
-        'all_telescopes', 'all_bands', 'all_systems', 'all_instruments',
-        'all_bandsets', 'all_modes',
-        'all_times', 'all_frequencies', 'observed', 'all_band_indices',
-        'observation_types'
+        'e_countrates', 'all_telescopes', 'all_bands', 'all_systems',
+        'all_instruments', 'all_bandsets', 'all_modes', 'all_times',
+        'all_frequencies', 'observed', 'all_band_indices', 'observation_types'
     ]
 
     def __init__(self, **kwargs):
