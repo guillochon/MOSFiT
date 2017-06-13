@@ -12,6 +12,7 @@ from collections import OrderedDict
 from textwrap import fill
 
 import numpy as np
+from scipy import ndimage
 
 from .utils import (calculate_WAIC, congrid, is_integer, open_atomic,
                     pretty_num, rebin)
@@ -458,13 +459,15 @@ class Printer(object):
 
         kmat_extra = 0
         if kmat is not None and kmat.shape[0] > 1:
+            smat = ndimage.filters.gaussian_filter(
+                kmat, 0.1 * len(kmat) / 7.0, mode='nearest', truncate=2.0)
             try:
-                kmat_scaled = congrid(kmat, (14, 7), minusone=True,
+                kmat_scaled = congrid(smat, (14, 7), minusone=True,
                                       bounds_error=True)
             except Exception:
-                kmat_scaled = rebin(kmat, (14, 7))
+                kmat_scaled = rebin(smat, (14, 7))
             kmat_scaled = np.log(kmat_scaled)
-            kmat_scaled /= np.max(kmat_scaled)
+            kmat_scaled /= np.max(kmat_scaled) - np.min(kmat_scaled)
             kmat_pers = [np.percentile(kmat_scaled, x) for x in (20, 50, 80)]
             kmat_dimi = range(len(kmat_scaled))
             kmat_dimj = range(len(kmat_scaled[0]))
