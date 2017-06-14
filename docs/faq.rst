@@ -8,7 +8,7 @@ Frequently Asked Questions
 MOSFiT or one of its requirements isn't installing
 --------------------------------------------------
 
-We highly recommend using ``conda`` to install ``MOSFiT`` rather than ``pip``, as ``conda`` will skip some compilation steps that are common sources of error in the install process. If you are still having issues installing ``MOSFiT`` even with ``conda``, please ask us directly in the `MOSFiT Slack channel<https://astrochats.slack.com/messages/mosfit>`_.
+We highly recommend using ``conda`` to install ``MOSFiT`` rather than ``pip``, as ``conda`` will skip some compilation steps that are common sources of error in the install process. If you are still having issues installing ``MOSFiT`` even with ``conda``, please ask us directly in the `MOSFiT Slack channel <https://astrochats.slack.com/messages/mosfit>`_.
 
 -------------------------------------
 The data MOSFiT is using is incorrect
@@ -28,4 +28,4 @@ Yes! Simply pass your ASCII datafile to the ``-e`` flag instead of the name of t
 How do I exclude particular instruments and/or bands from my fit?
 -----------------------------------------------------------------
 
-Excluding instruments can be accomplished by using the `--exclude-instruments` option, and excluding bands can be accomplished using the `--exclude-bands` option (see :ref:`here <restricting>` for more information on restricting your dataset). More complicated exclusion rules (say ignoring a particular band from a particular instrument, but not for other instruments) are most easily accomplished by simply deleting the unwanted data from the input file; users should copy the cached version downloaded from the Open Astronomy Catalogs to their run directory and edit the files to remove the data.
+Excluding instruments can be accomplished by using the ``--exclude-instruments`` option, and excluding bands can be accomplished using the ``--exclude-bands`` option (see :ref:`here <restricting>` for more information on restricting your dataset). More complicated exclusion rules (say ignoring a particular band from a particular instrument, but not for other instruments) are most easily accomplished by simply deleting the unwanted data from the input file; users should copy the cached version downloaded from the Open Astronomy Catalogs to their run directory and edit the files to remove the data.
