@@ -22,4 +22,10 @@ If you must correct the error immediately, feel free to copy the input file down
 Can I fit private data with MOSFiT?
 -----------------------------------
 
-Yes! Simply pass your ASCII datafile to the ``-e`` flag instead of the name of the transient you wish to fit. Your data will remain private unless you choose to upload it with the optional ``-u`` flag, which will warn you before any data is uploaded publicly. More info on fitting private data can be found `here <private>`_.
+Yes! Simply pass your ASCII datafile to the ``-e`` flag instead of the name of the transient you wish to fit. Your data will remain private unless you choose to upload it with the optional ``-u`` flag, which will warn you before any data is uploaded publicly. More info on fitting private data can be found :ref:`here <private>`.
+
+-----------------------------------------------------------------
+How do I exclude particular instruments and/or bands from my fit?
+-----------------------------------------------------------------
+
+Excluding instruments can be accomplished by using the `--exclude-instruments` option, and excluding bands can be accomplished using the `--exclude-bands` option (see :ref:`here <restricting>` for more information on restricting your dataset). More complicated exclusion rules (say ignoring a particular band from a particular instrument, but not for other instruments) are most easily accomplished by simply deleting the unwanted data from the input file; users should copy the cached version downloaded from the Open Astronomy Catalogs to their run directory and edit the files to remove the data.

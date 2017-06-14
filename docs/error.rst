@@ -24,7 +24,7 @@ But MLA is rather inflexible, in order to match a model to observations, it must
 Gaussian processes
 ------------------
 
-Gaussian processes (GP) provides an error model that addresses these shortcomings of MLA. A white noise component, equivalent to MLA, is still included, but off-diagonal covariance is explicitly modeled by considering the "distance" between observations. ``MOSFiT`` by default uses GP as its error model.
+Gaussian processes (GP) provides an error model that addresses these shortcomings of MLA. A white noise component, equivalent to MLA, is still included, but off-diagonal covariance is explicitly modeled by considering the "distance" between observations. ``MOSFiT`` by default uses GP as its error model, with a kernel structure that is described below.
 
 .. _kernel:
 

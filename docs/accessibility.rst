@@ -10,8 +10,6 @@ Accessibility
 Language
 --------
 
-.. _language:
-
 ``MOSFiT`` can optionally translate all of its command line text into any language supported by Google translate. ``MOSFiT`` will use a user's ``$LANG`` environment variable to guess the language to use, if this variable is set. To accomplish this, the user must install the ``googletrans`` via ``pip``:
 
 .. code-block:: bash
