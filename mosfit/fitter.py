@@ -218,7 +218,7 @@ class Fitter(object):
                         # top-level dictionary.
                         if ENTRY.NAME not in all_walker_data:
                             all_walker_data = all_walker_data[
-                                list(all_walker_data.keys()[0])]
+                                list(all_walker_data.keys())[0]]
 
                         models = all_walker_data.get(ENTRY.MODELS, [])
                         choice = None
