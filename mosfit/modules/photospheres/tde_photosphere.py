@@ -29,14 +29,6 @@ class TdePhotosphere(Photosphere):
         self._Rph_0 = 10.0**(kwargs['Rph0'])
         self._luminosities = np.array(kwargs['luminosities'])
         self._rest_t_explosion = kwargs['resttexplosion']
-        # getting beta at this point in process is more complicated than
-        # expected bc it can be a beta for a 4/3 - 5/3 combination.
-        # Can easily get 'b' -- scaled constant that is linearly related
-        # to beta but beta itself is not well defined.
-        # -- what does this mean exactly? beta = rt/rp
-        # self._beta = 1  # set to this for now, eventually need to get
-        # from scaled beta 'b'
-        # this should still help with general size of rphotmax
         self._beta = kwargs['beta']  # for now linearly interp between
         # beta43 and beta53 for a given 'b' if Mstar is in transition region
 
@@ -54,7 +46,7 @@ class TdePhotosphere(Photosphere):
         self._rp = rt/self._beta
 
         r_isco = 6 * c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS)
-        rphotmin = r_isco  # 2*rp #r_isco
+        rphotmin = r_isco
 
         a_p = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((tpeak -
                self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
@@ -67,25 +59,13 @@ class TdePhotosphere(Photosphere):
 
         rphotmax = self._rp + 2 * a_t
 
-        # adding rphotmin on to rphot so that there's a soft minimum
-        # also creating soft max by doing inverse( 1/rphot + 1/rphotmax)
-        # this means the new max is rphotmax/2
+        # adding rphotmin on to rphot for soft min
+        # also creating soft max -- inverse( 1/rphot + 1/rphotmax)
         rphot = self._Rph_0 * a_p * (self._luminosities/Ledd)**self._l
-        rphotbeforecut = np.copy(rphot)
 
         rphot = (rphot * rphotmax)/(rphot + rphotmax) + rphotmin
-
-        nan = rphot[np.isnan(rphot)]
-        nan_error = ''
-        if len(nan) > 0:
-            nan_error = 'there are nan values in radiusphot'
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
         return {'radiusphot': rphot, 'temperaturephot': Tphot,
-                'rp': self._rp,
-                'rphotbeforecut': rphotbeforecut, 'rphotmax': rphotmax,
-                'rphotmin': rphotmin,
-                'sparse_luminosities': self._luminosities,
-                'nan_error': nan_error
-                }
+                'rp': self._rp}

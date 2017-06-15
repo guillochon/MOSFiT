@@ -34,9 +34,6 @@ class Fallback(Engine):
         # It is assumed that there are different files for each beta
         # (such as 2.500.dat for beta = 2.5)
         # The first row is energy, the second is dmde.
-        # This could be changed so that each beta has a different subdirectory
-
-        # for now just use astrocrash dmdes (converted from astrocrash dmdts)
 
         self._gammas = ['4-3', '5-3']
 
@@ -258,7 +255,7 @@ class Fallback(Engine):
             self._beta = self._betas['5-3'] + (
                 self._betas['4-3'] - self._betas['5-3']) * (1. - gfrac)
 
-        # try decoupling gamma from starmass for
+        # try decoupling gamma from starmass
         '''
         self._scaled_gamma = kwargs['scaledgamma']
         # print (self._scaled_gamma)
@@ -514,8 +511,6 @@ class Fallback(Engine):
                     prepeaktimes = time[:ipeak]
                     prepeakdmdt = dmdt[:ipeak]
 
-                # will cut off some part of original dmdt array, might change
-                # start = int(len(prepeakdmdt)*0.05) #0
                 start = 0
 
                 # last index of first part of data used to get power law fit
@@ -538,28 +533,19 @@ class Fallback(Engine):
 
                 bavg = np.mean(b1)
 
-                # logtfloor = np.log10(dfloor/bavg)/xiavg # log(new start time)
-                # tfloor = 0.01
                 tfloor = 0.01 + 0.9 * tfallback  # want first time ~0 (0.01)
-                # tfloor = 0.01  # (0.01 + self._rest_t_explosion -
-                # self._times[0])
+
                 indexext = len(time[time < prepeaktimes[index1]])
-                # ending extrapolation here will help make it a smoother
-                # transition
-                # textp = np.logspace(logtfloor, np.log10(time[int(indexext)]),
-                #                    num=ipeak*5)
+
                 textp = np.linspace(tfloor, time[int(indexext)], num=ipeak * 5)
                 dextp = bavg * (textp ** xiavg)
 
                 time = np.concatenate((textp, time[int(indexext) + 1:]))
 
                 time = time - 0.9 * tfallback  # shift back to original times
-                # time = (time + tfallback - self._rest_t_explosion +
-                #        self._times[0])
+
                 dmdt = np.concatenate((dextp, dmdt[int(indexext) + 1:]))
 
-        dmdtafterextrap = np.copy(dmdt)
-        timeafterextrap = np.copy(time)
         # try aligning first fallback time of simulation
         # (whatever first time is before early t extrapolation)
         # with parameter texplosion
@@ -578,7 +564,7 @@ class Fallback(Engine):
         dmdt1 = np.zeros(lengthpretimes)
         dmdt3 = np.zeros(lengthposttimes)
         # include len(self._times) instead of just using -lengthposttimes
-        # for indexing in case lenghtposttimes == 0
+        # for indexing in case lengthposttimes == 0
         dmdt2 = timeinterpfunc(self._times[lengthpretimes:(len(self._times) -
                                                            lengthposttimes)])
         dmdtnew = np.append(dmdt1, dmdt2)
@@ -590,7 +576,6 @@ class Fallback(Engine):
         # luminosities in erg/s
         luminosities = (self._efficiency * dmdtnew *
                         c.c.cgs.value * c.c.cgs.value)
-        precutlums = np.copy(luminosities)
         # -------------- EDDINGTON LUMINOSITY CUT -------------------
         # Assume solar metallicity for now
 
@@ -606,10 +591,4 @@ class Fallback(Engine):
         luminosities = (luminosities * Ledd / (luminosities + Ledd))
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta,
-                'unscaleddmdt': unscaleddmdt,
-                'unscaledtime': unscaledtime, 'dmdtbeforeextrap':
-                dmdtbeforeextrap, 'timebeforeextrap': timebeforeextrap,
-                'dmdtafterextrap': dmdtafterextrap,
-                'timeafterextrap': timeafterextrap,
-                'precutlums': precutlums, 'Ledd': Ledd}
+                'tpeak': tpeak, 'beta': self._beta}

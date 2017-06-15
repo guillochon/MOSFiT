@@ -10,7 +10,7 @@ CLASS_NAME = 'Viscous'
 class Viscous(Transform):
     """Viscous delay transform."""
 
-    N_INT_TIMES = 1000  # 1e5
+    N_INT_TIMES = 1000
 
     def process(self, **kwargs):
         """Process module."""
@@ -44,7 +44,7 @@ class Viscous(Transform):
                             self._dense_times_since_exp[-1])
 
         int_tes = int_times[:, -1]
-        int_lums = linterp(int_times)  # noqa: F841
+        int_lums = linterp(int_times)
 
         int_args = int_lums * np.exp(
             (int_times - int_tes.reshape(lu, 1)) / tvisc)
@@ -53,7 +53,5 @@ class Viscous(Transform):
         uniq_lums = np.trapz(int_args, int_times)/tvisc
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]
-        postviscous_lums = new_lums  # for testing
-        return {self.dense_key('luminosities'): new_lums,
-                'postviscous_lums': postviscous_lums,
-                'viscous_times': self._times_to_process}
+
+        return {self.dense_key('luminosities'): new_lums}

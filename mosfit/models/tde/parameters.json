@@ -19,7 +19,7 @@
         "log":true
     },
     "starmass":{
-        "min_value":0.1,
+        "min_value":0.01,
         "max_value":25.0,
         "log":true
     },
