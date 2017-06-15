@@ -167,7 +167,7 @@ def get_parser():
         nargs='+',
         help=("List of references to exclude data from when fitting. These "
               "are specified using the source ID number that is shown on the "
-              "catalog page for each transient. "))
+              "Open Astronomy Catalog page for each transient. "))
 
     parser.add_argument(
         '--fix-parameters',
