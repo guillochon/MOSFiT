@@ -148,6 +148,15 @@ def get_parser():
               "the bands listed in `--exclude-bands`."))
 
     parser.add_argument(
+        '--exclude-sources',
+        dest='exclude_sources',
+        default=[],
+        nargs='+',
+        help=("List of references to exclude data from when fitting. These "
+              "are specified using the source ID number that is shown on the "
+              "catalog page for each transient. "))
+
+    parser.add_argument(
         '--fix-parameters',
         '-F',
         dest='user_fixed_parameters',

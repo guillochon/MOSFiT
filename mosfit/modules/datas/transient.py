@@ -32,6 +32,7 @@ class Transient(Module):
                  limit_fitting_mjds=False,
                  exclude_bands=[],
                  exclude_instruments=[],
+                 exclude_sources=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -93,6 +94,8 @@ class Transient(Module):
                 if key == 'photometry':
                     skip_entry = False
                     for x in subkeys:
+                        if x=='source':
+                            print(entry.get(x, ''))
                         if limit_fitting_mjds is not False and x == 'time':
                             val = np.mean([
                                 float(x) for x in listify(
@@ -112,6 +115,11 @@ class Transient(Module):
                             if (entry.get(x, '') in exclude_instruments and
                                 (not exclude_bands or
                                  entry.get('band', '') in exclude_bands)):
+                                skip_entry = True
+                                break
+                        if (exclude_sources is not False and
+                                x == 'source'):
+                            if (entry.get(x, '') in exclude_sources):
                                 skip_entry = True
                                 break
                     if skip_entry:
