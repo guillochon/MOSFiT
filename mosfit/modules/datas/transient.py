@@ -94,8 +94,6 @@ class Transient(Module):
                 if key == 'photometry':
                     skip_entry = False
                     for x in subkeys:
-                        if x=='source':
-                            print(entry.get(x, ''))
                         if limit_fitting_mjds is not False and x == 'time':
                             val = np.mean([
                                 float(x) for x in listify(
