@@ -16,6 +16,7 @@ from mosfit.printer import Printer
 from mosfit.utils import listify
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
+# from scipy.optimize import basinhopping
 
 from astrocats.catalog.quantity import QUANTITY
 # from bayes_opt import BayesianOptimization
@@ -47,6 +48,7 @@ class Model(object):
         self._print_trees = print_trees
         self._inflect = inflect.engine()
         self._inflections = {}
+        self._references = []
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -87,6 +89,7 @@ class Model(object):
                             .format(claimed_type),
                             kind='select',
                             options=type_options,
+                            message=False,
                             none_string=('None of the above, skip this '
                                          'transient.'))
 
@@ -132,12 +135,18 @@ class Model(object):
 
         # Load model parameter file.
         model_pp = os.path.join(
-            os.path.split(model_path)[0], 'parameters.json')
+            self._dir_path, 'models', model_dir, 'parameters.json')
 
         pp = ''
 
-        selected_pp = os.path.join(
-            os.path.split(model_path)[0], parameter_path)
+        local_pp = (parameter_path if '/' in parameter_path
+                    else os.path.join('models', model_dir, parameter_path))
+
+        if os.path.isfile(local_pp):
+            selected_pp = local_pp
+        else:
+            selected_pp = os.path.join(
+                self._dir_path, 'models', model_dir, parameter_path)
 
         # First try user-specified path
         if parameter_path and os.path.isfile(parameter_path):
@@ -189,7 +198,8 @@ class Model(object):
             else:
                 max_depth = -1
                 for tag2 in self._trees:
-                    roots.extend(self._trees[tag2]['roots'])
+                    if self.in_tree(tag, self._trees[tag2]):
+                        roots.extend(self._trees[tag2]['roots'])
                     depth = self.get_max_depth(tag, self._trees[tag2],
                                                max_depth)
                     if depth > max_depth:
@@ -229,6 +239,7 @@ class Model(object):
                 self._instruments = self._modules[task].instruments()
                 self._bands = self._modules[task].bands()
             self._modules[task].set_attributes(cur_task)
+
             # This is currently not functional for MPI
             # cur_task = self._call_stack[task]
             # mod_name = cur_task.get('class', task)
@@ -262,11 +273,20 @@ class Model(object):
         if not call_stack:
             call_stack = self._call_stack
         cur_task = call_stack[task]
+        kinds = self._inflect.plural(cur_task['kind'])
         mod_name = cur_task.get('class', task).lower()
-        mod = importlib.import_module(
-            '.' + 'modules.' + self._inflect.plural(
-                cur_task['kind'].lower()) + '.' + mod_name,
-            package='mosfit')
+        mod_path = os.path.join('modules', kinds, mod_name + '.py')
+        if not os.path.isfile(mod_path):
+            mod_path = os.path.join(self._dir_path, 'modules', kinds,
+                                    mod_name + '.py')
+        mod_name = 'mosfit.modules.' + kinds + mod_name
+        try:
+            mod = importlib.machinery.SourceFileLoader(mod_name,
+                                                       mod_path).load_module()
+        except AttributeError:
+            import imp
+            mod = imp.load_source(mod_name, mod_path)
+
         class_name = [
             x[0] for x in
             inspect.getmembers(mod, inspect.isclass)
@@ -316,11 +336,11 @@ class Model(object):
                     variance_bands.append([awav, band])
                 if needs_general_variance:
                     new_call_stack[task] = deepcopy(cur_task)
-                self._printer.prt(
-                    'Anchoring variances for the following filters '
-                    '(interpolating variances for the rest): ' +
-                    (', '.join([x[1] for x in variance_bands])),
-                    wrapped=True)
+                if self._pool.is_master():
+                    self._printer.message(
+                        'anchoring_variances',
+                        [', '.join([x[1] for x in variance_bands])],
+                        wrapped=True)
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = deepcopy(cur_task)
@@ -398,15 +418,13 @@ class Model(object):
         #     zip(np.clip(x - step, 0.0, 1.0), np.clip(x + step, 0.0, 1.0)))
         #
         # bh = differential_evolution(
-        #     self.fprob, bounds, disp=True, polish=False, maxiter=10)
+        #     self.fprob, bounds, disp=True, polish=False)
 
-        # take_step = self.RandomDisplacementBounds(0.0, 1.0, 0.01)
         # bh = basinhopping(
         #     self.fprob,
         #     x,
         #     disp=True,
         #     niter=10,
-        #     take_step=take_step,
         #     minimizer_kwargs={'method': "L-BFGS-B",
         #                       'bounds': bounds})
 
@@ -438,7 +456,7 @@ class Model(object):
                 'input loop in `{}`.'.format(leaf))
         for tag in d:
             entry = deepcopy(d[tag])
-            new_roots = roots
+            new_roots = list(roots)
             if entry['kind'] in kinds or tag == name:
                 entry['depth'] = depth
                 if entry['kind'] in kinds:
@@ -518,6 +536,16 @@ class Model(object):
                 if new_max > max_depth:
                     max_depth = new_max
         return max_depth
+
+    def in_tree(self, tag, parent):
+        """Return the maximum depth a given task is found in a tree."""
+        for child in parent.get('children', []):
+            if child == tag:
+                return True
+            else:
+                if self.in_tree(tag, parent['children'][child]):
+                    return True
+        return False
 
     def pool(self):
         """Return processing pool."""
@@ -600,11 +628,20 @@ class Model(object):
                     "Failed to execute module `{}`\'s process().".format(task),
                     wrapped=True)
                 raise
+
             outputs.update(new_outs)
+
+            # Append module references
+            self._references.extend(self._modules[task]._REFERENCES)
+
             if '_delete_keys' in outputs:
                 for key in outputs['_delete_keys']:
                     del(outputs[key])
                 del(outputs['_delete_keys'])
 
             if cur_task['kind'] == root:
+                # Make sure references are unique.
+                self._references = list(map(
+                    dict, set(tuple(sorted(d.items()))
+                              for d in self._references)))
                 return outputs

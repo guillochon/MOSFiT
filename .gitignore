@@ -7,6 +7,7 @@ mosfit/modules/observables/filters/*.dat
 mosfit/modules/observables/filters/*.xml
 /models/
 /jupyter/
+/modules/
 MANIFEST
 mosfit.egg-info/
 *.pyc
@@ -14,7 +15,6 @@ mosfit.egg-info/
 *.so
 *.prof
 *.swp
-*.png
 .DS_Store
 /*.json
 /*.csv

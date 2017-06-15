@@ -35,7 +35,7 @@
                 "source":"optional"
             },
             "ebv":{
-                "value":"required"
+                "value":"optional"
             },
             "lumdist":{
                 "value":"optional"
@@ -52,8 +52,18 @@
     },
     "default_no_error_bar_error":{
         "kind":"parameter",
-        "value":1.0,
+        "value":0.0,
         "class":"constant"
+    },
+    "ebv":{
+        "kind":"parameter",
+        "min_value":0.0,
+        "max_value":5.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B}-{\\rm V})"
     },
     "lumdist":{
         "kind":"parameter",
@@ -102,8 +112,8 @@
     "constraint":{
         "kind":"constraint"
     },
-    "likelihood":{
-        "kind":"objective",
+    "fitkernel":{
+        "kind":"array",
         "inputs":[
             "transient",
             "variance",
@@ -111,13 +121,26 @@
             "codeltalambda",
             "photometry",
             "default_upper_limit_error",
-            "default_no_error_bar_error",
-            "constraint"
+            "default_no_error_bar_error"
         ],
         "requests":{
             "average_wavelengths": "photometry",
             "variance_bands": "photometry"
-        }
+        },
+        "class":"kernel"
+    },
+    "diagonal":{
+        "kind":"array",
+        "inputs":[
+            "fitkernel"
+        ]
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "diagonal",
+            "constraint"
+        ]
     },
     "alltimes":{
         "kind":"array",
@@ -142,11 +165,70 @@
             "resttimes"
         ]
     },
+    "oakernel":{
+        "kind":"array",
+        "inputs":[
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        },
+        "type":"oa",
+        "class":"kernel"
+    },
+    "aokernel":{
+        "kind":"array",
+        "inputs":[
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        },
+        "type":"ao",
+        "class":"kernel"
+    },
+    "fullkernel":{
+        "kind":"array",
+        "inputs":[
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error"
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        },
+        "type":"full",
+        "class":"kernel"
+    },
     "fitlc":{
         "kind":"output",
         "inputs":[
             "transient",
-            "photometry"
+            "photometry",
+            "fitkernel",
+            "oakernel",
+            "aokernel",
+            "fullkernel",
+            "diagonal"
         ],
         "class":"lightcurve"
     }

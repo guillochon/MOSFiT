@@ -32,7 +32,7 @@ def get_parser():
     """Retrieve MOSFiT's `argparse.ArgumentParser` object."""
     parser = argparse.ArgumentParser(
         prog='mosfit',
-        description='Fit astrophysical light curves using AstroCats data.',
+        description='Fit astrophysical transients.',
         formatter_class=SortingHelpFormatter)
 
     parser.add_argument(
@@ -63,7 +63,7 @@ def get_parser():
         '--parameter-paths',
         '-P',
         dest='parameter_paths',
-        default=[''],
+        default=['parameters.json'],
         nargs='+',
         help=("Paths to parameter files corresponding to each model file; "
               "length of this list should be equal to the length of the list "
@@ -95,6 +95,19 @@ def get_parser():
         default=1000.,
         help=("Set the maximum time for model light curves to be plotted "
               "until."))
+
+    parser.add_argument(
+        '--limiting-magnitude',
+        '-l',
+        dest='limiting_magnitude',
+        default=None,
+        nargs='+',
+        help=("Assumed limiting magnitude of a simulated survey. When "
+              "enabled, model light curves will be randomly drawn and "
+              "assigned error bars. If passed one argument, that number "
+              "will be used as the limiting magnitude (default: `20`). "
+              "If provided a second argument, that number will be used "
+              "for observation-to-observation variance in the limit."))
 
     parser.add_argument(
         '--band-list',
@@ -280,6 +293,14 @@ def get_parser():
               "amazing logo :-("))
 
     parser.add_argument(
+        '--cuda',
+        dest='cuda',
+        default=False,
+        action='store_true',
+        help=("Enable CUDA for MOSFiT routines. Requires the `scikit-cuda` "
+              "package (and its dependencies) to be installed."))
+
+    parser.add_argument(
         '--no-copy-at-launch',
         dest='copy',
         default=True,
@@ -353,8 +374,22 @@ def get_parser():
         '-R',
         dest='run_until_converged',
         type=float,
-        default=False,
-        const=10.0,
+        default=None,
+        const=1.1,
+        nargs='?',
+        help=("Run each model until the autocorrelation time is measured "
+              "accurately and chain has burned in for the specified number "
+              "of autocorrelation times [Default: 10.0]. This will run "
+              "beyond the specified number of iterations, and is recommended "
+              "when the `--upload/-u` flag is set."))
+
+    parser.add_argument(
+        '--run-until-uncorrelated',
+        '-U',
+        dest='run_until_uncorrelated',
+        type=int,
+        default=None,
+        const=5,
         nargs='?',
         help=("Run each model until the autocorrelation time is measured "
               "accurately and chain has burned in for the specified number "
@@ -509,14 +544,7 @@ def get_parser():
 
 
 def main():
-    """Main function for MOSFiT."""
-    # try:
-    #     import pycuda.autoinit  # noqa: F401
-    #     import skcuda.linalg as linalg
-    #     linalg.init()
-    # except ImportError:
-    #     pass
-
+    """Run MOSFiT."""
     parser = get_parser()
 
     args = parser.parse_args()
@@ -557,6 +585,9 @@ def main():
 
     args.start_time = time.time()
 
+    if args.limiting_magnitude == []:
+        args.limiting_magnitude = 20.0
+
     args.return_fits = False
 
     if (isinstance(args.extrapolate_time, list) and
@@ -573,13 +604,25 @@ def main():
             changed_iterations = True
             args.iterations = 0
         else:
-            args.iterations = 1000
+            args.iterations = 5000
 
     if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))
 
     if args.frack_step == 0:
         args.fracking = False
+
+    if (args.run_until_uncorrelated is not None and
+            args.run_until_converged is not None):
+        raise ValueError(
+            '`-R` and `-U` options are incompatible, please use one or the '
+            'other.')
+    elif args.run_until_uncorrelated is not None:
+        args.convergence_type = 'acor'
+        args.convergence_criteria = args.run_until_uncorrelated
+    elif args.run_until_converged is not None:
+        args.convergence_type = 'psrf'
+        args.convergence_criteria = args.run_until_converged
 
     if is_master():
         # Get hash of ourselves
@@ -690,15 +733,22 @@ def main():
                     os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
 
             # Disabled for now as external modules don't work with MPI.
-            # if not os.path.exists('modules'):
-            #     os.mkdir(os.path.join('modules'))
-            # module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
-            # for mdir in module_dirs:
-            #     if mdir.startswith('__'):
-            #         continue
-            #     mdir_path = os.path.join('modules', mdir)
-            #     if not os.path.exists(mdir_path):
-            #         os.mkdir(mdir_path)
+            if not os.path.exists('modules'):
+                os.mkdir(os.path.join('modules'))
+            module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
+            for mdir in module_dirs:
+                if mdir.startswith('__'):
+                    continue
+                mdir_path = os.path.join('modules', mdir)
+                if not os.path.exists(mdir_path):
+                    os.mkdir(mdir_path)
+                readme_path = os.path.join(mdir_path, 'README')
+                if not os.path.exists(readme_path):
+                    txt = prt.message('readme-modules', [
+                        os.path.join(dir_path, 'modules', 'mdir'),
+                        os.path.join(dir_path, 'modules')], prt=False)
+                    with open(readme_path, 'w') as f:
+                        f.write(txt)
 
             if not os.path.exists('models'):
                 os.mkdir(os.path.join('models'))
@@ -711,8 +761,17 @@ def main():
                     os.mkdir(mdir_path)
                 model_files = next(
                     os.walk(os.path.join(dir_path, 'models', mdir)))[2]
+                readme_path = os.path.join(mdir_path, 'README')
+                if not os.path.exists(readme_path):
+                    txt = prt.message('readme-models', [
+                        os.path.join(dir_path, 'models', mdir),
+                        os.path.join(dir_path, 'models')], prt=False)
+                    with open(readme_path, 'w') as f:
+                        f.write(txt)
                 for mfil in model_files:
-                    fil_path = os.path.join(os.getcwd(), 'models', mdir, mfil)
+                    if 'parameters.json' not in mfil:
+                        continue
+                    fil_path = os.path.join(mdir_path, mfil)
                     if os.path.isfile(fil_path) and not fc:
                         continue
                     shutil.copy(

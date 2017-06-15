@@ -9,20 +9,26 @@
 
 ## Installation
 
-`MOSFiT` is available on pip, and can be installed in the standard way:
+`MOSFiT` is available on `conda` and `pip`, and can be installed using:
+
+```bash
+conda install -c conda-forge mosfit
+```
+
+or:
 
 ```bash
 pip install mosfit
 ```
 
-To assist in the development of `MOSFiT`, the repository should be cloned from GitHub and then installed into your Python environment via the `setup.py` file:
+For a development install of `MOSFiT`, the repository should be cloned from GitHub and then installed into your Python environment via the `setup.py` script:
 
 ```bash
 git clone https://github.com/guillochon/MOSFiT.git
 cd MOSFiT
-python setup.py install
+python setup.py develop
 ```
 
 ## Using MOSFiT
 
-For detailed instructions on using MOSFiT, please see our documentation on RTD: http://mosfit.readthedocs.io/
+For detailed instructions on using MOSFiT, please see our documentation on RTD: <http://mosfit.readthedocs.io/>

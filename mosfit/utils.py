@@ -3,16 +3,17 @@
 
 import codecs
 import hashlib
-import io
 import json
 import os
 import re
 import sys
 import tempfile
-from builtins import bytes
+from builtins import bytes, str
 from collections import OrderedDict
 from contextlib import contextmanager
 from math import floor, isnan, log10
+
+from dateutil.parser import parse
 
 import numpy as np
 import scipy.interpolate
@@ -29,6 +30,15 @@ def get_url_file_handle(url, timeout=10):
     else:
         from urllib2 import urlopen
     return urlopen(url, timeout=timeout)
+
+
+def is_date(s):
+    """Check if input is a valid date."""
+    try:
+        parse(s)
+        return True
+    except ValueError:
+        return False
 
 
 def is_integer(s):
@@ -115,7 +125,7 @@ def calculate_WAIC(scores):
 
 
 def flux_density_unit(unit):
-    """Return coeffiecent to convert µJy to Jy."""
+    u"""Return coeffiecent to convert µJy to Jy."""
     if unit == 'µJy':
         return 1.0 / (1.0e-6 * 1.0e-23)
     return 1.0
@@ -182,10 +192,10 @@ def is_master():
 def speak(text, lang='es'):
     """Text to speech. For funp."""
     try:
+        from googletrans import Translator
         from gtts import gTTS
         from pygame import mixer
         from tempfile import TemporaryFile
-        from googletrans import Translator
 
         translator = Translator()
         tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
@@ -316,6 +326,35 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
         return None
 
 
+def all_to_list(array):
+    """Recursively convert list of numpy arrays to lists."""
+    try:
+        return ([x.tolist() if type(x).__module__ == 'numpy'
+                else all_to_list(x) if type(x) == 'list' else
+                x for x in array])
+    except TypeError:  # array is not iterable
+        return [array]
+
+
+# From Django
+def slugify(value, allow_unicode=False):
+    """Slugify string to make it a valid filename.
+
+    Convert to ASCII if 'allow_unicode' is False. Convert spaces to hyphens.
+    Remove characters that aren't alphanumerics, underscores, or hyphens.
+    Also strip leading and trailing whitespace.
+    """
+    import unicodedata
+    value = str(value)
+    if allow_unicode:
+        value = unicodedata.normalize('NFKC', value)
+    else:
+        value = unicodedata.normalize('NFKD', value).encode(
+            'ascii', 'ignore').decode('ascii')
+    value = re.sub(r'[^\w\s-]', '', value).strip()
+    return re.sub(r'[-\s]+', '-', value)
+
+
 # Below from
 # http://stackoverflow.com/questions/2333872/atomic-writing-to-file-with-python
 @contextmanager
@@ -331,6 +370,7 @@ def temp_atomic(suffix='', dir=None):
         optional file suffix
     dir : string
         optional directory to save temporary file in
+
     """
     tf = tempfile.NamedTemporaryFile(delete=False, suffix=suffix, dir=dir)
     tf.file.close()
@@ -364,6 +404,7 @@ def open_atomic(filepath, *args, **kwargs):
         Any valid arguments for :code:`open`
     **kwargs : mixed
         Any valid keyword arguments for :code:`open`
+
     """
     fsync = kwargs.get('fsync', False)
 
@@ -376,4 +417,6 @@ def open_atomic(filepath, *args, **kwargs):
                 if fsync:
                     file.flush()
                     os.fsync(file.fileno())
+        if os.path.isfile(filepath):
+            os.remove(filepath)
         os.rename(tmppath, filepath)

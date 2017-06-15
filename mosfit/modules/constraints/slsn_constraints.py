@@ -1,5 +1,7 @@
 """Definitions for the `SLSNConstraints` class."""
 import numpy as np
+from astrocats.catalog.source import SOURCE
+
 from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
 from mosfit.modules.constraints.constraint import Constraint
 
@@ -13,6 +15,10 @@ class SLSNConstraints(Constraint):
     1. Kinetic energy cannot excede magnetar rotational energy
     2. Ejecta remain optically thick to thermal photons for at least 100d
     """
+
+    _REFERENCES = [
+        {SOURCE.NAME: 'Nicholl et al. 2017'}
+    ]
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -65,7 +71,6 @@ class SLSNConstraints(Constraint):
             self._score_modifier += -(
                 self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
                     2 * self._neutrino_energy ** 2)
-
 
         # Time from explosion at which optical depth in ejecta reaches tau=1
         t_nebular = np.sqrt(3 * self._kappa * self._mejecta / (

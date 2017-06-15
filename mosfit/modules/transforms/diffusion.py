@@ -12,9 +12,14 @@ from mosfit.modules.transforms.transform import Transform
 class Diffusion(Transform):
     """Photon diffusion transform."""
 
-    N_INT_TIMES = 1000
+    N_INT_TIMES = 100
+    MIN_LOG_SPACING = -3
     DIFF_CONST = 2.0 * M_SUN_CGS / (13.7 * C_CGS * KM_CGS)
     TRAP_CONST = 3.0 * M_SUN_CGS / (FOUR_PI * KM_CGS ** 2)
+
+    _REFERENCES = [
+        {'bibcode': '1982ApJ...253..785A'}
+    ]
 
     def process(self, **kwargs):
         """Process module."""
@@ -45,22 +50,26 @@ class Diffusion(Transform):
                 self._times_to_process <= self._dense_times_since_exp[-1])])
         lu = len(uniq_times)
 
-        xm = np.linspace(0, 1, self.N_INT_TIMES)
-        int_times = np.clip(tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
-                            self._dense_times_since_exp[-1])
+        num = int(round(self.N_INT_TIMES / 2.0))
+        lsp = np.logspace(
+            np.log10(self._tau_diff) + self.MIN_LOG_SPACING, 0, num)
+        xm = np.unique(np.concatenate((lsp, 1 - lsp)))
 
-        dts = int_times[:, 1] - int_times[:, 0]
+        int_times = np.clip(
+            tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
+            self._dense_times_since_exp[-1])
+
         int_te2s = int_times[:, -1] ** 2
         int_lums = linterp(int_times)  # noqa: F841
         int_args = int_lums * int_times * np.exp(
             (int_times ** 2 - int_te2s.reshape(lu, 1)) / td2)
         int_args[np.isnan(int_args)] = 0.0
 
-        uniq_lums = np.sum(int_args[:, 2:-1], axis=1) + 0.5 * (
-            int_args[:, 0] + int_args[:, -1])
-        uniq_lums *= -2.0 * np.expm1(-A / int_te2s) * dts / td2
+        uniq_lums = np.trapz(int_args, int_times)
+        uniq_lums *= -2.0 * np.expm1(-A / int_te2s) / td2
 
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]
 
-        return {self.dense_key('luminosities'): new_lums}
+        return {self.key('tau_diffusion'): self._tau_diff,
+                self.dense_key('luminosities'): new_lums}

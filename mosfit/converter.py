@@ -9,13 +9,13 @@ import numpy as np
 from astrocats.catalog.entry import Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
-from astrocats.catalog.utils import is_number, jd_to_mjd
 from astrocats.catalog.source import SOURCE
+from astrocats.catalog.utils import is_number, jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
 
-from mosfit.utils import entabbed_json_dump
+from mosfit.utils import entabbed_json_dump, is_date
 
 
 class Converter(object):
@@ -56,52 +56,58 @@ class Converter(object):
 
         self._rsource = {SOURCE.NAME: self._DEFAULT_SOURCE}
 
-        emagstrs = [
+        self._emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr', 'mag error']
-        self._header_keys = {
-            PHOTOMETRY.TIME: ['time', 'mjd', ('jd', 'jd')],
-            PHOTOMETRY.SYSTEM: ['system'],
-            PHOTOMETRY.MAGNITUDE: ['mag', 'magnitude'],
-            PHOTOMETRY.E_MAGNITUDE: emagstrs,
-            PHOTOMETRY.TELESCOPE: ['tel', 'telescope'],
-            PHOTOMETRY.INSTRUMENT: ['inst', 'instrument'],
-            PHOTOMETRY.BAND: ['passband', 'band', 'filter'],
-            PHOTOMETRY.E_LOWER_MAGNITUDE: [
+            'mag err', 'magerr', 'mag error', 'err']
+        self._header_keys = OrderedDict((
+            (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd')]),
+            (PHOTOMETRY.SYSTEM, ['system']),
+            (PHOTOMETRY.MAGNITUDE, ['mag', 'magnitude']),
+            (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
+            (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
+            (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
+            (PHOTOMETRY.BAND, ['passband', 'band', 'filter']),
+            (PHOTOMETRY.E_LOWER_MAGNITUDE, [
                 ' '.join(y) for y in (
                     list(i for s in [
                         list(permutations(['minus'] + x.split()))
-                        for x in emagstrs] for i in s) +
+                        for x in self._emagstrs] for i in s) +
                     list(i for s in [
                         list(permutations(['lower'] + x.split()))
-                        for x in emagstrs] for i in s))],
-            PHOTOMETRY.E_UPPER_MAGNITUDE: [
+                        for x in self._emagstrs] for i in s))]),
+            (PHOTOMETRY.E_UPPER_MAGNITUDE, [
                 ' '.join(y) for y in (
                     list(i for s in [
                         list(permutations(['plus'] + x.split()))
-                        for x in emagstrs] for i in s) +
+                        for x in self._emagstrs] for i in s) +
                     list(i for s in [
                         list(permutations(['upper'] + x.split()))
-                        for x in emagstrs] for i in s))],
-            PHOTOMETRY.UPPER_LIMIT: ['upper limit', 'upperlimit', 'l_mag'],
-            PHOTOMETRY.COUNT_RATE: ['counts', 'flux', 'count rate'],
-            PHOTOMETRY.E_COUNT_RATE: [
-                'e_counts', 'count error', 'count rate error'],
-            PHOTOMETRY.ZERO_POINT: ['zero point', 'self._zp'],
-            'reference': ['reference', 'bibcode', 'source', 'origin'],
-            'event': ['event', 'transient', 'name', 'supernova']
-        }
+                        for x in self._emagstrs] for i in s))]),
+            (PHOTOMETRY.UPPER_LIMIT, ['upper limit', 'upperlimit', 'l_mag']),
+            (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
+            (PHOTOMETRY.E_COUNT_RATE, [
+                'e_counts', 'count error', 'count rate error']),
+            (PHOTOMETRY.ZERO_POINT, ['zero point', 'self._zp']),
+            ('reference', ['reference', 'bibcode', 'source', 'origin']),
+            ('event', ['event', 'transient', 'name', 'supernova'])
+        ))
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.BAND,
             PHOTOMETRY.E_MAGNITUDE,
             PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.ZERO_POINT]
+        self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._optional_keys = [PHOTOMETRY.ZERO_POINT]
         self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
         self._dep_keys = [
             PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
-        self._specify_keys = [PHOTOMETRY.BAND]
+        self._specify_keys = [
+            PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
+        self._band_names = [
+            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'u', 'g', 'r', 'i', 'z',
+            'y', 'W1', 'W2', 'M2'
+        ]
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -162,18 +168,34 @@ class Converter(object):
 
                 if table is None:
                     fsplit = ftxt.splitlines()
-                    fsplit = [x.replace(',', '\t').replace('&', '\t')
+                    fsplit = [x.replace('$', '').replace(',', '\t')
+                              .replace('&', '\t').replace('\\pm', '\t')
                               .strip(' ()')
                               for x in fsplit]
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
                          re.split(
-                             '''\s(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+                             '''\s+(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
                              x)]
                         for x in fsplit]
 
                     flines = [[
                         x.strip(' #$()\\') for x in y] for y in flines]
+
+                    # Find band columns if they exist and insert error columns
+                    # if they don't exist.
+                    for fi, fl in enumerate(list(flines)):
+                        flcopy = list(fl)
+                        offset = 0
+                        if not any([is_number(x) for x in fl]):
+                            for fci, fc in enumerate(fl):
+                                if (fc in self._band_names and
+                                    (fci == len(fl) - 1 or
+                                     fl[fci + 1].lower()
+                                     not in self._emagstrs)):
+                                    flcopy.insert(fci + 1 + offset, 'e mag')
+                                    offset += 1
+                        flines[fi] = flcopy
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -242,6 +264,43 @@ class Converter(object):
                             if cidict[key][0] != 'j':
                                 perms = len(cidict[key])
 
+                    # Clean up the data a bit now that we know the column
+                    # identities.
+
+                    # Strip common prefixes/suffixes from band names
+                    if PHOTOMETRY.BAND in cidict:
+                        bi = cidict[PHOTOMETRY.BAND]
+                        for d in [True, False]:
+                            if not isinstance(bi, int):
+                                break
+                            strip_cols = []
+                            lens = [len(x[bi])
+                                    for x in flines[self._first_data:]]
+                            llen = min(lens)
+                            ra = range(llen) if d else range(-1, -llen - 1, -1)
+                            for li in ra:
+                                letter = None
+                                for row in list(flines[self._first_data:]):
+                                    if letter is None:
+                                        letter = row[bi][li]
+                                    elif row[bi][li] != letter:
+                                        letter = None
+                                        break
+                                if letter is not None:
+                                    strip_cols.append(li)
+                                else:
+                                    break
+                            print(strip_cols)
+                            if len(strip_cols) == llen:
+                                break
+                            for ri in range(len(flines[self._first_data:])):
+                                flines[self._first_data + ri][bi] = ''.join(
+                                    [c for i, c in enumerate(flines[
+                                        self._first_data + ri][bi])
+                                     if (i if d else i - len(flines[
+                                         self._first_data + ri][bi])) not in
+                                     strip_cols])
+
                     for row in flines[self._first_data:]:
                         photodict = {}
                         for pi in range(perms):
@@ -291,12 +350,14 @@ class Converter(object):
                                         isinstance(val, string_types)):
                                     val = val[pi]
                                     if isinstance(val, string_types):
-                                        photodict[key] = val
+                                        if val != '':
+                                            photodict[key] = val
                                     else:
                                         photodict[key] = row[val]
                                 else:
                                     if isinstance(val, string_types):
-                                        photodict[key] = val
+                                        if val != '':
+                                            photodict[key] = val
                                     else:
                                         photodict[key] = row[val]
                             if self._data_type == 2:
@@ -338,7 +399,7 @@ class Converter(object):
                                             self._rsource[
                                                 SOURCE.NAME] = (
                                                     last_name.strip().title() +
-                                                    'et al., in preparation')
+                                                    ' et al., in preparation')
 
                                 photodict[
                                     PHOTOMETRY.SOURCE] = entry.add_source(
@@ -398,21 +459,24 @@ class Converter(object):
     def assign_columns(self, cidict, flines):
         """Assign columns based on header."""
         used_cis = {}
-        ckeys = list(self._critical_keys)
+        akeys = list(self._critical_keys) + list(self._helpful_keys)
         dkeys = list(self._dep_keys)
         prt = self._printer
 
         for fi, fl in enumerate(flines):
             if not any([is_number(x) for x in fl]):
                 # Try to associate column names with common header keys.
+                conflict_keys = []
+                conflict_cis = []
                 for ci, col in enumerate(fl):
                     for key in self._header_keys:
                         if any([(x[0] if isinstance(x, tuple)
                                  else x) == col.lower()
                                 for x in self._header_keys[key]]):
-                            if ci in used_cis:
+                            if key in cidict or ci in used_cis:
                                 # There is a conflict, ask user.
-                                del(cidict[used_cis[ci]])
+                                conflict_keys.append(key)
+                                conflict_cis.append(ci)
                             else:
                                 ind = [
                                     (x[0] if isinstance(x, tuple) else x)
@@ -423,9 +487,45 @@ class Converter(object):
                                     match, tuple) else ci
                                 used_cis[ci] = key
                             break
+
+                for cki, ck in enumerate(conflict_keys):
+                    if ck in cidict:
+                        ci = cidict[ck]
+                        del(cidict[ck])
+                        del(used_cis[ci])
             else:
                 self._first_data = fi
                 break
+
+        # Look for columns that are band names if no magnitude column was
+        # found.
+        if PHOTOMETRY.MAGNITUDE not in cidict:
+            # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
+            # for each column).
+            key = PHOTOMETRY.MAGNITUDE
+            ekey = PHOTOMETRY.E_MAGNITUDE
+            bkey = PHOTOMETRY.BAND
+            if ekey in cidict:
+                ci = cidict[ekey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            if bkey in cidict:
+                ci = cidict[bkey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            for fi, fl in enumerate(flines):
+                if not any([is_number(x) for x in fl]):
+                    # Try to associate column names with common header keys.
+                    for ci, col in enumerate(fl):
+                        if ci in used_cis:
+                            continue
+                        if col in self._band_names:
+                            cidict.setdefault(key, []).append(ci)
+                            used_cis[ci] = key
+                            cidict.setdefault(bkey, []).append(col)
+                        elif col.lower() in self._emagstrs:
+                            cidict.setdefault(ekey, []).append(ci)
+                            used_cis[ci] = ekey
 
         # See which keys we collected. If we are missing any critical keys, ask
         # the user which column they are.
@@ -444,36 +544,44 @@ class Converter(object):
                 options=['Magnitudes', 'Counts (fluxes)'],
                 none_string=None)
         if self._data_type == 1:
-            ckeys.remove(PHOTOMETRY.COUNT_RATE)
-            ckeys.remove(PHOTOMETRY.E_COUNT_RATE)
-            ckeys.remove(PHOTOMETRY.ZERO_POINT)
+            akeys.remove(PHOTOMETRY.COUNT_RATE)
+            akeys.remove(PHOTOMETRY.E_COUNT_RATE)
+            akeys.remove(PHOTOMETRY.ZERO_POINT)
             if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
                     PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
-                ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
+                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
         else:
-            ckeys.remove(PHOTOMETRY.MAGNITUDE)
-            ckeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            akeys.remove(PHOTOMETRY.MAGNITUDE)
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
+        print(colstrs)
         colinds = np.setdiff1d(np.arange(len(colstrs)),
                                list([x[-1] if isinstance(x, list)
                                      else x for x in cidict.values()]))
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
-        for key in ckeys:
+        for key in akeys:
             if key in cidict:
                 continue
             if key in dkeys and self._use_mc:
                 continue
             if key.type == KEY_TYPES.NUMERIC:
-                lcolinds = [x for xi, x in enumerate(colinds)
+                lcolinds = [x for x in colinds
                             if any(is_number(y) for y in columns[x])]
+            elif key.type == KEY_TYPES.TIME:
+                lcolinds = [x for x in colinds
+                            if any(is_date(y) or is_number(y)
+                                   for y in columns[x])]
+            elif key.type == KEY_TYPES.STRING:
+                lcolinds = [x for x in colinds
+                            if any(not is_number(y) for y in columns[x])]
             else:
-                lcolinds = colinds
+                lcolinds = list(colinds)
             select = False
             selmap = np.array(range(len(lcolinds)))
             selects = []
@@ -493,18 +601,22 @@ class Converter(object):
                     text = prt.message(
                         'no_matching_column', [key], prt=False)
                     ns = (
-                        ignore if key in self._optional_keys else
+                        ignore if key in (
+                            self._optional_keys + self._helpful_keys) else
                         specify if key in self._specify_keys
                         else None)
-                    select = prt.prompt(
-                        text, message=False,
-                        kind='option', none_string=ns,
-                        default=('j' if ns is None and
-                                 len(colstrs[lcolinds]) > 1
-                                 else None if ns is None else 'n'),
-                        options=colstrs[lcolinds].tolist() + (
-                            [('Multiple columns need to be joined.', 'j')]
-                            if len(colstrs[lcolinds]) > 1 else []))
+                    if len(colstrs[lcolinds]):
+                        select = prt.prompt(
+                            text, message=False,
+                            kind='option', none_string=ns,
+                            default=('j' if ns is None and
+                                     len(colstrs[lcolinds]) > 1
+                                     else None if ns is None else 'n'),
+                            options=colstrs[lcolinds].tolist() + (
+                                [('Multiple columns need to be joined.', 'j')]
+                                if len(colstrs[lcolinds]) > 1 else []))
+                    else:
+                        select = None
                     if select == 'j':
                         select = None
                         jsel = None
@@ -567,8 +679,10 @@ class Converter(object):
                                     break
 
             if select is not None:
-                cidict[key] = colinds[select - 1]
-                colinds = np.delete(colinds, select - 1)
+                iselect = int(select)
+                cidict[key] = lcolinds[iselect - 1]
+                colinds = np.delete(colinds, np.argwhere(
+                    colinds == lcolinds[iselect - 1]))
             elif len(selects):
                 if selects[0] == 'j':
                     cidict[key] = selects
@@ -576,18 +690,20 @@ class Converter(object):
                     allk = [key] + dkeys
                     for ki, k in enumerate(allk):
                         cidict[k] = [
-                            colinds[s - 1] if isinstance(s, int) else s
+                            lcolinds[s - 1] if isinstance(s, int) else s
                             for s in selects[ki::len(allk)]]
                     for s in selects:
                         if not isinstance(s, int):
                             continue
-                        colinds = np.delete(colinds, s - 1)
+                        colinds = np.delete(colinds, np.argwhere(
+                            colinds == lcolinds[s - 1]))
             elif key in self._specify_keys:
-                text = prt.message('specify_value', [key], prt=False)
-                cidict[key] = ''
-                while cidict[key].strip() is '':
-                    cidict[key] = prt.prompt(
-                        text, message=False, kind='string')
+                msg = ('specify_value_blank' if key in self._helpful_keys else
+                       'specify_value')
+                text = prt.message(msg, [key], prt=False)
+                cidict[key] = prt.prompt(
+                    text, message=False, kind='string', allow_blank=(
+                        key in self._helpful_keys))
 
         self._zp = ''
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:

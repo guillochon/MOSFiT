@@ -20,18 +20,18 @@ from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
+from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.converter import Converter
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
-from mosfit.utils import (calculate_WAIC, entabbed_json_dump,
+from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, get_url_file_handle,
-                          listify, open_atomic, pretty_num, speak)
+                          listify, open_atomic, pretty_num, slugify, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -67,10 +67,7 @@ class Fitter(object):
 
     _MAX_ACORC = 5
     _REPLACE_AGE = 20
-
-    def __init__(self):
-        """Initialize `Fitter`."""
-        pass
+    _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
 
     def fit_events(self,
                    events=[],
@@ -81,10 +78,10 @@ class Fitter(object):
                    band_systems=[],
                    band_instruments=[],
                    band_bandsets=[],
-                   iterations=1000,
+                   iterations=5000,
                    num_walkers=None,
                    num_temps=1,
-                   parameter_paths=[''],
+                   parameter_paths=['parameters.json'],
                    fracking=True,
                    frack_step=50,
                    wrap_length=100,
@@ -103,11 +100,13 @@ class Fitter(object):
                    upload=False,
                    write=False,
                    quiet=False,
+                   cuda=False,
                    upload_token='',
                    check_upload_quality=False,
                    variance_for_each=[],
                    user_fixed_parameters=[],
-                   run_until_converged=False,
+                   convergence_type='psrf',
+                   convergence_criteria=None,
                    save_full_chain=False,
                    draw_above_likelihood=False,
                    maximum_walltime=False,
@@ -121,6 +120,7 @@ class Fitter(object):
                    walker_paths=[],
                    catalogs=[],
                    open_in_browser=False,
+                   limiting_magnitude=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -131,6 +131,16 @@ class Fitter(object):
         self._maximum_memory = maximum_memory
         self._debug = False
         self._speak = speak
+        self._limiting_magnitude = limiting_magnitude
+
+        self._cuda = cuda
+        if cuda:
+            try:
+                import pycuda.autoinit  # noqa: F401
+                import skcuda.linalg as linalg
+                linalg.init()
+            except ImportError:
+                pass
 
         dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
@@ -186,7 +196,67 @@ class Fitter(object):
         ps = [[] for x in range(len(event_list))]
         lnprobs = [[] for x in range(len(event_list))]
 
+        # Load walker data if provided a list of walker paths.
         walker_data = []
+
+        if len(walker_paths):
+            try:
+                pool = MPIPool()
+            except ValueError:
+                pool = SerialPool()
+            if pool.is_master():
+                for walker_path in walker_paths:
+                    if os.path.exists(walker_path):
+                        with open(walker_path, 'r') as f:
+                            all_walker_data = json.load(
+                                f, object_pairs_hook=OrderedDict)
+                        prt.message('walker_file', [
+                                    walker_path], wrapped=True)
+
+                        # Support both the format where all data stored in a
+                        # single-item dictionary (the OAC format) and the older
+                        # MOSFiT format where the data was stored in the
+                        # top-level dictionary.
+                        if ENTRY.NAME not in all_walker_data:
+                            all_walker_data = all_walker_data[
+                                list(all_walker_data.keys())[0]]
+
+                        models = all_walker_data.get(ENTRY.MODELS, [])
+                        choice = None
+                        if len(models) > 1:
+                            model_opts = [
+                                '{}-{}-{}'.format(
+                                    x['code'], x['name'], x['date'])
+                                for x in models]
+                            choice = prt.prompt(
+                                'select_model_walkers', kind='select',
+                                message=True, options=model_opts)
+                            choice = model_opts.index(choice)
+                        elif len(models) == 1:
+                            choice = 0
+
+                        if choice is not None:
+                            walker_data.extend([
+                                x[REALIZATION.PARAMETERS]
+                                for x in models[choice][
+                                    MODEL.REALIZATIONS]])
+
+                        if not len(walker_data):
+                            prt.message('no_walker_data')
+                    else:
+                        prt.message('no_walker_data')
+                        if offline:
+                            prt.message('omit_offline')
+                        raise RuntimeError
+
+                for rank in range(1, pool.size + 1):
+                    pool.comm.send(walker_data, dest=rank, tag=3)
+            else:
+                walker_data = pool.comm.recv(source=0, tag=3)
+                pool.wait()
+
+            if pool.is_master():
+                pool.close()
 
         self._event_name = 'Batch'
         self._event_catalog = ''
@@ -352,50 +422,10 @@ class Fitter(object):
                         pool.comm.send(self._event_name, dest=rank, tag=0)
                         pool.comm.send(path, dest=rank, tag=1)
                         pool.comm.send(data, dest=rank, tag=2)
-
-                    if len(walker_paths):
-                        walker_path = walker_paths[ei]
-                        if os.path.exists(walker_path):
-                            with open(walker_path, 'r') as f:
-                                all_walker_data = json.load(
-                                    f, object_pairs_hook=OrderedDict)
-                            prt.message('walker_file', [
-                                        walker_path], wrapped=True)
-                            models = all_walker_data.get(ENTRY.MODELS, [])
-                            choice = None
-                            if len(models) > 1:
-                                model_opts = [
-                                    '{}-{}-{}'.format(
-                                        x['code'], x['name'], x['date'])
-                                    for x in models]
-                                choice = prt.prompt(
-                                    'select_model_walkers', kind='select',
-                                    message=True, options=model_opts)
-                                choice = model_opts.index(choice)
-                            elif len(models) == 1:
-                                choice = 0
-
-                            if choice is not None:
-                                walker_data = [
-                                    x[REALIZATION.PARAMETERS]
-                                    for x in models[choice][
-                                        MODEL.REALIZATIONS]]
-
-                            if not len(walker_data):
-                                prt.message('no_walker_data')
-                        else:
-                            prt.message('no_walker_data')
-                            if offline:
-                                prt.message('omit_offline')
-                            raise RuntimeError
-
-                    for rank in range(1, pool.size + 1):
-                        pool.comm.send(walker_data, dest=rank, tag=3)
                 else:
                     self._event_name = pool.comm.recv(source=0, tag=0)
                     path = pool.comm.recv(source=0, tag=1)
                     data = pool.comm.recv(source=0, tag=2)
-                    walker_data = pool.comm.recv(source=0, tag=3)
                     pool.wait()
 
                 self._event_path = path
@@ -483,7 +513,8 @@ class Fitter(object):
                             upload=upload,
                             upload_token=upload_token,
                             check_upload_quality=check_upload_quality,
-                            run_until_converged=run_until_converged,
+                            convergence_type=convergence_type,
+                            convergence_criteria=convergence_criteria,
                             save_full_chain=save_full_chain,
                             extra_outputs=extra_outputs)
                         if return_fits:
@@ -530,7 +561,8 @@ class Fitter(object):
         """Load the data for the specified event."""
         prt = self._printer
 
-        prt.message('loading_data', inline=True)
+        if pool.is_master():
+            prt.message('loading_data', inline=True)
 
         self._walker_data = walker_data
         fixed_parameters = []
@@ -581,7 +613,8 @@ class Fitter(object):
 
         self._model.exchange_requests()
 
-        prt.message('finding_bands', inline=True)
+        if pool.is_master():
+            prt.message('finding_bands', inline=True)
 
         # Run through once to set all inits.
         for root in ['output', 'objective']:
@@ -689,7 +722,8 @@ class Fitter(object):
                  upload=False,
                  upload_token='',
                  check_upload_quality=True,
-                 run_until_converged=False,
+                 convergence_type='psrf',
+                 convergence_criteria=None,
                  save_full_chain=False,
                  extra_outputs=[]):
         """Fit the data for a given event.
@@ -825,12 +859,14 @@ class Fitter(object):
                     ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
                 st = time.time()
             while (iterations > 0 and (
-                    run_until_converged or ici < len(iter_arr))):
+                    convergence_criteria is not None or ici < len(iter_arr))):
                 slr = int(np.round(sli))
-                ic = max_chunk if run_until_converged else iter_arr[ici]
+                ic = (max_chunk if convergence_criteria is not None else
+                      iter_arr[ici])
                 if exceeded_walltime:
                     break
-                if run_until_converged and converged and emi > iterations:
+                if (convergence_criteria is not None and converged and
+                        emi > iterations):
                     break
                 for li, (
                         p, lnprob, lnlike) in enumerate(
@@ -889,7 +925,12 @@ class Fitter(object):
                                     tar_x = np.array(
                                         p[np.random.randint(ntemps)][
                                             np.random.randint(nwalkers)])
-                                    new_x = np.clip(tar_x + dxx, 0.0, 1.0)
+                                    # Reflect if out of bounds.
+                                    new_x = np.clip(np.where(
+                                        np.where(tar_x + dxx < 1.0,
+                                                 tar_x + dxx,
+                                                 tar_x - dxx) > 0.0,
+                                        tar_x + dxx, tar_x - dxx), 0.0, 1.0)
                                     new_like = likelihood(new_x)
                                     new_prob = new_like + prior(new_x)
                                     if new_prob > wprob or np.isnan(wprob):
@@ -942,6 +983,17 @@ class Fitter(object):
                                 break
                         acor = [aacort, aa, ams]
 
+                        actc = int(np.ceil(aacort / sli))
+                        actn = np.int(float(emi - ams) / actc)
+
+                        if (convergence_type == 'acor' and
+                            convergence_criteria is not None and
+                            actn >= convergence_criteria and
+                                emi > iterations):
+                            prt.message('converged')
+                            converged = True
+                            break
+
                     # Calculate the PSRF (Gelman-Rubin statistic).
                     if li > 1 and emi > self._burn_in + 2:
                         cur_chain = (np.concatenate(
@@ -967,13 +1019,15 @@ class Fitter(object):
                         if np.isnan(psrf):
                             psrf = np.inf
 
-                        if (run_until_converged and psrf < 1.1 and
+                        if (convergence_type == 'psrf' and
+                            convergence_criteria is not None and
+                            psrf < convergence_criteria and
                                 emi > iterations):
                             prt.message('converged')
                             converged = True
                             break
 
-                    if run_until_converged:
+                    if convergence_criteria is not None:
                         self._emcee_est_t = -1.0
                     else:
                         self._emcee_est_t = float(
@@ -989,10 +1043,17 @@ class Fitter(object):
 
                     scores = [np.array(x) for x in lnprob]
                     if emim1 % kmat_chunk == 0:
-                        kmat = model.run_stack(
+                        sout = model.run_stack(
                             p[np.unravel_index(
                                 np.argmax(lnprob), lnprob.shape)],
-                            root='objective')['kmat']
+                            root='objective')
+                        kmat = sout.get('kmat', None)
+                        kdiag = sout.get('kdiagonal', None)
+                        variance = sout.get('variance')
+                        if kdiag is not None and kmat is not None:
+                            kmat[np.diag_indices_from(kmat)] += kdiag
+                        elif kdiag is not None and kmat is None:
+                            kmat = np.diag(kdiag + variance)
                     prt.status(
                         desc='fracking' if frack_now else
                         ('burning' if emi < self._burn_in else 'walking'),
@@ -1000,11 +1061,14 @@ class Fitter(object):
                         kmat=kmat,
                         accepts=accepts,
                         progress=[emi, None if
-                                  run_until_converged else iterations],
+                                  convergence_criteria is not None else
+                                  iterations],
                         acor=acor,
                         psrf=[psrf, self._burn_in],
                         messages=messages,
-                        make_space=emim1 == 0)
+                        make_space=emim1 == 0,
+                        convergence_type=convergence_type,
+                        convergence_criteria=convergence_criteria)
 
                     if s_exception:
                         break
@@ -1056,7 +1120,10 @@ class Fitter(object):
                         kmat=kmat,
                         fracking=True,
                         progress=[emi, None if
-                                  run_until_converged else iterations])
+                                  convergence_criteria is not None else
+                                  iterations],
+                        convergence_type=convergence_type,
+                        convergence_criteria=convergence_criteria)
                     tft = tft + time.time() - sft
                     if s_exception:
                         break
@@ -1133,17 +1200,29 @@ class Fitter(object):
         else:
             entry = Entry(name=self._event_name)
 
-        if upload:
-            uentry = Entry(name=self._event_name)
-            usource = uentry.add_source(name='MOSFiT paper')
-            data_keys = set()
-            for task in model._call_stack:
-                if model._call_stack[task]['kind'] == 'data':
-                    data_keys.update(
-                        list(model._call_stack[task].get('keys', {}).keys()))
-            entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
+        uentry = Entry(name=self._event_name)
+        data_keys = set()
+        for task in model._call_stack:
+            if model._call_stack[task]['kind'] == 'data':
+                data_keys.update(
+                    list(model._call_stack[task].get('keys', {}).keys()))
+        entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
 
-        source = entry.add_source(name='MOSFiT paper')
+        # Accumulate all the sources and add them to each entry.
+        sources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                sources.append(entry.add_source(**ref))
+        sources.append(entry.add_source(**self._DEFAULT_SOURCE))
+        source = ','.join(sources)
+
+        usources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                usources.append(uentry.add_source(**ref))
+        usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
+        usource = ','.join(usources)
+
         model_setup = OrderedDict()
         for ti, task in enumerate(model._call_stack):
             task_copy = deepcopy(model._call_stack[task])
@@ -1172,7 +1251,6 @@ class Fitter(object):
                     }
                 )
             if acor and aacort > 0:
-                actc = int(np.ceil(aacort))
                 acortimes = '<' if aa < self._MAX_ACORC else ''
                 acortimes += str(np.int(float(emi - ams) / actc))
                 modeldict[MODEL.CONVERGENCE].append(
@@ -1183,17 +1261,19 @@ class Fitter(object):
                 )
             modeldict[MODEL.STEPS] = str(emi)
 
-        if upload:
-            umodeldict = deepcopy(modeldict)
-            umodeldict[MODEL.SOURCE] = usource
-            modelhash = get_model_hash(
-                umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
-            umodelnum = uentry.add_model(**umodeldict)
-            if check_upload_quality:
-                if WAIC is None or WAIC < 0.0:
+        umodeldict = deepcopy(modeldict)
+        umodeldict[MODEL.SOURCE] = usource
+        modelhash = get_model_hash(
+            umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
+        umodelnum = uentry.add_model(**umodeldict)
+        if check_upload_quality:
+            if WAIC is None:
+                upload_model = False
+            elif WAIC is not None and WAIC < 0.0:
+                if upload:
                     prt.message('no_ul_waic', ['' if WAIC is None
                                                else pretty_num(WAIC)])
-                    upload_model = False
+                upload_model = False
 
         modelnum = entry.add_model(**modeldict)
 
@@ -1211,7 +1291,6 @@ class Fitter(object):
         # upon the value of acort (the autocorrelation timescale).
         if acor and aacort > 0 and aa == self._MAX_ACORC:
             actc0 = int(np.ceil(aacort))
-            actc = int(np.ceil(aacort / sli))
             for i in range(1, np.int(float(emi - ams) / actc0)):
                 pout = np.concatenate(
                     (all_chain[:, :, -i * actc, :], pout), axis=1)
@@ -1224,13 +1303,16 @@ class Fitter(object):
         for xi, x in enumerate(pout):
             for yi, y in enumerate(pout[xi]):
                 # Only produce LCs for end walker state.
+                wcnt = xi * nwalkers + yi
+                if wcnt > 0:
+                    prt.message('outputting_walker', [
+                        wcnt, nwalkers * ntemps], inline=True)
                 if yi <= nwalkers:
                     output = model.run_stack(y, root='output')
                     if extra_outputs:
                         for key in extra_outputs:
                             new_val = output.get(key, [])
-                            if type(new_val).__module__ == 'numpy':
-                                new_val = new_val.tolist()
+                            new_val = all_to_list(new_val)
                             extras.setdefault(key, []).append(new_val)
                     for i in range(len(output['times'])):
                         if not np.isfinite(output['model_observations'][i]):
@@ -1246,18 +1328,60 @@ class Fitter(object):
                             photodict[PHOTOMETRY.BAND] = output['bands'][i]
                             photodict[PHOTOMETRY.MAGNITUDE] = output[
                                 'model_observations'][i]
+                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                                'model_variances'][i]
                         if output['observation_types'][i] == 'fluxdensity':
                             photodict[PHOTOMETRY.FREQUENCY] = output[
                                 'frequencies'][i] * frequency_unit('GHz')
                             photodict[PHOTOMETRY.FLUX_DENSITY] = output[
                                 'model_observations'][
                                     i] * flux_density_unit('µJy')
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_FLUX_DENSITY] = (
+                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.FLUX_DENSITY]) -
+                                            output['model_variances'][
+                                                i] / 2.5)) *
+                                    flux_density_unit('µJy'))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.FLUX_DENSITY]) +
+                                    output['model_variances'][i] / 2.5) *
+                                    flux_density_unit('µJy') -
+                                    photodict[PHOTOMETRY.FLUX_DENSITY])
                             photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                             photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
                         if output['observation_types'][i] == 'countrate':
                             photodict[PHOTOMETRY.COUNT_RATE] = output[
                                 'model_observations'][i]
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_COUNT_RATE] = (
+                                    photodict[PHOTOMETRY.COUNT_RATE] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.COUNT_RATE]) -
+                                            output['model_variances'][
+                                                i] / 2.5)))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_COUNT_RATE] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.COUNT_RATE]) +
+                                    output['model_variances'][i] / 2.5) -
+                                    photodict[PHOTOMETRY.COUNT_RATE])
                             photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
+                        if ('model_upper_limits' in output and
+                                output['model_upper_limits'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
+                                'model_upper_limits'][i])
+                        if self._limiting_magnitude is not None:
+                            photodict[PHOTOMETRY.SIMULATED] = True
                         if 'telescopes' in output and output['telescopes'][i]:
                             photodict[PHOTOMETRY.TELESCOPE] = output[
                                 'telescopes'][i]
@@ -1277,13 +1401,12 @@ class Fitter(object):
                             compare_to_existing=False, check_for_dupes=False,
                             **photodict)
 
-                        if upload_model:
-                            uphotodict = deepcopy(photodict)
-                            uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                            uentry.add_photometry(
-                                compare_to_existing=False,
-                                check_for_dupes=False,
-                                **uphotodict)
+                        uphotodict = deepcopy(photodict)
+                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                        uentry.add_photometry(
+                            compare_to_existing=False,
+                            check_for_dupes=False,
+                            **uphotodict)
                 else:
                     output = model.run_stack(y, root='objective')
 
@@ -1318,18 +1441,23 @@ class Fitter(object):
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
-                if upload_model:
-                    uentry[ENTRY.MODELS][0].add_realization(**urealdict)
+                uentry[ENTRY.MODELS][0].add_realization(**urealdict)
                 ri = ri + 1
+        prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
-        oentry = entry._ordered(entry)
+        oentry = {self._event_name: entry._ordered(entry)}
+        uentry.sanitize()
+        ouentry = {self._event_name: uentry._ordered(uentry)}
+
+        uname = '_'.join(
+            [self._event_name, entryhash, modelhash])
 
         if not os.path.exists(model.MODEL_OUTPUT_DIR):
             os.makedirs(model.MODEL_OUTPUT_DIR)
 
         if write:
-            prt.message('writing_model')
+            prt.message('writing_complete')
             with open_atomic(
                     os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
                     'w') as flast, open_atomic(os.path.join(
@@ -1365,18 +1493,24 @@ class Fitter(object):
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
                     entabbed_json_dump(extras, feven, separators=(',', ':'))
 
+            prt.message('writing_model')
+            with open_atomic(os.path.join(
+                model.MODEL_OUTPUT_DIR, 'upload.json'),
+                    'w') as flast, open_atomic(os.path.join(
+                        model.MODEL_OUTPUT_DIR,
+                        uname + (('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
+                entabbed_json_dump(ouentry, flast, separators=(',', ':'))
+                entabbed_json_dump(ouentry, feven, separators=(',', ':'))
+
         if upload_model:
-            uentry.sanitize()
             prt.message('ul_fit', [entryhash, modelhash])
-            upath = '/' + '_'.join(
-                [self._event_name, entryhash, modelhash]) + '.json'
-            ouentry = {self._event_name: uentry._ordered(uentry)}
             upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
             try:
                 dbx = dropbox.Dropbox(upload_token)
                 dbx.files_upload(
                     upayload.encode(),
-                    upath,
+                    '/' + uname + '.json',
                     mode=dropbox.files.WriteMode.overwrite)
                 prt.message('ul_complete')
             except Exception:
@@ -1402,7 +1536,10 @@ class Fitter(object):
                 text = prt.message('ul_devent', [ce[0]], prt=False)
                 ul_devent = prt.prompt(text, kind='bool', message=False)
                 if ul_devent:
-                    dpath = '/' + ce[0] + '.json'
+                    dpath = '/' + slugify(
+                        ce[0] + '_' + dentry[ENTRY.SOURCES][0].get(
+                            SOURCE.BIBCODE, dentry[ENTRY.SOURCES][0].get(
+                                SOURCE.NAME, 'NOSOURCE'))) + '.json'
                     try:
                         dbx = dropbox.Dropbox(upload_token)
                         dbx.files_upload(
