@@ -32,6 +32,7 @@ class Transient(Module):
                  limit_fitting_mjds=False,
                  exclude_bands=[],
                  exclude_instruments=[],
+                 exclude_sources=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -112,6 +113,11 @@ class Transient(Module):
                             if (entry.get(x, '') in exclude_instruments and
                                 (not exclude_bands or
                                  entry.get('band', '') in exclude_bands)):
+                                skip_entry = True
+                                break
+                        if (exclude_sources is not False and
+                                x == 'source'):
+                            if (entry.get(x, '') in exclude_sources):
                                 skip_entry = True
                                 break
                     if skip_entry:
