@@ -48,7 +48,7 @@ class AllTimes(Array):
         else:
             for key in list(
                     set(self._obs_keys) - set([
-                        'frequencies', 'u_frequencies', 'observed'])):
+                        'frequencies', 'observed'])):
                 setattr(self, '_' + key, kwargs[key])
             self._frequencies = np.array([
                 x / frequency_unit(y) if x is not None else None
