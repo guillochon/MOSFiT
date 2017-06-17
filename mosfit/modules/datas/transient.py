@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 from astrocats.catalog.utils import is_number
+from astrocats.catalog.source import SOURCE
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
@@ -47,6 +48,18 @@ class Transient(Module):
         name = list(self._all_data.keys())[0]
         self._data['name'] = name
         numeric_keys = set()
+
+        # Construct some source dictionaries for exclusion rules
+        src_dict = OrderedDict()
+        sources = self._all_data[name].get('sources', [])
+        for src in sources:
+            if SOURCE.BIBCODE in src:
+                src_dict[src[SOURCE.ALIAS]] = src[SOURCE.BIBCODE]
+            if SOURCE.ARXIVID in src:
+                src_dict[src[SOURCE.ALIAS]] = src[SOURCE.ARXIVID]
+            if SOURCE.NAME in src:
+                src_dict[src[SOURCE.ALIAS]] = src[SOURCE.NAME]
+
         for key in self._keys:
             if key not in self._all_data[name]:
                 continue
@@ -117,7 +130,11 @@ class Transient(Module):
                                 break
                         if (exclude_sources is not False and
                                 x == 'source'):
-                            if (entry.get(x, '') in exclude_sources):
+                            val = entry.get(x, '')
+                            if (any([x in exclude_sources
+                                     for x in val.split(',')])
+                                or any([src_dict.get(x, '') in exclude_sources
+                                        for x in val.split(',')])):
                                 skip_entry = True
                                 break
                     if skip_entry:
