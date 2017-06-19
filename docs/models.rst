@@ -107,6 +107,40 @@ Now, change the range of allowed neutron star masses to something else:
 
 **Congratulations!** You have just modified your first MOSFiT model. It should be noted that even this very minor change, which affects the range of a single parameter, would generate a completely different model hash than the default model, distinguishing it from any other models that might have been uploaded by other users using the default settings.
 
+You can also use more complex priors within the same file. For example:
+
+.. code-block:: json
+
+    {
+    "Mns":{
+        "class":"gaussian",
+        "mu":1.4,
+        "sigma":0.4,
+        "min_value":0.1,
+        "max_value":3.0,
+        "log":false
+    },
+    "Bfield":{
+        "class":"powerlaw",
+        "alpha":3.0,
+        "min_value": 0.1,
+        "max_value": 10.0,
+        "log":false
+    },
+    }
+
+A list of available priors is below.
+
++--------------+--------------------------------------------+-----------------------------+
+| Prior name   | Equation                                   | Parameters                  |
++==============+============================================+=============================+
+| ``gaussian`` | $\Pi\sim \exp\frac{-(x-\mu)^2}{2\sigma^2}$ | $\mu$, $\sigma$, min, max   |
++--------------+--------------------------------------------+-----------------------------+
+| ``powerlaw`` | $\Pi\sim x^-\alpha$                        | $\alpha$, min, max          |
++--------------+--------------------------------------------+-----------------------------+
+
+
+
 .. _swapping:
 
 Swapping modules
