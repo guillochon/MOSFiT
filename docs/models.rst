@@ -294,6 +294,7 @@ Copy one of the existing models as a starting point:
 
     cp -R models/slsn models/my_model_that_explains_everything
 
+
  Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
  First, the ``mode_name.json`` file should be edited to include your model's:
