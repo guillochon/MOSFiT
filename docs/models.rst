@@ -294,20 +294,21 @@ Copy one of the existing models as a starting point:
 
     cp -R models/slsn models/my_model_that_explains_everything
 
- Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
- First, the ``mode_name.json`` file should be edited to include your model's
+Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
- Parameters
- Engine(s)
- Diffusion prescription
- Photosphere prescription
- SED prescription
- The photometry module
+First, the ``mode_name.json`` file should be edited to include your model's
 
- Optionally, your model file can also include an extinction prescription.
+-Parameters
+-Engine(s)
+-Diffusion prescription
+-Photosphere prescription
+-SED prescription
+-The photometry module
 
- Then, you need to edit the ``parameters.json`` to include the priors on all ofyour model parameters. If no prior is specified, the variable will be set to a constant.
+Optionally, your model file can also include an extinction prescription.
+
+Then, you need to edit the ``parameters.json`` to include the priors on all ofyour model parameters. If no prior is specified, the variable will be set to a constant.
 
 You can invoke the model using:
 
