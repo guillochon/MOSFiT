@@ -292,7 +292,7 @@ Copy one of the existing models as a starting point:
 
 .. code-block:: bash
 
-	cp -R models/slsn models/my_model_that_explains_everything
+    cp -R models/slsn models/my_model_that_explains_everything
 
  Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
