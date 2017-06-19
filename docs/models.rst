@@ -296,7 +296,7 @@ Copy one of the existing models as a starting point:
 
  Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
- First, the ``mode_name.json`` file should be edited to include your model's:
+ First, the ``mode_name.json`` file should be edited to include your model's
 
  *Parameters
  *Engine(s)
