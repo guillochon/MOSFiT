@@ -292,7 +292,7 @@ Copy one of the existing models as a starting point:
 
 .. code-block:: bash
 
-    cp -R models/slsn models/my_model_that_explains_everything
+	cp -R models/slsn models/my_model_that_explains_everything
 
  Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
@@ -311,14 +311,14 @@ Copy one of the existing models as a starting point:
 
 You can invoke the model using:
 
-.. highlight:: bash
+.. code-block:: bash
 
     python -m my_model_that_explains_everything
 
 
 If your model requires a new engine, you can create this engine by again copying an existing engine:
 
-.. highlight:: bash
+.. code-block:: bash
 
 	cp modules/engines/nickelcobalt.py my_new_engine.py
 
