@@ -299,12 +299,12 @@ Inside this directory are two files: a ``model_name.json`` file and a ``paramete
 
 First, the ``mode_name.json`` file should be edited to include your model's
 
--Parameters
--Engine(s)
--Diffusion prescription
--Photosphere prescription
--SED prescription
--The photometry module
+- Parameters
+- Engine(s)
+- Diffusion prescription
+- Photosphere prescription
+- SED prescription
+- The photometry module
 
 Optionally, your model file can also include an extinction prescription.
 
