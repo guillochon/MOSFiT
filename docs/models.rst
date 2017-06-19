@@ -291,7 +291,6 @@ If you go this route, we highly recommend that you `fork MOSFiT <https://github.
 Copy one of the existing models as a starting point:
 
 .. code-block:: bash
-
     cp -R models/slsn models/my_model_that_explains_everything
 
 
@@ -313,7 +312,6 @@ Copy one of the existing models as a starting point:
 You can invoke the model using:
 
 .. code-block:: bash
-
     python -m my_model_that_explains_everything
 
 
