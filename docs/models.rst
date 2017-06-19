@@ -119,25 +119,19 @@ You can also use more complex priors within the same file. For example:
         "min_value":0.1,
         "max_value":3.0,
         "log":false
-    },
-    "Bfield":{
-        "class":"powerlaw",
-        "alpha":3.0,
-        "min_value": 0.1,
-        "max_value": 10.0,
-        "log":false
-    },
+    }
     }
 
 A list of available priors is below.
 
-+--------------+---------------------------------------------------+-----------------------------+
-| Prior name   | Equation                                          | Parameters                  |
-+==============+===================================================+=============================+
-| ``gaussian`` |  :math:'\Pi\sim \exp\frac{-(x-\mu)^2}{2\sigma^2}' | $\mu$, $\sigma$, min, max   |
-+--------------+---------------------------------------------------+-----------------------------+
-| ``powerlaw`` | $\Pi\sim x^{-\alpha}$                             | $\alpha$, min, max          |
-+--------------+---------------------------------------------------+-----------------------------+
+
++--------------+----------------------------------------------------------------+-----------------------------------------+
+| Prior name   | Equation                                                       | Parameters                              |
++==============+================================================================+=========================================+
+| ``gaussian`` |  :math:`\Pi\sim \exp\left(\frac{-(x-\mu)^2}{2\sigma^2}\right)` | :math:`\mu`, :math:`\sigma`, min, max   |
++--------------+----------------------------------------------------------------+-----------------------------------------+
+| ``powerlaw`` | :math:`\Pi\sim x^{-\alpha}`                                    | :math:`\alpha`, min, max                |
++--------------+----------------------------------------------------------------+-----------------------------------------+
 
 
 
@@ -297,7 +291,7 @@ Copy one of the existing models as a starting point:
 
 Inside this directory are two files: a ``model_name.json`` file and a ``parameters.json`` file. We must edit both files to run our new model.
 
-First, the ``mode_name.json`` file should be edited to include your model's
+First, the ``model_name.json`` file should be edited to include your model's:
 
 - Parameters
 - Engine(s)
