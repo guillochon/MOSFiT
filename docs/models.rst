@@ -311,14 +311,14 @@ Copy one of the existing models as a starting point:
 
 You can invoke the model using:
 
-.. code-block:: bash
+.. highlight:: bash
 
     python -m my_model_that_explains_everything
 
 
 If your model requires a new engine, you can create this engine by again copying an existing engine:
 
-.. code-block:: bash
+.. highlight:: bash
 
 	cp modules/engines/nickelcobalt.py my_new_engine.py
 
