@@ -5,7 +5,7 @@ import re
 
 from setuptools import find_packages, setup
 
-with open(os.path.join('mosfit', 'requirements.txt')) as f:
+with open('requirements.txt') as f:
     required = f.read().splitlines()
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
