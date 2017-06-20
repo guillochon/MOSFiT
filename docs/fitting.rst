@@ -59,7 +59,15 @@ When initializing, walkers are drawn randomly from the prior distributions of al
 Restricting the data used
 =========================
 
-By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, and specific photometric bands using the ``--exclude-bands`` option. To exclude times from a fit, the user can specify a range of MJDs that will be included using the ``-L`` option, e.g.:
+By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, specific photometric bands using the ``--exclude-bands`` option, and specific sources of data (e.g. papers or surveys) using ``--exclude-sources``. The source is specified using the source ID number, visible on the Open Astronomy Catalog page for each transient as well as in the input file. For example
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn --exclude-sources 2
+
+will exclude all data from the paper that has the source ID number 2 on the Open Astronomy Catalog page.
+
+To exclude times from a fit, the user can specify a range of MJDs that will be included using the ``-L`` option, e.g.:
 
 .. code-block:: bash
 
