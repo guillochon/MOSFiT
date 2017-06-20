@@ -21,7 +21,7 @@ class AllTimes(Array):
         super(AllTimes, self).__init__(**kwargs)
         self._obs_keys = [
             'times', 'bands', 'telescopes', 'systems', 'instruments', 'modes',
-            'bandsets', 'frequencies', 'observed']
+            'bandsets', 'frequencies', 'u_frequencies', 'observed']
         self._okeys = [i for i in self._obs_keys if i not in ['observed']]
         for key in self._obs_keys:
             setattr(self, '_' + key, [])
@@ -40,12 +40,15 @@ class AllTimes(Array):
                       [[False for x in range(len(kwargs['extra_times']))]]))))
             obslist.sort()
 
-            self._all_observations = np.vstack(obslist).T
+            self._all_observations = np.concatenate([
+                np.atleast_2d(np.array(x, dtype=object))
+                for x in obslist], axis=0).T
             for ki, key in enumerate(self._obs_keys):
                 setattr(self, '_' + key, self._all_observations[ki])
         else:
             for key in list(
-                    set(self._obs_keys) - set(['frequencies', 'observed'])):
+                    set(self._obs_keys) - set([
+                        'frequencies', 'observed'])):
                 setattr(self, '_' + key, kwargs[key])
             self._frequencies = np.array([
                 x / frequency_unit(y) if x is not None else None
@@ -64,7 +67,8 @@ class AllTimes(Array):
                 (self._photometry.find_band_index(
                     b, telescope=t, instrument=i, mode=m, bandset=bs, system=s)
                  if f is None else -1)
-                for ti, b, t, s, i, m, bs, f, o in zip(*self._all_observations)
+                for ti, b, t, s, i, m, bs, f, uf, o
+                in zip(*self._all_observations)
             ])
             self._observation_types = np.array([
                 self._photometry._band_kinds[bi] if bi >= 0 else

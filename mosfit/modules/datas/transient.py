@@ -32,6 +32,7 @@ class Transient(Module):
                  limit_fitting_mjds=False,
                  exclude_bands=[],
                  exclude_instruments=[],
+                 exclude_sources=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -114,6 +115,11 @@ class Transient(Module):
                                  entry.get('band', '') in exclude_bands)):
                                 skip_entry = True
                                 break
+                        if (exclude_sources is not False and
+                                x == 'source'):
+                            if (entry.get(x, '') in exclude_sources):
+                                skip_entry = True
+                                break
                     if skip_entry:
                         continue
 
@@ -171,7 +177,7 @@ class Transient(Module):
                 zip(*(self._data['telescopes'], self._data['systems'],
                       self._data['modes'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'])))
+                          'frequencies'], self._data['u_frequencies'])))
             if len(band_list):
                 b_teles = band_telescopes if len(band_telescopes) == len(
                     band_list) else ([band_telescopes[0] for x in band_list]
@@ -220,7 +226,8 @@ class Transient(Module):
                     self._data['times'], self._data['telescopes'],
                     self._data['systems'], self._data['modes'],
                     self._data['instruments'], self._data['bandsets'],
-                    self._data['bands'], self._data['frequencies'])))
+                    self._data['bands'], self._data['frequencies'],
+                    self._data['u_frequencies'])))
 
             obslist = []
             for t in alltimes:
@@ -235,8 +242,8 @@ class Transient(Module):
                 (self._data['extra_times'], self._data['extra_telescopes'],
                  self._data['extra_systems'], self._data['extra_modes'],
                  self._data['extra_instruments'], self._data['extra_bandsets'],
-                 self._data['extra_bands'],
-                 self._data['extra_frequencies']) = zip(*obslist)
+                 self._data['extra_bands'], self._data['extra_frequencies'],
+                 self._data['extra_u_frequencies']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
             if 'upperlimits' in self._data:
