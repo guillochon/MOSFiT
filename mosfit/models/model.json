@@ -31,8 +31,7 @@
                 "host":"exclude",
                 "kcorrected":"exclude",
                 "scorrected":"exclude",
-                "realization":"exclude",
-                "source":"optional"
+                "realization":"exclude"
             },
             "ebv":{
                 "value":"optional"
