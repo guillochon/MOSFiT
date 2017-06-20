@@ -11,6 +11,6 @@ numexpr>=2.6.1
 numpy>=1.11.1
 palettable>=2.1.1
 schwimmbad>=0.2.1
-scipy>=0.18,!=0.19.0
+scipy>=0.18
 seaborn>=0.7.1
 six

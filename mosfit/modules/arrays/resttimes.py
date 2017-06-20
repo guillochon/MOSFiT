@@ -15,12 +15,11 @@ class RestTimes(Array):
         """Process module."""
         self._times = kwargs['all_times']
         self._t_explosion = kwargs[self.key('texplosion')]
-        self._z = kwargs[self.key('redshift')]
 
         outputs = OrderedDict()
         outputs['rest_times'] = np.array([
-            x / (1.0 + self._z) for x in self._times
+            x / (1.0 + kwargs['redshift']) for x in self._times
         ])
         outputs[self.key('resttexplosion')] = self._t_explosion / (
-            1.0 + self._z)
+            1.0 + kwargs[self.key('redshift')])
         return outputs
