@@ -9,7 +9,7 @@ from . import plotting  # noqa: F401
 from . import printer  # noqa: F401
 from . import utils  # noqa: F401
 
-__version__ = '0.6.4'
+__version__ = '0.7.0'
 __author__ = 'James Guillochon & Matt Nicholl'
 __license__ = 'MIT'
 
