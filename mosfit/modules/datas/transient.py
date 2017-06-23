@@ -217,10 +217,11 @@ class Transient(Module):
                                      if len(band_bandsets) else
                                      ['' for x in band_list])
                 b_freqs = [None for x in band_list]
+                b_u_freqs = ['' for x in band_list]
                 obs.extend(
                     list(
                         zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
-                              band_list, b_freqs))))
+                              band_list, b_freqs, b_u_freqs))))
 
             uniqueobs = []
             for o in obs:
