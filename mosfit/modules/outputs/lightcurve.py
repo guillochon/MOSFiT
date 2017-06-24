@@ -74,13 +74,18 @@ class LightCurve(Output):
                  for x in ['kmat', 'kfmat', 'koamat', 'kaomat']]) and not
             any([kwargs[x] is None
                  for x in ['kmat', 'kfmat', 'koamat', 'kaomat']])):
-            ikmat = np.linalg.inv(
-                kwargs['kmat'] + np.diag(kwargs['kdiagonal']))
-            kfmatd = np.diagonal(kwargs['kfmat'])
-            koamat = kwargs['koamat']
-            kaomat = kwargs['kaomat']
-            output['model_variances'] = np.sqrt(kfmatd - np.diagonal(np.matmul(
-                np.matmul(kaomat, ikmat), koamat)))
+            kmat = kwargs['kmat'] + np.diag(kwargs['kdiagonal'])
+            if np.linalg.cond(kmat) > 1e10:
+                output['model_variances'] = np.full(
+                    len(output['model_observations']), kwargs['variance'])
+            else:
+                ikmat = np.linalg.inv(kmat)
+                kfmatd = np.diagonal(kwargs['kfmat'])
+                koamat = kwargs['koamat']
+                kaomat = kwargs['kaomat']
+                output['model_variances'] = np.sqrt(
+                    kfmatd - np.diagonal(np.matmul(np.matmul(
+                        kaomat, ikmat), koamat)))
         else:
             output['model_variances'] = np.full(
                 len(output['model_observations']), kwargs['abandvs'])
