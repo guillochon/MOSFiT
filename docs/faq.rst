@@ -14,7 +14,7 @@ We highly recommend using ``conda`` to install ``MOSFiT`` rather than ``pip``, a
 I installed MOSFiT via conda and MOSFiT won't run?
 --------------------------------------------------
 
-If ``MOSFiT`` is the first ``conda`` program you've used, and you previously used your system's built-in Python install, your shell environment may still be set up for your old Python setup, which can cause problems both for ``MOSFiT`` and your old Python programs. One common issue is that your ``PYTHON_PATH`` environment variable might be set to your build-in Python's install location, this will supercede conda's paths and potentially cause issues. Edit your `.bashrc` or `.profile` file to remove any ``PYTHON_PATH`` variable declarations, this will prevent path conflicts.
+If ``MOSFiT`` is the first ``conda`` program you've used, and you previously used your system's built-in Python install, your shell environment may still be set up for your old Python setup, which can cause problems both for ``MOSFiT`` and your old Python programs. One common issue is that your ``PYTHON_PATH`` environment variable might be set to your build-in Python's install location, this will supercede conda's paths and potentially cause issues. Edit your ``.bashrc`` or ``.profile`` file to remove any ``PYTHON_PATH`` variable declarations, this will prevent path conflicts.
 
 --------------------------------------
 The data MOSFiT is using is incorrect?
