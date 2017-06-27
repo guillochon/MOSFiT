@@ -4,15 +4,21 @@
 Frequently Asked Questions
 ==========================
 
---------------------------------------------------
-MOSFiT or one of its requirements isn't installing
---------------------------------------------------
+---------------------------------------------------
+MOSFiT or one of its requirements isn't installing?
+---------------------------------------------------
 
 We highly recommend using ``conda`` to install ``MOSFiT`` rather than ``pip``, as ``conda`` will skip some compilation steps that are common sources of error in the install process. If you are still having issues installing ``MOSFiT`` even with ``conda``, please ask us directly in the `MOSFiT Slack channel <https://astrochats.slack.com/messages/mosfit>`_.
 
--------------------------------------
-The data MOSFiT is using is incorrect
--------------------------------------
+--------------------------------------------------
+I installed MOSFiT via conda and MOSFiT won't run?
+--------------------------------------------------
+
+If ``MOSFiT`` is the first ``conda`` program you've used, and you previously used your system's built-in Python install, your shell environment may still be set up for your old Python setup, which can cause problems both for ``MOSFiT`` and your old Python programs. One common issue is that your ``PYTHON_PATH`` environment variable might be set to your build-in Python's install location, this will supercede conda's paths and potentially cause issues. Edit your `.bashrc` or `.profile` file to remove any ``PYTHON_PATH`` variable declarations, this will prevent path conflicts.
+
+--------------------------------------
+The data MOSFiT is using is incorrect?
+--------------------------------------
 
 If private data is not provided to ``MOSFiT``, it will draw data from the Open Astronomy Catalogs (the `Open Supernova Catalog <https://sne.space>`_ and the `Open Tidal Disruption Catalog <https://tde.space>`_). These catalogs are constructed by combining data from hundreds of individual sources, any one of which could have had an issue when being imported into the OACs. If you suspect the data contained for a transient on one of these catalogs is incorrect, please open an issue on the appropriate catalog repository (links to the repositories are available on the `AstroCats homepage <https://astrocats.space>`_) and the error will be corrected ASAP.
 
