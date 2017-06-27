@@ -8,101 +8,91 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
-    "kroupainput":{
-        "kind":"parameter",
-        "value":0.0,
-        "class":"parameter",
-        "latex":"\\rm kroupa \\rm input"
-    },
-    "rvhost":{
-        "kind":"parameter",
-        "value":3.1,
-        "class":"parameter",
-        "latex":"R_{\\rm V, host}"
-    },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e21,
+        "value":1.0e18,
         "class":"parameter",
         "latex":"n_{\\rm H,host}",
         "derived_keys":"avhost"
     },
     "texplosion":{
         "kind":"parameter",
-        "value":-12.0,
+        "value":0.0,
         "class":"parameter",
-        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
+        "requests":{
+            "min_times": "transient"
+        }
     },
-    "b":{
-        "kind":"parameter",
-        "value": 0.98,
-        "class":"parameter",
-        "latex":"b\\ (\\rm scaled\\ \\beta)"
-    },
-    "Tviscous":{
+    "alpha":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"T_{\\rm viscous}"
+        "latex":"\\alpha"
     },
-    "efficiency":{
+    "beta":{
         "kind":"parameter",
-        "value":0.1,
+        "value":1.0,
         "class":"parameter",
-        "latex":"\\epsilon\\ \\rm (efficiency)"
+        "latex":"\\beta"
     },
-    "bhmass":{
+    "tpeak":{
         "kind":"parameter",
-        "value":1.78e7,
+        "value":100.0,
         "class":"parameter",
-        "latex":"M_{h} (M_{\\odot})"
+        "latex":"t_{\\rm peak}"
     },
-    "starmass":{
+    "lumscale":{
         "kind":"parameter",
-        "value":0.1,
+        "value":1.0e44,
         "class":"parameter",
-        "latex":"M_{star} (M_{\\odot})"
+        "latex":"\\L_{\\rm scale}"
     },
-    "Rph0":{
+    "kappa":{
         "kind":"parameter",
-        "value":0.8,
+        "value":0.2,
         "class":"parameter",
-        "latex": "\\rm log (R_{\\rm ph0})"
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-    "lphoto":{
-        "kind": "parameter",
-        "value": 1.5,
-        "class": "parameter",
-        "latex": "\\rm photosphere\\ \\rm  exponent\\ 'l' "
+    "mejecta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
-    "fallback":{
+    "vejecta":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "exppow":{
         "kind":"engine",
         "inputs":[
             "densetimes",
-            "bhmass",
-            "starmass",
-            "b",
-            "efficiency",
-            "texplosion",
-            "kroupainput"
+            "alpha",
+            "beta",
+            "tpeak",
+            "lumscale",
+            "texplosion"
         ]
     },
-    "viscous":{
+    "diffusion":{
         "kind":"transform",
         "inputs":[
-            "fallback",
+            "exppow",
+            "kappa",
+            "kappagamma",
+            "mejecta",
             "texplosion",
-            "Tviscous"
+            "vejecta"
         ]
     },
-    "tde_photosphere":{
+    "densecore":{
         "kind":"photosphere",
         "inputs":[
-            "bhmass",
-            "starmass",
-            "lphoto",
-            "Rph0",
-            "viscous"
+            "texplosion",
+            "diffusion"
         ]
     },
     "blackbody":{
@@ -110,7 +100,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "tde_photosphere"
+            "densecore"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -133,20 +123,6 @@
         "inputs":[
             "losextinction",
             "lumdist"
-        ]
-    },
-    "tde_constraints":{
-        "kind":"constraint",
-        "inputs":[
-            "bhmass",
-            "tde_photosphere"
-        ]
-    },
-    "likelihood":{
-        "kind":"objective",
-        "inputs":[
-            "diagonal",
-            "tde_constraints"
         ]
     }
 }

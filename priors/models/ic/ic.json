@@ -1,0 +1,154 @@
+{
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "fnickel":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"f_{\\rm Ni}"
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1.0e18,
+        "class":"parameter",
+        "latex":"n_{\\rm H,host}",
+        "derived_keys":"avhost"
+    },
+    "texplosion":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
+        "requests":{
+            "min_times": "transient"
+        }
+    },
+    "temperature":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"T_{\\min}\\,{\\rm (K)}"
+    },
+    "kappa":{
+        "kind":"parameter",
+        "value":0.2,
+        "class":"parameter",
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "kappagamma":{
+        "kind":"parameter",
+        "value":10.0,
+        "class":"parameter",
+        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "mejecta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
+    },
+    "vejecta":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "radiussource":{
+        "kind":"parameter",
+        "value":1.0e13,
+        "class":"parameter"
+    },
+    "f0":{
+        "kind":"parameter",
+        "value":1.0e-26,
+        "class":"parameter"
+    },
+    "p":{
+        "kind":"parameter",
+        "value":2.5,
+        "class":"parameter"
+    },
+    "numax":{
+        "kind":"parameter",
+        "value":1.0e9,
+        "class":"parameter"
+    },
+    "nickelcobalt":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",
+            "mejecta",
+            "fnickel",
+            "texplosion"
+        ]
+    },
+    "diffusion":{
+        "kind":"transform",
+        "inputs":[
+            "nickelcobalt",
+            "kappa",
+            "kappagamma",
+            "mejecta",
+            "texplosion",
+            "vejecta"
+        ]
+    },
+    "temperature_floor":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion",
+            "temperature"
+        ]
+    },
+    "blackbody":{
+        "kind":"sed",
+        "inputs":[
+            "texplosion",
+            "redshift",
+            "temperature_floor"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "synchrotron":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody",
+            "radiussource",
+            "f0",
+            "p",
+            "numax"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "synchrotron",
+            "nhhost",
+            "rvhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "photometry":{
+        "kind":"observable",
+        "inputs":[
+            "losextinction",
+            "lumdist"
+        ]
+    }
+}

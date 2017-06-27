@@ -8,12 +8,6 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
-    "kroupainput":{
-        "kind":"parameter",
-        "value":0.0,
-        "class":"parameter",
-        "latex":"\\rm kroupa \\rm input"
-    },
     "rvhost":{
         "kind":"parameter",
         "value":3.1,
@@ -37,43 +31,43 @@
         "kind":"parameter",
         "value": 0.98,
         "class":"parameter",
-        "latex":"b\\ (\\rm scaled\\ \\beta)"
+        "latex":"b\\ (scaled\\ \\beta)"
     },
     "Tviscous":{
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"T_{\\rm viscous}"
+        "latex":"\\tau\\ (\\T_{vis}\\/peaktime)"
     },
     "efficiency":{
         "kind":"parameter",
         "value":0.1,
         "class":"parameter",
-        "latex":"\\epsilon\\ \\rm (efficiency)"
+        "latex":"\\epsilon\\ (efficiency)"
     },
     "bhmass":{
         "kind":"parameter",
         "value":1.78e7,
         "class":"parameter",
-        "latex":"M_{h} (M_{\\odot})"
+        "latex":"M_{h} (M_{odot})"
     },
     "starmass":{
         "kind":"parameter",
         "value":0.1,
         "class":"parameter",
-        "latex":"M_{star} (M_{\\odot})"
+        "latex":"M_{star} (M_{odot})"
     },
     "Rph0":{
         "kind":"parameter",
         "value":0.8,
         "class":"parameter",
-        "latex": "\\rm log (R_{\\rm ph0})"
+        "latex": "log(R_{ph0})"
     },
     "lphoto":{
         "kind": "parameter",
         "value": 1.5,
         "class": "parameter",
-        "latex": "\\rm photosphere\\ \\rm  exponent\\ 'l' "
+        "latex": "photosphere exponent 'l' "
     },
     "fallback":{
         "kind":"engine",
@@ -83,8 +77,7 @@
             "starmass",
             "b",
             "efficiency",
-            "texplosion",
-            "kroupainput"
+            "texplosion"
         ]
     },
     "viscous":{
@@ -102,7 +95,7 @@
             "starmass",
             "lphoto",
             "Rph0",
-            "viscous"
+			"viscous"
         ]
     },
     "blackbody":{
@@ -145,8 +138,18 @@
     "likelihood":{
         "kind":"objective",
         "inputs":[
-            "diagonal",
+            "transient",
+            "variance",
+            "codeltatime",
+            "codeltalambda",
+            "photometry",
+            "default_upper_limit_error",
+            "default_no_error_bar_error",
             "tde_constraints"
-        ]
+        ],
+        "requests":{
+            "average_wavelengths": "photometry",
+            "variance_bands": "photometry"
+        }
     }
 }

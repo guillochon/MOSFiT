@@ -8,12 +8,6 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
-    "kroupainput":{
-        "kind":"parameter",
-        "value":0.0,
-        "class":"parameter",
-        "latex":"\\rm kroupa \\rm input"
-    },
     "rvhost":{
         "kind":"parameter",
         "value":3.1,
@@ -29,51 +23,45 @@
     },
     "texplosion":{
         "kind":"parameter",
-        "value":-12.0,
+        "value":15.0,
         "class":"parameter",
         "latex":"t_{\\rm exp}\\,{\\rm (days)}"
     },
     "b":{
         "kind":"parameter",
-        "value": 0.98,
+        "value": 0.576,
         "class":"parameter",
-        "latex":"b\\ (\\rm scaled\\ \\beta)"
-    },
-    "Tviscous":{
-        "kind":"parameter",
-        "value":1.0,
-        "class":"parameter",
-        "latex":"T_{\\rm viscous}"
+        "latex":"b\\ (scaled\\ \\beta)"
     },
     "efficiency":{
         "kind":"parameter",
         "value":0.1,
         "class":"parameter",
-        "latex":"\\epsilon\\ \\rm (efficiency)"
+        "latex":"\\epsilon\\ (efficiency)"
     },
     "bhmass":{
         "kind":"parameter",
         "value":1.78e7,
         "class":"parameter",
-        "latex":"M_{h} (M_{\\odot})"
+        "latex":"M_{h} (M_{odot})"
     },
     "starmass":{
         "kind":"parameter",
-        "value":0.1,
+        "value":3.78,
         "class":"parameter",
-        "latex":"M_{star} (M_{\\odot})"
+        "latex":"M_{star} (M_{odot})"
     },
     "Rph0":{
         "kind":"parameter",
-        "value":0.8,
+        "value":0.17,
         "class":"parameter",
-        "latex": "\\rm log (R_{\\rm ph0})"
+        "latex": "log(R_{ph0})"
     },
     "lphoto":{
         "kind": "parameter",
-        "value": 1.5,
+        "value": 2.7,
         "class": "parameter",
-        "latex": "\\rm photosphere\\ \\rm  exponent\\ 'l' "
+        "latex": "photosphere exponent 'l' "
     },
     "fallback":{
         "kind":"engine",
@@ -83,16 +71,7 @@
             "starmass",
             "b",
             "efficiency",
-            "texplosion",
-            "kroupainput"
-        ]
-    },
-    "viscous":{
-        "kind":"transform",
-        "inputs":[
-            "fallback",
-            "texplosion",
-            "Tviscous"
+            "texplosion"
         ]
     },
     "tde_photosphere":{
@@ -102,7 +81,7 @@
             "starmass",
             "lphoto",
             "Rph0",
-            "viscous"
+			"fallback"
         ]
     },
     "blackbody":{
@@ -133,20 +112,6 @@
         "inputs":[
             "losextinction",
             "lumdist"
-        ]
-    },
-    "tde_constraints":{
-        "kind":"constraint",
-        "inputs":[
-            "bhmass",
-            "tde_photosphere"
-        ]
-    },
-    "likelihood":{
-        "kind":"objective",
-        "inputs":[
-            "diagonal",
-            "tde_constraints"
         ]
     }
 }

@@ -1,13 +1,4 @@
 {
-    "Tviscous":{
-        "min_value":1.0e-3,
-        "max_value":1.0e5,
-        "log":true
-    },
-    "kroupainput":{
-        "min_value":0.0,
-        "max_value":1.0
-    },
     "nhhost":{
         "min_value":1.0e16,
         "max_value":1.0e23,
@@ -23,17 +14,17 @@
         "log":true
     },
     "starmass":{
-        "min_value":0.01,
+        "min_value":0.1,
         "max_value":25.0,
         "log":true
-    },
+    },    
     "efficiency":{
         "min_value":0.005,
         "max_value":0.4
     },
     "texplosion":{
         "min_value":-500.0,
-        "max_value":0.0
+        "max_value":500.0
     },
     "variance":{
         "min_value":1.0e-3,

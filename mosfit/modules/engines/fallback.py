@@ -7,6 +7,7 @@ from scipy.interpolate import interp1d
 
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
+from priors.kroupa import Kroupa
 
 CLASS_NAME = 'Fallback'
 
@@ -229,6 +230,9 @@ class Fallback(Engine):
 
         gamma_interp = False
 
+        #print(kwargs['kroupainput'])
+        self._starmass = Kroupa.process(Kroupa, **{'kroupainput': kwargs['kroupainput']})
+        #print('starmass from kroupa', self._starmass)
         if kwargs['starmass'] <= 0.3 or kwargs['starmass'] >= 22:
             gammas = [self._gammas[1]]  # gamma = ['5-3']
             self._beta = self._betas['5-3']
@@ -590,5 +594,8 @@ class Fallback(Engine):
         #    luminosities)
         luminosities = (luminosities * Ledd / (luminosities + Ledd))
 
+        with open('/Users/brennamockler/TDEmodel/products/testKroupa.dat', 'a') as outfile:
+            outfile.write('{:.6f}'.format(self._starmass) + '\n')
+
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta}
+                'tpeak': tpeak, 'beta': self._beta, 'kroupaMstar': self._starmass}
