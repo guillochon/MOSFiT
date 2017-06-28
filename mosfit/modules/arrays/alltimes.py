@@ -1,5 +1,6 @@
 """Definitions for the `AllTimes` class."""
 from collections import OrderedDict
+from operator import itemgetter
 
 import numpy as np
 from mosfit.modules.arrays.array import Array
