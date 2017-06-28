@@ -87,7 +87,7 @@ class Converter(object):
             (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
             (PHOTOMETRY.E_COUNT_RATE, [
                 'e_counts', 'count error', 'count rate error']),
-            (PHOTOMETRY.ZERO_POINT, ['zero point', 'self._zp']),
+            (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
             ('reference', ['reference', 'bibcode', 'source', 'origin']),
             ('event', ['event', 'transient', 'name', 'supernova'])
         ))
@@ -367,7 +367,7 @@ class Converter(object):
                                     photodict,
                                     c=row[cidict[PHOTOMETRY.COUNT_RATE]],
                                     ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
-                                    zp=self._zp)
+                                    zp=row[cidict[PHOTOMETRY.ZERO_POINT]])
                             if not len(sources):
                                 if self._require_source:
                                     if (self._rsource.get(SOURCE.NAME, '') ==
