@@ -108,8 +108,8 @@ class Kernel(Array):
         self._times = new_times
         self._all_band_indices = kwargs.get('all_band_indices', [])
         self._are_bands = np.array(self._all_band_indices) >= 0
-        self._freqs = kwargs.get('frequencies', [])
-        self._u_freqs = kwargs.get('u_frequencies', [])
+        self._freqs = kwargs.get('all_frequencies', [])
+        self._u_freqs = kwargs.get('all_u_frequencies', [])
         self._waves = np.array([
             self._average_wavelengths[bi] if bi >= 0 else
             C_CGS / self._freqs[i] / ANG_CGS for i, bi in

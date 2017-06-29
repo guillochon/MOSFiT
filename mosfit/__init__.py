@@ -17,7 +17,7 @@ __license__ = 'MIT'
 right_astrocats = True
 vparts = astrocats.__version__.split('.')
 req_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), '..', 'requirements.txt')
+    os.path.dirname(os.path.realpath(__file__)), 'requirements.txt')
 with open(req_path, 'r') as f:
     for req in f.read().splitlines():
         if 'astrocats' in req:

@@ -290,7 +290,6 @@ class Converter(object):
                                     strip_cols.append(li)
                                 else:
                                     break
-                            print(strip_cols)
                             if len(strip_cols) == llen:
                                 break
                             for ri in range(len(flines[self._first_data:])):
@@ -559,7 +558,6 @@ class Converter(object):
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
-        print(colstrs)
         colinds = np.setdiff1d(np.arange(len(colstrs)),
                                list([x[-1] if isinstance(x, list)
                                      else x for x in cidict.values()]))
