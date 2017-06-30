@@ -3,6 +3,7 @@ from collections import OrderedDict
 
 import numpy as np
 from astrocats.catalog.utils import is_number
+from astrocats.catalog.source import SOURCE
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
@@ -32,6 +33,7 @@ class Transient(Module):
                  limit_fitting_mjds=False,
                  exclude_bands=[],
                  exclude_instruments=[],
+                 exclude_sources=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -46,6 +48,18 @@ class Transient(Module):
         name = list(self._all_data.keys())[0]
         self._data['name'] = name
         numeric_keys = set()
+
+        # Construct some source dictionaries for exclusion rules
+        src_dict = OrderedDict()
+        sources = self._all_data[name].get('sources', [])
+        for src in sources:
+            if SOURCE.BIBCODE in src:
+                src_dict[src[SOURCE.ALIAS]] = src[SOURCE.BIBCODE]
+            if SOURCE.ARXIVID in src:
+                src_dict[src[SOURCE.ALIAS]] = src[SOURCE.ARXIVID]
+            if SOURCE.NAME in src:
+                src_dict[src[SOURCE.ALIAS]] = src[SOURCE.NAME]
+
         for key in self._keys:
             if key not in self._all_data[name]:
                 continue
@@ -114,6 +128,15 @@ class Transient(Module):
                                  entry.get('band', '') in exclude_bands)):
                                 skip_entry = True
                                 break
+                        if (exclude_sources is not False and
+                                x == 'source'):
+                            val = entry.get(x, '')
+                            if (any([x in exclude_sources
+                                     for x in val.split(',')])
+                                or any([src_dict.get(x, '') in exclude_sources
+                                        for x in val.split(',')])):
+                                skip_entry = True
+                                break
                     if skip_entry:
                         continue
 
@@ -171,7 +194,7 @@ class Transient(Module):
                 zip(*(self._data['telescopes'], self._data['systems'],
                       self._data['modes'], self._data['instruments'],
                       self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'])))
+                          'frequencies'], self._data['u_frequencies'])))
             if len(band_list):
                 b_teles = band_telescopes if len(band_telescopes) == len(
                     band_list) else ([band_telescopes[0] for x in band_list]
@@ -194,10 +217,11 @@ class Transient(Module):
                                      if len(band_bandsets) else
                                      ['' for x in band_list])
                 b_freqs = [None for x in band_list]
+                b_u_freqs = ['' for x in band_list]
                 obs.extend(
                     list(
                         zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
-                              band_list, b_freqs))))
+                              band_list, b_freqs, b_u_freqs))))
 
             uniqueobs = []
             for o in obs:
@@ -220,7 +244,8 @@ class Transient(Module):
                     self._data['times'], self._data['telescopes'],
                     self._data['systems'], self._data['modes'],
                     self._data['instruments'], self._data['bandsets'],
-                    self._data['bands'], self._data['frequencies'])))
+                    self._data['bands'], self._data['frequencies'],
+                    self._data['u_frequencies'])))
 
             obslist = []
             for t in alltimes:
@@ -235,8 +260,8 @@ class Transient(Module):
                 (self._data['extra_times'], self._data['extra_telescopes'],
                  self._data['extra_systems'], self._data['extra_modes'],
                  self._data['extra_instruments'], self._data['extra_bandsets'],
-                 self._data['extra_bands'],
-                 self._data['extra_frequencies']) = zip(*obslist)
+                 self._data['extra_bands'], self._data['extra_frequencies'],
+                 self._data['extra_u_frequencies']) = zip(*obslist)
 
         for qkey in subtract_minimum_keys:
             if 'upperlimits' in self._data:

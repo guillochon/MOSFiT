@@ -94,6 +94,7 @@ class Fitter(object):
                    limit_fitting_mjds=False,
                    exclude_bands=[],
                    exclude_instruments=[],
+                   exclude_sources=[],
                    suffix='',
                    offline=False,
                    upload=False,
@@ -487,6 +488,7 @@ class Fitter(object):
                         limit_fitting_mjds=limit_fitting_mjds,
                         exclude_bands=exclude_bands,
                         exclude_instruments=exclude_instruments,
+                        exclude_sources=exclude_sources,
                         band_list=band_list,
                         band_systems=band_systems,
                         band_instruments=band_instruments,
@@ -547,6 +549,7 @@ class Fitter(object):
                   limit_fitting_mjds=False,
                   exclude_bands=[],
                   exclude_instruments=[],
+                  exclude_sources=[],
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
@@ -578,6 +581,7 @@ class Fitter(object):
                     limit_fitting_mjds=limit_fitting_mjds,
                     exclude_bands=exclude_bands,
                     exclude_instruments=exclude_instruments,
+                    exclude_sources=exclude_sources,
                     band_list=band_list,
                     band_systems=band_systems,
                     band_instruments=band_instruments,
@@ -792,6 +796,7 @@ class Fitter(object):
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the
         # loaded walker data they will be drawn from their priors instead.
+        pool_len = len(walkers_pool)
         for i, pt in enumerate(p0):
             dwscores = []
             while len(p0[i]) < nwalkers:
@@ -800,10 +805,10 @@ class Fitter(object):
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
 
-                if pool.size == 0 or len(walkers_pool):
+                if pool.size == 0 or pool_len:
                     p, score = draw_walker(
                         test_walker, walkers_pool,
-                        replace=len(walkers_pool) < ntemps * nwalkers)
+                        replace=pool_len < ntemps * nwalkers)
                     p0[i].append(p)
                     dwscores.append(score)
                 else:

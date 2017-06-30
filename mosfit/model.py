@@ -505,7 +505,10 @@ class Model(object):
                 for i, x in enumerate(draw)
             ]
             if len(walkers_pool):
-                chosen_one = np.random.choice(range(len(walkers_pool)))
+                if not replace:
+                    chosen_one = 0
+                else:
+                    chosen_one = np.random.choice(range(len(walkers_pool)))
                 for e, elem in enumerate(walkers_pool[chosen_one]):
                     if elem is not None:
                         draw[e] = elem

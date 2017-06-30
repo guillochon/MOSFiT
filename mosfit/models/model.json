@@ -26,12 +26,13 @@
                 "bandset":"optional",
                 "system":"optional",
                 "mode":"optional",
-                "upperlimit":["optional","boolean"],
+                "upperlimit":["optional", "boolean"],
                 "includeshost":"exclude",
                 "host":"exclude",
                 "kcorrected":"exclude",
                 "scorrected":"exclude",
-                "realization":"exclude"
+                "realization":"exclude",
+                "source":"optional"
             },
             "ebv":{
                 "value":"optional"
@@ -41,6 +42,11 @@
             },
             "redshift":{
                 "value":"optional"
+            },
+            "sources":{
+                "bibcode":"optional",
+                "arxivid":"optional",
+                "alias":"required"
             }
         }
     },

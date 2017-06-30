@@ -13,14 +13,13 @@ Once installed, ``MOSFiT`` can be run from any directory, and it's typically con
     cd mosfit_runs
 
 ``MOSFiT`` can be invoked either via either :code:`python -m mosfit` or simply :code:`mosfit`. Then, to run ``MOSFiT``, pass an event name to the program via
-the ``-e`` option (the default model is a simple Nickel-Cobalt decay with
-diffusion):
+the ``-e`` option:
 
 .. code-block:: bash
 
     mosfit -e LSQ12dlf
 
-Different models (several are distributed with ``MOSFiT``) can be fit to transients using the model option ``-m``:
+The above command will prompt the user to choose a model (of those distributed with ``MOSFiT``) to fit against the data, using the event's claimed type to provide a list of suggested models. A specific model can be fit to transients using the model option ``-m``:
 
 .. code-block:: bash
 
@@ -118,4 +117,4 @@ If the data was read from a file (rather than from one of the Open Astronomy Cat
 Troubleshooting
 ---------------
 
-If you are having trouble getting ``MOSFiT`` working, please first consult our :ref:`FAQ` page, which addresses many common issues. If the answers there do not answer your questions, feel free to join our `MOSFiT Slack channel<https://astrochats.slack.com/messages/mosfit>`_ and ask for assistance.
+If you are having trouble getting ``MOSFiT`` working, please first consult our :ref:`FAQ` page, which addresses many common issues. If the answers there do not answer your questions, feel free to join our `MOSFiT Slack channel <https://astrochats.slack.com/messages/mosfit>`_ and ask for assistance.
