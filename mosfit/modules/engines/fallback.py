@@ -174,10 +174,12 @@ class Fallback(Engine):
 
                     if interp == 'hi':
                         slope = ((dmdtinterp - dmdt['lo'][j]) /
-                                 (self._sim_beta[g][i] - self._sim_beta[g][i - 1]))
+                                 (self._sim_beta[g][i] - self._sim_beta[g][
+                                     i - 1]))
                     else:
                         slope = ((dmdt['hi'][j] - dmdtinterp) /
-                                 (self._sim_beta[g][i] - self._sim_beta[g][i - 1]))
+                                 (self._sim_beta[g][i] - self._sim_beta[g][
+                                     i - 1]))
                     self._beta_slope[g][-1].append(slope)
 
                     yinter1 = (dmdt[nointerp][j] - self._beta_slope[g][-1][j] *
@@ -191,7 +193,7 @@ class Fallback(Engine):
                 time['lo'] = np.copy(time['hi'])
                 dmdt['lo'] = np.copy(dmdt['hi'])
 
-    def process(self,  ** kwargs):
+    def process(self, **kwargs):
         """Process module."""
         beta_interp = True
         beta_outside_range = False
@@ -317,7 +319,8 @@ class Fallback(Engine):
 
                     time.append(
                         time_betalo + (time_betahi - time_betalo) *
-                        (self._betas[g] - self._sim_beta[g][interp_index_low]) /
+                        (self._betas[g] -
+                         self._sim_beta[g][interp_index_low]) /
                         (self._sim_beta[g][interp_index_high] -
                          self._sim_beta[g][interp_index_low]))
 
@@ -354,7 +357,8 @@ class Fallback(Engine):
                 # (both pre & post peak, might be from diff. dmdts)
                 # to 0 - 1
                 mapped_time[nointerp].append(
-                    1. / (timedict[nointerp][j][-1] - timedict[nointerp][j][0]) *
+                    1. / (timedict[nointerp][j][-1] -
+                          timedict[nointerp][j][0]) *
                     (timedict[nointerp][j] - timedict[nointerp][j][0]))
                 mapped_time[interp].append(
                     1. / (timedict[interp][j][-1] - timedict[interp][j][0]) *
@@ -375,14 +379,16 @@ class Fallback(Engine):
                     # then mapped_time = mapped_time[nointerp] =
                     # mapped_time['4-3']
                     time53 = (mapped_time['4-3'][j] * (timedict['5-3'][j][-1] -
-                                                       timedict['5-3'][j][0]) + timedict['5-3'][j][0])
+                                                       timedict['5-3'][j][0]) +
+                              timedict['5-3'][j][0])
                     # convert back from logspace before adding to time array
                     time.extend(10 ** (timedict['4-3'][j] +
                                        (time53 - timedict['4-3'][j]) * gfrac))
                 else:
                     # interp == '4-3'
                     time43 = (mapped_time['5-3'][j] * (timedict['4-3'][j][-1] -
-                                                       timedict['4-3'][j][0]) + timedict['4-3'][j][0])
+                                                       timedict['4-3'][j][0]) +
+                              timedict['4-3'][j][0])
                     # convert back from logspace before adding to time array
                     time.extend(10 ** (time43 +
                                        (timedict['5-3'][j] - time43) * gfrac))
@@ -390,7 +396,8 @@ class Fallback(Engine):
                 # recall gfrac = 0 --> gamma = 4/3, gfrac = 1 --> gamma 5/3
                 # convert back from logspace before adding to dmdt array
                 dmdt.extend(10 ** (dmdtdict['4-3'][j] +
-                                   (dmdtdict['5-3'][j] - dmdtdict['4-3'][j]) * gfrac))
+                                   (dmdtdict['5-3'][j] -
+                                    dmdtdict['4-3'][j]) * gfrac))
 
         else:  # gamma_interp == False
             # in this case, g will still be g from loop over gammas,
@@ -405,8 +412,6 @@ class Fallback(Engine):
 
         time = np.array(time)
         dmdt = np.array(dmdt)
-        unscaleddmdt = np.copy(dmdt)
-        unscaledtime = np.copy(time)
 
         # ----------- SCALE dm/dt TO BH & STAR MASS & STAR RADIUS -------------
 
@@ -429,33 +434,36 @@ class Fallback(Engine):
 
         # Tout coefficients for calculating Rstar
         Tout_theta = (1.71535900 + 0.62246212 * log10_Z_02 - 0.92557761 *
-                      log10_Z_02 ** 2 - 1.16996966 * log10_Z_02 ** 3 - 0.30631491 *
+                      log10_Z_02 ** 2 - 1.16996966 * log10_Z_02 ** 3 -
+                      0.30631491 *
                       log10_Z_02 ** 4)
         Tout_l = (6.59778800 - 0.42450044 * log10_Z_02 - 12.13339427 *
-                  log10_Z_02 ** 2 - 10.73509484 * log10_Z_02 ** 3 - 2.51487077 *
-                  log10_Z_02 ** 4)
+                  log10_Z_02 ** 2 - 10.73509484 * log10_Z_02 ** 3 -
+                  2.51487077 * log10_Z_02 ** 4)
         Tout_kpa = (10.08855000 - 7.11727086 * log10_Z_02 - 31.67119479 *
-                    log10_Z_02 ** 2 - 24.24848322 * log10_Z_02 ** 3 - 5.33608972 *
-                    log10_Z_02 ** 4)
+                    log10_Z_02 ** 2 - 24.24848322 * log10_Z_02 ** 3 -
+                    5.33608972 * log10_Z_02 ** 4)
         Tout_lbda = (1.01249500 + 0.32699690 * log10_Z_02 - 0.00923418 *
-                     log10_Z_02 ** 2 - 0.03876858 * log10_Z_02 ** 3 - 0.00412750 *
-                     log10_Z_02 ** 4)
+                     log10_Z_02 ** 2 - 0.03876858 * log10_Z_02 ** 3 -
+                     0.00412750 * log10_Z_02 ** 4)
         Tout_mu = (0.07490166 + 0.02410413 * log10_Z_02 + 0.07233664 *
-                   log10_Z_02 ** 2 + 0.03040467 * log10_Z_02 ** 3 + 0.00197741 *
-                   log10_Z_02 ** 4)
+                   log10_Z_02 ** 2 + 0.03040467 * log10_Z_02 ** 3 +
+                   0.00197741 * log10_Z_02 ** 4)
         Tout_nu = 0.01077422
         Tout_eps = (3.08223400 + 0.94472050 * log10_Z_02 - 2.15200882 *
-                    log10_Z_02 ** 2 - 2.49219496 * log10_Z_02 ** 3 - 0.63848738 *
-                    log10_Z_02 ** 4)
+                    log10_Z_02 ** 2 - 2.49219496 * log10_Z_02 ** 3 -
+                    0.63848738 * log10_Z_02 ** 4)
         Tout_o = (17.84778000 - 7.45345690 * log10_Z_02 - 48.9606685 *
-                  log10_Z_02 ** 2 - 40.05386135 * log10_Z_02 ** 3 - 9.09331816 *
-                  log10_Z_02 ** 4)
+                  log10_Z_02 ** 2 - 40.05386135 * log10_Z_02 ** 3 -
+                  9.09331816 * log10_Z_02 ** 4)
         Tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 + 0.00388783 *
-                   log10_Z_02 ** 2 + 0.00142402 * log10_Z_02 ** 3 - 0.00007671 *
-                   log10_Z_02 ** 4)
+                   log10_Z_02 ** 2 + 0.00142402 * log10_Z_02 ** 3 -
+                   0.00007671 * log10_Z_02 ** 4)
         # caculate Rstar in units of Rsolar
-        Rstar = ((Tout_theta * self._Mstar ** 2.5 + Tout_l * self._Mstar ** 6.5 +
-                  Tout_kpa * self._Mstar ** 11 + Tout_lbda * self._Mstar ** 19 +
+        Rstar = ((Tout_theta * self._Mstar ** 2.5 + Tout_l *
+                  self._Mstar ** 6.5 +
+                  Tout_kpa * self._Mstar ** 11 + Tout_lbda *
+                  self._Mstar ** 19 +
                   Tout_mu * self._Mstar ** 19.5) /
                  (Tout_nu + Tout_eps * self._Mstar ** 2 + Tout_o *
                   self._Mstar ** 8.5 + self._Mstar ** 18.5 + Tout_pi *
@@ -471,8 +479,6 @@ class Fallback(Engine):
         tfallback = np.copy(time[0])
         self._rest_t_explosion = kwargs['resttexplosion']  # units = days
 
-        dmdtbeforeextrap = np.copy(dmdt)
-        timebeforeextrap = np.copy(time)
         # ----------- EXTRAPOLATE dm/dt TO EARLY TIMES -------------
         # use power law to fit : dmdt = b*t^xi
 
