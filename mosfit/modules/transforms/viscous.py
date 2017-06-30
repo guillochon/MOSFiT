@@ -11,6 +11,7 @@ class Viscous(Transform):
     """Viscous delay transform."""
 
     N_INT_TIMES = 1000
+    MIN_LOG_SPACING = -3
 
     def process(self, **kwargs):
         """Process module."""
@@ -32,13 +33,12 @@ class Viscous(Transform):
                 self._times_to_process <= self._dense_times_since_exp[-1])])
         lu = len(uniq_times)
 
-        num = int(self.N_INT_TIMES/2.0)
-        expstart = np.log10(tvisc) - 3
-        if expstart > -1:
-            expstart = -1
-        xm = np.unique(np.concatenate(
-            (np.array([0]), np.logspace(expstart, 0, num),
-             1 - np.logspace(expstart, 0, num))))
+        num = int(self.N_INT_TIMES / 2.0)
+        lsp = np.logspace(
+            np.log10(tvisc /
+                     self._dense_times_since_exp[-1]) +
+            self.MIN_LOG_SPACING, 0, num)
+        xm = np.unique(np.concatenate((lsp, 1 - lsp)))
 
         int_times = np.clip(tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
                             self._dense_times_since_exp[-1])
@@ -50,7 +50,7 @@ class Viscous(Transform):
             (int_times - int_tes.reshape(lu, 1)) / tvisc)
         int_args[np.isnan(int_args)] = 0.0
 
-        uniq_lums = np.trapz(int_args, int_times)/tvisc
+        uniq_lums = np.trapz(int_args, int_times) / tvisc
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]
 
