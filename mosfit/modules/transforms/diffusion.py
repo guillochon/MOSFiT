@@ -52,7 +52,9 @@ class Diffusion(Transform):
 
         num = int(round(self.N_INT_TIMES / 2.0))
         lsp = np.logspace(
-            np.log10(self._tau_diff) + self.MIN_LOG_SPACING, 0, num)
+            np.log10(self._tau_diff /
+                     self._dense_times_since_exp[-1]) +
+            self.MIN_LOG_SPACING, 0, num)
         xm = np.unique(np.concatenate((lsp, 1 - lsp)))
 
         int_times = np.clip(
