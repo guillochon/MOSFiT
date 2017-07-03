@@ -57,12 +57,6 @@
         "class":"parameter",
         "latex":"M_{h} (M_{\\odot})"
     },
-    "starmass":{
-        "kind":"parameter",
-        "value":0.1,
-        "class":"parameter",
-        "latex":"M_{star} (M_{\\odot})"
-    },
     "Rph0":{
         "kind":"parameter",
         "value":0.8,
@@ -80,7 +74,6 @@
         "inputs":[
             "densetimes",
             "bhmass",
-            "starmass",
             "b",
             "efficiency",
             "texplosion",
@@ -99,7 +92,7 @@
         "kind":"photosphere",
         "inputs":[
             "bhmass",
-            "starmass",
+            "fallback",
             "lphoto",
             "Rph0",
             "viscous"

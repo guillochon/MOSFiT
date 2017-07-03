@@ -232,30 +232,30 @@ class Fallback(Engine):
 
         gamma_interp = False
 
-        #print(kwargs['kroupainput'])
-        self._starmass = Kroupa.process(Kroupa, **{'kroupainput': kwargs['kroupainput']})
-        #print('starmass from kroupa', self._starmass)
-        if kwargs['starmass'] <= 0.3 or kwargs['starmass'] >= 22:
+        # print(kwargs['kroupainput'])
+        self._Mstar = Kroupa.process(Kroupa, **{'kroupainput': kwargs['kroupainput']})
+        # print('starmass from kroupa', self._starmass)
+        if self._Mstar <= 0.3 or self._Mstar >= 22:
             gammas = [self._gammas[1]]  # gamma = ['5-3']
             self._beta = self._betas['5-3']
-        elif 1 <= kwargs['starmass'] <= 15:
+        elif 1 <= self._Mstar <= 15:
             gammas = [self._gammas[0]]  # gamma = ['4-3']
             self._beta = self._betas['4-3']
-        elif 0.3 < kwargs['starmass'] < 1:
+        elif 0.3 < self._Mstar < 1:
             # region going from gamma = 5/3 to gamma = 4/3 as mass increases
             gamma_interp = True
             gammas = self._gammas
             # gfrac should == 0 for 4/3; == 1 for 5/3
-            gfrac = (kwargs['starmass'] - 1.) / (0.3 - 1.)
+            gfrac = (self._Mstar - 1.) / (0.3 - 1.)
             # beta_43 is always larger than beta_53
             self._beta = self._betas['5-3'] + (
                 self._betas['4-3'] - self._betas['5-3']) * (1. - gfrac)
-        elif 15 < kwargs['starmass'] < 22:
+        elif 15 < self._Mstar < 22:
             # region going from gamma = 4/3 to gamma = 5/3 as mass increases
             gamma_interp = True
             gammas = self._gammas
             # gfrac should == 0 for 4/3; == 1 for 5/3
-            gfrac = (kwargs['starmass'] - 15.) / (22. - 15.)
+            gfrac = (self._Mstar - 15.) / (22. - 15.)
 
             # beta_43 is always larger than beta_53
             self._beta = self._betas['5-3'] + (
@@ -429,7 +429,7 @@ class Fallback(Engine):
         # dmdt ~ Mh^(-1/2)
         self._Mh = kwargs['bhmass']  # in units of solar masses
         # star mass for dmdts in astrocrash is 1 solar mass
-        self._Mstar = kwargs['starmass']  # in units of solar masses
+        #self._Mstar = kwargs['starmass']  # in units of solar masses
         # Assume that BDs below 0.1 solar masses are n=1 polytropes
         if self._Mstar < 0.1:
             Mstar_Tout = 0.1
@@ -605,8 +605,8 @@ class Fallback(Engine):
         #    luminosities)
         luminosities = (luminosities * Ledd / (luminosities + Ledd))
 
-        with open('/Users/brennamockler/TDEmodel/products/testKroupa.dat', 'a') as outfile:
-            outfile.write('{:.6f}'.format(self._starmass) + '\n')
+        #with open('/Users/brennamockler/TDEmodel/products/testKroupa.dat', 'a') as outfile:
+        #    outfile.write('{:.6f}'.format(self._starmass) + '\n')
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta, 'kroupaMstar': self._starmass}
+                'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar}
