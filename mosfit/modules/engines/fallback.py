@@ -605,8 +605,8 @@ class Fallback(Engine):
         #    luminosities)
         luminosities = (luminosities * Ledd / (luminosities + Ledd))
 
-        #with open('/Users/brennamockler/TDEmodel/products/testKroupa.dat', 'a') as outfile:
-        #    outfile.write('{:.6f}'.format(self._starmass) + '\n')
+        # with open('/Users/brennamockler/TDEmodel/products/testKroupa.dat', 'a') as outfile:
+        #    outfile.write('{:.6f}'.format(self._Mstar) + '\n')
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar}
