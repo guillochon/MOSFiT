@@ -28,7 +28,7 @@ class Redshift(Parameter):
                 return {}
 
             self._lum_dist = kwargs.get(self.key('lumdist'), None)
-            if not self._value and self._lum_dist:
+            if self._value is None and self._lum_dist:
                 if self._lum_dist < 1.0:
                     if not self._warned_small:
                         self._printer.message(
@@ -41,10 +41,8 @@ class Redshift(Parameter):
                 else:
                     value = z_at_value(cosmo.luminosity_distance,
                                        self._lum_dist * un.Mpc)
-            elif self._value:
-                value = self._value
             else:
-                raise ValueError('Redshift has no value!')
+                value = self._value
         else:
             value = self.value(kwargs['fraction'])
 
