@@ -80,6 +80,7 @@
     "select_mc_column": "\nSelect a column that has a `{}`:",
     "select_model_walkers": "More than one model output in this file, which model's walkers should we draw from?",
     "select_source": "You have set the upload flag, but no reference information was found for `{}`. In order to upload data to the Open Catalogs, a reference for the data is required. While a bibcode is preferred, you can use your last name as a placeholder.",
+    "small_lumdist": "Luminosity distance less than 1 Mpc (`{}` pc), setting redshift to 0.",
     "specify_column": "None of the above, use the same value for all rows.",
     "specify_mc_value": "\nPlease specify `{}` for this set of `{}s`:",
     "specify_value": "\nPlease specify `{}`, which will be assumed for all rows:",
