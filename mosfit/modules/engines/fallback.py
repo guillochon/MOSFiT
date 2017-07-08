@@ -426,6 +426,11 @@ class Fallback(Engine):
         self._Mh = kwargs['bhmass']  # in units of solar masses
         # star mass for dmdts in astrocrash is 1 solar mass
         self._Mstar = kwargs['starmass']  # in units of solar masses
+        # Assume that BDs below 0.1 solar masses are n=1 polytropes
+        if self._Mstar < 0.1:
+            Mstar_Tout = 0.1
+        else:
+            Mstar_Tout = self._Mstar
 
         # calculate Rstar from Mstar (using Tout et. al. 1996),
         # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
@@ -460,14 +465,14 @@ class Fallback(Engine):
                    log10_Z_02 ** 2 + 0.00142402 * log10_Z_02 ** 3 -
                    0.00007671 * log10_Z_02 ** 4)
         # caculate Rstar in units of Rsolar
-        Rstar = ((Tout_theta * self._Mstar ** 2.5 + Tout_l *
-                  self._Mstar ** 6.5 +
-                  Tout_kpa * self._Mstar ** 11 + Tout_lbda *
-                  self._Mstar ** 19 +
-                  Tout_mu * self._Mstar ** 19.5) /
-                 (Tout_nu + Tout_eps * self._Mstar ** 2 + Tout_o *
-                  self._Mstar ** 8.5 + self._Mstar ** 18.5 + Tout_pi *
-                  self._Mstar ** 19.5))
+        Rstar = ((Tout_theta * Mstar_Tout ** 2.5 + Tout_l *
+                  Mstar_Tout ** 6.5 +
+                  Tout_kpa * Mstar_Tout ** 11 + Tout_lbda *
+                  Mstar_Tout ** 19 +
+                  Tout_mu * Mstar_Tout ** 19.5) /
+                 (Tout_nu + Tout_eps * Mstar_Tout ** 2 + Tout_o *
+                  Mstar_Tout ** 8.5 + Mstar_Tout ** 18.5 + Tout_pi *
+                  Mstar_Tout ** 19.5))
 
         dmdt = (dmdt * np.sqrt(Mhbase / self._Mh) *
                 (self._Mstar / Mstarbase) ** 2.0 * (Rstarbase / Rstar) ** 1.5)
