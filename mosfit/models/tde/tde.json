@@ -31,7 +31,7 @@
         "kind":"parameter",
         "value": 0.98,
         "class":"parameter",
-        "latex":"b\\ (scaled\\ \\beta)"
+        "latex":"b\\ (\\rm scaled\\ \\beta)"
     },
     "Tviscous":{
         "kind":"parameter",
@@ -43,31 +43,31 @@
         "kind":"parameter",
         "value":0.1,
         "class":"parameter",
-        "latex":"\\epsilon\\ (efficiency)"
+        "latex":"\\epsilon\\ \\rm (efficiency)"
     },
     "bhmass":{
         "kind":"parameter",
         "value":1.78e7,
         "class":"parameter",
-        "latex":"M_{h} (M_{odot})"
+        "latex":"M_{h} (M_{\\odot})"
     },
     "starmass":{
         "kind":"parameter",
         "value":0.1,
         "class":"parameter",
-        "latex":"M_{star} (M_{odot})"
+        "latex":"M_{star} (M_{\\odot})"
     },
     "Rph0":{
         "kind":"parameter",
         "value":0.8,
         "class":"parameter",
-        "latex": "log(R_{ph0})"
+        "latex": "\\rm log (R_{\\rm ph0})"
     },
     "lphoto":{
         "kind": "parameter",
         "value": 1.5,
         "class": "parameter",
-        "latex": "photosphere exponent 'l' "
+        "latex": "\\rm photosphere\\ \\rm  exponent\\ 'l' "
     },
     "fallback":{
         "kind":"engine",
