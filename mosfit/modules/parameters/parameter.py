@@ -34,6 +34,7 @@ class Parameter(Module):
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
         self._reference_value = None
+        self._clipped_warning = False
 
     def fix_value(self, value):
         """Fix value of parameter."""
@@ -72,7 +73,12 @@ class Parameter(Module):
             value = np.log(value)
         f = (value - self._min_value) / (self._max_value - self._min_value)
         if clip:
+            of = f
             f = np.clip(f, 0.0, 1.0)
+            if f != of and not self._clipped_warning:
+                self._clipped_warning = True
+                self._printer.message(
+                    'parameter_clipped', [self._name], warning=True)
         return f
 
     def get_derived_keys(self):
