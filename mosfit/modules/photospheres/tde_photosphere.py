@@ -25,8 +25,7 @@ class TdePhotosphere(Photosphere):
         self._Mh = kwargs['bhmass']
         self._Mstar = kwargs['starmass']
         self._l = kwargs['lphoto']
-        # parameter is varied in logspace, kwargs['Rph_0'] = log10(Rph0)
-        self._Rph_0 = 10.0**(kwargs['Rph0'])
+        self._Rph_0 = kwargs['Rph0']
         self._luminosities = np.array(kwargs['luminosities'])
         self._rest_t_explosion = kwargs['resttexplosion']
         self._beta = kwargs['beta']  # for now linearly interp between
