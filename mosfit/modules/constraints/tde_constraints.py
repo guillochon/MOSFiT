@@ -8,14 +8,13 @@ from mosfit.modules.constraints.constraint import Constraint
 class TDEConstraints(Constraint):
     """TDE constraints.
 
-    1. rp > rs --> the pericenter radius must be less than the Schwarzschild
+    1. rp > rs --> the pericenter radius must be greater than the Schwarzschild
     radius or the bh will swallow the star whole (no disruption or flare)
     """
 
     def __init__(self, **kwargs):
         """Initialize module."""
         super(TDEConstraints, self).__init__(**kwargs)
-        self._max_modification = 3.0
 
     def process(self, **kwargs):
         """Process module. Add constraints below."""
@@ -27,8 +26,6 @@ class TDEConstraints(Constraint):
         # Pericenter radius is getting close to Schwarzschild radius
         if (self._Rs / self._rp > 0.1):
             # soft limit
-            self._score_modifier += - (
-                self._Rs / self._rp * self._max_modification) / (
-                self._Rs / self._rp + self._max_modification)
+            self._score_modifier += 100.0**(self._Rs / self._rp)
 
         return {self.key('score_modifier'): self._score_modifier}
