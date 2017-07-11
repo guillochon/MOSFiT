@@ -59,9 +59,9 @@
     },
     "Rph0":{
         "kind":"parameter",
-        "value":0.8,
+        "value":6.31,
         "class":"parameter",
-        "latex": "\\rm log (R_{\\rm ph0})"
+        "latex": "R_{\\rm ph0}"
     },
     "lphoto":{
         "kind": "parameter",
