@@ -121,6 +121,7 @@ class Fitter(object):
                    catalogs=[],
                    open_in_browser=False,
                    limiting_magnitude=None,
+                   exit_on_prompt=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -147,8 +148,9 @@ class Fitter(object):
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
 
-        self._printer = Printer(wrap_length=wrap_length, quiet=quiet,
-                                fitter=self, language=language)
+        self._printer = Printer(
+            wrap_length=wrap_length, quiet=quiet, fitter=self,
+            language=language, exit_on_prompt=exit_on_prompt)
 
         prt = self._printer
 
