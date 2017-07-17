@@ -1429,13 +1429,17 @@ class Fitter(object):
                         paramdict['value'] = value
                         paramdict['fraction'] = y[pi]
                         pi = pi + 1
+                    else:
+                        if output.get(task, None) is not None:
+                            paramdict['value'] = output[task]
                     parameters.update({model._modules[task].name(): paramdict})
                     # Dump out any derived parameter keys
                     derived_keys.update(model._modules[task].get_derived_keys(
                     ))
 
                 for key in list(sorted(list(derived_keys))):
-                    if output.get(key, None) is not None:
+                    if (output.get(key, None) is not None and
+                            key not in parameters):
                         parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}

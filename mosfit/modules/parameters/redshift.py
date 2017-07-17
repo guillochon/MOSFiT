@@ -21,13 +21,12 @@ class Redshift(Parameter):
 
     def process(self, **kwargs):
         """Process module."""
-        if (self._name in kwargs or self._min_value is None or
-                self._max_value is None):
-            # If this parameter is not free and is already set, then skip
-            if self._name in kwargs:
-                return {}
+        # If this parameter is not free and is already set, then skip
+        if self._name in kwargs:
+            return {}
 
-            self._lum_dist = kwargs.get(self.key('lumdist'), None)
+        if self._value is None:
+            self._lum_dist = kwargs.get(self.key('lumdist'), self._lum_dist)
             if self._value is None and self._lum_dist is not None:
                 if self._lum_dist < 1.0:
                     if not self._warned_small:
@@ -42,8 +41,17 @@ class Redshift(Parameter):
                     value = z_at_value(cosmo.luminosity_distance,
                                        self._lum_dist * un.Mpc)
             else:
-                value = self._value
+                value = self.value(kwargs['fraction'])
         else:
-            value = self.value(kwargs['fraction'])
+            value = self._value
 
         return {self._name: value}
+
+    def send_request(self, request):
+        """Send requests to other modules."""
+        if request == 'redshift':
+            return self._value
+
+    def receive_requests(self, **requests):
+        """Receive requests from other ``Module`` objects."""
+        self._lum_dist = requests.get('lumdist', None)

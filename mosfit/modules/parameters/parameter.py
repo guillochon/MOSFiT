@@ -15,6 +15,7 @@ class Parameter(Module):
         """Initialize module."""
         super(Parameter, self).__init__(**kwargs)
         self._fixed = False
+        self._fixed_by_user = False
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
         if (self._min_value is not None and self._max_value is not None and
@@ -23,8 +24,10 @@ class Parameter(Module):
             self._value = self._min_value
             self._min_value, self._max_value = None, None
             self._fixed = True
+            self._fixed_by_user = True
         if self._min_value is None or self._max_value is None:
             self._fixed = True
+            self._fixed_by_user = True
         self._value = kwargs.get('value', None)
         self._log = kwargs.get('log', False)
         self._latex = kwargs.get('latex', self._name)
@@ -46,6 +49,7 @@ class Parameter(Module):
         self._min_value = None
         self._value = value
         self._fixed = True
+        self._fixed_by_user = True
 
     def is_log(self):
         """Return if `Parameter`'s value is stored as log10(value)."""

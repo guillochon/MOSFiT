@@ -19,9 +19,9 @@ class LuminosityDistance(Parameter):
             return {}
 
         if self._value is None:
-            self._redshift = kwargs.get(self.key('redshift'), None)
+            self._redshift = kwargs.get(self.key('redshift'), self._redshift)
             if self._redshift is not None:
-                if self._redshift < 0.0:
+                if self._redshift <= 0.0:
                     msg = self._printer.message(
                         'negative_redshift', [
                             str(np.around(self._redshift, decimals=2))],
@@ -36,3 +36,12 @@ class LuminosityDistance(Parameter):
             value = self._value
 
         return {self._name: value}
+
+    def send_request(self, request):
+        """Send requests to other modules."""
+        if request == 'lumdist':
+            return self._value
+
+    def receive_requests(self, **requests):
+        """Receive requests from other ``Module`` objects."""
+        self._redshift = requests.get('redshift', None)

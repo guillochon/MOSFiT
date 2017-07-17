@@ -350,14 +350,21 @@ class Model(object):
                 new_call_stack[task] = deepcopy(cur_task)
             # Fixed any variables to be fixed if any conditional inputs are
             # fixed by the data.
-            if any([listify(x)[-1] == 'conditional'
-                    for x in cur_task.get('inputs', [])]):
-                for inp in cur_task['inputs']:
-                    if listify(inp)[0] in output:
-                        self._modules[task]._fixed = True
-                        self._modules[task]._derived_keys = list(set(
-                            self._modules[task]._derived_keys + [task]))
+            # if any([listify(x)[-1] == 'conditional'
+            #         for x in cur_task.get('inputs', [])]):
         self._call_stack = new_call_stack
+
+        for task in reversed(self._call_stack):
+            cur_task = self._call_stack[task]
+            for inp in cur_task.get('inputs', []):
+                other = listify(inp)[0]
+                if (cur_task['kind'] == 'parameter' and
+                        output.get(other, None) is not None):
+                    if (not self._modules[other]._fixed or
+                            self._modules[other]._fixed_by_user):
+                        self._modules[task]._fixed = True
+                    self._modules[task]._derived_keys = list(set(
+                        self._modules[task]._derived_keys + [task]))
 
     def determine_number_of_measurements(self):
         """Estimate the number of measurements."""
