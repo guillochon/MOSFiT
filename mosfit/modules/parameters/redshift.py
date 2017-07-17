@@ -28,7 +28,7 @@ class Redshift(Parameter):
                 return {}
 
             self._lum_dist = kwargs.get(self.key('lumdist'), None)
-            if self._value is None and self._lum_dist:
+            if self._value is None and self._lum_dist is not None:
                 if self._lum_dist < 1.0:
                     if not self._warned_small:
                         self._printer.message(

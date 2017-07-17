@@ -623,8 +623,7 @@ class Fitter(object):
                 root=root)
 
         # Create any data-dependent free parameters.
-        self._model.create_data_dependent_free_parameters(
-            variance_for_each, outputs)
+        self._model.adjust_fixed_parameters(variance_for_each, outputs)
 
         # Determine free parameters again as above may have changed them.
         self._model.determine_free_parameters(fixed_parameters)
@@ -1415,22 +1414,25 @@ class Fitter(object):
                 derived_keys = set()
                 pi = 0
                 for ti, task in enumerate(model._call_stack):
-                    if task not in model._free_parameters:
+                    # if task not in model._free_parameters:
+                    #     continue
+                    if model._call_stack[task]['kind'] != 'parameter':
                         continue
-                    poutput = model._modules[task].process(
-                        **{'fraction': y[pi]})
-                    value = list(poutput.values())[0]
-                    paramdict = {
-                        'value': value,
-                        'fraction': y[pi],
-                        'latex': model._modules[task].latex(),
-                        'log': model._modules[task].is_log()
-                    }
+                    paramdict = OrderedDict((
+                        ('latex', model._modules[task].latex()),
+                        ('log', model._modules[task].is_log())
+                    ))
+                    if task in model._free_parameters:
+                        poutput = model._modules[task].process(
+                            **{'fraction': y[pi]})
+                        value = list(poutput.values())[0]
+                        paramdict['value'] = value
+                        paramdict['fraction'] = y[pi]
+                        pi = pi + 1
                     parameters.update({model._modules[task].name(): paramdict})
                     # Dump out any derived parameter keys
                     derived_keys.update(model._modules[task].get_derived_keys(
                     ))
-                    pi = pi + 1
 
                 for key in list(sorted(list(derived_keys))):
                     if output.get(key, None) is not None:

@@ -14,6 +14,7 @@ class Parameter(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Parameter, self).__init__(**kwargs)
+        self._fixed = False
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
         if (self._min_value is not None and self._max_value is not None and
@@ -21,6 +22,9 @@ class Parameter(Module):
             self._printer.message('min_max_same', [self._name], warning=True)
             self._value = self._min_value
             self._min_value, self._max_value = None, None
+            self._fixed = True
+        if self._min_value is None or self._max_value is None:
+            self._fixed = True
         self._value = kwargs.get('value', None)
         self._log = kwargs.get('log', False)
         self._latex = kwargs.get('latex', self._name)
@@ -41,6 +45,7 @@ class Parameter(Module):
         self._max_value = None
         self._min_value = None
         self._value = value
+        self._fixed = True
 
     def is_log(self):
         """Return if `Parameter`'s value is stored as log10(value)."""
@@ -91,8 +96,7 @@ class Parameter(Module):
         Initialize a parameter based upon either a fixed value or a
         distribution, if one is defined.
         """
-        if (self._name in kwargs or self._min_value is None or
-                self._max_value is None):
+        if self._fixed:
             # If this parameter is not free and is already set, then skip
             if self._name in kwargs:
                 return {}
