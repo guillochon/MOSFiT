@@ -715,8 +715,7 @@ def main():
         args.upload_token = upload_token
 
         if changed_iterations:
-            prt.prt("No events specified, setting iterations to 0.",
-                    wrapped=True)
+            prt.message('iterations_0', wrapped=True)
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:

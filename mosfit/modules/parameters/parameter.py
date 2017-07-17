@@ -14,6 +14,8 @@ class Parameter(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Parameter, self).__init__(**kwargs)
+        self._fixed = False
+        self._fixed_by_user = False
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
         if (self._min_value is not None and self._max_value is not None and
@@ -21,6 +23,11 @@ class Parameter(Module):
             self._printer.message('min_max_same', [self._name], warning=True)
             self._value = self._min_value
             self._min_value, self._max_value = None, None
+            self._fixed = True
+            self._fixed_by_user = True
+        if self._min_value is None or self._max_value is None:
+            self._fixed = True
+            self._fixed_by_user = True
         self._value = kwargs.get('value', None)
         self._log = kwargs.get('log', False)
         self._latex = kwargs.get('latex', self._name)
@@ -34,12 +41,15 @@ class Parameter(Module):
             self._min_value = np.log(self._min_value)
             self._max_value = np.log(self._max_value)
         self._reference_value = None
+        self._clipped_warning = False
 
     def fix_value(self, value):
         """Fix value of parameter."""
         self._max_value = None
         self._min_value = None
         self._value = value
+        self._fixed = True
+        self._fixed_by_user = True
 
     def is_log(self):
         """Return if `Parameter`'s value is stored as log10(value)."""
@@ -72,7 +82,12 @@ class Parameter(Module):
             value = np.log(value)
         f = (value - self._min_value) / (self._max_value - self._min_value)
         if clip:
+            of = f
             f = np.clip(f, 0.0, 1.0)
+            if f != of and not self._clipped_warning:
+                self._clipped_warning = True
+                self._printer.message(
+                    'parameter_clipped', [self._name], warning=True)
         return f
 
     def get_derived_keys(self):
@@ -85,8 +100,7 @@ class Parameter(Module):
         Initialize a parameter based upon either a fixed value or a
         distribution, if one is defined.
         """
-        if (self._name in kwargs or self._min_value is None or
-                self._max_value is None):
+        if self._fixed:
             # If this parameter is not free and is already set, then skip
             if self._name in kwargs:
                 return {}

@@ -72,23 +72,32 @@
     },
     "lumdist":{
         "kind":"parameter",
-        "min_value":1.0e-4,
+        "class":"luminositydistance",
+        "min_value":1.0e-5,
         "max_value":10.0e4,
         "log":true,
-        "class":"parameter",
         "inputs":[
-            "transient"
+            "transient",
+            ["redshift", "conditional"]
         ],
-        "latex":"d_{L}"
+        "latex":"d_{L}",
+        "requests":{
+            "redshift": "redshift"
+        }
     },
     "redshift":{
         "kind":"parameter",
         "class":"redshift",
+        "min_value":0.0,
+        "max_value":10.0,
         "inputs":[
             "transient",
             "lumdist"
         ],
-        "latex":"z"
+        "latex":"z",
+        "requests":{
+            "lumdist": "lumdist"
+        }
     },
     "variance":{
         "kind":"parameter",
