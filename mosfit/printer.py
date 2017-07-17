@@ -60,13 +60,15 @@ class Printer(object):
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
-                 language='en'):
+                 language='en', exit_on_prompt=False):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._quiet = quiet
         self._pool = pool
         self._fitter = fitter
         self._language = language
+        self._exit_on_prompt = exit_on_prompt
+
         self._was_inline = False
 
         self.set_strings()
@@ -308,6 +310,11 @@ class Printer(object):
                 prompt_txt[-1], wl, replace_whitespace=False) + " "
             if colorify:
                 inp_text = self.colorify(color + inp_text + "!e")
+
+            if self._exit_on_prompt:
+                msg = self.message('prompt_encountered', prt=False)
+                raise RuntimeError(msg)
+
             user_input = input(inp_text)
 
             yes = ['y', 'yes', 'yep']
