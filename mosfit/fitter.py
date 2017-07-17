@@ -1047,9 +1047,9 @@ class Fitter(object):
                             p[np.unravel_index(
                                 np.argmax(lnprob), lnprob.shape)],
                             root='objective')
-                        kmat = sout.get('kmat', None)
-                        kdiag = sout.get('kdiagonal', None)
-                        variance = sout.get('variance')
+                        kmat = sout.get('kmat')
+                        kdiag = sout.get('kdiagonal')
+                        variance = sout.get('obandvs', sout.get('variance'))
                         if kdiag is not None and kmat is not None:
                             kmat[np.diag_indices_from(kmat)] += kdiag
                         elif kdiag is not None and kmat is None:
