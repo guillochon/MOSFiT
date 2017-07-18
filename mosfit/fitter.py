@@ -78,6 +78,7 @@ class Fitter(object):
                    band_systems=[],
                    band_instruments=[],
                    band_bandsets=[],
+                   band_sampling_points=17,
                    iterations=5000,
                    num_walkers=None,
                    num_temps=1,
@@ -495,6 +496,7 @@ class Fitter(object):
                         band_systems=band_systems,
                         band_instruments=band_instruments,
                         band_bandsets=band_bandsets,
+                        band_sampling_points=band_sampling_points,
                         variance_for_each=variance_for_each,
                         user_fixed_parameters=user_fixed_parameters,
                         pool=pool,
@@ -556,6 +558,7 @@ class Fitter(object):
                   band_systems=[],
                   band_instruments=[],
                   band_bandsets=[],
+                  band_sampling_points=17,
                   variance_for_each=[],
                   user_fixed_parameters=[],
                   pool='',
@@ -592,6 +595,8 @@ class Fitter(object):
                     return False
                 fixed_parameters.extend(self._model._modules[task]
                                         .get_data_determined_parameters())
+            elif cur_task['kind'] == 'sed':
+                self._model._modules[task].set_data(band_sampling_points)
 
             # Fix user-specified parameters.
             for fi, param in enumerate(user_fixed_parameters):
