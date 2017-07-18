@@ -221,8 +221,6 @@ class Photometry(Module):
                         [np.linspace(
                             band['min_wavelength'], band['max_wavelength'],
                             nbins), np.full(nbins, 1.0)]).T.tolist()
-                    print(rows)
-                    raise
                     self._unique_bands[i]['origin'] = 'generated'
                 elif 'path' in band:
                     self._unique_bands[i]['origin'] = band['path']
