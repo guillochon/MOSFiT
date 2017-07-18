@@ -215,11 +215,14 @@ class Photometry(Module):
                         'delta_wavelength']):
                     nbins = int(np.round((
                         band['max_wavelength'] -
-                        band['min_wavelength']) / band['delta_wavelength']))
+                        band['min_wavelength']) / band[
+                            'delta_wavelength'])) + 1
                     rows = np.array(
                         [np.linspace(
                             band['min_wavelength'], band['max_wavelength'],
                             nbins), np.full(nbins, 1.0)]).T.tolist()
+                    print(rows)
+                    raise
                     self._unique_bands[i]['origin'] = 'generated'
                 elif 'path' in band:
                     self._unique_bands[i]['origin'] = band['path']
