@@ -10,15 +10,19 @@ from math import isnan
 
 import inflect
 import numpy as np
+from astrocats.catalog.quantity import QUANTITY
+# from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
+from six import string_types
+
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.printer import Printer
 from mosfit.utils import listify
-# from scipy.optimize import differential_evolution
-from scipy.optimize import minimize
+
+
 # from scipy.optimize import basinhopping
 
-from astrocats.catalog.quantity import QUANTITY
 # from bayes_opt import BayesianOptimization
 
 
@@ -296,7 +300,7 @@ class Model(object):
         return mod_class(
             name=task, model=self, **cur_task)
 
-    def create_data_dependent_free_parameters(
+    def adjust_fixed_parameters(
             self, variance_for_each=[], output={}):
         """Create free parameters that depend on loaded data."""
         unique_band_indices = list(
@@ -344,7 +348,23 @@ class Model(object):
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = deepcopy(cur_task)
+            # Fixed any variables to be fixed if any conditional inputs are
+            # fixed by the data.
+            # if any([listify(x)[-1] == 'conditional'
+            #         for x in cur_task.get('inputs', [])]):
         self._call_stack = new_call_stack
+
+        for task in reversed(self._call_stack):
+            cur_task = self._call_stack[task]
+            for inp in cur_task.get('inputs', []):
+                other = listify(inp)[0]
+                if (cur_task['kind'] == 'parameter' and
+                        output.get(other, None) is not None):
+                    if (not self._modules[other]._fixed or
+                            self._modules[other]._fixed_by_user):
+                        self._modules[task]._fixed = True
+                    self._modules[task]._derived_keys = list(set(
+                        self._modules[task]._derived_keys + [task]))
 
     def determine_number_of_measurements(self):
         """Estimate the number of measurements."""
@@ -364,7 +384,8 @@ class Model(object):
             if (task not in extra_fixed_parameters and
                     cur_task['kind'] == 'parameter' and
                     'min_value' in cur_task and 'max_value' in cur_task and
-                    cur_task['min_value'] != cur_task['max_value']):
+                    cur_task['min_value'] != cur_task['max_value'] and
+                    not self._modules[task]._fixed):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
@@ -465,7 +486,14 @@ class Model(object):
                 trees[tag] = entry
                 simple[tag] = OrderedDict()
                 inputs = listify(entry.get('inputs', []))
-                for inp in inputs:
+                for inps in inputs:
+                    conditional = False
+                    if isinstance(inps, list) and not isinstance(
+                            inps, string_types) and inps[-1] == "conditional":
+                        inp = inps[0]
+                        conditional = True
+                    else:
+                        inp = inps
                     if inp not in d:
                         suggests = get_close_matches(inp, d, n=1, cutoff=0.8)
                         warn_str = (
@@ -476,6 +504,9 @@ class Model(object):
                                 ' Did you perhaps mean `{}`?'.
                                 format(suggests[0]))
                         raise RuntimeError(warn_str)
+                    # Conditional inputs don't propagate down the tree.
+                    if conditional:
+                        continue
                     children = OrderedDict()
                     simple_children = OrderedDict()
                     self.construct_trees(

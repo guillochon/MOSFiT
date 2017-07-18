@@ -540,6 +540,14 @@ def get_parser():
         help=("Open the events listed with `-e` in the user's web "
               "browser one at a time."))
 
+    parser.add_argument(
+        '--exit-on-prompt',
+        dest='exit_on_prompt',
+        default=False,
+        action='store_true',
+        help=("Exit immediately if any user prompts are encountered "
+              "(useful for batch jobs)."))
+
     return parser
 
 
@@ -572,7 +580,8 @@ def main():
                 'install with `pip install googletrans`.')
 
         if args.language == 'select' or args.language not in LANGUAGES:
-            tprt = Printer(wrap_length=100, quiet=args.quiet, language='en')
+            tprt = Printer(wrap_length=100, quiet=args.quiet, language='en',
+                           exit_on_prompt=args.exit_on_prompt)
             languages = list(
                 sorted([LANGUAGES[x].title().replace('_', ' ') +
                         ' (' + x + ')' for x in LANGUAGES]))
@@ -581,7 +590,8 @@ def main():
                 message=False)
             args.language = sel.split('(')[-1].strip(')')
 
-    prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language)
+    prt = Printer(wrap_length=100, quiet=args.quiet, language=args.language,
+                  exit_on_prompt=args.exit_on_prompt)
 
     args.start_time = time.time()
 
@@ -715,8 +725,7 @@ def main():
         args.upload_token = upload_token
 
         if changed_iterations:
-            prt.prt("No events specified, setting iterations to 0.",
-                    wrapped=True)
+            prt.message('iterations_0', wrapped=True)
 
         # Create the user directory structure, if it doesn't already exist.
         if args.copy:
