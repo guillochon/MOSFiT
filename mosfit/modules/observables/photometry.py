@@ -132,6 +132,7 @@ class Photometry(Module):
                     prt.message('loading_bands', [per], inline=True)
                 systems = ['AB']
                 zps = [0.0]
+                path = None
                 if 'SVO' in band:
                     photsystem = self._band_systs[i]
                     if photsystem in syst_syns:
@@ -209,16 +210,30 @@ class Photometry(Module):
                             raise RuntimeError(
                                 prt.string('cant_read_svo'))
                     self._unique_bands[i]['origin'] = band['SVO']
-                else:
+                elif all(x in band for x in [
+                        'min_wavelength', 'max_wavelength',
+                        'delta_wavelength']):
+                    nbins = int(np.round((
+                        band['max_wavelength'] -
+                        band['min_wavelength']) / band['delta_wavelength']))
+                    rows = np.array(
+                        [np.linspace(
+                            band['min_wavelength'], band['max_wavelength'],
+                            nbins), np.full(nbins, 1.0)]).T.tolist()
+                    self._unique_bands[i]['origin'] = 'generated'
+                elif 'path' in band:
                     self._unique_bands[i]['origin'] = band['path']
                     path = band['path']
+                else:
+                    raise RuntimeError(prt.text('bad_filter_rule'))
 
-                with open(os.path.join(
-                        self._dir_path, 'filters', path), 'r') as f:
-                    rows = []
-                    for row in csv.reader(
-                            f, delimiter=' ', skipinitialspace=True):
-                        rows.append([float(x) for x in row[:2]])
+                if path:
+                    with open(os.path.join(
+                            self._dir_path, 'filters', path), 'r') as f:
+                        rows = []
+                        for row in csv.reader(
+                                f, delimiter=' ', skipinitialspace=True):
+                            rows.append([float(x) for x in row[:2]])
                 for rank in range(1, self._pool.size + 1):
                     self._pool.comm.send(rows, dest=rank, tag=3)
                     self._pool.comm.send(zps, dest=rank, tag=4)
