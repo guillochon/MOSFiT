@@ -3,6 +3,15 @@
         "@note": "List of rules to find the right filter for each observation. Generic rules should go near the top of the file, whereas instrument/telescope-specific rules should go near the bottom."
     },
     {
+        "filters": {
+            "white": {
+                "min_wavelength": 2000.0,
+                "max_wavelength": 11000.0,
+                "delta_wavelength": 50.0
+            }
+        }
+    },
+    {
         "systems": [
             "AB"
         ],

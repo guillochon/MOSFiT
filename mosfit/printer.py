@@ -60,13 +60,15 @@ class Printer(object):
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
-                 language='en'):
+                 language='en', exit_on_prompt=False):
         """Initialize printer, setting wrap length."""
         self._wrap_length = wrap_length
         self._quiet = quiet
         self._pool = pool
         self._fitter = fitter
         self._language = language
+        self._exit_on_prompt = exit_on_prompt
+
         self._was_inline = False
 
         self.set_strings()
@@ -200,6 +202,10 @@ class Printer(object):
             lines.append(rline)
         return '\n'.join(lines)
 
+    def text(self, text, reps=[], **kwargs):
+        """Return a string from a dictionary of strings."""
+        return self.message(text, reps=reps, prt=False, **kwargs)
+
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
                 colorify=True, width=None, prt=True, color=''):
@@ -308,6 +314,11 @@ class Printer(object):
                 prompt_txt[-1], wl, replace_whitespace=False) + " "
             if colorify:
                 inp_text = self.colorify(color + inp_text + "!e")
+
+            if self._exit_on_prompt:
+                msg = self.message('prompt_encountered', prt=False)
+                raise RuntimeError(msg)
+
             user_input = input(inp_text)
 
             yes = ['y', 'yes', 'yep']
