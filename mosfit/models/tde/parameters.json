@@ -22,11 +22,6 @@
         "max_value":5.0e8,
         "log":true
     },
-    "starmass":{
-        "min_value":0.01,
-        "max_value":100.0,
-        "log":true
-    },
     "efficiency":{
         "min_value":0.005,
         "max_value":0.4
