@@ -122,18 +122,17 @@ You can also use more complex priors within the same file. For example:
     }
     }
 
-A list of available priors is below.
+A list of available priors is below; for all prior types, ``min_value`` and ``max_value`` specify the minimum and maximum allowed parameter values, and ``log`` will apply the prior to the log transform of the parameter.
 
-
-+--------------+----------------------------------------------------------------+-----------------------------------------+
-| Prior name   | Equation                                                       | Parameters                              |
-+==============+================================================================+=========================================+
-| ``gaussian`` |  :math:`\Pi\sim \exp\left(\frac{-(x-\mu)^2}{2\sigma^2}\right)` | :math:`\mu`, :math:`\sigma`, min, max   |
-+--------------+----------------------------------------------------------------+-----------------------------------------+
-| ``powerlaw`` | :math:`\Pi\sim x^{-\alpha}`                                    | :math:`\alpha`, min, max                |
-+--------------+----------------------------------------------------------------+-----------------------------------------+
-
-
++---------------+---------------------------------------------------------------+-----------------------------------------+
+| Prior name    | Equation                                                      | Parameters                              |
++===============+===============================================================+=========================================+
+| ``parameter`` | :math:`\Pi\sim {\rm constant}`                                | min_value, max_value, log                             |
++---------------+---------------------------------------------------------------+-----------------------------------------+
+| ``gaussian``  | :math:`\Pi\sim \exp\left(\frac{-(x-\mu)^2}{2\sigma^2}\right)` | :math:`\mu`, :math:`\sigma`, min_value, max_value, log |
++---------------+---------------------------------------------------------------+-----------------------------------------+
+| ``powerlaw``  | :math:`\Pi\sim x^{-\alpha}`                                   | :math:`\alpha`, min_value, max_value, log             |
++---------------+---------------------------------------------------------------+-----------------------------------------+
 
 .. _swapping:
 
