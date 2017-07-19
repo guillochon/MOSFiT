@@ -202,9 +202,9 @@ class Printer(object):
             lines.append(rline)
         return '\n'.join(lines)
 
-    def text(self, **kwargs):
+    def text(self, text, reps=[], **kwargs):
         """Return a string from a dictionary of strings."""
-        return self.message(prt=False, **kwargs)
+        return self.message(text, reps=reps, prt=False, **kwargs)
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
