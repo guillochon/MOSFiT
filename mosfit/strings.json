@@ -1,4 +1,5 @@
 {
+    "all_models": "No model specified and no type found for provided transient, please select a model from the list of available models:",
     "all_walkers_written": "All walkers written.",
     "anchoring_variances": "Anchoring variances for the following filters (interpolating variances for the rest): {}",
     "bad_filter_rule": "Filter rule has incorrect syntax, requires either 'SVO', 'path', or ['min_wavelength', 'max_wavelength', 'delta_wavelength'] in its list of keys.",
@@ -89,6 +90,7 @@
     "specify_mc_value": "\nPlease specify `{}` for this set of `{}s`:",
     "specify_value": "\nPlease specify `{}`, which will be assumed for all rows:",
     "specify_value_blank": "\nPlease specify `{}`, which will be assumed for all rows (leave blank if not known):",
+    "suggested_models": "No model specified. Based on this transient's claimed type of `{}`, the following models are suggested for fitting this transient:",
     "system": "\nPhotometric system not specified, please specify a photometric system:",
     "too_few_walkers": "Number of free parameters exceeds number of measurements. Please treat results with caution.",
     "ul_complete": "\n!gUploading complete!!e",
