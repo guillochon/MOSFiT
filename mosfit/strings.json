@@ -55,6 +55,7 @@
     "mc_interrupted": "You have interrupted the Monte Carlo. Do you wish to save the incomplete run to disk? Previous results will be overwritten.",
     "min_max_same": "Minimum and maximum values are the same for `{}`, treating variable as a fixed parameter.",
     "moves_accepted": "Moves accepted",
+    "negative_redshift": "Redshift <= 0 (`{}`), setting luminosity distance to 10 pc.",
     "nmeas_nfree": "\n{} measurements, {} free parameters.",
     "no_data": "\nCould not find data for `{}` locally or in the `{}`.",
     "no_event_by_name": "Could not find event by that name, skipping!",
