@@ -609,4 +609,5 @@ class Fallback(Engine):
         #    outfile.write('{:.6f}'.format(self._Mstar) + '\n')
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar}
+                'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
+                'dmdt': dmdtnew, 'Ledd': Ledd}
