@@ -31,6 +31,7 @@ class Model(object):
 
     MODEL_OUTPUT_DIR = 'products'
     MIN_WAVE_FRAC_DIFF = 0.1
+    DRAW_LIMIT = 10
 
     # class outClass(object):
     #     pass
@@ -53,6 +54,8 @@ class Model(object):
         self._inflect = inflect.engine()
         self._inflections = {}
         self._references = []
+
+        self._draw_limit_reached = False
 
         if self._fitter:
             self._printer = self._fitter._printer
@@ -551,7 +554,9 @@ class Model(object):
         """
         p = None
         chosen_one = None
+        draw_cnt = 0
         while p is None:
+            draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
             draw = [
@@ -571,9 +576,13 @@ class Model(object):
                 score = None
                 break
             score = self.likelihood(draw)
-            if (not isnan(score) and np.isfinite(score) and
-                (not isinstance(self._fitter._draw_above_likelihood, float) or
-                 score > self._fitter._draw_above_likelihood)):
+            if draw_cnt >= self.DRAW_LIMIT and not self._draw_limit_reached:
+                self._printer.message('draw_limit_reached', warning=True)
+                self._draw_limit_reached = True
+            if ((not isnan(score) and np.isfinite(score) and
+                 (not isinstance(self._fitter._draw_above_likelihood, float) or
+                  score > self._fitter._draw_above_likelihood)) or
+                    draw_cnt >= self.DRAW_LIMIT):
                 p = draw
 
         if not replace and chosen_one is not None:
