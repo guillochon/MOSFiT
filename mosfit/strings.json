@@ -26,6 +26,7 @@
     "dl_svo": "Downloading bandpass `{}` from SVO...",
     "dling_aliases": "Event `{}` interpreted as a transient name, downloading lists of transient aliases...",
     "dling_event": "Found event by primary name `{}` in the `{}`, downloading data...",
+    "draw_limit_reached": "Draw limit reached, suggests model scoring infinitely poorly for this event. Possible causes might be lack of flux in an observed wave band, a constraint that is not satisfiable with current combination of priors, or a bug in this particular model!",
     "drawing_walkers": "Drawing initial walkers",
     "enabling_s": "Enabling `-S` as extra bands were defined.",
     "enter_name": "Please enter the name of this transient: ",
