@@ -84,6 +84,7 @@ def get_parser():
     parser.add_argument(
         '--plot-points',
         dest='plot_points',
+        type=int,
         default=100,
         help=("Set the number of plot points when producing light curves from "
               "models without fitting against any actual transient data."))
@@ -144,6 +145,14 @@ def get_parser():
         nargs='+',
         help=("List of bandsets corresponding to the bands listed "
               "in `--band-list`."))
+
+    parser.add_argument(
+        '--band-sampling-points',
+        dest='band_sampling_points',
+        type=int,
+        default=17,
+        help=("Number of wavelengths to sample in each band when modeling "
+              "photometry."))
 
     parser.add_argument(
         '--exclude-bands',

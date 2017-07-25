@@ -31,6 +31,7 @@ class Model(object):
 
     MODEL_OUTPUT_DIR = 'products'
     MIN_WAVE_FRAC_DIFF = 0.1
+    DRAW_LIMIT = 10
 
     # class outClass(object):
     #     pass
@@ -54,6 +55,8 @@ class Model(object):
         self._inflections = {}
         self._references = []
 
+        self._draw_limit_reached = False
+
         if self._fitter:
             self._printer = self._fitter._printer
         else:
@@ -72,30 +75,53 @@ class Model(object):
         with open(types_path, 'r') as f:
             model_types = json.load(f, object_pairs_hook=OrderedDict)
 
+        # Create list of all available models.
+        all_models = set()
+        if os.path.isdir('models'):
+            all_models |= set(next(os.walk('models'))[1])
+        models_path = os.path.join(self._dir_path, 'models')
+        if os.path.isdir(models_path):
+            all_models |= set(next(os.walk(models_path))[1])
+        all_models = list(sorted(list(all_models)))
+
         if not self._model_name:
+            claimed_type = None
             try:
                 claimed_type = list(data.values())[0][
                     'claimedtype'][0][QUANTITY.VALUE]
             except Exception:
                 prt.message('no_model_type', warning=True)
+
+            all_models_txt = prt.text('all_models')
+            suggested_models_txt = prt.text('suggested_models', [claimed_type])
+
+            if claimed_type is None:
+                type_options = all_models
+                model_prompt_txt = all_models_txt
             else:
-                type_options = model_types.get(claimed_type, [])
-                if not type_options:
-                    prt.message('no_model_for_type', warning=True)
-                else:
+                type_options = model_types.get(claimed_type, []) + [
+                    'Another model not listed here.']
+                model_prompt_txt = suggested_models_txt
+            if not type_options:
+                prt.message('no_model_for_type', warning=True)
+            else:
+                while not self._model_name:
                     if fitter._test:
                         self._model_name = type_options[0]
                     else:
                         self._model_name = self._printer.prompt(
-                            'No model specified. Based on this transient\'s '
-                            'claimed type of `{}`, the following models are '
-                            'suggested for fitting this transient:'
-                            .format(claimed_type),
+                            model_prompt_txt,
                             kind='select',
                             options=type_options,
                             message=False,
                             none_string=('None of the above, skip this '
                                          'transient.'))
+                    if not self._model_name:
+                        break
+                    if self._model_name == 'Another model not listed here.':
+                        type_options = all_models
+                        model_prompt_txt = all_models_txt
+                        self._model_name = None
 
         if not self._model_name:
             return
@@ -528,7 +554,9 @@ class Model(object):
         """
         p = None
         chosen_one = None
+        draw_cnt = 0
         while p is None:
+            draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
             draw = [
@@ -548,9 +576,13 @@ class Model(object):
                 score = None
                 break
             score = self.likelihood(draw)
-            if (not isnan(score) and np.isfinite(score) and
-                (not isinstance(self._fitter._draw_above_likelihood, float) or
-                 score > self._fitter._draw_above_likelihood)):
+            if draw_cnt >= self.DRAW_LIMIT and not self._draw_limit_reached:
+                self._printer.message('draw_limit_reached', warning=True)
+                self._draw_limit_reached = True
+            if ((not isnan(score) and np.isfinite(score) and
+                 (not isinstance(self._fitter._draw_above_likelihood, float) or
+                  score > self._fitter._draw_above_likelihood)) or
+                    draw_cnt >= self.DRAW_LIMIT):
                 p = draw
 
         if not replace and chosen_one is not None:
