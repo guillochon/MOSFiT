@@ -1183,6 +1183,12 @@ class Fitter(object):
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
+        msg_criteria = (
+            1.1 if convergence_criteria is None else convergence_criteria)
+        if (convergence_type == 'psrf' and msg_criteria is not None and
+                psrf > msg_criteria):
+            prt.message('not_converged', [msg_criteria], warning=True)
+
         prt.message('constructing')
 
         if write:

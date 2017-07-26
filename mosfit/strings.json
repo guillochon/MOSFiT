@@ -71,6 +71,7 @@
     "no_ul_token": "No upload token found! Please visit {} to obtain an upload token for MOSFiT.",
     "no_ul_waic": "WAIC score `{}` below 0.0, not uploading this fit.",
     "no_walker_data": "Could not find walker data.",
+    "not_converged": "The PSRF score of this fit is larger than the specified convergence criterion of `{}`, suggesting the final distribution of walkers is not converged. The user is encourged to either increase the number of iterations they run for (with the `-i` flag) or to use the `-R` flag to guarantee convergence is achieved.",
     "omit_offline": "Try omitting the `--offline` flag.",
     "outputting_walker": "Wrote walker [ {}/{} ]...",
     "one_per_line": "\nDoes each row contain a single `{}`, or multiple `{}s` (e.g. a single row reports magnitudes for different `{}s` in different columns)?",
