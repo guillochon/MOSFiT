@@ -212,13 +212,17 @@ def get_parser():
         dest='smooth_times',
         type=int,
         const=0,
-        default=-1,
+        default=20,
         nargs='?',
         action='store',
         help=("Add this many more fictitious observations between the first "
-              "and last observed times. Setting this value to `0` will "
+              "and last observed times. Setting this value to `0` (or "
+              "providing no argument) will "
               "guarantee that all observed bands/instrument/system "
-              "combinations have a point at all observed epochs."))
+              "combinations have a point at all observed epochs, but no other "
+              "times. A negative "
+              "value will only yield model predictions at the observations "
+              "but at no other times (faster but sparser light curves)."))
 
     parser.add_argument(
         '--extrapolate-time',
