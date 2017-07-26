@@ -19,7 +19,7 @@ from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
 
 
-class SortingHelpFormatter(argparse.HelpFormatter):
+class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     """Sort argparse arguments by argument name."""
 
     def add_arguments(self, actions):
