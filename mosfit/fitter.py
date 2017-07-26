@@ -957,7 +957,7 @@ class Fitter(object):
                     # Calculate the autocorrelation time.
                     low = 10
                     asize = 0.5 * (emim1 - self._burn_in) / low
-                    if asize >= 0:
+                    if asize >= 0 and convergence_type == 'acor':
                         acorc = max(
                             1, min(self._MAX_ACORC,
                                    int(np.floor(0.5 * emi / low))))
@@ -993,8 +993,7 @@ class Fitter(object):
                         actc = int(np.ceil(aacort / sli))
                         actn = np.int(float(emi - ams) / actc)
 
-                        if (convergence_type == 'acor' and
-                            convergence_criteria is not None and
+                        if (convergence_criteria is not None and
                             actn >= convergence_criteria and
                                 emi > iterations):
                             prt.message('converged')
