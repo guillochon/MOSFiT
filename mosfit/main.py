@@ -13,7 +13,7 @@ from unicodedata import normalize
 
 import numpy as np
 
-from mosfit import __version__
+from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
@@ -661,8 +661,10 @@ def main():
                 #     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
             prt.prt(logo, colorify=True)
-            prt.message('byline', reps=[__version__, mosfit_hash],
-                        center=True, colorify=True, width=width, wrapped=False)
+            prt.message(
+                'byline', reps=[
+                    __version__, mosfit_hash, __author__, __contributors__],
+                center=True, colorify=True, width=width, wrapped=False)
 
         # Get/set upload token
         upload_token = ''

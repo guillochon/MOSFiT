@@ -7,7 +7,7 @@
     "bands_used": "\nBands being used for current transient:",
     "bibcode": "Please enter the 19-character ADS bibcode associated with this data:",
     "burning": "Burning",
-    "byline": "### !mM!e!gO!e!rS!e!yFi!e!bT!e -- Version {} ({}) ###\nAuthored by James Guillochon & Matt Nicholl\nReleased under the MIT license\n\nCode: !c!uhttps://github.com/guillochon/MOSFiT!e!e\nDocumentation: !c!uhttps://mosfit.readthedocs.io!e!e\n",
+    "byline": "### !mM!e!gO!e!rS!e!yFi!e!bT!e -- Version {} ({}) ###\nAuthored by {}\nAdditional contributions from {}\nReleased under the MIT license\n\nCode: !c!uhttps://github.com/guillochon/MOSFiT!e!e\nDocumentation: !c!uhttps://mosfit.readthedocs.io!e!e\n",
     "cached_event": "Using cache of event `{}`, originally downloaded from the `{}`.",
     "cant_dl_event": "Could not download data for `{}`, will attempt to use cached data.",
     "cant_dl_names": "Could not download `{}` names (are you online?), using cached list.",
