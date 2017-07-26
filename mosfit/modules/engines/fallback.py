@@ -602,4 +602,5 @@ class Fallback(Engine):
         luminosities = (luminosities * Ledd / (luminosities + Ledd))
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta}
+                'tpeak': tpeak, 'beta': self._beta,
+                'dmdt': dmdtnew, 'Ledd': Ledd}
