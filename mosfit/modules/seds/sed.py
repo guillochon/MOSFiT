@@ -18,11 +18,11 @@ class SED(Module):
     """
 
     C_OVER_ANG = (c.c / u.Angstrom).cgs.value
-    N_PTS = 16 + 1
 
     def __init__(self, **kwargs):
         """Initialize module."""
         super(SED, self).__init__(**kwargs)
+        self._N_PTS = 16 + 1
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):
@@ -40,7 +40,7 @@ class SED(Module):
                 rngc.remove(max_wav)
                 self._sample_wavelengths.append(np.unique(np.concatenate(
                     (np.linspace(min_wav, max_wav,
-                                 self.N_PTS - len(rngc)), np.array(rngc)))))
+                                 self._N_PTS - len(rngc)), np.array(rngc)))))
                 llen = len(self._sample_wavelengths[-1])
                 if llen > max_len:
                     max_len = llen
@@ -81,3 +81,8 @@ class SED(Module):
         if request == 'sample_wavelengths':
             return self._sample_wavelengths
         return []
+
+    def set_data(self, band_sampling_points):
+        """Set SED data."""
+        self._N_PTS = band_sampling_points
+        return True

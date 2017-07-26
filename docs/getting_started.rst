@@ -49,7 +49,7 @@ Parallel execution
 
 .. code-block:: bash
 
-    mpirun -np 5 mosfit -i 0 -m magnetar
+    mpirun -np 5 mosfit -m magnetar
 
 .. _own-data:
 
@@ -63,7 +63,7 @@ Using your own data
 
     mosfit -e my_ascii_data_file.csv
 
-When run with no other arguments, ``MOSFiT`` will convert the files to JSON format and immediately exit, but if run with the other standard arguments ``MOSFiT`` will read in the newly created JSON files and begin processing them. For more information, please see the :ref:`Private data` section.
+``MOSFiT`` will convert the files to JSON format and immediately begin processing the new files (append ``-i 0`` to immediately exit after conversion). For more information, please see the :ref:`Private data` section.
 
 .. _producing-outputs:
 

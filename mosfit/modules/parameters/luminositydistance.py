@@ -1,8 +1,7 @@
-"""Definitions for the `Redshift` class."""
+"""Definitions for the `LuminosityDistance` class."""
 import numpy as np
 from astropy import units as un
 from astropy.cosmology import Planck15 as cosmo
-from astropy.cosmology import z_at_value
 
 from mosfit.modules.parameters.parameter import Parameter
 
@@ -10,12 +9,12 @@ from mosfit.modules.parameters.parameter import Parameter
 # Important: Only define one ``Module`` class per file.
 
 
-class Redshift(Parameter):
-    """Redshift parameter that depends on luminosity distance."""
+class LuminosityDistance(Parameter):
+    """LuminosityDistance parameter that depends on luminosity distance."""
 
     def __init__(self, **kwargs):
         """Initialize module."""
-        super(Redshift, self).__init__(**kwargs)
+        super(LuminosityDistance, self).__init__(**kwargs)
 
         self._warned_small = False
 
@@ -26,20 +25,19 @@ class Redshift(Parameter):
             return {}
 
         if self._value is None:
-            self._lum_dist = kwargs.get(self.key('lumdist'), self._lum_dist)
-            if self._value is None and self._lum_dist is not None:
-                if self._lum_dist < 1.0:
+            self._redshift = kwargs.get(self.key('redshift'), self._redshift)
+            if self._redshift is not None:
+                if self._redshift <= 0.0:
                     if not self._warned_small:
                         self._printer.message(
-                            'small_lumdist', [
-                                str(np.around(
-                                    self._lum_dist * 1.0e6, decimals=2))],
+                            'negative_redshift', [
+                                str(np.around(self._redshift, decimals=2))],
                             warning=True)
                     self._warned_small = True
-                    value = 0.0
+                    value = 1.0e-5
                 else:
-                    value = z_at_value(cosmo.luminosity_distance,
-                                       self._lum_dist * un.Mpc)
+                    value = (cosmo.luminosity_distance(
+                        self._redshift) / un.Mpc).value
             else:
                 value = self.value(kwargs['fraction'])
         else:
@@ -49,9 +47,9 @@ class Redshift(Parameter):
 
     def send_request(self, request):
         """Send requests to other modules."""
-        if request == 'redshift':
+        if request == 'lumdist':
             return self._value
 
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
-        self._lum_dist = requests.get('lumdist', None)
+        self._redshift = requests.get('redshift', None)

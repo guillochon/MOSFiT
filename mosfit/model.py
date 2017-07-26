@@ -10,15 +10,19 @@ from math import isnan
 
 import inflect
 import numpy as np
+from astrocats.catalog.quantity import QUANTITY
+# from scipy.optimize import differential_evolution
+from scipy.optimize import minimize
+from six import string_types
+
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
 from mosfit.printer import Printer
 from mosfit.utils import listify
-# from scipy.optimize import differential_evolution
-from scipy.optimize import minimize
+
+
 # from scipy.optimize import basinhopping
 
-from astrocats.catalog.quantity import QUANTITY
 # from bayes_opt import BayesianOptimization
 
 
@@ -27,6 +31,7 @@ class Model(object):
 
     MODEL_OUTPUT_DIR = 'products'
     MIN_WAVE_FRAC_DIFF = 0.1
+    DRAW_LIMIT = 10
 
     # class outClass(object):
     #     pass
@@ -50,6 +55,8 @@ class Model(object):
         self._inflections = {}
         self._references = []
 
+        self._draw_limit_reached = False
+
         if self._fitter:
             self._printer = self._fitter._printer
         else:
@@ -68,30 +75,53 @@ class Model(object):
         with open(types_path, 'r') as f:
             model_types = json.load(f, object_pairs_hook=OrderedDict)
 
+        # Create list of all available models.
+        all_models = set()
+        if os.path.isdir('models'):
+            all_models |= set(next(os.walk('models'))[1])
+        models_path = os.path.join(self._dir_path, 'models')
+        if os.path.isdir(models_path):
+            all_models |= set(next(os.walk(models_path))[1])
+        all_models = list(sorted(list(all_models)))
+
         if not self._model_name:
+            claimed_type = None
             try:
                 claimed_type = list(data.values())[0][
                     'claimedtype'][0][QUANTITY.VALUE]
             except Exception:
                 prt.message('no_model_type', warning=True)
+
+            all_models_txt = prt.text('all_models')
+            suggested_models_txt = prt.text('suggested_models', [claimed_type])
+
+            if claimed_type is None:
+                type_options = all_models
+                model_prompt_txt = all_models_txt
             else:
-                type_options = model_types.get(claimed_type, [])
-                if not type_options:
-                    prt.message('no_model_for_type', warning=True)
-                else:
+                type_options = model_types.get(claimed_type, []) + [
+                    'Another model not listed here.']
+                model_prompt_txt = suggested_models_txt
+            if not type_options:
+                prt.message('no_model_for_type', warning=True)
+            else:
+                while not self._model_name:
                     if fitter._test:
                         self._model_name = type_options[0]
                     else:
                         self._model_name = self._printer.prompt(
-                            'No model specified. Based on this transient\'s '
-                            'claimed type of `{}`, the following models are '
-                            'suggested for fitting this transient:'
-                            .format(claimed_type),
+                            model_prompt_txt,
                             kind='select',
                             options=type_options,
                             message=False,
                             none_string=('None of the above, skip this '
                                          'transient.'))
+                    if not self._model_name:
+                        break
+                    if self._model_name == 'Another model not listed here.':
+                        type_options = all_models
+                        model_prompt_txt = all_models_txt
+                        self._model_name = None
 
         if not self._model_name:
             return
@@ -296,7 +326,7 @@ class Model(object):
         return mod_class(
             name=task, model=self, **cur_task)
 
-    def create_data_dependent_free_parameters(
+    def adjust_fixed_parameters(
             self, variance_for_each=[], output={}):
         """Create free parameters that depend on loaded data."""
         unique_band_indices = list(
@@ -344,7 +374,23 @@ class Model(object):
                 self._modules[ptask].set_variance_bands(variance_bands)
             else:
                 new_call_stack[task] = deepcopy(cur_task)
+            # Fixed any variables to be fixed if any conditional inputs are
+            # fixed by the data.
+            # if any([listify(x)[-1] == 'conditional'
+            #         for x in cur_task.get('inputs', [])]):
         self._call_stack = new_call_stack
+
+        for task in reversed(self._call_stack):
+            cur_task = self._call_stack[task]
+            for inp in cur_task.get('inputs', []):
+                other = listify(inp)[0]
+                if (cur_task['kind'] == 'parameter' and
+                        output.get(other, None) is not None):
+                    if (not self._modules[other]._fixed or
+                            self._modules[other]._fixed_by_user):
+                        self._modules[task]._fixed = True
+                    self._modules[task]._derived_keys = list(set(
+                        self._modules[task]._derived_keys + [task]))
 
     def determine_number_of_measurements(self):
         """Estimate the number of measurements."""
@@ -364,7 +410,8 @@ class Model(object):
             if (task not in extra_fixed_parameters and
                     cur_task['kind'] == 'parameter' and
                     'min_value' in cur_task and 'max_value' in cur_task and
-                    cur_task['min_value'] != cur_task['max_value']):
+                    cur_task['min_value'] != cur_task['max_value'] and
+                    not self._modules[task]._fixed):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
@@ -465,7 +512,14 @@ class Model(object):
                 trees[tag] = entry
                 simple[tag] = OrderedDict()
                 inputs = listify(entry.get('inputs', []))
-                for inp in inputs:
+                for inps in inputs:
+                    conditional = False
+                    if isinstance(inps, list) and not isinstance(
+                            inps, string_types) and inps[-1] == "conditional":
+                        inp = inps[0]
+                        conditional = True
+                    else:
+                        inp = inps
                     if inp not in d:
                         suggests = get_close_matches(inp, d, n=1, cutoff=0.8)
                         warn_str = (
@@ -476,6 +530,9 @@ class Model(object):
                                 ' Did you perhaps mean `{}`?'.
                                 format(suggests[0]))
                         raise RuntimeError(warn_str)
+                    # Conditional inputs don't propagate down the tree.
+                    if conditional:
+                        continue
                     children = OrderedDict()
                     simple_children = OrderedDict()
                     self.construct_trees(
@@ -497,7 +554,9 @@ class Model(object):
         """
         p = None
         chosen_one = None
+        draw_cnt = 0
         while p is None:
+            draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
             draw = [
@@ -517,9 +576,13 @@ class Model(object):
                 score = None
                 break
             score = self.likelihood(draw)
-            if (not isnan(score) and np.isfinite(score) and
-                (not isinstance(self._fitter._draw_above_likelihood, float) or
-                 score > self._fitter._draw_above_likelihood)):
+            if draw_cnt >= self.DRAW_LIMIT and not self._draw_limit_reached:
+                self._printer.message('draw_limit_reached', warning=True)
+                self._draw_limit_reached = True
+            if ((not isnan(score) and np.isfinite(score) and
+                 (not isinstance(self._fitter._draw_above_likelihood, float) or
+                  score > self._fitter._draw_above_likelihood)) or
+                    draw_cnt >= self.DRAW_LIMIT):
                 p = draw
 
         if not replace and chosen_one is not None:
