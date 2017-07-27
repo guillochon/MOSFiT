@@ -92,15 +92,14 @@ class Converter(object):
             ('event', ['event', 'transient', 'name', 'supernova'])
         ))
         self._critical_keys = [
-            PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.BAND,
-            PHOTOMETRY.E_MAGNITUDE,
-            PHOTOMETRY.COUNT_RATE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+            PHOTOMETRY.BAND, PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.ZERO_POINT]
         self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._optional_keys = [PHOTOMETRY.ZERO_POINT]
         self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
         self._dep_keys = [
-            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE]
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE, PHOTOMETRY.BAND]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
@@ -362,11 +361,25 @@ class Converter(object):
                             if self._data_type == 2:
                                 if self._zp:
                                     photodict[PHOTOMETRY.ZERO_POINT] = self._zp
+                                else:
+                                    photodict[PHOTOMETRY.ZERO_POINT] = (
+                                        row[cidict[PHOTOMETRY.ZERO_POINT][pi]]
+                                        if isinstance(cidict[
+                                            PHOTOMETRY.ZERO_POINT], list) else
+                                        row[cidict[PHOTOMETRY.ZERO_POINT]])
+                                zpp = photodict[PHOTOMETRY.ZERO_POINT]
+                                cc = (
+                                    row[cidict[PHOTOMETRY.COUNT_RATE][pi]] if
+                                    isinstance(cidict[
+                                        PHOTOMETRY.COUNT_RATE], list) else
+                                    row[cidict[PHOTOMETRY.COUNT_RATE]])
+                                ecc = (
+                                    row[cidict[PHOTOMETRY.E_COUNT_RATE][pi]] if
+                                    isinstance(cidict[
+                                        PHOTOMETRY.E_COUNT_RATE], list) else
+                                    row[cidict[PHOTOMETRY.E_COUNT_RATE]])
                                 set_pd_mag_from_counts(
-                                    photodict,
-                                    c=row[cidict[PHOTOMETRY.COUNT_RATE]],
-                                    ec=row[cidict[PHOTOMETRY.E_COUNT_RATE]],
-                                    zp=row[cidict[PHOTOMETRY.ZERO_POINT]])
+                                    photodict, c=cc, ec=ecc, zp=zpp)
                             if not len(sources):
                                 if self._require_source:
                                     if (self._rsource.get(SOURCE.NAME, '') ==
@@ -498,7 +511,8 @@ class Converter(object):
 
         # Look for columns that are band names if no magnitude column was
         # found.
-        if PHOTOMETRY.MAGNITUDE not in cidict:
+        if (PHOTOMETRY.MAGNITUDE not in cidict and
+                PHOTOMETRY.COUNT_RATE not in cidict):
             # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
             # for each column).
             key = PHOTOMETRY.MAGNITUDE
