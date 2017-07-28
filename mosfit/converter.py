@@ -381,37 +381,48 @@ class Converter(object):
                                 set_pd_mag_from_counts(
                                     photodict, c=cc, ec=ecc, zp=zpp)
                             if not len(sources):
-                                if self._require_source:
-                                    if (self._rsource.get(SOURCE.NAME, '') ==
-                                            self._DEFAULT_SOURCE):
+                                if (self._rsource.get(SOURCE.NAME, '') ==
+                                        self._DEFAULT_SOURCE):
+                                    sopts = [
+                                        ('Bibcode', 'b'), ('Last name', 'l')]
+                                    if self._require_source:
+                                        sel_str = 'must_select_source'
+                                    else:
+                                        sel_str = 'select_source'
+                                    text = prt.message(
+                                        sel_str, [new_event_name], prt=False)
+                                    skind = prt.prompt(
+                                        text, kind='option',
+                                        options=sopts, default='b',
+                                        none_string=(
+                                            None if self._require_source else
+                                            'Neither, tag MOSFiT as source'))
+                                    if skind == 'b':
                                         self._rsource = {}
-                                        sopts = [
-                                            ('Bibcode', 'b'), ('Name', 'n')]
-                                        text = prt.message(
-                                            'select_source', [new_event_name],
-                                            prt=False)
-                                        skind = prt.prompt(
-                                            text, kind='option',
-                                            options=sopts, default='b',
-                                            none_string=None)
-                                        if skind == 'b':
-                                            bibcode = ''
-                                            while len(bibcode) != 19:
-                                                bibcode = prt.prompt(
-                                                    'bibcode',
-                                                    kind='string',
-                                                    allow_blank=False
-                                                )
-                                            self._rsource[
-                                                SOURCE.BIBCODE] = bibcode
-                                        elif skind == 'n':
-                                            last_name = prt.prompt(
-                                                'last_name', kind='string'
+                                        bibcode = ''
+
+                                        while len(bibcode) != 19:
+                                            bibcode = prt.prompt(
+                                                'bibcode',
+                                                kind='string',
+                                                allow_blank=False
                                             )
-                                            self._rsource[
-                                                SOURCE.NAME] = (
-                                                    last_name.strip().title() +
-                                                    ' et al., in preparation')
+                                            if (re.search(
+                                                '[0-9]{4}..........[\.0-9]{4}'
+                                                '[A-Za-z]', bibcode)
+                                                    is None):
+                                                bibcode = ''
+                                        self._rsource[
+                                            SOURCE.BIBCODE] = bibcode
+                                    elif skind == 'l':
+                                        self._rsource = {}
+                                        last_name = prt.prompt(
+                                            'last_name', kind='string'
+                                        )
+                                        self._rsource[
+                                            SOURCE.NAME] = (
+                                                last_name.strip().title() +
+                                                ' et al., in preparation')
 
                                 photodict[
                                     PHOTOMETRY.SOURCE] = entry.add_source(
