@@ -3,15 +3,11 @@
 import gc
 import json
 import os
-import re
-import shutil
 import sys
 import time
 import warnings
-import webbrowser
 from collections import OrderedDict
 from copy import deepcopy
-from difflib import get_close_matches
 
 import numpy as np
 import scipy
@@ -23,15 +19,17 @@ from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
+
 from mosfit.converter import Converter
+from mosfit.fetcher import Fetcher
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
-                          frequency_unit, get_model_hash, get_url_file_handle,
-                          listify, open_atomic, pretty_num, slugify, speak)
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
+                          frequency_unit, get_model_hash, listify, open_atomic,
+                          pretty_num, slugify, speak)
 
 from .model import Model
 
@@ -134,6 +132,8 @@ class Fitter(object):
         self._debug = False
         self._speak = speak
         self._limiting_magnitude = limiting_magnitude
+        self._offline = offline
+        self._open_in_browser = open_in_browser
 
         self._cuda = cuda
         if cuda:
@@ -144,7 +144,6 @@ class Fitter(object):
             except ImportError:
                 pass
 
-        dir_path = os.path.dirname(os.path.realpath(__file__))
         self._test = test
         self._wrap_length = wrap_length
         self._draw_above_likelihood = draw_above_likelihood
@@ -184,8 +183,6 @@ class Fitter(object):
 
         if not len(event_list) and not len(model_list):
             prt.message('no_events_models', warning=True)
-
-        data = {}
 
         # If the input is not a JSON file, assume it is either a list of
         # transients or that it is the data from a single transient in tabular
@@ -262,179 +259,29 @@ class Fitter(object):
                 pool.close()
 
         self._event_name = 'Batch'
-        self._event_catalog = ''
-        for ei, event in enumerate(event_list):
-            self._event_name = ''
-            self._event_path = ''
-            if event:
-                try:
-                    pool = MPIPool()
-                except ValueError:
-                    pool = SerialPool()
-                if pool.is_master():
-                    path = ''
-                    # If the event name ends in .json, assume event is a path.
-                    if event.endswith('.json'):
-                        path = event
-                        self._event_name = event.replace('.json',
-                                                         '').split('/')[-1]
+        self._event_path = ''
+        self._event_data = {}
 
-                    # If not (or the file doesn't exist), download from an open
-                    # catalog.
-                    if not path or not os.path.exists(path):
-                        names_paths = [
-                            os.path.join(dir_path, 'cache', x +
-                                         '.names.min.json') for x in
-                            self._catalogs]
-                        input_name = event.replace('.json', '')
-                        if offline:
-                            prt.message('event_interp', [input_name])
-                        else:
-                            prt.message('dling_aliases', [input_name])
-                            for ci, catalog in enumerate(self._catalogs):
-                                try:
-                                    response = get_url_file_handle(
-                                        self._catalogs[catalog]['json'] +
-                                        '/names.min.json',
-                                        timeout=10)
-                                except Exception:
-                                    prt.message('cant_dl_names'
-                                                [catalog], warning=True)
-                                    raise
-                                else:
-                                    with open_atomic(
-                                            names_paths[ci], 'wb') as f:
-                                        shutil.copyfileobj(response, f)
-                        names = OrderedDict()
-                        for ci, catalog in enumerate(self._catalogs):
-                            if os.path.exists(names_paths[ci]):
-                                with open(names_paths[ci], 'r') as f:
-                                    names[catalog] = json.load(
-                                        f, object_pairs_hook=OrderedDict)
-                            else:
-                                prt.message('cant_read_names', [catalog],
-                                            warning=True)
-                                if offline:
-                                    prt.message('omit_offline')
-                                raise RuntimeError
+        try:
+            pool = MPIPool()
+        except ValueError:
+            pool = SerialPool()
+        if pool.is_master():
+            self._fetcher = Fetcher(self)
+            fetched_events = self._fetcher.fetch(event_list)
 
-                            if event in names[catalog]:
-                                self._event_name = event
-                                self._event_catalog = catalog
-                            else:
-                                for name in names[catalog]:
-                                    if (event in names[catalog][name] or
-                                            'SN' + event in
-                                            names[catalog][name]):
-                                        self._event_name = name
-                                        self._event_catalog = catalog
-                                        break
+            for rank in range(1, pool.size + 1):
+                pool.comm.send(fetched_events, dest=rank, tag=0)
+            pool.close()
+        else:
+            fetched_events = pool.comm.recv(source=0, tag=0)
+            pool.wait()
 
-                        if not self._event_name:
-                            for ci, catalog in enumerate(self._catalogs):
-                                namekeys = []
-                                for name in names[catalog]:
-                                    namekeys.extend(names[catalog][name])
-                                namekeys = list(sorted(set(namekeys)))
-                                matches = get_close_matches(
-                                    event, namekeys, n=5, cutoff=0.8)
-                                # matches = []
-                                if len(matches) < 5 and is_number(event[0]):
-                                    prt.message('pef_ext_search')
-                                    snprefixes = set(('SN19', 'SN20'))
-                                    for name in names[catalog]:
-                                        ind = re.search("\d", name)
-                                        if ind and ind.start() > 0:
-                                            snprefixes.add(name[:ind.start()])
-                                    snprefixes = list(sorted(snprefixes))
-                                    for prefix in snprefixes:
-                                        testname = prefix + event
-                                        new_matches = get_close_matches(
-                                            testname, namekeys, cutoff=0.95,
-                                            n=1)
-                                        if (len(new_matches) and
-                                                new_matches[0] not in matches):
-                                            matches.append(new_matches[0])
-                                        if len(matches) == 5:
-                                            break
-                                if len(matches):
-                                    if test:
-                                        response = matches[0]
-                                    else:
-                                        response = prt.prompt(
-                                            'no_exact_match',
-                                            kind='select',
-                                            options=matches,
-                                            none_string=(
-                                                'None of the above, ' +
-                                                ('skip this event.' if
-                                                 ci == len(self._catalogs) - 1
-                                                 else
-                                                 'try the next catalog.')))
-                                    if response:
-                                        for name in names[catalog]:
-                                            if response in names[
-                                                    catalog][name]:
-                                                self._event_name = name
-                                                self._event_catalog = catalog
-                                                break
-                                        if self._event_name:
-                                            break
-
-                        if not self._event_name:
-                            prt.message('no_event_by_name')
-                            continue
-                        urlname = self._event_name + '.json'
-                        name_path = os.path.join(dir_path, 'cache', urlname)
-
-                        if offline:
-                            prt.message('cached_event', [
-                                self._event_name, self._event_catalog])
-                        else:
-                            prt.message('dling_event', [
-                                self._event_name, self._event_catalog])
-                            try:
-                                response = get_url_file_handle(
-                                    self._catalogs[self._event_catalog][
-                                        'json'] + '/json/' + urlname,
-                                    timeout=10)
-                            except Exception:
-                                prt.message('cant_dl_event', [
-                                    self._event_name], warning=True)
-                            else:
-                                with open_atomic(name_path, 'wb') as f:
-                                    shutil.copyfileobj(response, f)
-                        path = name_path
-
-                    if os.path.exists(path):
-                        if open_in_browser:
-                            webbrowser.open(
-                                self._catalogs[self._event_catalog]['web'] +
-                                self._event_name)
-                        with open(path, 'r') as f:
-                            data = json.load(f, object_pairs_hook=OrderedDict)
-                        prt.message('event_file', [path], wrapped=True)
-                    else:
-                        prt.message('no_data', [
-                            self._event_name, '/'.join(self._catalogs.keys())])
-                        if offline:
-                            prt.message('omit_offline')
-                        raise RuntimeError
-
-                    for rank in range(1, pool.size + 1):
-                        pool.comm.send(self._event_name, dest=rank, tag=0)
-                        pool.comm.send(path, dest=rank, tag=1)
-                        pool.comm.send(data, dest=rank, tag=2)
-                else:
-                    self._event_name = pool.comm.recv(source=0, tag=0)
-                    path = pool.comm.recv(source=0, tag=1)
-                    data = pool.comm.recv(source=0, tag=2)
-                    pool.wait()
-
-                self._event_path = path
-
-                if pool.is_master():
-                    pool.close()
+        for ei, event in enumerate(fetched_events):
+            if event is not None:
+                self._event_name = event.get('name', 'Batch')
+                self._event_path = event.get('path', '')
+                self._event_data = event.get('data', {})
 
             if model_list:
                 lmodel_list = model_list
@@ -453,7 +300,7 @@ class Fitter(object):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
-                        data=data,
+                        data=self._event_data,
                         parameter_path=parameter_path,
                         wrap_length=wrap_length,
                         fitter=self,
@@ -477,10 +324,10 @@ class Fitter(object):
                             'band_instruments': band_instruments,
                             'band_bandsets': band_bandsets
                         }
-                        data = self.generate_dummy_data(**gen_args)
+                        self._event_data = self.generate_dummy_data(**gen_args)
 
                     success = self.load_data(
-                        data,
+                        self._event_data,
                         event_name=self._event_name,
                         iterations=iterations,
                         fracking=fracking,
