@@ -78,19 +78,19 @@ class Fetcher(object):
                             prt.message('omit_offline')
                         raise RuntimeError
 
-                    if event in names[catalog]:
-                        events[ei]['name'] = event
+                    if input_name in names[catalog]:
+                        events[ei]['name'] = input_name
                         events[ei]['catalog'] = catalog
                     else:
                         for name in names[catalog]:
-                            if (event in names[catalog][name] or
-                                    'SN' + event in
+                            if (input_name in names[catalog][name] or
+                                    'SN' + input_name in
                                     names[catalog][name]):
                                 events[ei]['name'] = name
                                 events[ei]['catalog'] = catalog
                                 break
 
-                if not events[ei]['name']:
+                if not events[ei].get('name', None):
                     for ci, catalog in enumerate(self._fitter._catalogs):
                         namekeys = []
                         for name in names[catalog]:
@@ -141,8 +141,9 @@ class Fetcher(object):
                                 if events[ei]['name']:
                                     break
 
-                if not events[ei]['name']:
+                if not events[ei].get('name', None):
                     prt.message('no_event_by_name')
+                    events[ei]['name'] = input_name
                     continue
                 urlname = events[ei]['name'] + '.json'
                 name_path = os.path.join(dir_path, 'cache', urlname)
