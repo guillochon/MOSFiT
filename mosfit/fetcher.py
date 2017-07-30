@@ -118,7 +118,7 @@ class Fetcher(object):
                                 if len(matches) == 5:
                                     break
                         if len(matches):
-                            if self._fitter.test:
+                            if self._fitter._test:
                                 response = matches[0]
                             else:
                                 response = prt.prompt(
