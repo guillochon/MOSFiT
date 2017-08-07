@@ -161,6 +161,14 @@ def get_parser():
               "the bands listed in `--exclude-bands`."))
 
     parser.add_argument(
+        '--exclude-systems',
+        dest='exclude_systems',
+        default=[],
+        nargs='+',
+        help=("List of systems to exclude in fitting corresponding to "
+              "the bands listed in `--exclude-bands`."))
+
+    parser.add_argument(
         '--exclude-sources',
         dest='exclude_sources',
         default=[],
