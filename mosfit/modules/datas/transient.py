@@ -33,6 +33,7 @@ class Transient(Module):
                  limit_fitting_mjds=False,
                  exclude_bands=[],
                  exclude_instruments=[],
+                 exclude_systems=[],
                  exclude_sources=[],
                  band_list=[],
                  band_telescopes=[],
@@ -118,14 +119,27 @@ class Transient(Module):
                         if exclude_bands is not False and x == 'band':
                             if (entry.get(x, '') in exclude_bands and
                                 (not exclude_instruments or entry.get(
-                                    'instrument', '') in exclude_instruments)):
+                                    'instrument', '') in exclude_instruments)
+                                and (not exclude_systems or entry.get(
+                                    'system', '') in exclude_systems)):
                                 skip_entry = True
                                 break
                         if (exclude_instruments is not False and
                                 x == 'instrument'):
                             if (entry.get(x, '') in exclude_instruments and
                                 (not exclude_bands or
-                                 entry.get('band', '') in exclude_bands)):
+                                 entry.get('band', '') in exclude_bands)
+                                and (not exclude_systems or entry.get(
+                                    'system', '') in exclude_systems)):
+                                skip_entry = True
+                                break
+                        if (exclude_systems is not False and
+                                x == 'system'):
+                            if (entry.get(x, '') in exclude_systems and
+                                (not exclude_bands or
+                                 entry.get('band', '') in exclude_bands)
+                                and (not exclude_instruments or entry.get(
+                                    'instrument', '') in exclude_instruments)):
                                 skip_entry = True
                                 break
                         if (exclude_sources is not False and
