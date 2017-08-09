@@ -72,7 +72,6 @@ class Fitter(object):
     def fit_events(self,
                    events=[],
                    models=[],
-                   plot_points='',
                    max_time='',
                    band_list=[],
                    band_systems=[],
@@ -472,7 +471,6 @@ class Fitter(object):
                         gen_args = {
                             'name': mod_name,
                             'max_time': max_time,
-                            'plot_points': plot_points,
                             'band_list': band_list,
                             'band_systems': band_systems,
                             'band_instruments': band_instruments,
@@ -1583,12 +1581,14 @@ class Fitter(object):
     def generate_dummy_data(self,
                             name,
                             max_time=1000.,
-                            plot_points=100,
                             band_list=[],
                             band_systems=[],
                             band_instruments=[],
                             band_bandsets=[]):
         """Generate simulated data based on priors."""
+        # Just need 2 plot points for beginning and end.
+        plot_points = 2
+
         time_list = np.linspace(0.0, max_time, plot_points)
         band_list_all = ['V'] if len(band_list) == 0 else band_list
         times = np.repeat(time_list, len(band_list_all))
