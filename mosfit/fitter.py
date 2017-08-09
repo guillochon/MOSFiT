@@ -209,13 +209,14 @@ class Fitter(object):
             except ValueError:
                 pool = SerialPool()
             if pool.is_master():
+                prt.message('walker_file')
+                wfi = 0
                 for walker_path in walker_paths:
                     if os.path.exists(walker_path):
+                        prt.prt('  {}'.format(walker_path))
                         with open(walker_path, 'r') as f:
                             all_walker_data = json.load(
                                 f, object_pairs_hook=OrderedDict)
-                        prt.message('walker_file', [
-                                    walker_path], wrapped=True)
 
                         # Support both the format where all data stored in a
                         # single-item dictionary (the OAC format) and the older
@@ -241,7 +242,7 @@ class Fitter(object):
 
                         if choice is not None:
                             walker_data.extend([
-                                x[REALIZATION.PARAMETERS]
+                                [wfi, x[REALIZATION.PARAMETERS]]
                                 for x in models[choice][
                                     MODEL.REALIZATIONS]])
 
@@ -252,6 +253,7 @@ class Fitter(object):
                         if offline:
                             prt.message('omit_offline')
                         raise RuntimeError
+                    wfi = wfi + 1
 
                 for rank in range(1, pool.size + 1):
                     pool.comm.send(walker_data, dest=rank, tag=3)
@@ -792,16 +794,20 @@ class Fitter(object):
         # Generate walker positions based upon loaded walker data, if
         # available.
         walkers_pool = []
-        for walk in self._walker_data:
-            new_walk = np.full(model._num_free_parameters, None)
-            for k, key in enumerate(model._free_parameters):
-                param = model._modules[key]
-                walk_param = walk.get(key, None)
-                if not walk_param:
+        nmodels = len(set([x[0] for x in self._walker_data]))
+        for wm in range(len(self._walker_data)):
+            for walk in self._walker_data:
+                if wm % nmodels != walk[0]:
                     continue
-                if param:
-                    new_walk[k] = param.fraction(walk_param['value'])
-            walkers_pool.append(new_walk)
+                new_walk = np.full(model._num_free_parameters, None)
+                for k, key in enumerate(model._free_parameters):
+                    param = model._modules[key]
+                    walk_param = walk[1].get(key, None)
+                    if walk_param is None:
+                        continue
+                    if param:
+                        new_walk[k] = param.fraction(walk_param['value'])
+                walkers_pool.append(new_walk)
 
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the
