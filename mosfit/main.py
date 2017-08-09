@@ -82,14 +82,6 @@ def get_parser():
               "instead be drawn randomly from the specified model priors."))
 
     parser.add_argument(
-        '--plot-points',
-        dest='plot_points',
-        type=int,
-        default=100,
-        help=("Set the number of plot points when producing light curves from "
-              "models without fitting against any actual transient data."))
-
-    parser.add_argument(
         '--max-time',
         dest='max_time',
         type=float,
