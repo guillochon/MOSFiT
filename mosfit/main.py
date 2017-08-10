@@ -216,6 +216,7 @@ def get_parser():
 
     parser.add_argument(
         '--smooth-times',
+        '--plot-points',
         '-S',
         dest='smooth_times',
         type=int,
