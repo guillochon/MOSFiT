@@ -795,10 +795,10 @@ class Fitter(object):
         nmodels = len(set([x[0] for x in self._walker_data]))
         wp_extra = 0
         while len(walkers_pool) < len(self._walker_data):
+            appended_walker = False
             for walk in self._walker_data:
                 if (len(walkers_pool) + wp_extra) % nmodels != walk[0]:
                     continue
-                print(walk[0])
                 new_walk = np.full(model._num_free_parameters, None)
                 for k, key in enumerate(model._free_parameters):
                     param = model._modules[key]
@@ -808,8 +808,9 @@ class Fitter(object):
                     if param:
                         new_walk[k] = param.fraction(walk_param['value'])
                 walkers_pool.append(new_walk)
-                break
-            wp_extra += 1
+                appended_walker = True
+            if not appended_walker:
+                wp_extra += 1
 
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the
