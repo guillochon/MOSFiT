@@ -72,7 +72,6 @@ class Fitter(object):
     def fit_events(self,
                    events=[],
                    models=[],
-                   plot_points='',
                    max_time='',
                    band_list=[],
                    band_systems=[],
@@ -95,6 +94,7 @@ class Fitter(object):
                    limit_fitting_mjds=False,
                    exclude_bands=[],
                    exclude_instruments=[],
+                   exclude_systems=[],
                    exclude_sources=[],
                    suffix='',
                    offline=False,
@@ -208,13 +208,14 @@ class Fitter(object):
             except ValueError:
                 pool = SerialPool()
             if pool.is_master():
+                prt.message('walker_file')
+                wfi = 0
                 for walker_path in walker_paths:
                     if os.path.exists(walker_path):
+                        prt.prt('  {}'.format(walker_path))
                         with open(walker_path, 'r') as f:
                             all_walker_data = json.load(
                                 f, object_pairs_hook=OrderedDict)
-                        prt.message('walker_file', [
-                                    walker_path], wrapped=True)
 
                         # Support both the format where all data stored in a
                         # single-item dictionary (the OAC format) and the older
@@ -240,7 +241,7 @@ class Fitter(object):
 
                         if choice is not None:
                             walker_data.extend([
-                                x[REALIZATION.PARAMETERS]
+                                [wfi, x[REALIZATION.PARAMETERS]]
                                 for x in models[choice][
                                     MODEL.REALIZATIONS]])
 
@@ -251,6 +252,7 @@ class Fitter(object):
                         if offline:
                             prt.message('omit_offline')
                         raise RuntimeError
+                    wfi = wfi + 1
 
                 for rank in range(1, pool.size + 1):
                     pool.comm.send(walker_data, dest=rank, tag=3)
@@ -471,7 +473,6 @@ class Fitter(object):
                         gen_args = {
                             'name': mod_name,
                             'max_time': max_time,
-                            'plot_points': plot_points,
                             'band_list': band_list,
                             'band_systems': band_systems,
                             'band_instruments': band_instruments,
@@ -491,6 +492,7 @@ class Fitter(object):
                         limit_fitting_mjds=limit_fitting_mjds,
                         exclude_bands=exclude_bands,
                         exclude_instruments=exclude_instruments,
+                        exclude_systems=exclude_systems,
                         exclude_sources=exclude_sources,
                         band_list=band_list,
                         band_systems=band_systems,
@@ -553,6 +555,7 @@ class Fitter(object):
                   limit_fitting_mjds=False,
                   exclude_bands=[],
                   exclude_instruments=[],
+                  exclude_systems=[],
                   exclude_sources=[],
                   band_list=[],
                   band_systems=[],
@@ -586,6 +589,7 @@ class Fitter(object):
                     limit_fitting_mjds=limit_fitting_mjds,
                     exclude_bands=exclude_bands,
                     exclude_instruments=exclude_instruments,
+                    exclude_systems=exclude_systems,
                     exclude_sources=exclude_sources,
                     band_list=band_list,
                     band_systems=band_systems,
@@ -788,16 +792,25 @@ class Fitter(object):
         # Generate walker positions based upon loaded walker data, if
         # available.
         walkers_pool = []
-        for walk in self._walker_data:
-            new_walk = np.full(model._num_free_parameters, None)
-            for k, key in enumerate(model._free_parameters):
-                param = model._modules[key]
-                walk_param = walk.get(key, None)
-                if not walk_param:
+        nmodels = len(set([x[0] for x in self._walker_data]))
+        wp_extra = 0
+        while len(walkers_pool) < len(self._walker_data):
+            appended_walker = False
+            for walk in self._walker_data:
+                if (len(walkers_pool) + wp_extra) % nmodels != walk[0]:
                     continue
-                if param:
-                    new_walk[k] = param.fraction(walk_param['value'])
-            walkers_pool.append(new_walk)
+                new_walk = np.full(model._num_free_parameters, None)
+                for k, key in enumerate(model._free_parameters):
+                    param = model._modules[key]
+                    walk_param = walk[1].get(key, None)
+                    if walk_param is None:
+                        continue
+                    if param:
+                        new_walk[k] = param.fraction(walk_param['value'])
+                walkers_pool.append(new_walk)
+                appended_walker = True
+            if not appended_walker:
+                wp_extra += 1
 
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the
@@ -957,7 +970,7 @@ class Fitter(object):
                     # Calculate the autocorrelation time.
                     low = 10
                     asize = 0.5 * (emim1 - self._burn_in) / low
-                    if asize >= 0:
+                    if asize >= 0 and convergence_type == 'acor':
                         acorc = max(
                             1, min(self._MAX_ACORC,
                                    int(np.floor(0.5 * emi / low))))
@@ -993,8 +1006,7 @@ class Fitter(object):
                         actc = int(np.ceil(aacort / sli))
                         actn = np.int(float(emi - ams) / actc)
 
-                        if (convergence_type == 'acor' and
-                            convergence_criteria is not None and
+                        if (convergence_criteria is not None and
                             actn >= convergence_criteria and
                                 emi > iterations):
                             prt.message('converged')
@@ -1182,6 +1194,14 @@ class Fitter(object):
             pool.close()
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
+
+        msg_criteria = (
+            1.1 if convergence_criteria is None else convergence_criteria)
+        if (convergence_type == 'psrf' and msg_criteria is not None and
+                psrf > msg_criteria):
+            prt.message('not_converged', [
+                'default' if convergence_criteria is None else 'specified',
+                msg_criteria], warning=True)
 
         prt.message('constructing')
 
@@ -1572,12 +1592,14 @@ class Fitter(object):
     def generate_dummy_data(self,
                             name,
                             max_time=1000.,
-                            plot_points=100,
                             band_list=[],
                             band_systems=[],
                             band_instruments=[],
                             band_bandsets=[]):
         """Generate simulated data based on priors."""
+        # Just need 2 plot points for beginning and end.
+        plot_points = 2
+
         time_list = np.linspace(0.0, max_time, plot_points)
         band_list_all = ['V'] if len(band_list) == 0 else band_list
         times = np.repeat(time_list, len(band_list_all))

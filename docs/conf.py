@@ -18,6 +18,7 @@
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
+import datetime
 import os
 import re
 import sys
@@ -34,6 +35,9 @@ init_string = open(os.path.join(dir_path, '..', 'mosfit',
 VERS = r"^__version__ = ['\"]([^'\"]*)['\"]"
 mo = re.search(VERS, init_string, re.M)
 __version__ = mo.group(1)
+AUTH = r"^__author__ = ['\"]([^'\"]*)['\"]"
+mo = re.search(AUTH, init_string, re.M)
+__author__ = mo.group(1)
 
 # -- General configuration ------------------------------------------------
 
@@ -72,8 +76,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'MOSFiT'
-copyright = '2017, James Guillochon & Matt Nicholl'
-author = 'James Guillochon & Matt Nicholl'
+copyright = '2016 - {}, '.format(datetime.today().year) + __author__
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -158,14 +161,14 @@ latex_elements = {
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
     (master_doc, 'MOSFiT.tex', 'MOSFiT Documentation',
-     'James Guillochon \\& Matt Nicholl', 'manual'),
+     __author__.replace('&', '\\&'), 'manual'),
 ]
 
 # -- Options for manual page output ---------------------------------------
 
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
-man_pages = [(master_doc, 'mosfit', 'MOSFiT Documentation', [author], 1)]
+man_pages = [(master_doc, 'mosfit', 'MOSFiT Documentation', [__author__], 1)]
 
 # -- Options for Texinfo output -------------------------------------------
 
@@ -173,7 +176,7 @@ man_pages = [(master_doc, 'mosfit', 'MOSFiT Documentation', [author], 1)]
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-    (master_doc, 'MOSFiT', 'MOSFiT Documentation', author, 'MOSFiT',
+    (master_doc, 'MOSFiT', 'MOSFiT Documentation', __author__, 'MOSFiT',
      'One line description of project.', 'Miscellaneous'),
 ]
 

@@ -459,7 +459,7 @@ class Printer(object):
             else:
                 col = '!g'
             psrfstring = col
-            psrfstring = psrfstring + 'PSRF (i > {}): {}'.format(
+            psrfstring = psrfstring + 'PSRF (for i > {}): {}'.format(
                 psrfbstr, psrfstr)
             psrfstring = psrfstring + ('!e' if col else '')
             outarr.append(psrfstring)

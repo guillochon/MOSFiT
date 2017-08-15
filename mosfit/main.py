@@ -13,13 +13,13 @@ from unicodedata import normalize
 
 import numpy as np
 
-from mosfit import __version__
+from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
 
 
-class SortingHelpFormatter(argparse.HelpFormatter):
+class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     """Sort argparse arguments by argument name."""
 
     def add_arguments(self, actions):
@@ -80,14 +80,6 @@ def get_parser():
               "MOSFiT can be loaded with this command. If some variables "
               "are not contained within the input file(s), they will "
               "instead be drawn randomly from the specified model priors."))
-
-    parser.add_argument(
-        '--plot-points',
-        dest='plot_points',
-        type=int,
-        default=100,
-        help=("Set the number of plot points when producing light curves from "
-              "models without fitting against any actual transient data."))
 
     parser.add_argument(
         '--max-time',
@@ -170,6 +162,14 @@ def get_parser():
               "the bands listed in `--exclude-bands`."))
 
     parser.add_argument(
+        '--exclude-systems',
+        dest='exclude_systems',
+        default=[],
+        nargs='+',
+        help=("List of systems to exclude in fitting corresponding to "
+              "the bands listed in `--exclude-bands`."))
+
+    parser.add_argument(
         '--exclude-sources',
         dest='exclude_sources',
         default=[],
@@ -208,17 +208,22 @@ def get_parser():
 
     parser.add_argument(
         '--smooth-times',
+        '--plot-points',
         '-S',
         dest='smooth_times',
         type=int,
         const=0,
-        default=-1,
+        default=20,
         nargs='?',
         action='store',
         help=("Add this many more fictitious observations between the first "
-              "and last observed times. Setting this value to `0` will "
+              "and last observed times. Setting this value to `0` (or "
+              "providing no argument) will "
               "guarantee that all observed bands/instrument/system "
-              "combinations have a point at all observed epochs."))
+              "combinations have a point at all observed epochs, but no other "
+              "times. A negative "
+              "value will only yield model predictions at the observations "
+              "but at no other times (faster but sparser light curves)."))
 
     parser.add_argument(
         '--extrapolate-time',
@@ -657,8 +662,10 @@ def main():
                 #     firstline = firstline.decode('utf-8')
                 width = len(normalize('NFC', firstline))
             prt.prt(logo, colorify=True)
-            prt.message('byline', reps=[__version__, mosfit_hash],
-                        center=True, colorify=True, width=width, wrapped=False)
+            prt.message(
+                'byline', reps=[
+                    __version__, mosfit_hash, __author__, __contributors__],
+                center=True, colorify=True, width=width, wrapped=False)
 
         # Get/set upload token
         upload_token = ''

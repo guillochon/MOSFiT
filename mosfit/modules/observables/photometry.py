@@ -288,15 +288,16 @@ class Photometry(Module):
 
             self._min_waves[i] = min(self._band_wavelengths[i])
             self._max_waves[i] = max(self._band_wavelengths[i])
-            self._imp_waves[i] = [self._min_waves[i], self._max_waves[i]]
+            self._imp_waves[i] = set([self._min_waves[i], self._max_waves[i]])
             if len(self._transmissions[i]):
                 new_wave = self._band_wavelengths[i][
                     np.argmax(self._transmissions[i])]
-                self._imp_waves[i].append(new_wave)
+                self._imp_waves[i].add(new_wave)
             elif len(self._band_areas[i]):
                 new_wave = self._band_wavelengths[i][
                     np.argmax(self._band_areas[i])]
-                self._imp_waves[i].append(new_wave)
+                self._imp_waves[i].add(new_wave)
+            self._imp_waves[i] = list(sorted(self._imp_waves[i]))
             bc = bc + 1
 
         if self._pool.is_master():
