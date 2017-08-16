@@ -562,6 +562,14 @@ def get_parser():
         help=("Exit immediately if any user prompts are encountered "
               "(useful for batch jobs)."))
 
+    parser.add_argument(
+        '--download-recommended-data',
+        dest='download_recommended_data',
+        default=False,
+        action='store_true',
+        help=("Downloads any recommended data from the Open Catalogs if not"
+              "provided by the user (without prompting)."))
+
     return parser
 
 

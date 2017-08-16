@@ -121,6 +121,7 @@ class Fitter(object):
                    open_in_browser=False,
                    limiting_magnitude=None,
                    exit_on_prompt=False,
+                   download_recommended_data=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -134,6 +135,7 @@ class Fitter(object):
         self._limiting_magnitude = limiting_magnitude
         self._offline = offline
         self._open_in_browser = open_in_browser
+        self._download_recommended_data = download_recommended_data
 
         self._cuda = cuda
         if cuda:
@@ -365,8 +367,9 @@ class Fitter(object):
                         urk = self._model.get_unset_recommended_keys()
                         ptxt = prt.text('acquire_recommended', [
                             ', '.join(list(urk))])
-                        if len(urk) and prt.prompt(ptxt, [
-                                ', '.join(urk)], kind='bool'):
+                        if len(urk) and (
+                            self._download_recommended_data or prt.prompt(
+                                ptxt, [', '.join(urk)], kind='bool')):
                             try:
                                 pool = MPIPool()
                             except ValueError:
@@ -386,10 +389,16 @@ class Fitter(object):
                                 pool.wait()
 
                             for key in urk:
+                                new_val = extra_event.get(key)
                                 self._event_data[list(
-                                    self._event_data.keys())[0]][
-                                        key] = extra_event.get(key)
+                                    self._event_data.keys())[0]][key] = new_val
+                                if new_val is not None and len(new_val):
+                                    prt.message('extra_value', [
+                                        key, str(new_val[0].get(
+                                            QUANTITY.VALUE))])
                             success = False
+
+                            prt.message('reloading_merged')
 
                     if success:
                         entry, p, lnprob = self.fit_data(

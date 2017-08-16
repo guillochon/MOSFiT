@@ -1,5 +1,5 @@
 {
-    "acquire_recommended": "This event's data is missing a few recommended parameters that can be downloaded from the Open Catalogs: `{}`. Would you like to merge this data with your own data before fitting?",
+    "acquire_recommended": "\n!mThis event's local data is missing a few recommended parameters that can be provided by the Open Catalogs: `{}`. Would you like to merge this data with your own data before fitting?!e",
     "all_models": "No model specified and no type found for provided transient, please select a model from the list of available models:",
     "all_walkers_written": "All walkers written.",
     "anchoring_variances": "Anchoring variances for the following filters (interpolating variances for the rest): {}",
@@ -36,6 +36,7 @@
     "event_file": "\nEvent file:\n  {}",
     "event_interp": "Event `{}` interpreted as a transient name.",
     "exceeded_walltime": "Walltime exceeded, exiting...",
+    "extra_value": "Value acquired from Open Catalogs for `{}`: `{}`",
     "files": "Basic model file:\n  {}\nModel file:\n  {}\nParameter file:\n  {}",
     "finding_bands": "\nFinding bands...",
     "force_copy": "The flag `--force-copy-at-launch` has been set. Do you really wish to overwrite your local model/module/jupyter file hierarchy? This action cannot be reversed.",
@@ -84,6 +85,7 @@
     "prompt_encountered": "User prompt encountered with `--exit-on-prompt` enabled, exiting.",
     "readme-models": "{}\nThe contents of this directory will supersede any model JSON file included with MOSFiT. Copy files in the directory structure located at `{}` to customize the models included with MOSFiT. If MOSFiT has been updated recently, the model JSON files included with the installation may have changed, so it is recommended to either purge the files located here or to modify them to be consistent with the latest version.",
     "readme-modules": "{}\nThe contents of this directory will supersede any module code included with MOSFiT. Copy files in the directory structure located at `{}` to customize the modules included with MOSFiT. If MOSFiT has been updated recently, the modules included with the installation may have changed, so it is recommended to either purge the files located here or to modify them to be consistent with the latest version.",
+    "reloading_merged": "\nReloading merged event data...",
     "run_until_converged": "Running until convergence ({} <= {})",
     "score_ranges": "Score ranges",
     "select_dep_column": "\nSelect column reporting `{}` for last selected `{}`:",
