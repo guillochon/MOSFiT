@@ -316,6 +316,8 @@ class Converter(object):
 
                     for row in flines[self._first_data:]:
                         photodict = {}
+                        rname = (row[cidict[ENTRY.NAME]]
+                                 if ENTRY.NAME in cidict else event_names[0])
                         for pi in range(perms):
                             sources = set()
                             for key in cidict:
@@ -333,8 +335,7 @@ class Converter(object):
                                     if (isinstance(cidict[key],
                                                    string_types) and
                                             len(cidict[key]) == 19):
-                                        new_src = entries[row[
-                                            cidict[ENTRY.NAME]]].add_source(
+                                        new_src = entries[rname].add_source(
                                             bibcode=cidict[key])
                                         sources.update(new_src)
                                         row[
@@ -408,7 +409,7 @@ class Converter(object):
                                     else:
                                         sel_str = 'select_source'
                                     text = prt.message(
-                                        sel_str, [row[cidict[ENTRY.NAME]]],
+                                        sel_str, [rname],
                                         prt=False)
                                     skind = prt.prompt(
                                         text, kind='option',
@@ -444,9 +445,8 @@ class Converter(object):
                                                 ' et al., in preparation')
 
                                 photodict[
-                                    PHOTOMETRY.SOURCE] = entries[row[
-                                        cidict[ENTRY.NAME]]].add_source(
-                                        **self._rsource)
+                                    PHOTOMETRY.SOURCE] = entries[
+                                        rname].add_source(**self._rsource)
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
@@ -481,7 +481,7 @@ class Converter(object):
                                     del(photodict[key])
 
                             # Add the photometry.
-                            entries[row[cidict[ENTRY.NAME]]].add_photometry(
+                            entries[rname].add_photometry(
                                 **photodict)
 
                     for ei, entry in enumerate(entries):
