@@ -19,7 +19,7 @@ from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
 
 
-class SortingHelpFormatter(argparse.HelpFormatter):
+class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
     """Sort argparse arguments by argument name."""
 
     def add_arguments(self, actions):
@@ -80,14 +80,6 @@ def get_parser():
               "MOSFiT can be loaded with this command. If some variables "
               "are not contained within the input file(s), they will "
               "instead be drawn randomly from the specified model priors."))
-
-    parser.add_argument(
-        '--plot-points',
-        dest='plot_points',
-        type=int,
-        default=100,
-        help=("Set the number of plot points when producing light curves from "
-              "models without fitting against any actual transient data."))
 
     parser.add_argument(
         '--max-time',
@@ -170,6 +162,14 @@ def get_parser():
               "the bands listed in `--exclude-bands`."))
 
     parser.add_argument(
+        '--exclude-systems',
+        dest='exclude_systems',
+        default=[],
+        nargs='+',
+        help=("List of systems to exclude in fitting corresponding to "
+              "the bands listed in `--exclude-bands`."))
+
+    parser.add_argument(
         '--exclude-sources',
         dest='exclude_sources',
         default=[],
@@ -208,6 +208,7 @@ def get_parser():
 
     parser.add_argument(
         '--smooth-times',
+        '--plot-points',
         '-S',
         dest='smooth_times',
         type=int,

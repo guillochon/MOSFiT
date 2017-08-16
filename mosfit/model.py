@@ -109,13 +109,16 @@ class Model(object):
                     if fitter._test:
                         self._model_name = type_options[0]
                     else:
-                        self._model_name = self._printer.prompt(
+                        sel = self._printer.prompt(
                             model_prompt_txt,
-                            kind='select',
+                            kind='option',
                             options=type_options,
                             message=False,
+                            default='n',
                             none_string=('None of the above, skip this '
                                          'transient.'))
+                        if sel is not None:
+                            self._model_name = type_options[sel]
                     if not self._model_name:
                         break
                     if self._model_name == 'Another model not listed here.':
