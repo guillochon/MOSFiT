@@ -6,7 +6,7 @@ from decimal import Decimal
 from itertools import permutations
 
 import numpy as np
-from astrocats.catalog.entry import Entry
+from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
 from astrocats.catalog.source import SOURCE
@@ -89,7 +89,9 @@ class Converter(object):
                 'e_counts', 'count error', 'count rate error']),
             (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
             ('reference', ['reference', 'bibcode', 'source', 'origin']),
-            ('event', ['event', 'transient', 'name', 'supernova'])
+            (ENTRY.NAME, [
+                'event', 'transient', 'name', 'supernova', 'sne', 'id',
+                'identifier'])
         ))
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
@@ -169,7 +171,7 @@ class Converter(object):
                     fsplit = ftxt.splitlines()
                     fsplit = [x.replace('$', '').replace(',', '\t')
                               .replace('&', '\t').replace('\\pm', '\t')
-                              .strip(' ()')
+                              .strip(' ()#')
                               for x in fsplit]
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
@@ -226,18 +228,6 @@ class Converter(object):
                         raise ValueError(
                             'Number of columns in each row not '
                             'consistent!')
-                    new_event_name = '.'.join(event.split(
-                        '.')[:-1]).split('/')[-1]
-                    text = prt.message(
-                        'is_event_name', [new_event_name], prt=False)
-                    is_name = prt.prompt(text, message=False,
-                                         kind='bool', default='y')
-                    if not is_name:
-                        new_event_name = ''
-                        while new_event_name.strip() == '':
-                            new_event_name = prt.prompt(
-                                'enter_name', kind='string')
-                    new_events = [new_event_name + '.json']
 
                     if len(cidict) and len(new_event_list):
                         text = prt.message(
@@ -253,15 +243,40 @@ class Converter(object):
                     if not len(cidict):
                         self.assign_columns(cidict, flines)
 
-                    # Create a new event, populate the photometry, and dump
-                    # to a JSON file in the run directory.
-                    entry = Entry(name=new_event_name)
                     perms = 1
                     for key in cidict:
                         if isinstance(cidict[key], list) and not isinstance(
                                 cidict[key], string_types):
                             if cidict[key][0] != 'j':
                                 perms = len(cidict[key])
+
+                    # Get event name (if single event) or list of names from
+                    # table.
+                    event_names = []
+                    if ENTRY.NAME in cidict:
+                        event_names = list(sorted(set([
+                            x[cidict[ENTRY.NAME]] for x in flines[
+                                self._first_data:]])))
+                        new_events = [x + '.json' for x in event_names]
+                    else:
+                        new_event_name = '.'.join(event.split(
+                            '.')[:-1]).split('/')[-1]
+                        text = prt.message(
+                            'is_event_name', [new_event_name], prt=False)
+                        is_name = prt.prompt(text, message=False,
+                                             kind='bool', default='y')
+                        if not is_name:
+                            new_event_name = ''
+                            while new_event_name.strip() == '':
+                                new_event_name = prt.prompt(
+                                    'enter_name', kind='string')
+                        event_names.append(new_event_name)
+                        new_events = [new_event_name + '.json']
+
+                    # Create a new event, populate the photometry, and dump
+                    # to a JSON file in the run directory.
+                    entries = OrderedDict([(x, Entry(name=x))
+                                           for x in event_names])
 
                     # Clean up the data a bit now that we know the column
                     # identities.
@@ -318,11 +333,14 @@ class Converter(object):
                                     if (isinstance(cidict[key],
                                                    string_types) and
                                             len(cidict[key]) == 19):
-                                        new_src = entry.add_source(
+                                        new_src = entries[row[
+                                            cidict[ENTRY.NAME]]].add_source(
                                             bibcode=cidict[key])
                                         sources.update(new_src)
                                         row[
                                             cidict[key]] = new_src
+                                elif key == ENTRY.NAME:
+                                    continue
                                 elif (isinstance(key, Key) and
                                         key.type == KEY_TYPES.TIME and
                                         isinstance(cidict[key], list) and not
@@ -390,7 +408,8 @@ class Converter(object):
                                     else:
                                         sel_str = 'select_source'
                                     text = prt.message(
-                                        sel_str, [new_event_name], prt=False)
+                                        sel_str, [row[cidict[ENTRY.NAME]]],
+                                        prt=False)
                                     skind = prt.prompt(
                                         text, kind='option',
                                         options=sopts, default='b',
@@ -425,7 +444,8 @@ class Converter(object):
                                                 ' et al., in preparation')
 
                                 photodict[
-                                    PHOTOMETRY.SOURCE] = entry.add_source(
+                                    PHOTOMETRY.SOURCE] = entries[row[
+                                        cidict[ENTRY.NAME]]].add_source(
                                         **self._rsource)
 
                             if any([x in photodict.get(
@@ -461,17 +481,23 @@ class Converter(object):
                                     del(photodict[key])
 
                             # Add the photometry.
-                            entry.add_photometry(**photodict)
+                            entries[row[cidict[ENTRY.NAME]]].add_photometry(
+                                **photodict)
 
-                    entry.sanitize()
-                    oentry = entry._ordered(entry)
+                    for ei, entry in enumerate(entries):
+                        entries[entry].sanitize()
+                        oentry = entries[entry]._ordered(entries[entry])
 
-                    with open(new_events[0], 'w') as f:
-                        entabbed_json_dump(
-                            {new_event_name: oentry}, f,
-                            separators=(',', ':'))
+                        with open(new_events[ei], 'w') as f:
+                            entabbed_json_dump(
+                                {entry: oentry}, f,
+                                separators=(',', ':'))
 
-                    self._converted.append([new_event_name, new_events[0]])
+                    self._converted.extend([
+                        [event_names[x], new_events[x]]
+                        for x in range(len(event_names))])
+
+                    print(self._converted)
 
                 new_event_list.extend(new_events)
             else:
