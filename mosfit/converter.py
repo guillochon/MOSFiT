@@ -497,8 +497,6 @@ class Converter(object):
                         [event_names[x], new_events[x]]
                         for x in range(len(event_names))])
 
-                    print(self._converted)
-
                 new_event_list.extend(new_events)
             else:
                 new_event_list.append(event)
