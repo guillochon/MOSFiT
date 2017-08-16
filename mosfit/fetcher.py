@@ -9,7 +9,7 @@ from difflib import get_close_matches
 
 from astrocats.catalog.utils import is_number
 
-from mosfit.utils import get_url_file_handle, open_atomic
+from mosfit.utils import get_url_file_handle, listify, open_atomic
 
 
 class Fetcher(object):
@@ -26,9 +26,10 @@ class Fetcher(object):
         prt = self._printer
         offline = self._fitter._offline
 
-        events = [None for x in event_list]
+        levent_list = listify(event_list)
+        events = [None for x in levent_list]
 
-        for ei, event in enumerate(event_list):
+        for ei, event in enumerate(levent_list):
             if not event:
                 continue
             events[ei] = OrderedDict()

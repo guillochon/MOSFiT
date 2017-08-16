@@ -329,29 +329,64 @@ class Fitter(object):
                         }
                         self._event_data = self.generate_dummy_data(**gen_args)
 
-                    success = self.load_data(
-                        self._event_data,
-                        event_name=self._event_name,
-                        iterations=iterations,
-                        fracking=fracking,
-                        burn=burn,
-                        post_burn=post_burn,
-                        smooth_times=smooth_times,
-                        extrapolate_time=extrapolate_time,
-                        limit_fitting_mjds=limit_fitting_mjds,
-                        exclude_bands=exclude_bands,
-                        exclude_instruments=exclude_instruments,
-                        exclude_systems=exclude_systems,
-                        exclude_sources=exclude_sources,
-                        band_list=band_list,
-                        band_systems=band_systems,
-                        band_instruments=band_instruments,
-                        band_bandsets=band_bandsets,
-                        band_sampling_points=band_sampling_points,
-                        variance_for_each=variance_for_each,
-                        user_fixed_parameters=user_fixed_parameters,
-                        pool=pool,
-                        walker_data=walker_data)
+                    success = False
+                    while not success:
+                        self._model.reset_unset_recommended_keys()
+                        success = self.load_data(
+                            self._event_data,
+                            event_name=self._event_name,
+                            iterations=iterations,
+                            fracking=fracking,
+                            burn=burn,
+                            post_burn=post_burn,
+                            smooth_times=smooth_times,
+                            extrapolate_time=extrapolate_time,
+                            limit_fitting_mjds=limit_fitting_mjds,
+                            exclude_bands=exclude_bands,
+                            exclude_instruments=exclude_instruments,
+                            exclude_systems=exclude_systems,
+                            exclude_sources=exclude_sources,
+                            band_list=band_list,
+                            band_systems=band_systems,
+                            band_instruments=band_instruments,
+                            band_bandsets=band_bandsets,
+                            band_sampling_points=band_sampling_points,
+                            variance_for_each=variance_for_each,
+                            user_fixed_parameters=user_fixed_parameters,
+                            pool=pool,
+                            walker_data=walker_data)
+
+                        if not success:
+                            break
+
+                        # If our data is missing recommended keys, offer the
+                        # user option to pull the missing data from online and
+                        # merge with existing data.
+                        urk = self._model.get_unset_recommended_keys()
+                        if len(urk):
+                            try:
+                                pool = MPIPool()
+                            except ValueError:
+                                pool = SerialPool()
+                            if pool.is_master():
+                                extra_event = self._fetcher.fetch(
+                                    self._event_name)[0]['data']
+                                extra_event = extra_event[
+                                    list(extra_event.keys())[0]]
+
+                                for rank in range(1, pool.size + 1):
+                                    pool.comm.send(extra_event, dest=rank,
+                                                   tag=4)
+                                pool.close()
+                            else:
+                                extra_event = pool.comm.recv(source=0, tag=4)
+                                pool.wait()
+
+                            for key in urk:
+                                self._event_data[list(
+                                    self._event_data.keys())[0]][
+                                        key] = extra_event.get(key)
+                            success = False
 
                     if success:
                         entry, p, lnprob = self.fit_data(
