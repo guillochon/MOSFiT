@@ -363,7 +363,10 @@ class Fitter(object):
                         # user option to pull the missing data from online and
                         # merge with existing data.
                         urk = self._model.get_unset_recommended_keys()
-                        if len(urk):
+                        ptxt = prt.text('acquire_recommended', [
+                            ', '.join(list(urk))])
+                        if len(urk) and prt.prompt(ptxt, [
+                                ', '.join(urk)], kind='bool'):
                             try:
                                 pool = MPIPool()
                             except ValueError:

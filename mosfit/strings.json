@@ -1,4 +1,5 @@
 {
+    "acquire_recommended": "This event's data is missing a few recommended parameters that can be downloaded from the Open Catalogs: `{}`. Would you like to merge this data with your own data before fitting?",
     "all_models": "No model specified and no type found for provided transient, please select a model from the list of available models:",
     "all_walkers_written": "All walkers written.",
     "anchoring_variances": "Anchoring variances for the following filters (interpolating variances for the rest): {}",
