@@ -1,5 +1,5 @@
 {
-    "acquire_recommended": "\n!mThis event's local data is missing a few recommended parameters that can be provided by the Open Catalogs: `{}`. Would you like to merge this data with your own data before fitting?!e",
+    "acquire_recommended": "\n!mThis event's local data is missing a few recommended parameters that can potentially be provided by the Open Catalogs: `{}`.!e Would you like to attempt to download this supplemental data and include it in the fitting process?",
     "all_models": "No model specified and no type found for provided transient, please select a model from the list of available models:",
     "all_walkers_written": "All walkers written.",
     "anchoring_variances": "Anchoring variances for the following filters (interpolating variances for the rest): {}",
@@ -37,7 +37,7 @@
     "event_interp": "Event `{}` interpreted as a transient name.",
     "exceeded_walltime": "Walltime exceeded, exiting...",
     "extra_value": "Value acquired from Open Catalogs for `{}`: `{}`",
-    "extra_not_found": "Event not found in the Open Catalogs. Could it possibly be listed under another name aside from `{}`? If so, enter the other name now, otherwise the currently unset recommended parameters will be treated as free parameters.",
+    "extra_not_found": "!yEvent not found in the Open Catalogs.!e Could it possibly be listed under another name aside from `{}`? If so, enter the other name now, otherwise the currently unset recommended parameters will be treated as free parameters:",
     "files": "Basic model file:\n  {}\nModel file:\n  {}\nParameter file:\n  {}",
     "finding_bands": "\nFinding bands...",
     "force_copy": "The flag `--force-copy-at-launch` has been set. Do you really wish to overwrite your local model/module/jupyter file hierarchy? This action cannot be reversed.",

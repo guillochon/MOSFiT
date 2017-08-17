@@ -368,53 +368,52 @@ class Fitter(object):
                         urk = self._model.get_unset_recommended_keys()
                         ptxt = prt.text('acquire_recommended', [
                             ', '.join(list(urk))])
-                        while True:
-                            if event and len(urk) and (
-                                alt_name or self._download_recommended_data
-                                or prt.prompt(
-                                    ptxt, [', '.join(urk)], kind='bool')):
-                                try:
-                                    pool = MPIPool()
-                                except ValueError:
-                                    pool = SerialPool()
-                                if pool.is_master():
-                                    en = (alt_name if alt_name
-                                          else self._event_name)
-                                    extra_event = self._fetcher.fetch(
-                                        en)[0].get('data')
+                        while event and len(urk) and (
+                            alt_name or self._download_recommended_data
+                            or prt.prompt(
+                                ptxt, [', '.join(urk)], kind='bool')):
+                            try:
+                                pool = MPIPool()
+                            except ValueError:
+                                pool = SerialPool()
+                            if pool.is_master():
+                                en = (alt_name if alt_name
+                                      else self._event_name)
+                                extra_event = self._fetcher.fetch(
+                                    en)[0].get('data')
 
-                                    for rank in range(1, pool.size + 1):
-                                        pool.comm.send(extra_event, dest=rank,
-                                                       tag=4)
-                                    pool.close()
-                                else:
-                                    extra_event = pool.comm.recv(
-                                        source=0, tag=4)
-                                    pool.wait()
+                                for rank in range(1, pool.size + 1):
+                                    pool.comm.send(extra_event, dest=rank,
+                                                   tag=4)
+                                pool.close()
+                            else:
+                                extra_event = pool.comm.recv(
+                                    source=0, tag=4)
+                                pool.wait()
 
-                                if extra_event is not None:
-                                    extra_event = extra_event[
-                                        list(extra_event.keys())[0]]
+                            if extra_event is not None:
+                                extra_event = extra_event[
+                                    list(extra_event.keys())[0]]
 
-                                    for key in urk:
-                                        new_val = extra_event.get(key)
-                                        self._event_data[list(
-                                            self._event_data.keys())[0]][
-                                                key] = new_val
-                                        if new_val is not None and len(
-                                                new_val):
-                                            prt.message('extra_value', [
-                                                key, str(new_val[0].get(
-                                                    QUANTITY.VALUE))])
-                                    success = False
-                                    prt.message('reloading_merged')
+                                for key in urk:
+                                    new_val = extra_event.get(key)
+                                    self._event_data[list(
+                                        self._event_data.keys())[0]][
+                                            key] = new_val
+                                    if new_val is not None and len(
+                                            new_val):
+                                        prt.message('extra_value', [
+                                            key, str(new_val[0].get(
+                                                QUANTITY.VALUE))])
+                                success = False
+                                prt.message('reloading_merged')
+                                break
+                            else:
+                                text = prt.text(
+                                    'extra_not_found', [self._event_name])
+                                alt_name = prt.prompt(text, kind='string')
+                                if not alt_name:
                                     break
-                                else:
-                                    text = prt.text(
-                                        'extra_not_found', self._event_name)
-                                    alt_name = prt.prompt(text, kind='string')
-                                    if not alt_name:
-                                        break
 
                     if success:
                         entry, p, lnprob = self.fit_data(
