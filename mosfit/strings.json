@@ -37,6 +37,7 @@
     "event_interp": "Event `{}` interpreted as a transient name.",
     "exceeded_walltime": "Walltime exceeded, exiting...",
     "extra_value": "Value acquired from Open Catalogs for `{}`: `{}`",
+    "extra_not_found": "Event not found in the Open Catalogs. Could it possibly be listed under another name aside from `{}`? If so, enter the other name now, otherwise the currently unset recommended parameters will be treated as free parameters.",
     "files": "Basic model file:\n  {}\nModel file:\n  {}\nParameter file:\n  {}",
     "finding_bands": "\nFinding bands...",
     "force_copy": "The flag `--force-copy-at-launch` has been set. Do you really wish to overwrite your local model/module/jupyter file hierarchy? This action cannot be reversed.",

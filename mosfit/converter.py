@@ -285,7 +285,7 @@ class Converter(object):
                     if PHOTOMETRY.BAND in cidict:
                         bi = cidict[PHOTOMETRY.BAND]
                         for d in [True, False]:
-                            if not isinstance(bi, int):
+                            if not isinstance(bi, (int, np.integer)):
                                 break
                             strip_cols = []
                             lens = [len(x[bi])
