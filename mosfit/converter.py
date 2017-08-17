@@ -10,12 +10,12 @@ from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
 from astrocats.catalog.source import SOURCE
-from astrocats.catalog.utils import is_number, jd_to_mjd
+from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
 
-from mosfit.utils import entabbed_json_dump, is_date
+from mosfit.utils import entabbed_json_dump, is_date, is_number
 
 
 class Converter(object):
@@ -607,9 +607,11 @@ class Converter(object):
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
-        colinds = np.setdiff1d(np.arange(len(colstrs)),
-                               list([x[-1] if isinstance(x, list)
-                                     else x for x in cidict.values()]))
+        print(len(colstrs))
+        colinds = np.setdiff1d(np.arange(
+            len(colstrs)), list([x[-1] if (
+                isinstance(x, list) and not isinstance(
+                    x, string_types)) else x for x in cidict.values()]))
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
         for key in akeys:
@@ -737,10 +739,11 @@ class Converter(object):
                     allk = [key] + dkeys
                     for ki, k in enumerate(allk):
                         cidict[k] = [
-                            lcolinds[s - 1] if isinstance(s, int) else s
+                            lcolinds[s - 1] if isinstance(s, (
+                                int, np.integer)) else s
                             for s in selects[ki::len(allk)]]
                     for s in selects:
-                        if not isinstance(s, int):
+                        if not isinstance(s, (int, np.integer)):
                             continue
                         colinds = np.delete(colinds, np.argwhere(
                             colinds == lcolinds[s - 1]))

@@ -57,6 +57,27 @@ def is_integer(s):
             return False
 
 
+def is_number(s):
+    """Check if input is a number."""
+    if isinstance(s, list) and not isinstance(s, string_types):
+        try:
+            for x in s:
+                if isinstance(x, string_types) and ' ' in x:
+                    raise ValueError
+            [float(x) for x in s]
+            return True
+        except ValueError:
+            return False
+    else:
+        try:
+            if isinstance(s, string_types) and ' ' in s:
+                raise ValueError
+            float(s)
+            return True
+        except ValueError:
+            return False
+
+
 def pretty_num(x, sig=4):
     """Convert number into string with specified significant digits."""
     if isnan(x) or not np.isfinite(x):
