@@ -367,7 +367,7 @@ class Fitter(object):
                         urk = self._model.get_unset_recommended_keys()
                         ptxt = prt.text('acquire_recommended', [
                             ', '.join(list(urk))])
-                        if len(urk) and (
+                        if event and len(urk) and (
                             self._download_recommended_data or prt.prompt(
                                 ptxt, [', '.join(urk)], kind='bool')):
                             try:
@@ -678,11 +678,12 @@ class Fitter(object):
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
-        if model._num_measurements <= ndim:
-            prt.message('too_few_walkers', warning=True)
-        if nwalkers < 10 * ndim:
-            prt.message('want_more_walkers', [10 * ndim, nwalkers],
-                        warning=True)
+        if test_walker:
+            if model._num_measurements <= ndim:
+                prt.message('too_few_walkers', warning=True)
+            if nwalkers < 10 * ndim:
+                prt.message('want_more_walkers', [10 * ndim, nwalkers],
+                            warning=True)
         p0 = [[] for x in range(ntemps)]
 
         # Generate walker positions based upon loaded walker data, if
@@ -1093,8 +1094,8 @@ class Fitter(object):
 
         msg_criteria = (
             1.1 if convergence_criteria is None else convergence_criteria)
-        if (convergence_type == 'psrf' and msg_criteria is not None and
-                psrf > msg_criteria):
+        if (test_walker and convergence_type == 'psrf' and
+                msg_criteria is not None and psrf > msg_criteria):
             prt.message('not_converged', [
                 'default' if convergence_criteria is None else 'specified',
                 msg_criteria], warning=True)
