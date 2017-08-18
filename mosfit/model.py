@@ -666,6 +666,18 @@ class Model(object):
             plural = self._inflections[x]
         return plural
 
+    def reset_unset_recommended_keys(self):
+        """Null the list of unset recommended keys across all modules."""
+        for module in self._modules.values():
+            module.reset_unset_recommended_keys()
+
+    def get_unset_recommended_keys(self):
+        """Collect list of unset recommended keys across all modules."""
+        unset_keys = set()
+        for module in self._modules.values():
+            unset_keys.update(module.get_unset_recommended_keys())
+        return unset_keys
+
     def run_stack(self, x, root='objective'):
         """Run module stack.
 

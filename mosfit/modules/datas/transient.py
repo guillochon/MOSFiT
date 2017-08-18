@@ -62,9 +62,6 @@ class Transient(Module):
                 src_dict[src[SOURCE.ALIAS]] = src[SOURCE.NAME]
 
         for key in self._keys:
-            if key not in self._all_data[name]:
-                continue
-            subdata = self._all_data[name][key]
             subkeys = self._keys[key]
             req_subkeys = [
                 x for x in subkeys
@@ -80,6 +77,14 @@ class Transient(Module):
             exc_subkeys = [
                 x for x in subkeys if 'exclude' in listify(subkeys[x])
             ]
+
+            if key not in self._all_data[name]:
+                if subkeys.get('value', None) == 'recommended':
+                    self._unset_recommended_keys.add(key)
+                continue
+
+            subdata = self._all_data[name][key]
+
             # Only include data that contains all subkeys
             for entry in subdata:
                 if any([x not in entry for x in req_subkeys]):

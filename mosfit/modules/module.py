@@ -26,6 +26,7 @@ class Module(object):
         self._wants_dense = False
         self._provide_dense = False
         self._replacements = OrderedDict()
+        self._unset_recommended_keys = set()
         if not model.printer():
             self._printer = Printer()
         else:
@@ -96,3 +97,11 @@ class Module(object):
                     'Expecting `dense_` version of `{}` to exist before '
                     'calling `{}` module.'.format(key, self._name))
         return kwargs
+
+    def reset_unset_recommended_keys(self):
+        """Null the list of unset recommended keys."""
+        self._unset_recommended_keys = set()
+
+    def get_unset_recommended_keys(self):
+        """Return list of recommended keys that are not set."""
+        return self._unset_recommended_keys
