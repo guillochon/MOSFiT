@@ -14,14 +14,14 @@ contributors = []
 
 dir_name = os.path.dirname(os.path.realpath(__file__))
 
-with open(os.path.join(dir_name, '..', 'CONTRIBUTORS.txt')) as f:
+with open(os.path.join(dir_name, 'contributors.txt')) as f:
     for cont in f.read().splitlines():
         if '*' in cont:
             authors.append(cont.split('(')[0].strip(' *'))
         else:
             contributors.append(cont.split('(')[0].strip())
 
-__version__ = '0.7.7'
+__version__ = '0.7.8'
 __author__ = ' & '.join([', '.join(authors[:-1]), authors[-1]])
 __contributors__ = ' & '.join([', '.join(contributors[:-1]), contributors[-1]])
 __license__ = 'MIT'
