@@ -66,7 +66,7 @@ class Converter(object):
             (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
             (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
             (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
-            (PHOTOMETRY.BAND, ['passband', 'band', 'filter']),
+            (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'flt']),
             (PHOTOMETRY.E_LOWER_MAGNITUDE, [
                 ' '.join(y) for y in (
                     list(i for s in [
@@ -607,7 +607,6 @@ class Converter(object):
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
-        print(len(colstrs))
         colinds = np.setdiff1d(np.arange(
             len(colstrs)), list([x[-1] if (
                 isinstance(x, list) and not isinstance(
@@ -631,6 +630,7 @@ class Converter(object):
                             if any(not is_number(y) for y in columns[x])]
             else:
                 lcolinds = list(colinds)
+            ocolinds = list(lcolinds)
             select = False
             selmap = np.array(range(len(lcolinds)))
             selects = []
@@ -736,17 +736,18 @@ class Converter(object):
                 if selects[0] == 'j':
                     cidict[key] = selects
                 else:
-                    allk = [key] + dkeys
+                    kdkeys = [key] + dkeys
+                    allk = list(OrderedDict.fromkeys(kdkeys).keys())
                     for ki, k in enumerate(allk):
                         cidict[k] = [
-                            lcolinds[s - 1] if isinstance(s, (
+                            ocolinds[s - 1] if isinstance(s, (
                                 int, np.integer)) else s
                             for s in selects[ki::len(allk)]]
                     for s in selects:
                         if not isinstance(s, (int, np.integer)):
                             continue
                         colinds = np.delete(colinds, np.argwhere(
-                            colinds == lcolinds[s - 1]))
+                            colinds == ocolinds[s - 1]))
             elif key in self._specify_keys:
                 msg = ('specify_value_blank' if key in self._helpful_keys else
                        'specify_value')
