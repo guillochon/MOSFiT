@@ -134,6 +134,7 @@ class Converter(object):
         new_event_list = []
         for event in event_list:
             new_events = []
+            toffset = Decimal('0')
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
                 if not intro_shown:
@@ -171,7 +172,7 @@ class Converter(object):
                     fsplit = ftxt.splitlines()
                     fsplit = [x.replace('$', '').replace(',', '\t')
                               .replace('&', '\t').replace('\\pm', '\t')
-                              .strip(' ()#')
+                              .replace('|', '\t').strip(' ()#')
                               for x in fsplit]
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
@@ -314,6 +315,24 @@ class Converter(object):
                                          self._first_data + ri][bi])) not in
                                      strip_cols])
 
+                    if PHOTOMETRY.TIME in cidict:
+                        bi = cidict[PHOTOMETRY.TIME]
+
+                        mintime = min([float(x[bi])
+                                       for x in flines[self._first_data:]])
+
+                        if mintime < 10000:
+                            tofftxt = prt.text('time_offset')
+                            while True:
+                                try:
+                                    response = prt.prompt(
+                                        tofftxt, kind='string')
+                                    if response is not None:
+                                        toffset = Decimal(response)
+                                    break
+                                except Exception:
+                                    pass
+
                     for row in flines[self._first_data:]:
                         photodict = {}
                         rname = (row[cidict[ENTRY.NAME]]
@@ -427,6 +446,7 @@ class Converter(object):
                                                 kind='string',
                                                 allow_blank=False
                                             )
+                                            bibcode = bibcode.strip()
                                             if (re.search(
                                                 '[0-9]{4}..........[\.0-9]{4}'
                                                 '[A-Za-z]', bibcode)
@@ -455,6 +475,13 @@ class Converter(object):
                                 photodict[
                                     PHOTOMETRY.MAGNITUDE] = photodict[
                                         PHOTOMETRY.MAGNITUDE].strip('<>')
+
+                            # Apply offset time if set.
+                            if (PHOTOMETRY.TIME in photodict
+                                    and toffset != Decimal('0')):
+                                photodict[PHOTOMETRY.TIME] = str(
+                                    Decimal(photodict[PHOTOMETRY.TIME]) +
+                                    toffset)
 
                             # Skip entries for which key values are not
                             # expected type.

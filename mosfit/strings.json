@@ -100,6 +100,7 @@
     "specify_value_blank": "\nPlease specify `{}`, which will be assumed for all rows (leave blank if not known):",
     "suggested_models": "No model specified. Based on this transient's claimed type of `{}`, the following models are suggested for fitting this transient:",
     "system": "\nPhotometric system not specified, please specify a photometric system:",
+    "time_offset": "The minimum time found is before the year 1900, suggesting the time is not MJD, but rather relative to a particular MJD offset. Please enter the MJD offset for the times found in this file (leave blank for no offset):",
     "too_few_walkers": "Number of free parameters exceeds number of measurements. Please treat results with caution.",
     "ul_complete": "\n!gUploading complete!!e",
     "ul_devent": "Do you wish to upload your converted observations to the Open Catalogs? IMPORTANT: This will make your data !opublicly available!e. If you believe you or someone else has uploaded private data in error, please e-mail `guillochon@gmail.com` immediately and it will be removed.",
