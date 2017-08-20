@@ -1,3 +1,4 @@
+# -*- coding: UTF-8 -*-
 """A class for converting ASCII inputs to JSON."""
 import os
 import re
@@ -60,7 +61,7 @@ class Converter(object):
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
             'mag err', 'magerr', 'mag error', 'err']
         self._header_keys = OrderedDict((
-            (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd')]),
+            (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd'), 'date']),
             (PHOTOMETRY.SYSTEM, ['system']),
             (PHOTOMETRY.MAGNITUDE, ['mag', 'magnitude']),
             (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
@@ -106,8 +107,8 @@ class Converter(object):
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._band_names = [
-            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'u', 'g', 'r', 'i', 'z',
-            'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'", "z'"
+            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', 'u', 'g', 'r', 'i',
+            'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'", "z'", "C"
         ]
         self._use_mc = False
         self._month_rep = re.compile(
@@ -169,22 +170,34 @@ class Converter(object):
                         list(x) for x in np.array(table).tolist()]
 
                 if table is None:
+                    # Count to try and determine delimiter.
+                    delims = [' ', '\t', ',', '|', '&']
+                    dcount = 0
+                    delim = None
+                    for x in delims:
+                        if ftxt.count(x) > dcount:
+                            dcount = ftxt.count(x)
+                            delim = x
+                    ad = list(delims)
+                    ad.remove(delim)
+                    ad = ''.join(ad)
+
                     fsplit = ftxt.splitlines()
-                    fsplit = [x.replace('$', '').replace(',', '\t')
-                              .replace('&', '\t').replace('\\pm', '\t')
-                              .replace('±', '\t')
-                              .replace('|', '\t').replace('(', ' (')
-                              .replace(')', ' )').strip(' ()#')
-                              for x in fsplit]
+                    fsplit = [
+                        x.replace('$', '').replace('\\pm', delim)
+                        .replace('±', delim).replace('(', delim + '(')
+                        .strip(ad + '()#')
+                        for x in fsplit]
                     flines = [
                         [y.replace('"', '') for y in
                          re.split(
-                             '''\s+(?=(?:[^"]|[^]*|"[^"]*")*$)''',
+                             delim + '''+(?=(?:[^"]|[^]*|"[^"]*")*$)''',
                              x)]
                         for x in fsplit]
 
                     flines = [[
-                        x.strip(' #$()\\') for x in y] for y in flines]
+                        x.strip(ad + '#$()\\')
+                        for x in y] for y in flines]
 
                     # Find band columns if they exist and insert error columns
                     # if they don't exist.
