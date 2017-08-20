@@ -172,7 +172,8 @@ class Converter(object):
                     fsplit = ftxt.splitlines()
                     fsplit = [x.replace('$', '').replace(',', '\t')
                               .replace('&', '\t').replace('\\pm', '\t')
-                              .replace('|', '\t').strip(' ()#')
+                              .replace('|', '\t').replace('(', ' (')
+                              .replace(')', ' )').strip(' ()#')
                               for x in fsplit]
                     flines = [
                         [y.replace('"', '').replace("'", '') for y in
@@ -657,9 +658,7 @@ class Converter(object):
                             if any(not is_number(y) for y in columns[x])]
             else:
                 lcolinds = list(colinds)
-            ocolinds = list(lcolinds)
             select = False
-            selmap = np.array(range(len(lcolinds)))
             selects = []
             while select is False:
                 mc = 1
@@ -707,7 +706,6 @@ class Converter(object):
                                 ])
                             if jsel != 'd':
                                 selects.append(lcolinds[jsel - 1])
-                                selmap = np.delete(selmap, jsel - 1)
                                 lcolinds = np.delete(lcolinds, jsel - 1)
                 else:
                     self._use_mc = True
@@ -722,7 +720,6 @@ class Converter(object):
                             options=colstrs[lcolinds].tolist())
                         if select is not None and select is not False:
                             selects.append(lcolinds[select - 1])
-                            selmap = np.delete(selmap, select - 1)
                             lcolinds = np.delete(lcolinds, select - 1)
                         else:
                             break
@@ -739,7 +736,6 @@ class Converter(object):
                                         options=colstrs[lcolinds].tolist())
                                     if dksel is not None:
                                         selects.append(lcolinds[dksel - 1])
-                                        selmap = np.delete(selmap, dksel - 1)
                                         lcolinds = np.delete(
                                             lcolinds, dksel - 1)
                                 else:
@@ -767,14 +763,14 @@ class Converter(object):
                     allk = list(OrderedDict.fromkeys(kdkeys).keys())
                     for ki, k in enumerate(allk):
                         cidict[k] = [
-                            ocolinds[s - 1] if isinstance(s, (
+                            colinds[s - 1] if isinstance(s, (
                                 int, np.integer)) else s
                             for s in selects[ki::len(allk)]]
                     for s in selects:
                         if not isinstance(s, (int, np.integer)):
                             continue
                         colinds = np.delete(colinds, np.argwhere(
-                            colinds == ocolinds[s - 1]))
+                            colinds == s - 1))
             elif key in self._specify_keys:
                 msg = ('specify_value_blank' if key in self._helpful_keys else
                        'specify_value')
