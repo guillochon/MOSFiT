@@ -15,7 +15,7 @@ from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from six import string_types
 
-from mosfit.utils import entabbed_json_dump, is_date, is_number
+from mosfit.utils import entabbed_json_dump, is_date, is_number, listify
 
 
 class Converter(object):
@@ -107,7 +107,7 @@ class Converter(object):
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'u', 'g', 'r', 'i', 'z',
-            'y', 'W1', 'W2', 'M2'
+            'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'", "z'"
         ]
         self._use_mc = False
         self._month_rep = re.compile(
@@ -172,13 +172,14 @@ class Converter(object):
                     fsplit = ftxt.splitlines()
                     fsplit = [x.replace('$', '').replace(',', '\t')
                               .replace('&', '\t').replace('\\pm', '\t')
+                              .replace('±', '\t')
                               .replace('|', '\t').replace('(', ' (')
                               .replace(')', ' )').strip(' ()#')
                               for x in fsplit]
                     flines = [
-                        [y.replace('"', '').replace("'", '') for y in
+                        [y.replace('"', '') for y in
                          re.split(
-                             '''\s+(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
+                             '''\s+(?=(?:[^"]|[^]*|"[^"]*")*$)''',
                              x)]
                         for x in fsplit]
 
@@ -318,6 +319,9 @@ class Converter(object):
 
                     if PHOTOMETRY.TIME in cidict:
                         bi = cidict[PHOTOMETRY.TIME]
+
+                        if isinstance(bi, string_types) and bi[0] == 'jd':
+                            bi = bi[-1]
 
                         mintime = min([float(x[bi])
                                        for x in flines[self._first_data:]])
@@ -642,22 +646,29 @@ class Converter(object):
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
         for key in akeys:
+            selected_cols = [
+                y for y in [a for b in [
+                    listify(x) for x in list(cidict.values())] for a in b]
+                if isinstance(y, (int, np.integer))]
             if key in cidict:
                 continue
             if key in dkeys and self._use_mc:
                 continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for x in colinds
-                            if any(is_number(y) for y in columns[x])]
+                            if any(is_number(y) for y in columns[x])
+                            and x not in selected_cols]
             elif key.type == KEY_TYPES.TIME:
                 lcolinds = [x for x in colinds
                             if any(is_date(y) or is_number(y)
-                                   for y in columns[x])]
+                                   for y in columns[x])
+                            and x not in selected_cols]
             elif key.type == KEY_TYPES.STRING:
                 lcolinds = [x for x in colinds
-                            if any(not is_number(y) for y in columns[x])]
+                            if any(not is_number(y) for y in columns[x])
+                            and x not in selected_cols]
             else:
-                lcolinds = list(colinds)
+                lcolinds = [x for x in colinds if x not in selected_cols]
             select = False
             selects = []
             while select is False:
