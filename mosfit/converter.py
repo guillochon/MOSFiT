@@ -330,8 +330,9 @@ class Converter(object):
                                          self._first_data + ri][bi])) not in
                                      strip_cols])
 
-                    if PHOTOMETRY.TIME in cidict and len(
-                            cidict[PHOTOMETRY.TIME]) <= 2:
+                    if (PHOTOMETRY.TIME in cidict and
+                            (not isinstance(cidict[PHOTOMETRY.TIME], list)
+                             or len(cidict[PHOTOMETRY.TIME]) <= 2)):
                         bi = cidict[PHOTOMETRY.TIME]
 
                         if isinstance(bi, string_types) and bi[0] == 'jd':
