@@ -813,7 +813,7 @@ def main():
 
     # Then, fit the listed events with the listed models.
     fitargs = vars(args)
-    Fitter().fit_events(**fitargs)
+    Fitter(**fitargs).fit_events(**fitargs)
 
 
 if __name__ == "__main__":
