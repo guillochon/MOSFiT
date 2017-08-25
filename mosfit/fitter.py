@@ -3,15 +3,11 @@
 import gc
 import json
 import os
-import re
-import shutil
 import sys
 import time
 import warnings
-import webbrowser
 from collections import OrderedDict
 from copy import deepcopy
-from difflib import get_close_matches
 
 import numpy as np
 import scipy
@@ -23,15 +19,17 @@ from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
+
 from mosfit.converter import Converter
+from mosfit.fetcher import Fetcher
 from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
 from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
-                          frequency_unit, get_model_hash, get_url_file_handle,
-                          listify, open_atomic, pretty_num, slugify, speak)
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
+                          frequency_unit, get_model_hash, listify, open_atomic,
+                          pretty_num, slugify, speak)
 
 from .model import Model
 
@@ -69,97 +67,39 @@ class Fitter(object):
     _REPLACE_AGE = 20
     _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
 
-    def fit_events(self,
-                   events=[],
-                   models=[],
-                   max_time='',
-                   band_list=[],
-                   band_systems=[],
-                   band_instruments=[],
-                   band_bandsets=[],
-                   band_sampling_points=17,
-                   iterations=5000,
-                   num_walkers=None,
-                   num_temps=1,
-                   parameter_paths=['parameters.json'],
-                   fracking=True,
-                   frack_step=50,
-                   wrap_length=100,
-                   test=False,
-                   burn=None,
-                   post_burn=None,
-                   gibbs=False,
-                   smooth_times=-1,
-                   extrapolate_time=0.0,
-                   limit_fitting_mjds=False,
-                   exclude_bands=[],
-                   exclude_instruments=[],
-                   exclude_systems=[],
-                   exclude_sources=[],
-                   suffix='',
-                   offline=False,
-                   upload=False,
-                   write=False,
-                   quiet=False,
-                   cuda=False,
-                   upload_token='',
-                   check_upload_quality=False,
-                   variance_for_each=[],
-                   user_fixed_parameters=[],
-                   convergence_type='psrf',
-                   convergence_criteria=None,
-                   save_full_chain=False,
-                   draw_above_likelihood=False,
-                   maximum_walltime=False,
-                   start_time=False,
-                   print_trees=False,
-                   maximum_memory=np.inf,
-                   speak=False,
-                   language='en',
-                   return_fits=True,
-                   extra_outputs=[],
-                   walker_paths=[],
-                   catalogs=[],
-                   open_in_browser=False,
-                   limiting_magnitude=None,
-                   exit_on_prompt=False,
-                   **kwargs):
-        """Fit a list of events with a list of models."""
-        global model
-        if start_time is False:
-            start_time = time.time()
-        self._start_time = start_time
-        self._maximum_walltime = maximum_walltime
-        self._maximum_memory = maximum_memory
-        self._debug = False
-        self._speak = speak
-        self._limiting_magnitude = limiting_magnitude
+    def __init__(self,
+                 cuda=False,
+                 exit_on_prompt=False,
+                 language='en',
+                 limiting_magnitude=None,
+                 offline=False,
+                 open_in_browser=False,
+                 pool=None,
+                 quiet=False,
+                 test=False,
+                 wrap_length=100,
+                 **kwargs):
+        """Initialize `Fitter` class."""
+        self._pool = SerialPool() if pool is None else pool
+        self._printer = Printer(
+            pool=self._pool, wrap_length=wrap_length, quiet=quiet, fitter=self,
+            language=language, exit_on_prompt=exit_on_prompt)
 
         self._cuda = cuda
-        if cuda:
+        self._limiting_magnitude = limiting_magnitude
+        self._offline = offline
+        self._open_in_browser = open_in_browser
+        self._quiet = quiet
+        self._test = test
+        self._wrap_length = wrap_length
+
+        if self._cuda:
             try:
                 import pycuda.autoinit  # noqa: F401
                 import skcuda.linalg as linalg
                 linalg.init()
             except ImportError:
                 pass
-
-        dir_path = os.path.dirname(os.path.realpath(__file__))
-        self._test = test
-        self._wrap_length = wrap_length
-        self._draw_above_likelihood = draw_above_likelihood
-
-        self._printer = Printer(
-            wrap_length=wrap_length, quiet=quiet, fitter=self,
-            language=language, exit_on_prompt=exit_on_prompt)
-
-        prt = self._printer
-
-        event_list = listify(events)
-        model_list = listify(models)
-
-        if len(model_list) and not len(event_list):
-            event_list = ['']
 
         self._catalogs = OrderedDict((
             ('OSC', {
@@ -176,6 +116,75 @@ class Fitter(object):
             })
         ))
 
+    def fit_events(self,
+                   events=[],
+                   models=[],
+                   max_time='',
+                   band_list=[],
+                   band_systems=[],
+                   band_instruments=[],
+                   band_bandsets=[],
+                   band_sampling_points=17,
+                   iterations=5000,
+                   num_walkers=None,
+                   num_temps=1,
+                   parameter_paths=['parameters.json'],
+                   fracking=True,
+                   frack_step=50,
+                   burn=None,
+                   post_burn=None,
+                   gibbs=False,
+                   smooth_times=-1,
+                   extrapolate_time=0.0,
+                   limit_fitting_mjds=False,
+                   exclude_bands=[],
+                   exclude_instruments=[],
+                   exclude_systems=[],
+                   exclude_sources=[],
+                   suffix='',
+                   upload=False,
+                   write=False,
+                   upload_token='',
+                   check_upload_quality=False,
+                   variance_for_each=[],
+                   user_fixed_parameters=[],
+                   convergence_type='psrf',
+                   convergence_criteria=None,
+                   save_full_chain=False,
+                   draw_above_likelihood=False,
+                   maximum_walltime=False,
+                   start_time=False,
+                   print_trees=False,
+                   maximum_memory=np.inf,
+                   speak=False,
+                   return_fits=True,
+                   extra_outputs=[],
+                   walker_paths=[],
+                   catalogs=[],
+                   exit_on_prompt=False,
+                   download_recommended_data=False,
+                   **kwargs):
+        """Fit a list of events with a list of models."""
+        global model
+        if start_time is False:
+            start_time = time.time()
+        self._start_time = start_time
+        self._maximum_walltime = maximum_walltime
+        self._maximum_memory = maximum_memory
+        self._debug = False
+        self._speak = speak
+        self._download_recommended_data = download_recommended_data
+
+        self._draw_above_likelihood = draw_above_likelihood
+
+        prt = self._printer
+
+        event_list = listify(events)
+        model_list = listify(models)
+
+        if len(model_list) and not len(event_list):
+            event_list = ['']
+
         # Exclude catalogs not included in catalog list.
         if len(catalogs):
             for cat in self._catalogs.copy():
@@ -184,8 +193,6 @@ class Fitter(object):
 
         if not len(event_list) and not len(model_list):
             prt.message('no_events_models', warning=True)
-
-        data = {}
 
         # If the input is not a JSON file, assume it is either a list of
         # transients or that it is the data from a single transient in tabular
@@ -249,7 +256,7 @@ class Fitter(object):
                             prt.message('no_walker_data')
                     else:
                         prt.message('no_walker_data')
-                        if offline:
+                        if self._offline:
                             prt.message('omit_offline')
                         raise RuntimeError
                     wfi = wfi + 1
@@ -264,179 +271,31 @@ class Fitter(object):
                 pool.close()
 
         self._event_name = 'Batch'
-        self._event_catalog = ''
-        for ei, event in enumerate(event_list):
-            self._event_name = ''
-            self._event_path = ''
-            if event:
-                try:
-                    pool = MPIPool()
-                except ValueError:
-                    pool = SerialPool()
-                if pool.is_master():
-                    path = ''
-                    # If the event name ends in .json, assume event is a path.
-                    if event.endswith('.json'):
-                        path = event
-                        self._event_name = event.replace('.json',
-                                                         '').split('/')[-1]
+        self._event_path = ''
+        self._event_data = {}
 
-                    # If not (or the file doesn't exist), download from an open
-                    # catalog.
-                    if not path or not os.path.exists(path):
-                        names_paths = [
-                            os.path.join(dir_path, 'cache', x +
-                                         '.names.min.json') for x in
-                            self._catalogs]
-                        input_name = event.replace('.json', '')
-                        if offline:
-                            prt.message('event_interp', [input_name])
-                        else:
-                            prt.message('dling_aliases', [input_name])
-                            for ci, catalog in enumerate(self._catalogs):
-                                try:
-                                    response = get_url_file_handle(
-                                        self._catalogs[catalog]['json'] +
-                                        '/names.min.json',
-                                        timeout=10)
-                                except Exception:
-                                    prt.message('cant_dl_names'
-                                                [catalog], warning=True)
-                                    raise
-                                else:
-                                    with open_atomic(
-                                            names_paths[ci], 'wb') as f:
-                                        shutil.copyfileobj(response, f)
-                        names = OrderedDict()
-                        for ci, catalog in enumerate(self._catalogs):
-                            if os.path.exists(names_paths[ci]):
-                                with open(names_paths[ci], 'r') as f:
-                                    names[catalog] = json.load(
-                                        f, object_pairs_hook=OrderedDict)
-                            else:
-                                prt.message('cant_read_names', [catalog],
-                                            warning=True)
-                                if offline:
-                                    prt.message('omit_offline')
-                                raise RuntimeError
+        try:
+            pool = MPIPool()
+        except ValueError:
+            pool = SerialPool()
+        if pool.is_master():
+            self._fetcher = Fetcher(self)
+            fetched_events = self._fetcher.fetch(event_list)
 
-                            if event in names[catalog]:
-                                self._event_name = event
-                                self._event_catalog = catalog
-                            else:
-                                for name in names[catalog]:
-                                    if (event in names[catalog][name] or
-                                            'SN' + event in
-                                            names[catalog][name]):
-                                        self._event_name = name
-                                        self._event_catalog = catalog
-                                        break
+            for rank in range(1, pool.size + 1):
+                pool.comm.send(fetched_events, dest=rank, tag=0)
+            pool.close()
+        else:
+            fetched_events = pool.comm.recv(source=0, tag=0)
+            pool.wait()
 
-                        if not self._event_name:
-                            for ci, catalog in enumerate(self._catalogs):
-                                namekeys = []
-                                for name in names[catalog]:
-                                    namekeys.extend(names[catalog][name])
-                                namekeys = list(sorted(set(namekeys)))
-                                matches = get_close_matches(
-                                    event, namekeys, n=5, cutoff=0.8)
-                                # matches = []
-                                if len(matches) < 5 and is_number(event[0]):
-                                    prt.message('pef_ext_search')
-                                    snprefixes = set(('SN19', 'SN20'))
-                                    for name in names[catalog]:
-                                        ind = re.search("\d", name)
-                                        if ind and ind.start() > 0:
-                                            snprefixes.add(name[:ind.start()])
-                                    snprefixes = list(sorted(snprefixes))
-                                    for prefix in snprefixes:
-                                        testname = prefix + event
-                                        new_matches = get_close_matches(
-                                            testname, namekeys, cutoff=0.95,
-                                            n=1)
-                                        if (len(new_matches) and
-                                                new_matches[0] not in matches):
-                                            matches.append(new_matches[0])
-                                        if len(matches) == 5:
-                                            break
-                                if len(matches):
-                                    if test:
-                                        response = matches[0]
-                                    else:
-                                        response = prt.prompt(
-                                            'no_exact_match',
-                                            kind='select',
-                                            options=matches,
-                                            none_string=(
-                                                'None of the above, ' +
-                                                ('skip this event.' if
-                                                 ci == len(self._catalogs) - 1
-                                                 else
-                                                 'try the next catalog.')))
-                                    if response:
-                                        for name in names[catalog]:
-                                            if response in names[
-                                                    catalog][name]:
-                                                self._event_name = name
-                                                self._event_catalog = catalog
-                                                break
-                                        if self._event_name:
-                                            break
-
-                        if not self._event_name:
-                            prt.message('no_event_by_name')
-                            continue
-                        urlname = self._event_name + '.json'
-                        name_path = os.path.join(dir_path, 'cache', urlname)
-
-                        if offline:
-                            prt.message('cached_event', [
-                                self._event_name, self._event_catalog])
-                        else:
-                            prt.message('dling_event', [
-                                self._event_name, self._event_catalog])
-                            try:
-                                response = get_url_file_handle(
-                                    self._catalogs[self._event_catalog][
-                                        'json'] + '/json/' + urlname,
-                                    timeout=10)
-                            except Exception:
-                                prt.message('cant_dl_event', [
-                                    self._event_name], warning=True)
-                            else:
-                                with open_atomic(name_path, 'wb') as f:
-                                    shutil.copyfileobj(response, f)
-                        path = name_path
-
-                    if os.path.exists(path):
-                        if open_in_browser:
-                            webbrowser.open(
-                                self._catalogs[self._event_catalog]['web'] +
-                                self._event_name)
-                        with open(path, 'r') as f:
-                            data = json.load(f, object_pairs_hook=OrderedDict)
-                        prt.message('event_file', [path], wrapped=True)
-                    else:
-                        prt.message('no_data', [
-                            self._event_name, '/'.join(self._catalogs.keys())])
-                        if offline:
-                            prt.message('omit_offline')
-                        raise RuntimeError
-
-                    for rank in range(1, pool.size + 1):
-                        pool.comm.send(self._event_name, dest=rank, tag=0)
-                        pool.comm.send(path, dest=rank, tag=1)
-                        pool.comm.send(data, dest=rank, tag=2)
-                else:
-                    self._event_name = pool.comm.recv(source=0, tag=0)
-                    path = pool.comm.recv(source=0, tag=1)
-                    data = pool.comm.recv(source=0, tag=2)
-                    pool.wait()
-
-                self._event_path = path
-
-                if pool.is_master():
-                    pool.close()
+        for ei, event in enumerate(fetched_events):
+            if event is not None:
+                if 'data' not in event:
+                    continue
+                self._event_name = event.get('name', 'Batch')
+                self._event_path = event.get('path', '')
+                self._event_data = event.get('data', {})
 
             if model_list:
                 lmodel_list = model_list
@@ -455,9 +314,9 @@ class Fitter(object):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
-                        data=data,
+                        data=self._event_data,
                         parameter_path=parameter_path,
-                        wrap_length=wrap_length,
+                        wrap_length=self._wrap_length,
                         fitter=self,
                         pool=pool,
                         print_trees=print_trees)
@@ -478,31 +337,91 @@ class Fitter(object):
                             'band_instruments': band_instruments,
                             'band_bandsets': band_bandsets
                         }
-                        data = self.generate_dummy_data(**gen_args)
+                        self._event_data = self.generate_dummy_data(**gen_args)
 
-                    success = self.load_data(
-                        data,
-                        event_name=self._event_name,
-                        iterations=iterations,
-                        fracking=fracking,
-                        burn=burn,
-                        post_burn=post_burn,
-                        smooth_times=smooth_times,
-                        extrapolate_time=extrapolate_time,
-                        limit_fitting_mjds=limit_fitting_mjds,
-                        exclude_bands=exclude_bands,
-                        exclude_instruments=exclude_instruments,
-                        exclude_systems=exclude_systems,
-                        exclude_sources=exclude_sources,
-                        band_list=band_list,
-                        band_systems=band_systems,
-                        band_instruments=band_instruments,
-                        band_bandsets=band_bandsets,
-                        band_sampling_points=band_sampling_points,
-                        variance_for_each=variance_for_each,
-                        user_fixed_parameters=user_fixed_parameters,
-                        pool=pool,
-                        walker_data=walker_data)
+                    success = False
+                    alt_name = None
+                    while not success:
+                        self._model.reset_unset_recommended_keys()
+                        success = self.load_data(
+                            self._event_data,
+                            event_name=self._event_name,
+                            iterations=iterations,
+                            fracking=fracking,
+                            burn=burn,
+                            post_burn=post_burn,
+                            smooth_times=smooth_times,
+                            extrapolate_time=extrapolate_time,
+                            limit_fitting_mjds=limit_fitting_mjds,
+                            exclude_bands=exclude_bands,
+                            exclude_instruments=exclude_instruments,
+                            exclude_systems=exclude_systems,
+                            exclude_sources=exclude_sources,
+                            band_list=band_list,
+                            band_systems=band_systems,
+                            band_instruments=band_instruments,
+                            band_bandsets=band_bandsets,
+                            band_sampling_points=band_sampling_points,
+                            variance_for_each=variance_for_each,
+                            user_fixed_parameters=user_fixed_parameters,
+                            pool=pool,
+                            walker_data=walker_data)
+
+                        if not success:
+                            break
+
+                        # If our data is missing recommended keys, offer the
+                        # user option to pull the missing data from online and
+                        # merge with existing data.
+                        urk = self._model.get_unset_recommended_keys()
+                        ptxt = prt.text('acquire_recommended', [
+                            ', '.join(list(urk))])
+                        while event and len(urk) and (
+                            alt_name or self._download_recommended_data
+                            or prt.prompt(
+                                ptxt, [', '.join(urk)], kind='bool')):
+                            try:
+                                pool = MPIPool()
+                            except ValueError:
+                                pool = SerialPool()
+                            if pool.is_master():
+                                en = (alt_name if alt_name
+                                      else self._event_name)
+                                extra_event = self._fetcher.fetch(
+                                    en)[0].get('data')
+
+                                for rank in range(1, pool.size + 1):
+                                    pool.comm.send(extra_event, dest=rank,
+                                                   tag=4)
+                                pool.close()
+                            else:
+                                extra_event = pool.comm.recv(
+                                    source=0, tag=4)
+                                pool.wait()
+
+                            if extra_event is not None:
+                                extra_event = extra_event[
+                                    list(extra_event.keys())[0]]
+
+                                for key in urk:
+                                    new_val = extra_event.get(key)
+                                    self._event_data[list(
+                                        self._event_data.keys())[0]][
+                                            key] = new_val
+                                    if new_val is not None and len(
+                                            new_val):
+                                        prt.message('extra_value', [
+                                            key, str(new_val[0].get(
+                                                QUANTITY.VALUE))])
+                                success = False
+                                prt.message('reloading_merged')
+                                break
+                            else:
+                                text = prt.text(
+                                    'extra_not_found', [self._event_name])
+                                alt_name = prt.prompt(text, kind='string')
+                                if not alt_name:
+                                    break
 
                     if success:
                         entry, p, lnprob = self.fit_data(
@@ -564,25 +483,31 @@ class Fitter(object):
                   band_sampling_points=17,
                   variance_for_each=[],
                   user_fixed_parameters=[],
-                  pool='',
-                  walker_data=[]):
+                  pool=None,
+                  walker_data=[],
+                  model=None):
         """Load the data for the specified event."""
         prt = self._printer
 
-        if pool.is_master():
-            prt.message('loading_data', inline=True)
+        if pool is not None:
+            self._pool = pool
+
+        if model is None:
+            model = self._model
+
+        prt.message('loading_data', inline=True)
 
         self._walker_data = walker_data
         fixed_parameters = []
-        for task in self._model._call_stack:
-            cur_task = self._model._call_stack[task]
-            self._model._modules[task].set_event_name(event_name)
+        for task in model._call_stack:
+            cur_task = model._call_stack[task]
+            model._modules[task].set_event_name(event_name)
             if cur_task['kind'] == 'data':
-                success = self._model._modules[task].set_data(
+                success = model._modules[task].set_data(
                     data,
                     req_key_values=OrderedDict((
-                        ('band', self._model._bands),
-                        ('instrument', self._model._instruments))),
+                        ('band', model._bands),
+                        ('instrument', model._instruments))),
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
@@ -597,64 +522,63 @@ class Fitter(object):
                     band_bandsets=band_bandsets)
                 if not success:
                     return False
-                fixed_parameters.extend(self._model._modules[task]
+                fixed_parameters.extend(model._modules[task]
                                         .get_data_determined_parameters())
             elif cur_task['kind'] == 'sed':
-                self._model._modules[task].set_data(band_sampling_points)
+                model._modules[task].set_data(band_sampling_points)
 
             # Fix user-specified parameters.
             for fi, param in enumerate(user_fixed_parameters):
                 if (task == param or
-                        self._model._call_stack[task].get(
+                        model._call_stack[task].get(
                             'class', '') == param):
                     fixed_parameters.append(task)
                     if fi < len(user_fixed_parameters) - 1 and is_number(
                             user_fixed_parameters[fi + 1]):
                         value = float(user_fixed_parameters[fi + 1])
-                        if value not in self._model._call_stack:
-                            self._model._call_stack[task]['value'] = value
-                    if 'min_value' in self._model._call_stack[task]:
-                        del self._model._call_stack[task]['min_value']
-                    if 'max_value' in self._model._call_stack[task]:
-                        del self._model._call_stack[task]['max_value']
-                    self._model._modules[task].fix_value(
-                        self._model._call_stack[task]['value'])
+                        if value not in model._call_stack:
+                            model._call_stack[task]['value'] = value
+                    if 'min_value' in model._call_stack[task]:
+                        del model._call_stack[task]['min_value']
+                    if 'max_value' in model._call_stack[task]:
+                        del model._call_stack[task]['max_value']
+                    model._modules[task].fix_value(
+                        model._call_stack[task]['value'])
 
-        self._model.determine_free_parameters(fixed_parameters)
+        model.determine_free_parameters(fixed_parameters)
 
-        self._model.exchange_requests()
+        model.exchange_requests()
 
-        if pool.is_master():
-            prt.message('finding_bands', inline=True)
+        prt.message('finding_bands', inline=True)
 
         # Run through once to set all inits.
         for root in ['output', 'objective']:
-            outputs = self._model.run_stack(
-                [0.0 for x in range(self._model._num_free_parameters)],
+            outputs = model.run_stack(
+                [0.0 for x in range(model._num_free_parameters)],
                 root=root)
 
         # Create any data-dependent free parameters.
-        self._model.adjust_fixed_parameters(variance_for_each, outputs)
+        model.adjust_fixed_parameters(variance_for_each, outputs)
 
         # Determine free parameters again as above may have changed them.
-        self._model.determine_free_parameters(fixed_parameters)
+        model.determine_free_parameters(fixed_parameters)
 
-        self._model.determine_number_of_measurements()
+        model.determine_number_of_measurements()
 
-        self._model.exchange_requests()
+        model.exchange_requests()
 
         # Reset modules
-        for task in self._model._call_stack:
-            self._model._modules[task].reset_preprocessed(['photometry'])
+        for task in model._call_stack:
+            model._modules[task].reset_preprocessed(['photometry'])
 
         # Run through inits once more.
         for root in ['output', 'objective']:
-            outputs = self._model.run_stack(
-                [0.0 for x in range(self._model._num_free_parameters)],
+            outputs = model.run_stack(
+                [0.0 for x in range(model._num_free_parameters)],
                 root=root)
 
         # Collect observed band info
-        if pool.is_master() and 'photometry' in self._model._modules:
+        if self._pool.is_master() and 'photometry' in model._modules:
             prt.message('bands_used')
             bis = list(
                 filter(lambda a: a != -1,
@@ -668,10 +592,10 @@ class Fitter(object):
                             'observed']) if x == bi
                     ]))
             band_len = max([
-                len(self._model._modules['photometry']._unique_bands[bi][
+                len(model._modules['photometry']._unique_bands[bi][
                     'origin']) for bi in bis
             ])
-            filts = self._model._modules['photometry']
+            filts = model._modules['photometry']
             ubs = filts._unique_bands
             filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
                           filts._average_wavelengths[bis[i]],
@@ -726,7 +650,7 @@ class Fitter(object):
                  num_temps=1,
                  fracking=True,
                  gibbs=False,
-                 pool='',
+                 pool=None,
                  suffix='',
                  write=False,
                  upload=False,
@@ -747,6 +671,9 @@ class Fitter(object):
         model = self._model
         prt = self._printer
 
+        if pool is not None:
+            self._pool = pool
+
         upload_model = upload and iterations > 0
 
         if upload:
@@ -759,9 +686,9 @@ class Fitter(object):
                     prt.message('install_db', error=True)
                     raise
 
-        if not pool.is_master():
+        if not self._pool.is_master():
             try:
-                pool.wait()
+                self._pool.wait()
             except (KeyboardInterrupt, SystemExit):
                 pass
             return (None, None, None)
@@ -776,17 +703,18 @@ class Fitter(object):
         test_walker = iterations > 0
         lnprob = None
         lnlike = None
-        pool_size = max(pool.size, 1)
+        pool_size = max(self._pool.size, 1)
         # Derived so only half a walker redrawn with Gaussian distribution.
         redraw_mult = 0.5 * np.sqrt(
             2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
 
         prt.message('nmeas_nfree', [model._num_measurements, ndim])
-        if model._num_measurements <= ndim:
-            prt.message('too_few_walkers', warning=True)
-        if nwalkers < 10 * ndim:
-            prt.message('want_more_walkers', [10 * ndim, nwalkers],
-                        warning=True)
+        if test_walker:
+            if model._num_measurements <= ndim:
+                prt.message('too_few_walkers', warning=True)
+            if nwalkers < 10 * ndim:
+                prt.message('want_more_walkers', [10 * ndim, nwalkers],
+                            warning=True)
         p0 = [[] for x in range(ntemps)]
 
         # Generate walker positions based upon loaded walker data, if
@@ -824,15 +752,15 @@ class Fitter(object):
                     progress=[
                         i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
 
-                if pool.size == 0 or pool_len:
+                if self._pool.size == 0 or pool_len:
                     p, score = draw_walker(
                         test_walker, walkers_pool,
                         replace=pool_len < ntemps * nwalkers)
                     p0[i].append(p)
                     dwscores.append(score)
                 else:
-                    nmap = min(nwalkers - len(p0[i]), max(pool.size, 10))
-                    dws = pool.map(draw_walker, [test_walker] * nmap)
+                    nmap = min(nwalkers - len(p0[i]), max(self._pool.size, 10))
+                    dws = self._pool.map(draw_walker, [test_walker] * nmap)
                     p0[i].extend([x[0] for x in dws])
                     dwscores.extend([x[1] for x in dws])
 
@@ -876,7 +804,7 @@ class Fitter(object):
         try:
             if iterations > 0:
                 sampler = MOSSampler(
-                    ntemps, nwalkers, ndim, likelihood, prior, pool=pool)
+                    ntemps, nwalkers, ndim, likelihood, prior, pool=self._pool)
                 st = time.time()
             while (iterations > 0 and (
                     convergence_criteria is not None or ici < len(iter_arr))):
@@ -1124,7 +1052,7 @@ class Fitter(object):
                         for x in range(len(bhwalkers))
                     ]
                     frack_args = list(zip(bhwalkers, seeds))
-                    bhs = list(pool.map(frack, frack_args))
+                    bhs = list(self._pool.map(frack, frack_args))
                     for bhi, bh in enumerate(bhs):
                         (wi, ti) = tuple(selijs[bhi])
                         if -bh.fun > lnprob[wi][ti]:
@@ -1191,14 +1119,14 @@ class Fitter(object):
             raise
 
         if s_exception:
-            pool.close()
+            self._pool.close()
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
 
         msg_criteria = (
             1.1 if convergence_criteria is None else convergence_criteria)
-        if (convergence_type == 'psrf' and msg_criteria is not None and
-                psrf > msg_criteria):
+        if (test_walker and convergence_type == 'psrf' and
+                msg_criteria is not None and psrf > msg_criteria):
             prt.message('not_converged', [
                 'default' if convergence_criteria is None else 'specified',
                 msg_criteria], warning=True)
