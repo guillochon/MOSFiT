@@ -219,7 +219,7 @@ class Converter(object):
                     for fi, fl in enumerate(flines):
                         if (len(fl) and flens[fi] == 1 and
                             fi < len(flines) - 1 and
-                                flens[fi + 1] == ncols):
+                                flens[fi + 1] == ncols and not len(newlines)):
                             potential_name = fl[0]
                         if flens[fi] == ncols:
                             if potential_name is not None and any(
@@ -249,6 +249,7 @@ class Converter(object):
 
                     # Check that each row has the same number of columns.
                     if len(set([len(x) for x in flines])) > 1:
+                        print(set([len(x) for x in flines]))
                         raise ValueError(
                             'Number of columns in each row not '
                             'consistent!')

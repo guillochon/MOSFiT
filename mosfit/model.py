@@ -11,14 +11,13 @@ from math import isnan
 import inflect
 import numpy as np
 from astrocats.catalog.quantity import QUANTITY
+from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
+from mosfit.modules.module import Module
+from mosfit.utils import listify
+from schwimmbad import SerialPool
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
 from six import string_types
-
-from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.modules.module import Module
-from mosfit.printer import Printer
-from mosfit.utils import listify
 
 
 # from scipy.optimize import basinhopping
@@ -46,7 +45,7 @@ class Model(object):
                  print_trees=False):
         """Initialize `Model` object."""
         self._model_name = model
-        self._pool = pool
+        self._pool = SerialPool() if pool is None else pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
         self._fitter = fitter
@@ -57,10 +56,11 @@ class Model(object):
 
         self._draw_limit_reached = False
 
-        if self._fitter:
-            self._printer = self._fitter._printer
-        else:
-            self._printer = Printer(pool=pool, wrap_length=wrap_length)
+        if not self._fitter:
+            from mosfit.fitter import Fitter
+            self._fitter = Fitter(
+                pool=pool, wrap_length=wrap_length)
+        self._printer = self._fitter._printer
 
         prt = self._printer
 
@@ -302,6 +302,9 @@ class Model(object):
                         self._modules[ftask]._wants_dense):
                     self._modules[ftask]._provide_dense = True
 
+        # Count free parameters.
+        self.determine_free_parameters()
+
     def _load_task_module(self, task, call_stack=None):
         if not call_stack:
             call_stack = self._call_stack
@@ -404,7 +407,7 @@ class Model(object):
                 self._num_measurements += len(
                     self._modules[task]._data['times'])
 
-    def determine_free_parameters(self, extra_fixed_parameters):
+    def determine_free_parameters(self, extra_fixed_parameters=[]):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
         self._num_variances = 0
@@ -419,6 +422,10 @@ class Model(object):
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
         self._num_free_parameters = len(self._free_parameters)
+
+    def get_num_free_parameters(self):
+        """Return number of free parameters."""
+        return self._num_free_parameters
 
     def exchange_requests(self):
         """Exchange requests between modules."""

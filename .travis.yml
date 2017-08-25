@@ -26,6 +26,7 @@ install:
     - conda config --add channels conda-forge
     - conda install --yes python=$TRAVIS_PYTHON_VERSION astrocats astropy corner coveralls cython dropbox emcee extinction inflect jupyter matplotlib mpi4py nbstripout numexpr palettable schwimmbad scipy!=0.19.0 seaborn six
     - pip install googletrans
+    - pip install --upgrade astrocats
     - coverage run -p setup.py install
 
 # Run test
