@@ -169,6 +169,7 @@ class Fetcher(object):
                 path = name_path
 
             if os.path.exists(path):
+                events[ei]['path'] = path
                 if self._fitter._open_in_browser:
                     webbrowser.open(
                         self._fitter._catalogs[events[ei]['catalog']]['web'] +
