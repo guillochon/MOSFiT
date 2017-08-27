@@ -40,7 +40,7 @@ class Fetcher(object):
             })
         ))
 
-    def add_excluded_catalog(self, catalogs):
+    def add_excluded_catalogs(self, catalogs):
         """Add catalog name(s) to list of catalogs that will be excluded."""
         if not isinstance(catalogs, list) or isinstance(
                 catalogs, string_types):
@@ -55,8 +55,9 @@ class Fetcher(object):
         levent_list = listify(event_list)
         events = [None for x in levent_list]
 
-        catalogs = [x for x in self._catalogs
-                    if x not in self._excluded_catalogs]
+        catalogs = OrderedDict([
+            (x, self._catalogs[x]) for x in self._catalogs
+            if x not in self._excluded_catalogs])
 
         for ei, event in enumerate(levent_list):
             if not event:

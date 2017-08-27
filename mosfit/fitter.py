@@ -17,11 +17,7 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.source import SOURCE
-from astrocats.catalog.utils import is_number
 from emcee.autocorr import AutocorrError
-from schwimmbad import MPIPool, SerialPool
-from six import string_types
-
 from mosfit.converter import Converter
 from mosfit.fetcher import Fetcher
 from mosfit.mossampler import MOSSampler
@@ -30,6 +26,8 @@ from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
                           entabbed_json_dumps, flux_density_unit,
                           frequency_unit, get_model_hash, listify, open_atomic,
                           pretty_num, slugify, speak)
+from schwimmbad import MPIPool, SerialPool
+from six import string_types
 
 from .model import Model
 
@@ -300,6 +298,8 @@ class Fitter(object):
                         data=self._event_data,
                         parameter_path=parameter_path,
                         wrap_length=self._wrap_length,
+                        test=self._test,
+                        printer=prt,
                         fitter=self,
                         pool=pool,
                         print_trees=print_trees)
@@ -326,13 +326,9 @@ class Fitter(object):
                     alt_name = None
                     while not success:
                         self._model.reset_unset_recommended_keys()
-                        success = self.load_data(
+                        success = self._model.load_data(
                             self._event_data,
                             event_name=self._event_name,
-                            iterations=iterations,
-                            fracking=fracking,
-                            burn=burn,
-                            post_burn=post_burn,
                             smooth_times=smooth_times,
                             extrapolate_time=extrapolate_time,
                             limit_fitting_mjds=limit_fitting_mjds,
@@ -347,8 +343,7 @@ class Fitter(object):
                             band_sampling_points=band_sampling_points,
                             variance_for_each=variance_for_each,
                             user_fixed_parameters=user_fixed_parameters,
-                            pool=pool,
-                            walker_data=walker_data)
+                            pool=pool)
 
                         if not success:
                             break
@@ -407,11 +402,15 @@ class Fitter(object):
                                     break
 
                     if success:
+                        self._walker_data = walker_data
+
                         entry, p, lnprob = self.fit_data(
                             event_name=self._event_name,
                             iterations=iterations,
                             num_walkers=num_walkers,
                             num_temps=num_temps,
+                            burn=burn,
+                            post_burn=post_burn,
                             fracking=fracking,
                             frack_step=frack_step,
                             gibbs=gibbs,
@@ -445,192 +444,14 @@ class Fitter(object):
 
         return (entries, ps, lnprobs)
 
-    def load_data(self,
-                  data,
-                  event_name='',
-                  iterations=2000,
-                  fracking=True,
-                  burn=None,
-                  post_burn=None,
-                  smooth_times=-1,
-                  extrapolate_time=0.0,
-                  limit_fitting_mjds=False,
-                  exclude_bands=[],
-                  exclude_instruments=[],
-                  exclude_systems=[],
-                  exclude_sources=[],
-                  band_list=[],
-                  band_systems=[],
-                  band_instruments=[],
-                  band_bandsets=[],
-                  band_sampling_points=17,
-                  variance_for_each=[],
-                  user_fixed_parameters=[],
-                  pool=None,
-                  walker_data=[],
-                  model=None):
-        """Load the data for the specified event."""
-        prt = self._printer
-
-        if pool is not None:
-            self._pool = pool
-
-        if model is None:
-            model = self._model
-
-        prt.message('loading_data', inline=True)
-
-        self._walker_data = walker_data
-        fixed_parameters = []
-        for task in model._call_stack:
-            cur_task = model._call_stack[task]
-            model._modules[task].set_event_name(event_name)
-            if cur_task['kind'] == 'data':
-                success = model._modules[task].set_data(
-                    data,
-                    req_key_values=OrderedDict((
-                        ('band', model._bands),
-                        ('instrument', model._instruments))),
-                    subtract_minimum_keys=['times'],
-                    smooth_times=smooth_times,
-                    extrapolate_time=extrapolate_time,
-                    limit_fitting_mjds=limit_fitting_mjds,
-                    exclude_bands=exclude_bands,
-                    exclude_instruments=exclude_instruments,
-                    exclude_systems=exclude_systems,
-                    exclude_sources=exclude_sources,
-                    band_list=band_list,
-                    band_systems=band_systems,
-                    band_instruments=band_instruments,
-                    band_bandsets=band_bandsets)
-                if not success:
-                    return False
-                fixed_parameters.extend(model._modules[task]
-                                        .get_data_determined_parameters())
-            elif cur_task['kind'] == 'sed':
-                model._modules[task].set_data(band_sampling_points)
-
-            # Fix user-specified parameters.
-            for fi, param in enumerate(user_fixed_parameters):
-                if (task == param or
-                        model._call_stack[task].get(
-                            'class', '') == param):
-                    fixed_parameters.append(task)
-                    if fi < len(user_fixed_parameters) - 1 and is_number(
-                            user_fixed_parameters[fi + 1]):
-                        value = float(user_fixed_parameters[fi + 1])
-                        if value not in model._call_stack:
-                            model._call_stack[task]['value'] = value
-                    if 'min_value' in model._call_stack[task]:
-                        del model._call_stack[task]['min_value']
-                    if 'max_value' in model._call_stack[task]:
-                        del model._call_stack[task]['max_value']
-                    model._modules[task].fix_value(
-                        model._call_stack[task]['value'])
-
-        model.determine_free_parameters(fixed_parameters)
-
-        model.exchange_requests()
-
-        prt.message('finding_bands', inline=True)
-
-        # Run through once to set all inits.
-        for root in ['output', 'objective']:
-            outputs = model.run_stack(
-                [0.0 for x in range(model._num_free_parameters)],
-                root=root)
-
-        # Create any data-dependent free parameters.
-        model.adjust_fixed_parameters(variance_for_each, outputs)
-
-        # Determine free parameters again as above may have changed them.
-        model.determine_free_parameters(fixed_parameters)
-
-        model.determine_number_of_measurements()
-
-        model.exchange_requests()
-
-        # Reset modules
-        for task in model._call_stack:
-            model._modules[task].reset_preprocessed(['photometry'])
-
-        # Run through inits once more.
-        for root in ['output', 'objective']:
-            outputs = model.run_stack(
-                [0.0 for x in range(model._num_free_parameters)],
-                root=root)
-
-        # Collect observed band info
-        if self._pool.is_master() and 'photometry' in model._modules:
-            prt.message('bands_used')
-            bis = list(
-                filter(lambda a: a != -1,
-                       sorted(set(outputs['all_band_indices']))))
-            ois = []
-            for bi in bis:
-                ois.append(
-                    any([
-                        y
-                        for x, y in zip(outputs['all_band_indices'], outputs[
-                            'observed']) if x == bi
-                    ]))
-            band_len = max([
-                len(model._modules['photometry']._unique_bands[bi][
-                    'origin']) for bi in bis
-            ])
-            filts = model._modules['photometry']
-            ubs = filts._unique_bands
-            filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
-                          filts._average_wavelengths[bis[i]],
-                          filts._band_offsets[bis[i]],
-                          filts._band_kinds[bis[i]],
-                          filts._band_names[bis[i]],
-                          ois[i], bis[i])
-                         for i in range(len(bis))]
-            filterrows = [(
-                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
-                .ljust(band_len) + ' [' + ', '.join(
-                    list(
-                        filter(None, (
-                            'Bandset: ' + s[1] if s[1] else '',
-                            'System: ' + s[0] if s[0] else '',
-                            'AB offset: ' + pretty_num(
-                                s[3]) if (s[4] == 'magnitude' and
-                                          s[0] != 'AB') else '')))) +
-                ']').replace(' []', '') for s in list(sorted(filterarr))]
-            if not all(ois):
-                filterrows.append('  (* = Not observed in this band)')
-            prt.prt('\n'.join(filterrows))
-
-            if ('unmatched_bands' in outputs and
-                    'unmatched_instruments' in outputs):
-                prt.message('unmatched_obs', warning=True)
-                prt.prt(', '.join(
-                    ['{} [{}]'.format(x[0], x[1]) if x[0] and x[1] else x[0]
-                     if not x[1] else x[1] for x in list(set(zip(
-                         outputs['unmatched_bands'],
-                         outputs['unmatched_instruments'])))]), warning=True,
-                    prefix=False, wrapped=True)
-
-        self._event_name = event_name
-        self._emcee_est_t = 0.0
-        self._bh_est_t = 0.0
-        self._fracking = fracking
-        if burn is not None:
-            self._burn_in = min(burn, iterations)
-        elif post_burn is not None:
-            self._burn_in = max(iterations - post_burn, 0)
-        else:
-            self._burn_in = int(np.round(iterations / 2))
-
-        return True
-
     def fit_data(self,
                  event_name='',
                  iterations=2000,
                  frack_step=20,
                  num_walkers=None,
                  num_temps=1,
+                 burn=None,
+                 post_burn=None,
                  fracking=True,
                  gibbs=False,
                  pool=None,
@@ -653,6 +474,15 @@ class Fitter(object):
         global model
         model = self._model
         prt = self._printer
+
+        self._emcee_est_t = 0.0
+        self._bh_est_t = 0.0
+        if burn is not None:
+            self._burn_in = min(burn, iterations)
+        elif post_burn is not None:
+            self._burn_in = max(iterations - post_burn, 0)
+        else:
+            self._burn_in = int(np.round(iterations / 2))
 
         if pool is not None:
             self._pool = pool

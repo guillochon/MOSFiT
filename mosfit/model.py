@@ -13,7 +13,7 @@ import numpy as np
 from astrocats.catalog.quantity import QUANTITY
 from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
 from mosfit.modules.module import Module
-from mosfit.utils import listify
+from mosfit.utils import is_number, listify, pretty_num
 from schwimmbad import SerialPool
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
@@ -41,14 +41,17 @@ class Model(object):
                  data={},
                  wrap_length=100,
                  pool=None,
+                 test=False,
+                 printer=None,
                  fitter=None,
                  print_trees=False):
         """Initialize `Model` object."""
+        from mosfit.fitter import Fitter
+
         self._model_name = model
         self._pool = SerialPool() if pool is None else pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
-        self._fitter = fitter
         self._print_trees = print_trees
         self._inflect = inflect.engine()
         self._inflections = {}
@@ -56,11 +59,8 @@ class Model(object):
 
         self._draw_limit_reached = False
 
-        if not self._fitter:
-            from mosfit.fitter import Fitter
-            self._fitter = Fitter(
-                pool=pool, wrap_length=wrap_length)
-        self._printer = self._fitter._printer
+        self._fitter = Fitter() if not fitter else fitter
+        self._printer = self._fitter._printer if not printer else printer
 
         prt = self._printer
 
@@ -106,7 +106,7 @@ class Model(object):
                 prt.message('no_model_for_type', warning=True)
             else:
                 while not self._model_name:
-                    if fitter._test:
+                    if self._test:
                         self._model_name = type_options[0]
                     else:
                         sel = self._printer.prompt(
@@ -330,7 +330,166 @@ class Model(object):
             x[1].__module__ == mod.__name__][0]
         mod_class = getattr(mod, class_name)
         return mod_class(
-            name=task, model=self, **cur_task)
+            name=task, model=self, fitter=self._fitter, **cur_task)
+
+    def load_data(self,
+                  data,
+                  event_name='',
+                  smooth_times=-1,
+                  extrapolate_time=0.0,
+                  limit_fitting_mjds=False,
+                  exclude_bands=[],
+                  exclude_instruments=[],
+                  exclude_systems=[],
+                  exclude_sources=[],
+                  band_list=[],
+                  band_systems=[],
+                  band_instruments=[],
+                  band_bandsets=[],
+                  band_sampling_points=17,
+                  variance_for_each=[],
+                  user_fixed_parameters=[],
+                  pool=None):
+        """Load the data for the specified event."""
+        prt = self._printer
+
+        if pool is not None:
+            self._pool = pool
+
+        prt.message('loading_data', inline=True)
+
+        fixed_parameters = []
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            self._modules[task].set_event_name(event_name)
+            if cur_task['kind'] == 'data':
+                success = self._modules[task].set_data(
+                    data,
+                    req_key_values=OrderedDict((
+                        ('band', self._bands),
+                        ('instrument', self._instruments))),
+                    subtract_minimum_keys=['times'],
+                    smooth_times=smooth_times,
+                    extrapolate_time=extrapolate_time,
+                    limit_fitting_mjds=limit_fitting_mjds,
+                    exclude_bands=exclude_bands,
+                    exclude_instruments=exclude_instruments,
+                    exclude_systems=exclude_systems,
+                    exclude_sources=exclude_sources,
+                    band_list=band_list,
+                    band_systems=band_systems,
+                    band_instruments=band_instruments,
+                    band_bandsets=band_bandsets)
+                if not success:
+                    return False
+                fixed_parameters.extend(self._modules[task]
+                                        .get_data_determined_parameters())
+            elif cur_task['kind'] == 'sed':
+                self._modules[task].set_data(band_sampling_points)
+
+            # Fix user-specified parameters.
+            for fi, param in enumerate(user_fixed_parameters):
+                if (task == param or
+                        self._call_stack[task].get(
+                            'class', '') == param):
+                    fixed_parameters.append(task)
+                    if fi < len(user_fixed_parameters) - 1 and is_number(
+                            user_fixed_parameters[fi + 1]):
+                        value = float(user_fixed_parameters[fi + 1])
+                        if value not in self._call_stack:
+                            self._call_stack[task]['value'] = value
+                    if 'min_value' in self._call_stack[task]:
+                        del self._call_stack[task]['min_value']
+                    if 'max_value' in self._call_stack[task]:
+                        del self._call_stack[task]['max_value']
+                    self._modules[task].fix_value(
+                        self._call_stack[task]['value'])
+
+        self.determine_free_parameters(fixed_parameters)
+
+        self.exchange_requests()
+
+        prt.message('finding_bands', inline=True)
+
+        # Run through once to set all inits.
+        for root in ['output', 'objective']:
+            outputs = self.run_stack(
+                [0.0 for x in range(self._num_free_parameters)],
+                root=root)
+
+        # Create any data-dependent free parameters.
+        self.adjust_fixed_parameters(variance_for_each, outputs)
+
+        # Determine free parameters again as above may have changed them.
+        self.determine_free_parameters(fixed_parameters)
+
+        self.determine_number_of_measurements()
+
+        self.exchange_requests()
+
+        # Reset modules
+        for task in self._call_stack:
+            self._modules[task].reset_preprocessed(['photometry'])
+
+        # Run through inits once more.
+        for root in ['output', 'objective']:
+            outputs = self.run_stack(
+                [0.0 for x in range(self._num_free_parameters)],
+                root=root)
+
+        # Collect observed band info
+        if self._pool.is_master() and 'photometry' in self._modules:
+            prt.message('bands_used')
+            bis = list(
+                filter(lambda a: a != -1,
+                       sorted(set(outputs['all_band_indices']))))
+            ois = []
+            for bi in bis:
+                ois.append(
+                    any([
+                        y
+                        for x, y in zip(outputs['all_band_indices'], outputs[
+                            'observed']) if x == bi
+                    ]))
+            band_len = max([
+                len(self._modules['photometry']._unique_bands[bi][
+                    'origin']) for bi in bis
+            ])
+            filts = self._modules['photometry']
+            ubs = filts._unique_bands
+            filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
+                          filts._average_wavelengths[bis[i]],
+                          filts._band_offsets[bis[i]],
+                          filts._band_kinds[bis[i]],
+                          filts._band_names[bis[i]],
+                          ois[i], bis[i])
+                         for i in range(len(bis))]
+            filterrows = [(
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
+                .ljust(band_len) + ' [' + ', '.join(
+                    list(
+                        filter(None, (
+                            'Bandset: ' + s[1] if s[1] else '',
+                            'System: ' + s[0] if s[0] else '',
+                            'AB offset: ' + pretty_num(
+                                s[3]) if (s[4] == 'magnitude' and
+                                          s[0] != 'AB') else '')))) +
+                ']').replace(' []', '') for s in list(sorted(filterarr))]
+            if not all(ois):
+                filterrows.append('  (* = Not observed in this band)')
+            prt.prt('\n'.join(filterrows))
+
+            if ('unmatched_bands' in outputs and
+                    'unmatched_instruments' in outputs):
+                prt.message('unmatched_obs', warning=True)
+                prt.prt(', '.join(
+                    ['{} [{}]'.format(x[0], x[1]) if x[0] and x[1] else x[0]
+                     if not x[1] else x[1] for x in list(set(zip(
+                         outputs['unmatched_bands'],
+                         outputs['unmatched_instruments'])))]), warning=True,
+                    prefix=False, wrapped=True)
+
+        return True
 
     def adjust_fixed_parameters(
             self, variance_for_each=[], output={}):
