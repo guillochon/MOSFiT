@@ -21,7 +21,6 @@ fetched = my_fetcher.fetch('SN2009do')[0]
 
 my_model = mosfit.model.Model(model='slsn')
 
-# Currently, the `Fitter` loads data into the `Model`.
 my_model.load_data(fetched['data'], event_name=fetched['name'])
 
 x = np.random.rand(my_model.get_num_free_parameters())
