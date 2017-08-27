@@ -15,7 +15,7 @@ print('Model WAICs: ',
 
 # Test a single call to the model.
 print('Testing single call to Model.likelihood().')
-my_fetcher = mosfit.fetcher.Fetcher(my_fitter)
+my_fetcher = mosfit.fetcher.Fetcher()
 
 fetched = my_fetcher.fetch('SN2009do')[0]
 

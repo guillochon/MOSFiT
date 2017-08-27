@@ -84,6 +84,8 @@ class Fitter(object):
         self._printer = Printer(
             pool=self._pool, wrap_length=wrap_length, quiet=quiet, fitter=self,
             language=language, exit_on_prompt=exit_on_prompt)
+        self._fetcher = Fetcher(test=test, open_in_browser=open_in_browser,
+                                printer=self._printer)
 
         self._cuda = cuda
         self._limiting_magnitude = limiting_magnitude
@@ -100,21 +102,6 @@ class Fitter(object):
                 linalg.init()
             except ImportError:
                 pass
-
-        self._catalogs = OrderedDict((
-            ('OSC', {
-                'json': (
-                    'https://sne.space/astrocats/astrocats/'
-                    'supernovae/output'),
-                'web': 'https://sne.space/sne/'
-            }),
-            ('OTC', {
-                'json': (
-                    'https://tde.space/astrocats/astrocats/'
-                    'tidaldisruptions/output'),
-                'web': 'https://tde.space/tde/'
-            })
-        ))
 
     def fit_events(self,
                    events=[],
@@ -186,10 +173,7 @@ class Fitter(object):
             event_list = ['']
 
         # Exclude catalogs not included in catalog list.
-        if len(catalogs):
-            for cat in self._catalogs.copy():
-                if cat.upper() not in [x.upper() for x in catalogs]:
-                    del(self._catalogs[cat])
+        self._fetcher.add_excluded_catalogs(catalogs)
 
         if not len(event_list) and not len(model_list):
             prt.message('no_events_models', warning=True)
@@ -279,7 +263,6 @@ class Fitter(object):
         except ValueError:
             pool = SerialPool()
         if pool.is_master():
-            self._fetcher = Fetcher(self)
             fetched_events = self._fetcher.fetch(event_list)
 
             for rank in range(1, pool.size + 1):
