@@ -3,15 +3,15 @@ import mosfit
 import numpy as np
 
 # Test running the fitter.
-# my_fitter = mosfit.fitter.Fitter(quiet=False, test=True, offline=True)
-#
-# print('Running `fit_events` test.')
-# entries, ps, lnprobs = my_fitter.fit_events(
-#     events=['SN2009do', 'SN2007bg'], models=['magni', 'slsn'], iterations=1,
-#     user_fixed_parameters=['covariance'])
-#
-# print('Model WAICs: ',
-#       [[y['models'][0]['score']['value'] for y in x] for x in entries])
+my_fitter = mosfit.fitter.Fitter(quiet=False, test=True, offline=True)
+
+print('Running `fit_events` test.')
+entries, ps, lnprobs = my_fitter.fit_events(
+    events=['SN2009do', 'SN2007bg'], models=['magni', 'slsn'], iterations=1,
+    user_fixed_parameters=['covariance'])
+
+print('Model WAICs: ',
+      [[y['models'][0]['score']['value'] for y in x] for x in entries])
 
 # Test a single call to the model.
 print('Testing single call to Model.likelihood().')

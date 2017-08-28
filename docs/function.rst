@@ -1,0 +1,33 @@
+.. _function:
+
+=================================
+Running MOSFiT in another program
+=================================
+
+If you wish to produce light curves or other data products for a given model without using the fitting and evidence accumulation features of ``MOSFiT``, models within the code can also be called by importing the package, fetching the data from the Open Catalogs using the ``Fetcher`` class, creating a ``Model`` that initializes from the fetched data, and finally running the model.
+
+An example of this is shown in the code snippet below:
+
+.. code_block:: python
+
+    import mosfit
+    import numpy as np
+
+    # Create an instance of the `Fetcher` class.
+    my_fetcher = mosfit.fetcher.Fetcher()
+
+    # Fetch some data from the Open Supernova Catalog.
+    fetched = my_fetcher.fetch('SN2009do')[0]
+
+    # Instantiatiate the `Model` class (selecting 'slsn' as the model).
+    my_model = mosfit.model.Model(model='slsn')
+
+    # Load the fetched data into the model.
+    my_model.load_data(fetched['data'], event_name=fetched['name'])
+
+    # Generate a random input vector of free parameters.
+    x = np.random.rand(my_model.get_num_free_parameters())
+
+    # Produce model output.
+    outputs = my_model.run(x)
+    print('Keys in output: `{}`'.format(', '.join(list(outputs.keys()))))
