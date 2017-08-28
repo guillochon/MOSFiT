@@ -54,6 +54,7 @@ class Model(object):
         self._wrap_length = wrap_length
         self._print_trees = print_trees
         self._inflect = inflect.engine()
+        self._test = test
         self._inflections = {}
         self._references = []
 
