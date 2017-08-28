@@ -4,9 +4,15 @@
 Running MOSFiT in another program
 =================================
 
-If you wish to produce light curves or other data products for a given model without using the fitting and evidence accumulation features of ``MOSFiT``, models within the code can also be called by importing the package, fetching the data from the Open Catalogs using the ``Fetcher`` class, creating a ``Model`` that initializes from the fetched data, and finally running the model.
+If you wish to produce light curves or other data products for a given model without using the fitting and evidence accumulation features of ``MOSFiT``, functions within the code can be accessed by importing the ``mosfit`` package into your Python code.
 
-An example of this is shown in the code snippet below:
+.. _run:
+
+---------------------
+Produce model outputs
+---------------------
+
+In the code snippet below, we fetch a supernova's data from the Open Catalogs using the ``Fetcher`` class, create a ``Model`` that initializes from the fetched data, and finally run the model:
 
 .. code_block:: python
 
