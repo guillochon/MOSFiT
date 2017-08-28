@@ -787,6 +787,11 @@ class Model(object):
         """Return processing pool."""
         return self._pool
 
+    def run(self, x, root='output'):
+        """Run stack with the given root."""
+        outputs = self.run_stack(x, root=root)
+        return outputs
+
     def printer(self):
         """Return printer."""
         return self._printer
