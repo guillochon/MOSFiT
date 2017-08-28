@@ -16,7 +16,7 @@ Using MOSFiT
    models.rst
    fitting.rst
    outputs.rst
-   function.rst
+   package.rst
    evaluation.rst
    error.rst
    accessibility.rst

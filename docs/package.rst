@@ -1,8 +1,8 @@
-.. _function:
+.. _package:
 
-=================================
-Running MOSFiT in another program
-=================================
+==================
+Using as a package
+==================
 
 If you wish to produce light curves or other data products for a given model without using the fitting and evidence accumulation features of ``MOSFiT``, functions within the code can be accessed by importing the ``mosfit`` package into your Python code.
 
@@ -14,7 +14,7 @@ Produce model outputs
 
 In the code snippet below, we fetch a supernova's data from the Open Catalogs using the ``Fetcher`` class, create a ``Model`` that initializes from the fetched data, and finally run the model:
 
-.. code_block:: python
+.. code-block:: python
 
     import mosfit
     import numpy as np
