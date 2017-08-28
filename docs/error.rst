@@ -1,8 +1,8 @@
 .. _error:
 
-============
-Error Models
-============
+===============
+Models of error
+===============
 
 The choice of error model can affect the score a given physical model receives; an error model that better treats the expected errors (either on the model or observation side) can thus enable a better evaluation of whether a model is a good match to a given set of observations. Commonly, no error modeling is done whatsoever, with a model's fitness being judged solely upon its deviance from the observations and their reported errors (i.e. reduced chi-square).
 
