@@ -17,7 +17,7 @@ class SLSNConstraints(Constraint):
     """
 
     _REFERENCES = [
-        {SOURCE.NAME: 'Nicholl et al. 2017'}
+        {SOURCE.BIBCODE: '2017arXiv170600825N'}
     ]
 
     def __init__(self, **kwargs):

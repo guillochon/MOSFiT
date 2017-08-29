@@ -20,7 +20,8 @@ class RProcess(Engine):
     """
 
     _REFERENCES = [
-        {SOURCE.BIBCODE: '2016arXiv161009381M'}
+        {SOURCE.BIBCODE: '2017LRR....20....3M'},
+        {SOURCE.BIBCODE: '2017arXiv170708132V'}
     ]
 
     M_sun = 1.99e33
