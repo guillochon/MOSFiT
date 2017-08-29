@@ -33,7 +33,7 @@ Gaussian processes (GP) provides an error model that addresses these shortcoming
 Kernel
 ======
 
-The default kernel is chosen specifically to be ammenable to fitting photometric light curves. The kernel is constructed as a product of two exponential squared kernels, with the distance factors being the time of observation and the average wavelength of the filter used for the observation:
+The default kernel is chosen specifically to be ammenable to fitting photometric light curves. The kernel is constructed as a product of two exponential squared kernels, with the distance factors being the time of observation and the average wavelength of the filter used for the observation,
 
 .. math::
 
@@ -42,6 +42,8 @@ The default kernel is chosen specifically to be ammenable to fitting photometric
     K_{t} &= \exp \left(-\frac{\left[t - t^{\prime}\right]^{2}}{2 l_{t}^{2}}\right)
 
     K_{\lambda} &= \exp \left(-\frac{\left[\lambda - \lambda^{\prime}\right]^{2}}{2 l_{\lambda}^{2}}\right)
+
+where :math:`t` is the time of observation and :math:`\lambda` is the mean wavelength of the observed band.
 
 Shortcomings
 ============
