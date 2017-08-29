@@ -37,13 +37,13 @@ The default kernel is chosen specifically to be ammenable to fitting photometric
 
 .. math::
 
-    K &= K_{t} \times K_{\lambda}
+    K_{ij} &= \sigma^{2} K_{ij,t} K_{ij,\lambda} + {\rm diag}(\sigma_i)
 
-    K_{t} &= \exp \left(-\frac{\left[t - t^{\prime}\right]^{2}}{2 l_{t}^{2}}\right)
+    K_{ij,t} &= \exp \left(-\frac{\left[t_i - t_j^{\prime}\right]^{2}}{2 l_{t}^{2}}\right)
 
-    K_{\lambda} &= \exp \left(-\frac{\left[\lambda - \lambda^{\prime}\right]^{2}}{2 l_{\lambda}^{2}}\right)
+    K_{ij,\lambda} &= \exp \left(-\frac{\left[\lambda_i - \lambda_j^{\prime}\right]^{2}}{2 l_{\lambda}^{2}}\right)
 
-where :math:`t` is the time of observation and :math:`\lambda` is the mean wavelength of the observed band.
+where :math:`\sigma` is the extra variance (analogous to the variance in MLA), :math:`\sigma_i` is the observation error of the :math:`i{\rm th}` observation, :math:`t` is the time of observation, and :math:`\lambda` is the mean wavelength of the observed band.
 
 Shortcomings
 ============
