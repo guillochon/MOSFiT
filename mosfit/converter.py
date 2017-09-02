@@ -61,8 +61,9 @@ class Converter(object):
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
             'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR']
         self._band_names = [
-            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', 'u', 'g', 'r', 'i',
-            'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'", "z'", 'C', 'Y'
+            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "K'", 'u', 'g',
+            'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
+            "z'", 'C', 'Y'
         ]
         self._emagstrs = self._emagstrs + [a + b for a, b in chain(
             product(self._emagstrs, self._band_names),
@@ -182,7 +183,7 @@ class Converter(object):
                     fsplit = [
                         x.replace('$', '').replace('\\pm', delim)
                         .replace('±', delim).replace('(', delim + '(')
-                        .strip(ad + '()# ')
+                        .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
                     flines = [
                         [y.replace('"', '') for y in

@@ -16,7 +16,8 @@ Using MOSFiT
    models.rst
    fitting.rst
    outputs.rst
-   evaluation.rst
+   package.rst
+   assessing.rst
    error.rst
    accessibility.rst
    faq.rst

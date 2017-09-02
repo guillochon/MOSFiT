@@ -15,16 +15,19 @@ print('Model WAICs: ',
 
 # Test a single call to the model.
 print('Testing single call to Model.likelihood().')
-my_fetcher = mosfit.fetcher.Fetcher(my_fitter)
+my_fetcher = mosfit.fetcher.Fetcher()
 
 fetched = my_fetcher.fetch('SN2009do')[0]
 
-my_model = mosfit.model.Model(model='slsn', fitter=my_fitter)
+my_model = mosfit.model.Model(model='slsn')
 
-my_fitter.load_data(
-    fetched['data'], event_name=fetched['name'], model=my_model)
+my_model.load_data(fetched['data'], event_name=fetched['name'])
 
 x = np.random.rand(my_model.get_num_free_parameters())
 likelihood = my_model.likelihood(x)
 
 print('Model likelihood: `{}`'.format(likelihood))
+
+outputs = my_model.run(x)
+
+print('Keys in output: `{}`'.format(', '.join(list(outputs.keys()))))

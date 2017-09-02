@@ -424,7 +424,7 @@ class Printer(object):
                 convergence_type, convergence_criteria], prt=False)
             outarr.append(txt)
         elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
-            if fitter._bh_est_t > 0.0 or not fitter._fracking:
+            if fitter._bh_est_t > 0.0 or not fracking:
                 tott = fitter._emcee_est_t + fitter._bh_est_t
             else:
                 tott = 2.0 * fitter._emcee_est_t
