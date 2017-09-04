@@ -1,24 +1,26 @@
 # -*- coding: UTF-8 -*-
 """A class for converting ASCII inputs to JSON."""
+import csv
 import os
 import re
 from collections import Counter, OrderedDict
 from decimal import Decimal
 from itertools import chain, product
 
+import inflect
 import numpy as np
 from astrocats.catalog.catalog import Catalog
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.key import KEY_TYPES, Key
-from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
+from astrocats.catalog.photometry import (PHOTOMETRY, set_pd_mag_from_counts,
+                                          set_pd_mag_from_flux_density)
 from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
-from six import string_types
-
 from mosfit.utils import (entabbed_json_dump, is_date, is_number, listify,
                           name_clean)
+from six import string_types
 
 
 class Converter(object):
@@ -54,6 +56,7 @@ class Converter(object):
 
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
+        self._inflect = inflect.engine()
         self._printer = printer
         self._require_source = require_source
 
@@ -86,6 +89,10 @@ class Converter(object):
             (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
             (PHOTOMETRY.E_COUNT_RATE, [
                 'e_counts', 'count error', 'count rate error']),
+            (PHOTOMETRY.FLUX_DENSITY, ['flux density', 'fd', 'f_nu']),
+            (PHOTOMETRY.E_FLUX_DENSITY, [
+                'e_flux_density', 'flux density error', 'e_fd', 'sigma_nu']),
+            (PHOTOMETRY.U_FLUX_DENSITY, []),
             (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
             ('reference', ['reference', 'bibcode', 'source', 'origin']),
             (ENTRY.NAME, [
@@ -94,13 +101,19 @@ class Converter(object):
         ))
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+            PHOTOMETRY.FLUX_DENSITY,
             PHOTOMETRY.BAND, PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
-            PHOTOMETRY.ZERO_POINT]
+            PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.ZERO_POINT]
         self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
-        self._optional_keys = [PHOTOMETRY.ZERO_POINT]
-        self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
+        self._optional_keys = [
+            PHOTOMETRY.ZERO_POINT, PHOTOMETRY.U_FLUX_DENSITY]
+        self._mc_keys = [
+            PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+            PHOTOMETRY.FLUX_DENSITY]
         self._dep_keys = [
-            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE, PHOTOMETRY.BAND]
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.U_FLUX_DENSITY,
+            PHOTOMETRY.BAND]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
@@ -185,12 +198,10 @@ class Converter(object):
                         .replace('±', delim).replace('(', delim + '(')
                         .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
-                    flines = [
-                        [y.replace('"', '') for y in
-                         re.split(
-                             delim + '''+(?=(?:[^"]|[^]*|"[^"]*")*$)''',
-                             x)]
-                        for x in fsplit]
+                    flines = []
+                    for fs in fsplit:
+                        flines.append(list(
+                            csv.reader([fs], delimiter=delim))[0])
 
                     flines = [[
                         x.strip(ad + '#$()\\')
@@ -452,8 +463,55 @@ class Converter(object):
                                     isinstance(cidict[
                                         PHOTOMETRY.E_COUNT_RATE], list) else
                                     row[cidict[PHOTOMETRY.E_COUNT_RATE]])
-                                set_pd_mag_from_counts(
-                                    photodict, c=cc, ec=ecc, zp=zpp)
+                                if '<' in cc:
+                                    set_pd_mag_from_counts(
+                                        photodict, ec=cc.strip('<'), zp=zpp)
+                                else:
+                                    set_pd_mag_from_counts(
+                                        photodict, c=cc, ec=ecc, zp=zpp)
+                            elif self._data_type == 3:
+                                photodict[
+                                    PHOTOMETRY.U_FLUX_DENSITY] = self._ufd
+                                if PHOTOMETRY.U_FLUX_DENSITY in cidict:
+                                    photodict[PHOTOMETRY.U_FLUX_DENSITY] = (
+                                        row[cidict[
+                                            PHOTOMETRY.U_FLUX_DENSITY][pi]]
+                                        if isinstance(cidict[
+                                            PHOTOMETRY.
+                                            U_FLUX_DENSITY], list) else
+                                        row[cidict[PHOTOMETRY.U_FLUX_DENSITY]])
+                                if photodict[
+                                        PHOTOMETRY.U_FLUX_DENSITY] == '':
+                                    photodict[
+                                        PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                                fd = (
+                                    row[cidict[PHOTOMETRY.FLUX_DENSITY][pi]] if
+                                    isinstance(cidict[
+                                        PHOTOMETRY.FLUX_DENSITY], list) else
+                                    row[cidict[PHOTOMETRY.FLUX_DENSITY]])
+                                efd = (
+                                    row[cidict[
+                                        PHOTOMETRY.E_FLUX_DENSITY][pi]] if
+                                    isinstance(cidict[
+                                        PHOTOMETRY.E_FLUX_DENSITY], list) else
+                                    row[cidict[PHOTOMETRY.E_FLUX_DENSITY]])
+
+                                mult = Decimal('1')
+                                ufd = photodict[PHOTOMETRY.U_FLUX_DENSITY]
+                                if ufd.lower() in [
+                                        'mjy', 'millijy', 'millijansky']:
+                                    mult = Decimal('1e3')
+                                elif ufd.lower() in ['jy', 'jansky']:
+                                    mult = Decimal('1e6')
+
+                                if '<' in fd:
+                                    set_pd_mag_from_flux_density(
+                                        photodict, efd=str(
+                                            Decimal(fd.strip('<')) * mult))
+                                else:
+                                    set_pd_mag_from_flux_density(
+                                        photodict, fd=Decimal(fd) * mult,
+                                        efd=Decimal(efd) * mult)
                             if not len(sources):
                                 if use_self_source is None:
                                     sopts = [
@@ -512,6 +570,23 @@ class Converter(object):
                                 photodict[
                                     PHOTOMETRY.MAGNITUDE] = photodict[
                                         PHOTOMETRY.MAGNITUDE].strip('<>')
+
+                            if '<' in photodict.get(PHOTOMETRY.COUNT_RATE, ''):
+                                photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                                photodict[
+                                    PHOTOMETRY.COUNT_RATE] = photodict[
+                                        PHOTOMETRY.COUNT_RATE].strip('<')
+                                if PHOTOMETRY.E_COUNT_RATE in photodict:
+                                    del(photodict[PHOTOMETRY.E_COUNT_RATE])
+
+                            if '<' in photodict.get(
+                                    PHOTOMETRY.FLUX_DENSITY, ''):
+                                photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                                photodict[
+                                    PHOTOMETRY.FLUX_DENSITY] = photodict[
+                                        PHOTOMETRY.FLUX_DENSITY].strip('<')
+                                if PHOTOMETRY.E_FLUX_DENSITY in photodict:
+                                    del(photodict[PHOTOMETRY.E_FLUX_DENSITY])
 
                             # Apply offset time if set.
                             if (PHOTOMETRY.TIME in photodict
@@ -624,10 +699,11 @@ class Converter(object):
                 self._first_data = fi
                 break
 
-        # Look for columns that are band names if no magnitude column was
-        # found.
-        if (PHOTOMETRY.MAGNITUDE not in cidict and
-                PHOTOMETRY.COUNT_RATE not in cidict):
+        # Look for columns that are band names if no mag/counts/flux dens
+        # column was found.
+        if (not any([x in cidict for x in [
+            PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+                PHOTOMETRY.FLUX_DENSITY]])):
             # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
             # for each column).
             key = PHOTOMETRY.MAGNITUDE
@@ -661,17 +737,24 @@ class Converter(object):
         # First ask the user if this data is in magnitudes or in counts.
         self._data_type = 1
         if (PHOTOMETRY.MAGNITUDE in cidict and
-                PHOTOMETRY.COUNT_RATE not in cidict):
+                PHOTOMETRY.COUNT_RATE not in cidict and
+                PHOTOMETRY.FLUX_DENSITY not in cidict):
             self._data_type = 1
         elif (PHOTOMETRY.MAGNITUDE not in cidict and
-              PHOTOMETRY.COUNT_RATE in cidict):
+              PHOTOMETRY.COUNT_RATE in cidict and
+              PHOTOMETRY.FLUX_DENSITY not in cidict):
             self._data_type = 2
+        elif (PHOTOMETRY.MAGNITUDE not in cidict and
+              PHOTOMETRY.COUNT_RATE not in cidict and
+              PHOTOMETRY.FLUX_DENSITY in cidict):
+            self._data_type = 3
         else:
             self._data_type = prt.prompt(
-                'counts_or_mags', kind='option',
-                options=['Magnitudes', 'Counts (fluxes)'],
+                'counts_mags_fds', kind='option',
+                options=['Magnitudes', 'Counts (per second)',
+                         'Flux Densities (Jansky)'],
                 none_string=None)
-        if self._data_type == 1:
+        if self._data_type in [1, 3]:
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)
             akeys.remove(PHOTOMETRY.ZERO_POINT)
@@ -679,10 +762,18 @@ class Converter(object):
                     PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
                 akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
-        else:
+        if self._data_type in [2, 3]:
             akeys.remove(PHOTOMETRY.MAGNITUDE)
             akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
+        if self._data_type in [1, 2]:
+            akeys.remove(PHOTOMETRY.FLUX_DENSITY)
+            akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
+            if (PHOTOMETRY.E_LOWER_FLUX_DENSITY in cidict and
+                    PHOTOMETRY.E_UPPER_FLUX_DENSITY in cidict):
+                akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
+            dkeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
+            dkeys.remove(PHOTOMETRY.U_FLUX_DENSITY)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
@@ -722,15 +813,16 @@ class Converter(object):
             while select is False:
                 mc = 1
                 if key in self._mc_keys:
+                    pkey = self._inflect.plural(key)
                     text = prt.message(
-                        'one_per_line', [key, key, key], prt=False)
+                        'one_per_line', [key, pkey, pkey],
+                        prt=False)
                     mc = prt.prompt(
                         text, kind='option', message=False,
                         none_string=None,
                         options=[
                             'One `{}` per row'.format(key),
-                            'Multiple `{}s` per row'.format(
-                                key)])
+                            'Multiple `{}` per row'.format(pkey)])
                 if mc == 1:
                     text = prt.message(
                         'no_matching_column', [key], prt=False)
@@ -842,6 +934,13 @@ class Converter(object):
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
             while not is_number(self._zp):
                 self._zp = prt.prompt('zeropoint', kind='string')
+
+        self._ufd = None
+        if self._data_type == 3 and PHOTOMETRY.U_FLUX_DENSITY not in cidict:
+            while ((self._ufd.lower() if self._ufd is not None else None)
+                   not in ['µjy', 'mjy', 'jy', 'microjy', 'millijy', 'jy',
+                           'microjansky', 'millijansky', 'jansky', '']):
+                self._ufd = prt.prompt('u_flux_density', kind='string')
 
         self._system = None
         if self._data_type == 1 and PHOTOMETRY.SYSTEM not in cidict:
