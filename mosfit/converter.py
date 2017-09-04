@@ -660,7 +660,7 @@ class Converter(object):
 
     def assign_columns(self, cidict, flines):
         """Assign columns based on header."""
-        used_cis = {}
+        used_cis = OrderedDict()
         akeys = list(self._critical_keys) + list(self._helpful_keys)
         dkeys = list(self._dep_keys)
         prt = self._printer

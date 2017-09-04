@@ -257,10 +257,10 @@ class Model(object):
                 if unsorted_call_stack[task]['depth'] == depth:
                     self._call_stack[task] = unsorted_call_stack[task]
 
-        # with open(os.path.join(
-        #         self.MODEL_OUTPUT_DIR,
-        #         self._model_name + '-stack.json'), 'w') as f:
-        #     json.dump(self._call_stack, f)
+        with open(os.path.join(
+                self.MODEL_OUTPUT_DIR,
+                self._model_name + '-stack.json'), 'w') as f:
+            json.dump(self._call_stack, f)
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
