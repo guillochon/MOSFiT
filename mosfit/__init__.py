@@ -9,15 +9,27 @@ from . import plotting  # noqa: F401
 from . import printer  # noqa: F401
 from . import utils  # noqa: F401
 
-__version__ = '0.7.4'
-__author__ = 'James Guillochon & Matt Nicholl'
+authors = []
+contributors = []
+
+dir_name = os.path.dirname(os.path.realpath(__file__))
+
+with open(os.path.join(dir_name, 'contributors.txt')) as f:
+    for cont in f.read().splitlines():
+        if '*' in cont:
+            authors.append(cont.split('(')[0].strip(' *'))
+        else:
+            contributors.append(cont.split('(')[0].strip())
+
+__version__ = '0.7.12'
+__author__ = ' & '.join([', '.join(authors[:-1]), authors[-1]])
+__contributors__ = ' & '.join([', '.join(contributors[:-1]), contributors[-1]])
 __license__ = 'MIT'
 
 # Check astrocats version for schema compatibility.
 right_astrocats = True
 vparts = astrocats.__version__.split('.')
-req_path = os.path.join(
-    os.path.dirname(os.path.realpath(__file__)), 'requirements.txt')
+req_path = os.path.join(dir_name, 'requirements.txt')
 with open(req_path, 'r') as f:
     for req in f.read().splitlines():
         if 'astrocats' in req:

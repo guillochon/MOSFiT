@@ -424,7 +424,7 @@ class Printer(object):
                 convergence_type, convergence_criteria], prt=False)
             outarr.append(txt)
         elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
-            if fitter._bh_est_t > 0.0 or not fitter._fracking:
+            if fitter._bh_est_t > 0.0 or not fracking:
                 tott = fitter._emcee_est_t + fitter._bh_est_t
             else:
                 tott = 2.0 * fitter._emcee_est_t
@@ -459,7 +459,7 @@ class Printer(object):
             else:
                 col = '!g'
             psrfstring = col
-            psrfstring = psrfstring + 'PSRF (i > {}): {}'.format(
+            psrfstring = psrfstring + 'PSRF (for i > {}): {}'.format(
                 psrfbstr, psrfstr)
             psrfstring = psrfstring + ('!e' if col else '')
             outarr.append(psrfstring)

@@ -1,8 +1,8 @@
-.. _evaluation:
+.. _assessing:
 
-=================
-Evaluating models
-=================
+================
+Assessing models
+================
 
 .. _convergence:
 

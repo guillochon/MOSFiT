@@ -35,13 +35,13 @@
                 "source":"optional"
             },
             "ebv":{
-                "value":"optional"
+                "value":"recommended"
             },
             "lumdist":{
-                "value":"optional"
+                "value":"recommended"
             },
             "redshift":{
-                "value":"optional"
+                "value":"recommended"
             },
             "sources":{
                 "bibcode":"optional",

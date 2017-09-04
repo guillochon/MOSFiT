@@ -11,14 +11,13 @@ from math import isnan
 import inflect
 import numpy as np
 from astrocats.catalog.quantity import QUANTITY
+from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
+from mosfit.modules.module import Module
+from mosfit.utils import is_number, listify, pretty_num
+from schwimmbad import SerialPool
 # from scipy.optimize import differential_evolution
 from scipy.optimize import minimize
 from six import string_types
-
-from mosfit.constants import LOCAL_LIKELIHOOD_FLOOR
-from mosfit.modules.module import Module
-from mosfit.printer import Printer
-from mosfit.utils import listify
 
 
 # from scipy.optimize import basinhopping
@@ -42,25 +41,27 @@ class Model(object):
                  data={},
                  wrap_length=100,
                  pool=None,
+                 test=False,
+                 printer=None,
                  fitter=None,
                  print_trees=False):
         """Initialize `Model` object."""
+        from mosfit.fitter import Fitter
+
         self._model_name = model
-        self._pool = pool
+        self._pool = SerialPool() if pool is None else pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
-        self._fitter = fitter
         self._print_trees = print_trees
         self._inflect = inflect.engine()
+        self._test = test
         self._inflections = {}
         self._references = []
 
         self._draw_limit_reached = False
 
-        if self._fitter:
-            self._printer = self._fitter._printer
-        else:
-            self._printer = Printer(pool=pool, wrap_length=wrap_length)
+        self._fitter = Fitter() if not fitter else fitter
+        self._printer = self._fitter._printer if not printer else printer
 
         prt = self._printer
 
@@ -106,16 +107,19 @@ class Model(object):
                 prt.message('no_model_for_type', warning=True)
             else:
                 while not self._model_name:
-                    if fitter._test:
+                    if self._test:
                         self._model_name = type_options[0]
                     else:
-                        self._model_name = self._printer.prompt(
+                        sel = self._printer.prompt(
                             model_prompt_txt,
-                            kind='select',
+                            kind='option',
                             options=type_options,
                             message=False,
+                            default='n',
                             none_string=('None of the above, skip this '
                                          'transient.'))
+                        if sel is not None:
+                            self._model_name = type_options[sel]
                     if not self._model_name:
                         break
                     if self._model_name == 'Another model not listed here.':
@@ -253,10 +257,10 @@ class Model(object):
                 if unsorted_call_stack[task]['depth'] == depth:
                     self._call_stack[task] = unsorted_call_stack[task]
 
-        # with open(os.path.join(
-        #         self.MODEL_OUTPUT_DIR,
-        #         self._model_name + '-stack.json'), 'w') as f:
-        #     json.dump(self._call_stack, f)
+        with open(os.path.join(
+                self.MODEL_OUTPUT_DIR,
+                self._model_name + '-stack.json'), 'w') as f:
+            json.dump(self._call_stack, f)
 
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -299,6 +303,9 @@ class Model(object):
                         self._modules[ftask]._wants_dense):
                     self._modules[ftask]._provide_dense = True
 
+        # Count free parameters.
+        self.determine_free_parameters()
+
     def _load_task_module(self, task, call_stack=None):
         if not call_stack:
             call_stack = self._call_stack
@@ -324,7 +331,166 @@ class Model(object):
             x[1].__module__ == mod.__name__][0]
         mod_class = getattr(mod, class_name)
         return mod_class(
-            name=task, model=self, **cur_task)
+            name=task, model=self, fitter=self._fitter, **cur_task)
+
+    def load_data(self,
+                  data,
+                  event_name='',
+                  smooth_times=-1,
+                  extrapolate_time=0.0,
+                  limit_fitting_mjds=False,
+                  exclude_bands=[],
+                  exclude_instruments=[],
+                  exclude_systems=[],
+                  exclude_sources=[],
+                  band_list=[],
+                  band_systems=[],
+                  band_instruments=[],
+                  band_bandsets=[],
+                  band_sampling_points=17,
+                  variance_for_each=[],
+                  user_fixed_parameters=[],
+                  pool=None):
+        """Load the data for the specified event."""
+        prt = self._printer
+
+        if pool is not None:
+            self._pool = pool
+
+        prt.message('loading_data', inline=True)
+
+        fixed_parameters = []
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            self._modules[task].set_event_name(event_name)
+            if cur_task['kind'] == 'data':
+                success = self._modules[task].set_data(
+                    data,
+                    req_key_values=OrderedDict((
+                        ('band', self._bands),
+                        ('instrument', self._instruments))),
+                    subtract_minimum_keys=['times'],
+                    smooth_times=smooth_times,
+                    extrapolate_time=extrapolate_time,
+                    limit_fitting_mjds=limit_fitting_mjds,
+                    exclude_bands=exclude_bands,
+                    exclude_instruments=exclude_instruments,
+                    exclude_systems=exclude_systems,
+                    exclude_sources=exclude_sources,
+                    band_list=band_list,
+                    band_systems=band_systems,
+                    band_instruments=band_instruments,
+                    band_bandsets=band_bandsets)
+                if not success:
+                    return False
+                fixed_parameters.extend(self._modules[task]
+                                        .get_data_determined_parameters())
+            elif cur_task['kind'] == 'sed':
+                self._modules[task].set_data(band_sampling_points)
+
+            # Fix user-specified parameters.
+            for fi, param in enumerate(user_fixed_parameters):
+                if (task == param or
+                        self._call_stack[task].get(
+                            'class', '') == param):
+                    fixed_parameters.append(task)
+                    if fi < len(user_fixed_parameters) - 1 and is_number(
+                            user_fixed_parameters[fi + 1]):
+                        value = float(user_fixed_parameters[fi + 1])
+                        if value not in self._call_stack:
+                            self._call_stack[task]['value'] = value
+                    if 'min_value' in self._call_stack[task]:
+                        del self._call_stack[task]['min_value']
+                    if 'max_value' in self._call_stack[task]:
+                        del self._call_stack[task]['max_value']
+                    self._modules[task].fix_value(
+                        self._call_stack[task]['value'])
+
+        self.determine_free_parameters(fixed_parameters)
+
+        self.exchange_requests()
+
+        prt.message('finding_bands', inline=True)
+
+        # Run through once to set all inits.
+        for root in ['output', 'objective']:
+            outputs = self.run_stack(
+                [0.0 for x in range(self._num_free_parameters)],
+                root=root)
+
+        # Create any data-dependent free parameters.
+        self.adjust_fixed_parameters(variance_for_each, outputs)
+
+        # Determine free parameters again as above may have changed them.
+        self.determine_free_parameters(fixed_parameters)
+
+        self.determine_number_of_measurements()
+
+        self.exchange_requests()
+
+        # Reset modules
+        for task in self._call_stack:
+            self._modules[task].reset_preprocessed(['photometry'])
+
+        # Run through inits once more.
+        for root in ['output', 'objective']:
+            outputs = self.run_stack(
+                [0.0 for x in range(self._num_free_parameters)],
+                root=root)
+
+        # Collect observed band info
+        if self._pool.is_master() and 'photometry' in self._modules:
+            prt.message('bands_used')
+            bis = list(
+                filter(lambda a: a != -1,
+                       sorted(set(outputs['all_band_indices']))))
+            ois = []
+            for bi in bis:
+                ois.append(
+                    any([
+                        y
+                        for x, y in zip(outputs['all_band_indices'], outputs[
+                            'observed']) if x == bi
+                    ]))
+            band_len = max([
+                len(self._modules['photometry']._unique_bands[bi][
+                    'origin']) for bi in bis
+            ])
+            filts = self._modules['photometry']
+            ubs = filts._unique_bands
+            filterarr = [(ubs[bis[i]]['systems'], ubs[bis[i]]['bandsets'],
+                          filts._average_wavelengths[bis[i]],
+                          filts._band_offsets[bis[i]],
+                          filts._band_kinds[bis[i]],
+                          filts._band_names[bis[i]],
+                          ois[i], bis[i])
+                         for i in range(len(bis))]
+            filterrows = [(
+                ' ' + (' ' if s[-2] else '*') + ubs[s[-1]]['origin']
+                .ljust(band_len) + ' [' + ', '.join(
+                    list(
+                        filter(None, (
+                            'Bandset: ' + s[1] if s[1] else '',
+                            'System: ' + s[0] if s[0] else '',
+                            'AB offset: ' + pretty_num(
+                                s[3]) if (s[4] == 'magnitude' and
+                                          s[0] != 'AB') else '')))) +
+                ']').replace(' []', '') for s in list(sorted(filterarr))]
+            if not all(ois):
+                filterrows.append('  (* = Not observed in this band)')
+            prt.prt('\n'.join(filterrows))
+
+            if ('unmatched_bands' in outputs and
+                    'unmatched_instruments' in outputs):
+                prt.message('unmatched_obs', warning=True)
+                prt.prt(', '.join(
+                    ['{} [{}]'.format(x[0], x[1]) if x[0] and x[1] else x[0]
+                     if not x[1] else x[1] for x in list(set(zip(
+                         outputs['unmatched_bands'],
+                         outputs['unmatched_instruments'])))]), warning=True,
+                    prefix=False, wrapped=True)
+
+        return True
 
     def adjust_fixed_parameters(
             self, variance_for_each=[], output={}):
@@ -401,7 +567,7 @@ class Model(object):
                 self._num_measurements += len(
                     self._modules[task]._data['times'])
 
-    def determine_free_parameters(self, extra_fixed_parameters):
+    def determine_free_parameters(self, extra_fixed_parameters=[]):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
         self._num_variances = 0
@@ -416,6 +582,10 @@ class Model(object):
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
         self._num_free_parameters = len(self._free_parameters)
+
+    def get_num_free_parameters(self):
+        """Return number of free parameters."""
+        return self._num_free_parameters
 
     def exchange_requests(self):
         """Exchange requests between modules."""
@@ -617,6 +787,11 @@ class Model(object):
         """Return processing pool."""
         return self._pool
 
+    def run(self, x, root='output'):
+        """Run stack with the given root."""
+        outputs = self.run_stack(x, root=root)
+        return outputs
+
     def printer(self):
         """Return printer."""
         return self._printer
@@ -662,6 +837,18 @@ class Model(object):
         else:
             plural = self._inflections[x]
         return plural
+
+    def reset_unset_recommended_keys(self):
+        """Null the list of unset recommended keys across all modules."""
+        for module in self._modules.values():
+            module.reset_unset_recommended_keys()
+
+    def get_unset_recommended_keys(self):
+        """Collect list of unset recommended keys across all modules."""
+        unset_keys = set()
+        for module in self._modules.values():
+            unset_keys.update(module.get_unset_recommended_keys())
+        return unset_keys
 
     def run_stack(self, x, root='objective'):
         """Run module stack.
