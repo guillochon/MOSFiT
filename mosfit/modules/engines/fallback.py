@@ -7,7 +7,6 @@ from scipy.interpolate import interp1d
 
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
-from priors.kroupa import Kroupa
 
 CLASS_NAME = 'Fallback'
 
