@@ -1,4 +1,9 @@
 {
+    "starmass":{
+        "kind": "parameter",
+        "value": 1,
+        "class":"kroupa"
+    },
     "ebv":{
         "kind":"parameter",
         "value":0.0,
@@ -77,7 +82,7 @@
             "b",
             "efficiency",
             "texplosion",
-            "kroupainput"
+            "starmass"
         ]
     },
     "viscous":{

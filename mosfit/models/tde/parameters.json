@@ -1,12 +1,13 @@
 {
+    "starmass":{
+        "class": "kroupa",
+        "min_value":0.01,
+        "max_value":100
+    },
     "Tviscous":{
         "min_value":1.0e-3,
         "max_value":1.0e5,
         "log":true
-    },
-    "kroupainput":{
-        "min_value":0.0,
-        "max_value":1.0
     },
     "nhhost":{
         "min_value":1.0e16,

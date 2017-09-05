@@ -232,9 +232,7 @@ class Fallback(Engine):
 
         gamma_interp = False
 
-        # print(kwargs['kroupainput'])
-        self._Mstar = Kroupa.process(Kroupa, **{'kroupainput': kwargs['kroupainput']})
-        # print('starmass from kroupa', self._starmass)
+        self._Mstar = kwargs.get(self.key('starmass'), None)
         if self._Mstar <= 0.3 or self._Mstar >= 22:
             gammas = [self._gammas[1]]  # gamma = ['5-3']
             self._beta = self._betas['5-3']
@@ -428,8 +426,7 @@ class Fallback(Engine):
         # bh mass for dmdt's in astrocrash is 1e6 solar masses
         # dmdt ~ Mh^(-1/2)
         self._Mh = kwargs['bhmass']  # in units of solar masses
-        # star mass for dmdts in astrocrash is 1 solar mass
-        #self._Mstar = kwargs['starmass']  # in units of solar masses
+
         # Assume that BDs below 0.1 solar masses are n=1 polytropes
         if self._Mstar < 0.1:
             Mstar_Tout = 0.1
@@ -604,9 +601,6 @@ class Fallback(Engine):
         #    luminosities > Ledd, (1. + np.log10(luminosities/Ledd)) * Ledd,
         #    luminosities)
         luminosities = (luminosities * Ledd / (luminosities + Ledd))
-
-        # with open('/Users/brennamockler/TDEmodel/products/testKroupa.dat', 'a') as outfile:
-        #    outfile.write('{:.6f}'.format(self._Mstar) + '\n')
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
