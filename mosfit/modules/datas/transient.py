@@ -83,7 +83,10 @@ class Transient(Module):
                     self._unset_recommended_keys.add(key)
                 continue
 
-            subdata = self._all_data[name][key]
+            subdata = self._all_data[name].get(key)
+
+            if subdata is None:
+                continue
 
             # Only include data that contains all subkeys
             for entry in subdata:
