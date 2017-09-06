@@ -1,4 +1,9 @@
 {
+    "starmass":{
+        "kind": "parameter",
+        "value": 1,
+        "class":"kroupa"
+    },
     "ebv":{
         "kind":"parameter",
         "value":0.0,
@@ -7,6 +12,12 @@
             "transient"
         ],
         "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "kroupainput":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"\\rm kroupa \\rm input"
     },
     "rvhost":{
         "kind":"parameter",
@@ -51,17 +62,11 @@
         "class":"parameter",
         "latex":"M_{h} (M_{\\odot})"
     },
-    "starmass":{
-        "kind":"parameter",
-        "value":0.1,
-        "class":"parameter",
-        "latex":"M_{star} (M_{\\odot})"
-    },
     "Rph0":{
         "kind":"parameter",
-        "value":0.8,
+        "value":6.31,
         "class":"parameter",
-        "latex": "\\rm log (R_{\\rm ph0})"
+        "latex": "R_{\\rm ph0}"
     },
     "lphoto":{
         "kind": "parameter",
@@ -74,10 +79,10 @@
         "inputs":[
             "densetimes",
             "bhmass",
-            "starmass",
             "b",
             "efficiency",
-            "texplosion"
+            "texplosion",
+            "starmass"
         ]
     },
     "viscous":{
@@ -92,7 +97,7 @@
         "kind":"photosphere",
         "inputs":[
             "bhmass",
-            "starmass",
+            "fallback",
             "lphoto",
             "Rph0",
             "viscous"
