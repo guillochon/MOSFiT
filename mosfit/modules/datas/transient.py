@@ -78,7 +78,8 @@ class Transient(Module):
                 x for x in subkeys if 'exclude' in listify(subkeys[x])
             ]
 
-            if key not in self._all_data[name]:
+            if (key not in self._all_data[name] and not
+                    self._model.is_parameter_fixed_by_user(key)):
                 if subkeys.get('value', None) == 'recommended':
                     self._unset_recommended_keys.add(key)
                 continue

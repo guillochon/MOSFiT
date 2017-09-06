@@ -148,6 +148,7 @@ class Fitter(object):
                    catalogs=[],
                    exit_on_prompt=False,
                    download_recommended_data=False,
+                   local_data_only=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -159,6 +160,7 @@ class Fitter(object):
         self._debug = False
         self._speak = speak
         self._download_recommended_data = download_recommended_data
+        self._local_data_only = local_data_only
 
         self._draw_above_likelihood = draw_above_likelihood
 
@@ -346,6 +348,9 @@ class Fitter(object):
                             pool=pool)
 
                         if not success:
+                            break
+
+                        if self._local_data_only:
                             break
 
                         # If our data is missing recommended keys, offer the
