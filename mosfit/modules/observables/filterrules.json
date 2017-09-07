@@ -608,6 +608,43 @@
         "instruments": [
             "",
             "WFC3",
+            "IR"
+        ],
+        "filters": {
+            "F105W": {
+                "SVO": "HST/WFC3_IR.F105W",
+                "offset": 0.0
+            },
+            "F110W": {
+                "SVO": "HST/WFC3_IR.F110W",
+                "offset": 0.0
+            },
+            "F125W": {
+                "SVO": "HST/WFC3_IR.F125W",
+                "offset": 0.0
+            },
+            "F140W": {
+                "SVO": "HST/WFC3_IR.F140W",
+                "offset": 0.0
+            },
+            "F160W": {
+                "SVO": "HST/WFC3_IR.F160W",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "systems": [
+            "",
+            "AB"
+        ],
+        "telescopes": [
+            "",
+            "HST"
+        ],
+        "instruments": [
+            "",
+            "WFC3",
             "UVIS",
             "UVIS1"
         ],
