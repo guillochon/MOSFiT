@@ -2,7 +2,9 @@
 MOSFiT
 ======
 
-Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients)! Please see the links below for information on how to install and run the package.
+Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients), a Python 2.7/3.x package for parameter inference and mock observations of semi-analytical models of transients.
+
+Please see the links below for information on how to install and run the package.
 
 ------------
 Using MOSFiT
