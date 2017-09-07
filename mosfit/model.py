@@ -57,6 +57,8 @@ class Model(object):
         self._test = test
         self._inflections = {}
         self._references = []
+        self._free_parameters = []
+        self._user_fixed_parameters = []
 
         self._draw_limit_reached = False
 
@@ -359,7 +361,28 @@ class Model(object):
 
         prt.message('loading_data', inline=True)
 
+        # Fix user-specified parameters.
         fixed_parameters = []
+        for task in self._call_stack:
+            for fi, param in enumerate(user_fixed_parameters):
+                if (task == param or
+                        self._call_stack[task].get(
+                            'class', '') == param):
+                    fixed_parameters.append(task)
+                    if fi < len(user_fixed_parameters) - 1 and is_number(
+                            user_fixed_parameters[fi + 1]):
+                        value = float(user_fixed_parameters[fi + 1])
+                        if value not in self._call_stack:
+                            self._call_stack[task]['value'] = value
+                    if 'min_value' in self._call_stack[task]:
+                        del self._call_stack[task]['min_value']
+                    if 'max_value' in self._call_stack[task]:
+                        del self._call_stack[task]['max_value']
+                    self._modules[task].fix_value(
+                        self._call_stack[task]['value'])
+
+        self.determine_free_parameters(fixed_parameters)
+
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             self._modules[task].set_event_name(event_name)
@@ -388,24 +411,8 @@ class Model(object):
             elif cur_task['kind'] == 'sed':
                 self._modules[task].set_data(band_sampling_points)
 
-            # Fix user-specified parameters.
-            for fi, param in enumerate(user_fixed_parameters):
-                if (task == param or
-                        self._call_stack[task].get(
-                            'class', '') == param):
-                    fixed_parameters.append(task)
-                    if fi < len(user_fixed_parameters) - 1 and is_number(
-                            user_fixed_parameters[fi + 1]):
-                        value = float(user_fixed_parameters[fi + 1])
-                        if value not in self._call_stack:
-                            self._call_stack[task]['value'] = value
-                    if 'min_value' in self._call_stack[task]:
-                        del self._call_stack[task]['min_value']
-                    if 'max_value' in self._call_stack[task]:
-                        del self._call_stack[task]['max_value']
-                    self._modules[task].fix_value(
-                        self._call_stack[task]['value'])
-
+        # Determine free parameters again as setting data may have fixed some
+        # more.
         self.determine_free_parameters(fixed_parameters)
 
         self.exchange_requests()
@@ -570,6 +577,7 @@ class Model(object):
     def determine_free_parameters(self, extra_fixed_parameters=[]):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
+        self._user_fixed_parameters = []
         self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -581,7 +589,14 @@ class Model(object):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
+            elif (cur_task['kind'] == 'parameter'
+                  and task in extra_fixed_parameters):
+                self._user_fixed_parameters.append(task)
         self._num_free_parameters = len(self._free_parameters)
+
+    def is_parameter_fixed_by_user(self, parameter):
+        """Return whether a parameter is fixed by the user."""
+        return parameter in self._user_fixed_parameters
 
     def get_num_free_parameters(self):
         """Return number of free parameters."""

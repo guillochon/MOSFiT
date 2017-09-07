@@ -567,8 +567,17 @@ def get_parser():
         dest='download_recommended_data',
         default=False,
         action='store_true',
-        help=("Downloads any recommended data from the Open Catalogs if not"
+        help=("Downloads any recommended data from the Open Catalogs if not "
               "provided by the user (without prompting)."))
+
+    parser.add_argument(
+        '--local-data-only',
+        dest='local_data_only',
+        default=False,
+        action='store_true',
+        help=("Will not attempt to acquire any data from the Open Catalogs "
+              "(even from cache), using only data provided locally by the "
+              "user."))
 
     return parser
 
