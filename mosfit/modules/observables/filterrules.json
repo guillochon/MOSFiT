@@ -608,7 +608,7 @@
         "instruments": [
             "",
             "WFC3",
-            "IR"
+            "WFC3_IR"
         ],
         "filters": {
             "F105W": {
