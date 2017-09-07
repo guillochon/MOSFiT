@@ -105,7 +105,7 @@ The last cell produces a corner plot using the `corner package <https://corner.r
 Sharing data and outputs with the community
 -------------------------------------------
 
-To upload fits back to the Open Catalogs, users can simply pass the ``-u`` option. The first time ``-u`` is used, MOSFiT will request a Dropbox token, which is provided on the Open Astronomy Catalogs on the pages describing ``MOSFiT``, e.g. `https://sne.space/mosfit/`_. These tokens can be revoked at any time, so a user may be occaisionally asked to enter a new token if the old one has expired.
+To upload fits back to the Open Catalogs, users can simply pass the ``-u`` option. The first time ``-u`` is used, MOSFiT will request a Dropbox token, which is provided on the Open Astronomy Catalogs on the pages describing ``MOSFiT``, e.g. `<https://sne.space/mosfit/>`_. These tokens can be revoked at any time, so a user may be occaisionally asked to enter a new token if the old one has expired.
 
 Upon completing the fitting process, and if the fits satisfy some quality checks, the model fits will uploaded to the Open Catalogs, where they will be ingested and available approximately 24 hours after their submission.
 
