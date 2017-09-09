@@ -503,7 +503,9 @@ def get_parser():
         default=[],
         nargs='+',
         help=("Create a separate `Variance` for each type of observation "
-              "specified. Currently `band` is the only valid option."))
+              "specified. Currently `band` is the only valid option, with "
+              "a trailing numeric value indicating the maximum fractional "
+              "difference in wavelength for two bands to be grouped."))
 
     parser.add_argument(
         '--speak',
