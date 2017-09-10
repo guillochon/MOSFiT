@@ -511,10 +511,10 @@ class Model(object):
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             vfe = listify(variance_for_each)
-            if cur_task.get('class', '') == 'variance' and 'band' in vfe:
+            if task == 'variance' and 'band' in vfe:
                 vfi = vfe.index('band') + 1
-                mwfd = float(vfe[vfi]) if vfi < len(vfe) and is_number(
-                    vfe[vfi]) else self.MIN_WAVE_FRAC_DIFF
+                mwfd = float(vfe[vfi]) if (vfi < len(vfe) and is_number(
+                    vfe[vfi])) else self.MIN_WAVE_FRAC_DIFF
                 # Find photometry in call stack.
                 for ptask in self._call_stack:
                     if ptask == 'photometry':
@@ -531,6 +531,8 @@ class Model(object):
                     if wave_frac_diff < mwfd:
                         continue
                     new_task_name = '-'.join([task, 'band', band])
+                    if new_task_name in self._call_stack:
+                        continue
                     new_task = deepcopy(cur_task)
                     new_call_stack[new_task_name] = new_task
                     if 'latex' in new_task:
