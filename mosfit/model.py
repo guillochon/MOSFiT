@@ -821,6 +821,10 @@ class Model(object):
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
+    def free_parameter_names(self, x):
+        """Return list of free parameter names."""
+        return self._free_parameters
+
     def prior(self, x):
         """Return score related to paramater priors."""
         prior = 0.0
