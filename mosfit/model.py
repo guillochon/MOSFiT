@@ -510,8 +510,11 @@ class Model(object):
         new_call_stack = OrderedDict()
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if (cur_task.get('class', '') == 'variance' and
-                    'band' in listify(variance_for_each)):
+            vfe = listify(variance_for_each)
+            if task == 'variance' and 'band' in vfe:
+                vfi = vfe.index('band') + 1
+                mwfd = float(vfe[vfi]) if (vfi < len(vfe) and is_number(
+                    vfe[vfi])) else self.MIN_WAVE_FRAC_DIFF
                 # Find photometry in call stack.
                 for ptask in self._call_stack:
                     if ptask == 'photometry':
@@ -525,9 +528,11 @@ class Model(object):
                 variance_bands = []
                 for bi, (awav, band) in enumerate(band_pairs):
                     wave_frac_diff = abs(awav - owav) / (awav + owav)
-                    if wave_frac_diff < self.MIN_WAVE_FRAC_DIFF:
+                    if wave_frac_diff < mwfd:
                         continue
                     new_task_name = '-'.join([task, 'band', band])
+                    if new_task_name in self._call_stack:
+                        continue
                     new_task = deepcopy(cur_task)
                     new_call_stack[new_task_name] = new_task
                     if 'latex' in new_task:
@@ -815,6 +820,10 @@ class Model(object):
         """Return score related to maximum likelihood."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
+
+    def free_parameter_names(self, x):
+        """Return list of free parameter names."""
+        return self._free_parameters
 
     def prior(self, x):
         """Return score related to paramater priors."""

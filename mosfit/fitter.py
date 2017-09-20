@@ -263,7 +263,8 @@ class Fitter(object):
         except ValueError:
             pool = SerialPool()
         if pool.is_master():
-            fetched_events = self._fetcher.fetch(event_list)
+            fetched_events = self._fetcher.fetch(
+                event_list, offline=self._offline)
 
             for rank in range(1, pool.size + 1):
                 pool.comm.send(fetched_events, dest=rank, tag=0)
@@ -371,7 +372,7 @@ class Fitter(object):
                                 en = (alt_name if alt_name
                                       else self._event_name)
                                 extra_event = self._fetcher.fetch(
-                                    en)[0].get('data')
+                                    en, offline=self._offline)[0].get('data')
 
                                 for rank in range(1, pool.size + 1):
                                     pool.comm.send(extra_event, dest=rank,
