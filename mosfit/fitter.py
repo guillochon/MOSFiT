@@ -40,16 +40,16 @@ def draw_walker(test=True, walkers_pool=[], replace=False):
     return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
 
 
-def likelihood(x):
-    """Return a likelihood score using the global model variable."""
+def ln_likelihood(x):
+    """Return ln(likelihood) using the global model variable."""
     global model
-    return model.likelihood(x)  # noqa: F821
+    return model.ln_likelihood(x)  # noqa: F821
 
 
-def prior(x):
-    """Return a prior score using the global model variable."""
+def ln_prior(x):
+    """Return ln(prior) using the global model variable."""
     global model
-    return model.prior(x)  # noqa: F821
+    return model.ln_prior(x)  # noqa: F821
 
 
 def frack(x):
@@ -623,7 +623,8 @@ class Fitter(object):
         try:
             if iterations > 0:
                 sampler = MOSSampler(
-                    ntemps, nwalkers, ndim, likelihood, prior, pool=self._pool)
+                    ntemps, nwalkers, ndim, ln_likelihood, ln_prior,
+                    pool=self._pool)
                 st = time.time()
             while (iterations > 0 and (
                     convergence_criteria is not None or ici < len(iter_arr))):
@@ -698,8 +699,8 @@ class Fitter(object):
                                                  tar_x + dxx,
                                                  tar_x - dxx) > 0.0,
                                         tar_x + dxx, tar_x - dxx), 0.0, 1.0)
-                                    new_like = likelihood(new_x)
-                                    new_prob = new_like + prior(new_x)
+                                    new_like = ln_likelihood(new_x)
+                                    new_prob = new_like + ln_prior(new_x)
                                     if new_prob > wprob or np.isnan(wprob):
                                         p[ti][wi] = new_x
                                         lnlike[ti][wi] = new_like
@@ -876,8 +877,8 @@ class Fitter(object):
                         (wi, ti) = tuple(selijs[bhi])
                         if -bh.fun > lnprob[wi][ti]:
                             p[wi][ti] = bh.x
-                            like = likelihood(bh.x)
-                            lnprob[wi][ti] = like + prior(bh.x)
+                            like = ln_likelihood(bh.x)
+                            lnprob[wi][ti] = like + ln_prior(bh.x)
                             lnlike[wi][ti] = like
                     scores = [[-x.fun for x in bhs]]
                     prt.status(

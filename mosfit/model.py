@@ -765,7 +765,7 @@ class Model(object):
                 p = draw
                 score = None
                 break
-            score = self.likelihood(draw)
+            score = self.ln_likelihood(draw)
             if draw_cnt >= self.DRAW_LIMIT and not self._draw_limit_reached:
                 self._printer.message('draw_limit_reached', warning=True)
                 self._draw_limit_reached = True
@@ -818,6 +818,10 @@ class Model(object):
 
     def likelihood(self, x):
         """Return score related to maximum likelihood."""
+        return np.exp(self.ln_likelihood(x))
+
+    def ln_likelihood(self, x):
+        """Return ln(likelihood)."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
@@ -827,6 +831,10 @@ class Model(object):
 
     def prior(self, x):
         """Return score related to paramater priors."""
+        return np.exp(self.ln_prior(x))
+
+    def ln_prior(self, x):
+        """Return ln(prior)."""
         prior = 0.0
         for pi, par in enumerate(self._free_parameters):
             lprior = self._modules[par].lnprior_pdf(x[pi])
@@ -839,14 +847,14 @@ class Model(object):
         for key in sorted(kwargs):
             x.append(kwargs[key])
 
-        l = self.likelihood(x) + self.prior(x)
+        l = self.ln_likelihood(x) + self.ln_prior(x)
         if not np.isfinite(l):
             return LOCAL_LIKELIHOOD_FLOOR
         return l
 
     def fprob(self, x):
         """Return score for fracking."""
-        l = -(self.likelihood(x) + self.prior(x))
+        l = -(self.ln_likelihood(x) + self.ln_prior(x))
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l

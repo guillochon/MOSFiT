@@ -17,7 +17,7 @@ class Likelihood(Module):
     MIN_COV_TERM = 1.0e-30
 
     def process(self, **kwargs):
-        """Process module."""
+        """Calculate the likelihood, returning ln(likelihood)."""
         ret = {'value': LIKELIHOOD_FLOOR}
 
         self._fractions = kwargs.get('fractions', [])
