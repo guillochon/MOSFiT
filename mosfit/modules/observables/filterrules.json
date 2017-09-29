@@ -8,6 +8,11 @@
                 "min_wavelength": 2000.0,
                 "max_wavelength": 11000.0,
                 "delta_wavelength": 50.0
+            },
+            "white_extended": {
+                "min_wavelength": 20.0,
+                "max_wavelength": 11000.0,
+                "delta_wavelength": 20.0
             }
         }
     },
