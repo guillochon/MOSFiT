@@ -12,7 +12,7 @@
             "white_extended": {
                 "min_wavelength": 20.0,
                 "max_wavelength": 11000.0,
-                "delta_wavelength": 20.0
+                "delta_wavelength": 100.0
             }
         }
     },
