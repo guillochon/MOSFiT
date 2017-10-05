@@ -452,7 +452,8 @@ class Fitter(object):
 
     def fit_data(self,
                  event_name='',
-                 iterations=2000,
+                 method=None,
+                 iterations=None,
                  frack_step=20,
                  num_walkers=None,
                  num_temps=1,
@@ -481,19 +482,10 @@ class Fitter(object):
         model = self._model
         prt = self._printer
 
-        self._emcee_est_t = 0.0
-        self._bh_est_t = 0.0
-        if burn is not None:
-            self._burn_in = min(burn, iterations)
-        elif post_burn is not None:
-            self._burn_in = max(iterations - post_burn, 0)
-        else:
-            self._burn_in = int(np.round(iterations / 2))
+        upload_model = upload and iterations > 0
 
         if pool is not None:
             self._pool = pool
-
-        upload_model = upload and iterations > 0
 
         if upload:
             try:
@@ -511,6 +503,363 @@ class Fitter(object):
             except (KeyboardInterrupt, SystemExit):
                 pass
             return (None, None, None)
+
+        self._method = method
+        self._method = 'nester' if method in [
+            'nest', 'nested', 'nested_sampler']
+
+        if self._method == 'nester':
+            self.nester()
+        else:
+            self.ensembler(model, burn, iterations, burn, post_burn)
+
+        prt.message('constructing')
+
+        if write:
+            if self._speak:
+                speak(prt._strings['saving_output'], self._speak)
+
+        if self._event_path:
+            entry = Entry.init_from_file(
+                catalog=None,
+                name=self._event_name,
+                path=self._event_path,
+                merge=False,
+                pop_schema=False,
+                ignore_keys=[ENTRY.MODELS],
+                compare_to_existing=False)
+            new_photometry = []
+            for photo in entry.get(ENTRY.PHOTOMETRY, []):
+                if PHOTOMETRY.REALIZATION not in photo:
+                    new_photometry.append(photo)
+            if len(new_photometry):
+                entry[ENTRY.PHOTOMETRY] = new_photometry
+        else:
+            entry = Entry(name=self._event_name)
+
+        uentry = Entry(name=self._event_name)
+        data_keys = set()
+        for task in model._call_stack:
+            if model._call_stack[task]['kind'] == 'data':
+                data_keys.update(
+                    list(model._call_stack[task].get('keys', {}).keys()))
+        entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
+
+        # Accumulate all the sources and add them to each entry.
+        sources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                sources.append(entry.add_source(**ref))
+        sources.append(entry.add_source(**self._DEFAULT_SOURCE))
+        source = ','.join(sources)
+
+        usources = []
+        if len(self._model._references):
+            for ref in self._model._references:
+                usources.append(uentry.add_source(**ref))
+        usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
+        usource = ','.join(usources)
+
+        model_setup = OrderedDict()
+        for ti, task in enumerate(model._call_stack):
+            task_copy = deepcopy(model._call_stack[task])
+            if (task_copy['kind'] == 'parameter' and
+                    task in model._parameter_json):
+                task_copy.update(model._parameter_json[task])
+            model_setup[task] = task_copy
+        modeldict = OrderedDict(
+            [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
+             (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
+             (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
+
+        if self._method == 'nester':
+            self.append_ensembler_output(modeldict)
+        else:
+            self.append_nester_output(modeldict)
+
+        modelnum = entry.add_model(**modeldict)
+
+        extras = OrderedDict()
+        for xi, x in enumerate(pout):
+            for yi, y in enumerate(pout[xi]):
+                # Only produce LCs for end walker state.
+                wcnt = xi * nwalkers + yi
+                if wcnt > 0:
+                    prt.message('outputting_walker', [
+                        wcnt, nwalkers * ntemps], inline=True)
+                if yi <= nwalkers:
+                    output = model.run_stack(y, root='output')
+                    if extra_outputs:
+                        for key in extra_outputs:
+                            new_val = output.get(key, [])
+                            new_val = all_to_list(new_val)
+                            extras.setdefault(key, []).append(new_val)
+                    for i in range(len(output['times'])):
+                        if not np.isfinite(output['model_observations'][i]):
+                            continue
+                        photodict = {
+                            PHOTOMETRY.TIME:
+                            output['times'][i] + output['min_times'],
+                            PHOTOMETRY.MODEL: modelnum,
+                            PHOTOMETRY.SOURCE: source,
+                            PHOTOMETRY.REALIZATION: str(ri)
+                        }
+                        if output['observation_types'][i] == 'magnitude':
+                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                            photodict[PHOTOMETRY.MAGNITUDE] = output[
+                                'model_observations'][i]
+                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                                'model_variances'][i]
+                        if output['observation_types'][i] == 'fluxdensity':
+                            photodict[PHOTOMETRY.FREQUENCY] = output[
+                                'frequencies'][i] * frequency_unit('GHz')
+                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                                'model_observations'][
+                                    i] * flux_density_unit('µJy')
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_FLUX_DENSITY] = (
+                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.FLUX_DENSITY]) -
+                                            output['model_variances'][
+                                                i] / 2.5)) *
+                                    flux_density_unit('µJy'))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.FLUX_DENSITY]) +
+                                    output['model_variances'][i] / 2.5) *
+                                    flux_density_unit('µJy') -
+                                    photodict[PHOTOMETRY.FLUX_DENSITY])
+                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                        if output['observation_types'][i] == 'countrate':
+                            photodict[PHOTOMETRY.COUNT_RATE] = output[
+                                'model_observations'][i]
+                            photodict[
+                                PHOTOMETRY.
+                                E_LOWER_COUNT_RATE] = (
+                                    photodict[PHOTOMETRY.COUNT_RATE] - (
+                                        10.0 ** (
+                                            np.log10(photodict[
+                                                PHOTOMETRY.COUNT_RATE]) -
+                                            output['model_variances'][
+                                                i] / 2.5)))
+                            photodict[
+                                PHOTOMETRY.
+                                E_UPPER_COUNT_RATE] = (10.0 ** (
+                                    np.log10(photodict[
+                                        PHOTOMETRY.COUNT_RATE]) +
+                                    output['model_variances'][i] / 2.5) -
+                                    photodict[PHOTOMETRY.COUNT_RATE])
+                            photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
+                        if ('model_upper_limits' in output and
+                                output['model_upper_limits'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
+                                'model_upper_limits'][i])
+                        if self._limiting_magnitude is not None:
+                            photodict[PHOTOMETRY.SIMULATED] = True
+                        if 'telescopes' in output and output['telescopes'][i]:
+                            photodict[PHOTOMETRY.TELESCOPE] = output[
+                                'telescopes'][i]
+                        if 'systems' in output and output['systems'][i]:
+                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                        if 'bandsets' in output and output['bandsets'][i]:
+                            photodict[PHOTOMETRY.BAND_SET] = output[
+                                'bandsets'][i]
+                        if 'instruments' in output and output[
+                                'instruments'][i]:
+                            photodict[PHOTOMETRY.INSTRUMENT] = output[
+                                'instruments'][i]
+                        if 'modes' in output and output['modes'][i]:
+                            photodict[PHOTOMETRY.MODE] = output[
+                                'modes'][i]
+                        entry.add_photometry(
+                            compare_to_existing=False, check_for_dupes=False,
+                            **photodict)
+
+                        uphotodict = deepcopy(photodict)
+                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                        uentry.add_photometry(
+                            compare_to_existing=False,
+                            check_for_dupes=False,
+                            **uphotodict)
+                else:
+                    output = model.run_stack(y, root='objective')
+
+                parameters = OrderedDict()
+                derived_keys = set()
+                pi = 0
+                for ti, task in enumerate(model._call_stack):
+                    # if task not in model._free_parameters:
+                    #     continue
+                    if model._call_stack[task]['kind'] != 'parameter':
+                        continue
+                    paramdict = OrderedDict((
+                        ('latex', model._modules[task].latex()),
+                        ('log', model._modules[task].is_log())
+                    ))
+                    if task in model._free_parameters:
+                        poutput = model._modules[task].process(
+                            **{'fraction': y[pi]})
+                        value = list(poutput.values())[0]
+                        paramdict['value'] = value
+                        paramdict['fraction'] = y[pi]
+                        pi = pi + 1
+                    else:
+                        if output.get(task, None) is not None:
+                            paramdict['value'] = output[task]
+                    parameters.update({model._modules[task].name(): paramdict})
+                    # Dump out any derived parameter keys
+                    derived_keys.update(model._modules[task].get_derived_keys(
+                    ))
+
+                for key in list(sorted(list(derived_keys))):
+                    if (output.get(key, None) is not None and
+                            key not in parameters):
+                        parameters.update({key: {'value': output[key]}})
+
+                realdict = {REALIZATION.PARAMETERS: parameters}
+                if lnprobout is not None:
+                    realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
+                realdict[REALIZATION.ALIAS] = str(ri)
+                entry[ENTRY.MODELS][0].add_realization(**realdict)
+                urealdict = deepcopy(realdict)
+                uentry[ENTRY.MODELS][0].add_realization(**urealdict)
+                ri = ri + 1
+        prt.message('all_walkers_written', inline=True)
+
+        entry.sanitize()
+        oentry = {self._event_name: entry._ordered(entry)}
+        uentry.sanitize()
+        ouentry = {self._event_name: uentry._ordered(uentry)}
+
+        uname = '_'.join(
+            [self._event_name, entryhash, modelhash])
+
+        if not os.path.exists(model.MODEL_OUTPUT_DIR):
+            os.makedirs(model.MODEL_OUTPUT_DIR)
+
+        if write:
+            prt.message('writing_complete')
+            with open_atomic(
+                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                    'w') as flast, open_atomic(os.path.join(
+                        model.MODEL_OUTPUT_DIR,
+                        self._event_name + (
+                            ('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
+                entabbed_json_dump(oentry, flast, separators=(',', ':'))
+                entabbed_json_dump(oentry, feven, separators=(',', ':'))
+
+            if save_full_chain:
+                prt.message('writing_full_chain')
+                with open_atomic(
+                    os.path.join(model.MODEL_OUTPUT_DIR,
+                                 'chain.json'), 'w') as flast, open_atomic(
+                        os.path.join(model.MODEL_OUTPUT_DIR,
+                                     self._event_name + '_chain' + (
+                                         ('_' + suffix) if suffix else '') +
+                                     '.json'), 'w') as feven:
+                    entabbed_json_dump(all_chain.tolist(),
+                                       flast, separators=(',', ':'))
+                    entabbed_json_dump(all_chain.tolist(),
+                                       feven, separators=(',', ':'))
+
+            if extra_outputs:
+                prt.message('writing_extras')
+                with open_atomic(os.path.join(
+                    model.MODEL_OUTPUT_DIR, 'extras.json'),
+                        'w') as flast, open_atomic(os.path.join(
+                            model.MODEL_OUTPUT_DIR, self._event_name +
+                            '_extras' + (('_' + suffix) if suffix else '') +
+                            '.json'), 'w') as feven:
+                    entabbed_json_dump(extras, flast, separators=(',', ':'))
+                    entabbed_json_dump(extras, feven, separators=(',', ':'))
+
+            prt.message('writing_model')
+            with open_atomic(os.path.join(
+                model.MODEL_OUTPUT_DIR, 'upload.json'),
+                    'w') as flast, open_atomic(os.path.join(
+                        model.MODEL_OUTPUT_DIR,
+                        uname + (('_' + suffix) if suffix else '') +
+                        '.json'), 'w') as feven:
+                entabbed_json_dump(ouentry, flast, separators=(',', ':'))
+                entabbed_json_dump(ouentry, feven, separators=(',', ':'))
+
+        if upload_model:
+            prt.message('ul_fit', [entryhash, modelhash])
+            upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
+            try:
+                dbx = dropbox.Dropbox(upload_token)
+                dbx.files_upload(
+                    upayload.encode(),
+                    '/' + uname + '.json',
+                    mode=dropbox.files.WriteMode.overwrite)
+                prt.message('ul_complete')
+            except Exception:
+                if self._test:
+                    pass
+                else:
+                    raise
+
+        if upload:
+            for ce in self._converter.get_converted():
+                dentry = Entry.init_from_file(
+                    catalog=None,
+                    name=ce[0],
+                    path=ce[1],
+                    merge=False,
+                    pop_schema=False,
+                    ignore_keys=[ENTRY.MODELS],
+                    compare_to_existing=False)
+
+                dentry.sanitize()
+                odentry = {ce[0]: uentry._ordered(dentry)}
+                dpayload = entabbed_json_dumps(odentry, separators=(',', ':'))
+                text = prt.message('ul_devent', [ce[0]], prt=False)
+                ul_devent = prt.prompt(text, kind='bool', message=False)
+                if ul_devent:
+                    dpath = '/' + slugify(
+                        ce[0] + '_' + dentry[ENTRY.SOURCES][0].get(
+                            SOURCE.BIBCODE, dentry[ENTRY.SOURCES][0].get(
+                                SOURCE.NAME, 'NOSOURCE'))) + '.json'
+                    try:
+                        dbx = dropbox.Dropbox(upload_token)
+                        dbx.files_upload(
+                            dpayload.encode(),
+                            dpath,
+                            mode=dropbox.files.WriteMode.overwrite)
+                        prt.message('ul_complete')
+                    except Exception:
+                        if self._test:
+                            pass
+                        else:
+                            raise
+
+        return (entry, pout, lnprobout)
+
+    def ensembler(self,
+                  model=None,
+                  iterations=2000,
+                  burn=None,
+                  post_burn=None,
+                  num_temps=1,
+                  num_walkers=None):
+        """Use ensemble sampling to determine posteriors."""
+        prt = self._printer
+
+        self._emcee_est_t = 0.0
+        self._bh_est_t = 0.0
+        if burn is not None:
+            self._burn_in = min(burn, iterations)
+        elif post_burn is not None:
+            self._burn_in = max(iterations - post_burn, 0)
+        else:
+            self._burn_in = int(np.round(iterations / 2))
 
         ntemps, ndim = (num_temps, model._num_free_parameters)
 
@@ -951,65 +1300,8 @@ class Fitter(object):
                 'default' if convergence_criteria is None else 'specified',
                 msg_criteria], warning=True)
 
-        prt.message('constructing')
-
-        if write:
-            if self._speak:
-                speak(prt._strings['saving_output'], self._speak)
-
-        if self._event_path:
-            entry = Entry.init_from_file(
-                catalog=None,
-                name=self._event_name,
-                path=self._event_path,
-                merge=False,
-                pop_schema=False,
-                ignore_keys=[ENTRY.MODELS],
-                compare_to_existing=False)
-            new_photometry = []
-            for photo in entry.get(ENTRY.PHOTOMETRY, []):
-                if PHOTOMETRY.REALIZATION not in photo:
-                    new_photometry.append(photo)
-            if len(new_photometry):
-                entry[ENTRY.PHOTOMETRY] = new_photometry
-        else:
-            entry = Entry(name=self._event_name)
-
-        uentry = Entry(name=self._event_name)
-        data_keys = set()
-        for task in model._call_stack:
-            if model._call_stack[task]['kind'] == 'data':
-                data_keys.update(
-                    list(model._call_stack[task].get('keys', {}).keys()))
-        entryhash = entry.get_hash(keys=list(sorted(list(data_keys))))
-
-        # Accumulate all the sources and add them to each entry.
-        sources = []
-        if len(self._model._references):
-            for ref in self._model._references:
-                sources.append(entry.add_source(**ref))
-        sources.append(entry.add_source(**self._DEFAULT_SOURCE))
-        source = ','.join(sources)
-
-        usources = []
-        if len(self._model._references):
-            for ref in self._model._references:
-                usources.append(uentry.add_source(**ref))
-        usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
-        usource = ','.join(usources)
-
-        model_setup = OrderedDict()
-        for ti, task in enumerate(model._call_stack):
-            task_copy = deepcopy(model._call_stack[task])
-            if (task_copy['kind'] == 'parameter' and
-                    task in model._parameter_json):
-                task_copy.update(model._parameter_json[task])
-            model_setup[task] = task_copy
-        modeldict = OrderedDict(
-            [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
-             (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
-             (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
-
+    def append_ensembler_output(modeldict, self):
+        """Append output from the ensembler to the model description."""
         WAIC = None
         if iterations > 0:
             WAIC = calculate_WAIC(scores)
@@ -1050,8 +1342,6 @@ class Fitter(object):
                                                else pretty_num(WAIC)])
                 upload_model = False
 
-        modelnum = entry.add_model(**modeldict)
-
         ri = 1
         if len(all_chain):
             pout = all_chain[:, :, -1, :]
@@ -1074,268 +1364,9 @@ class Fitter(object):
                 lnlikeout = np.concatenate(
                     (all_lnlike[:, :, -i * actc], lnlikeout), axis=1)
 
-        extras = OrderedDict()
-        for xi, x in enumerate(pout):
-            for yi, y in enumerate(pout[xi]):
-                # Only produce LCs for end walker state.
-                wcnt = xi * nwalkers + yi
-                if wcnt > 0:
-                    prt.message('outputting_walker', [
-                        wcnt, nwalkers * ntemps], inline=True)
-                if yi <= nwalkers:
-                    output = model.run_stack(y, root='output')
-                    if extra_outputs:
-                        for key in extra_outputs:
-                            new_val = output.get(key, [])
-                            new_val = all_to_list(new_val)
-                            extras.setdefault(key, []).append(new_val)
-                    for i in range(len(output['times'])):
-                        if not np.isfinite(output['model_observations'][i]):
-                            continue
-                        photodict = {
-                            PHOTOMETRY.TIME:
-                            output['times'][i] + output['min_times'],
-                            PHOTOMETRY.MODEL: modelnum,
-                            PHOTOMETRY.SOURCE: source,
-                            PHOTOMETRY.REALIZATION: str(ri)
-                        }
-                        if output['observation_types'][i] == 'magnitude':
-                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
-                            photodict[PHOTOMETRY.MAGNITUDE] = output[
-                                'model_observations'][i]
-                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
-                                'model_variances'][i]
-                        if output['observation_types'][i] == 'fluxdensity':
-                            photodict[PHOTOMETRY.FREQUENCY] = output[
-                                'frequencies'][i] * frequency_unit('GHz')
-                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                                'model_observations'][
-                                    i] * flux_density_unit('µJy')
-                            photodict[
-                                PHOTOMETRY.
-                                E_LOWER_FLUX_DENSITY] = (
-                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
-                                        10.0 ** (
-                                            np.log10(photodict[
-                                                PHOTOMETRY.FLUX_DENSITY]) -
-                                            output['model_variances'][
-                                                i] / 2.5)) *
-                                    flux_density_unit('µJy'))
-                            photodict[
-                                PHOTOMETRY.
-                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
-                                    np.log10(photodict[
-                                        PHOTOMETRY.FLUX_DENSITY]) +
-                                    output['model_variances'][i] / 2.5) *
-                                    flux_density_unit('µJy') -
-                                    photodict[PHOTOMETRY.FLUX_DENSITY])
-                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
-                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                        if output['observation_types'][i] == 'countrate':
-                            photodict[PHOTOMETRY.COUNT_RATE] = output[
-                                'model_observations'][i]
-                            photodict[
-                                PHOTOMETRY.
-                                E_LOWER_COUNT_RATE] = (
-                                    photodict[PHOTOMETRY.COUNT_RATE] - (
-                                        10.0 ** (
-                                            np.log10(photodict[
-                                                PHOTOMETRY.COUNT_RATE]) -
-                                            output['model_variances'][
-                                                i] / 2.5)))
-                            photodict[
-                                PHOTOMETRY.
-                                E_UPPER_COUNT_RATE] = (10.0 ** (
-                                    np.log10(photodict[
-                                        PHOTOMETRY.COUNT_RATE]) +
-                                    output['model_variances'][i] / 2.5) -
-                                    photodict[PHOTOMETRY.COUNT_RATE])
-                            photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
-                        if ('model_upper_limits' in output and
-                                output['model_upper_limits'][i]):
-                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
-                                'model_upper_limits'][i])
-                        if self._limiting_magnitude is not None:
-                            photodict[PHOTOMETRY.SIMULATED] = True
-                        if 'telescopes' in output and output['telescopes'][i]:
-                            photodict[PHOTOMETRY.TELESCOPE] = output[
-                                'telescopes'][i]
-                        if 'systems' in output and output['systems'][i]:
-                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                        if 'bandsets' in output and output['bandsets'][i]:
-                            photodict[PHOTOMETRY.BAND_SET] = output[
-                                'bandsets'][i]
-                        if 'instruments' in output and output[
-                                'instruments'][i]:
-                            photodict[PHOTOMETRY.INSTRUMENT] = output[
-                                'instruments'][i]
-                        if 'modes' in output and output['modes'][i]:
-                            photodict[PHOTOMETRY.MODE] = output[
-                                'modes'][i]
-                        entry.add_photometry(
-                            compare_to_existing=False, check_for_dupes=False,
-                            **photodict)
-
-                        uphotodict = deepcopy(photodict)
-                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                        uentry.add_photometry(
-                            compare_to_existing=False,
-                            check_for_dupes=False,
-                            **uphotodict)
-                else:
-                    output = model.run_stack(y, root='objective')
-
-                parameters = OrderedDict()
-                derived_keys = set()
-                pi = 0
-                for ti, task in enumerate(model._call_stack):
-                    # if task not in model._free_parameters:
-                    #     continue
-                    if model._call_stack[task]['kind'] != 'parameter':
-                        continue
-                    paramdict = OrderedDict((
-                        ('latex', model._modules[task].latex()),
-                        ('log', model._modules[task].is_log())
-                    ))
-                    if task in model._free_parameters:
-                        poutput = model._modules[task].process(
-                            **{'fraction': y[pi]})
-                        value = list(poutput.values())[0]
-                        paramdict['value'] = value
-                        paramdict['fraction'] = y[pi]
-                        pi = pi + 1
-                    else:
-                        if output.get(task, None) is not None:
-                            paramdict['value'] = output[task]
-                    parameters.update({model._modules[task].name(): paramdict})
-                    # Dump out any derived parameter keys
-                    derived_keys.update(model._modules[task].get_derived_keys(
-                    ))
-
-                for key in list(sorted(list(derived_keys))):
-                    if (output.get(key, None) is not None and
-                            key not in parameters):
-                        parameters.update({key: {'value': output[key]}})
-
-                realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprobout is not None:
-                    realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
-                realdict[REALIZATION.ALIAS] = str(ri)
-                entry[ENTRY.MODELS][0].add_realization(**realdict)
-                urealdict = deepcopy(realdict)
-                uentry[ENTRY.MODELS][0].add_realization(**urealdict)
-                ri = ri + 1
-        prt.message('all_walkers_written', inline=True)
-
-        entry.sanitize()
-        oentry = {self._event_name: entry._ordered(entry)}
-        uentry.sanitize()
-        ouentry = {self._event_name: uentry._ordered(uentry)}
-
-        uname = '_'.join(
-            [self._event_name, entryhash, modelhash])
-
-        if not os.path.exists(model.MODEL_OUTPUT_DIR):
-            os.makedirs(model.MODEL_OUTPUT_DIR)
-
-        if write:
-            prt.message('writing_complete')
-            with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
-                    'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
-                        self._event_name + (
-                            ('_' + suffix) if suffix else '') +
-                        '.json'), 'w') as feven:
-                entabbed_json_dump(oentry, flast, separators=(',', ':'))
-                entabbed_json_dump(oentry, feven, separators=(',', ':'))
-
-            if save_full_chain:
-                prt.message('writing_full_chain')
-                with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR,
-                                 'chain.json'), 'w') as flast, open_atomic(
-                        os.path.join(model.MODEL_OUTPUT_DIR,
-                                     self._event_name + '_chain' + (
-                                         ('_' + suffix) if suffix else '') +
-                                     '.json'), 'w') as feven:
-                    entabbed_json_dump(all_chain.tolist(),
-                                       flast, separators=(',', ':'))
-                    entabbed_json_dump(all_chain.tolist(),
-                                       feven, separators=(',', ':'))
-
-            if extra_outputs:
-                prt.message('writing_extras')
-                with open_atomic(os.path.join(
-                    model.MODEL_OUTPUT_DIR, 'extras.json'),
-                        'w') as flast, open_atomic(os.path.join(
-                            model.MODEL_OUTPUT_DIR, self._event_name +
-                            '_extras' + (('_' + suffix) if suffix else '') +
-                            '.json'), 'w') as feven:
-                    entabbed_json_dump(extras, flast, separators=(',', ':'))
-                    entabbed_json_dump(extras, feven, separators=(',', ':'))
-
-            prt.message('writing_model')
-            with open_atomic(os.path.join(
-                model.MODEL_OUTPUT_DIR, 'upload.json'),
-                    'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
-                        uname + (('_' + suffix) if suffix else '') +
-                        '.json'), 'w') as feven:
-                entabbed_json_dump(ouentry, flast, separators=(',', ':'))
-                entabbed_json_dump(ouentry, feven, separators=(',', ':'))
-
-        if upload_model:
-            prt.message('ul_fit', [entryhash, modelhash])
-            upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
-            try:
-                dbx = dropbox.Dropbox(upload_token)
-                dbx.files_upload(
-                    upayload.encode(),
-                    '/' + uname + '.json',
-                    mode=dropbox.files.WriteMode.overwrite)
-                prt.message('ul_complete')
-            except Exception:
-                if self._test:
-                    pass
-                else:
-                    raise
-
-        if upload:
-            for ce in self._converter.get_converted():
-                dentry = Entry.init_from_file(
-                    catalog=None,
-                    name=ce[0],
-                    path=ce[1],
-                    merge=False,
-                    pop_schema=False,
-                    ignore_keys=[ENTRY.MODELS],
-                    compare_to_existing=False)
-
-                dentry.sanitize()
-                odentry = {ce[0]: uentry._ordered(dentry)}
-                dpayload = entabbed_json_dumps(odentry, separators=(',', ':'))
-                text = prt.message('ul_devent', [ce[0]], prt=False)
-                ul_devent = prt.prompt(text, kind='bool', message=False)
-                if ul_devent:
-                    dpath = '/' + slugify(
-                        ce[0] + '_' + dentry[ENTRY.SOURCES][0].get(
-                            SOURCE.BIBCODE, dentry[ENTRY.SOURCES][0].get(
-                                SOURCE.NAME, 'NOSOURCE'))) + '.json'
-                    try:
-                        dbx = dropbox.Dropbox(upload_token)
-                        dbx.files_upload(
-                            dpayload.encode(),
-                            dpath,
-                            mode=dropbox.files.WriteMode.overwrite)
-                        prt.message('ul_complete')
-                    except Exception:
-                        if self._test:
-                            pass
-                        else:
-                            raise
-
-        return (entry, pout, lnprobout)
+    def nester(self):
+        """Use nested sampling to determine posteriors."""
+        pass
 
     def generate_dummy_data(self,
                             name,
