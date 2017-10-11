@@ -22,7 +22,7 @@ Using MOSFiT
    assessing.rst
    error.rst
    accessibility.rst
-   faq.rst
+   help.rst
    command_line.rst
    api.rst
 
