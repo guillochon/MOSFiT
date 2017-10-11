@@ -724,6 +724,14 @@
         }
     },
     {
+        "systems": [
+            "",
+            "AB"
+        ],
+        "telescopes": [
+            "",
+            "PS1"
+        ],
         "instruments": [
             "",
             "PS1",
