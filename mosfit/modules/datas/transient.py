@@ -14,6 +14,10 @@ from mosfit.utils import listify
 class Transient(Module):
     """Structure to store transient data."""
 
+    _REFERENCES = [
+        {SOURCE.BIBCODE: '2017arXiv171002145G'}
+    ]
+
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Transient, self).__init__(**kwargs)
