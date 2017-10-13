@@ -776,23 +776,34 @@ def main():
                     os.path.join(dir_path, 'jupyter', 'mosfit.ipynb'),
                     os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
 
-            # Disabled for now as external modules don't work with MPI.
             if not os.path.exists('modules'):
                 os.mkdir(os.path.join('modules'))
             module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
             for mdir in module_dirs:
                 if mdir.startswith('__'):
                     continue
+                full_mdir = os.path.join(dir_path, 'modules', mdir)
+                copy_path = os.path.join(full_mdir, '.copy')
+                to_copy = []
+                if os.path.isfile(copy_path):
+                    to_copy = list(filter(None, open(
+                        copy_path, 'r').read().split()))
+
                 mdir_path = os.path.join('modules', mdir)
                 if not os.path.exists(mdir_path):
                     os.mkdir(mdir_path)
+                for tc in to_copy:
+                    tc_path = os.path.join(full_mdir, tc)
+                    if os.path.isfile(tc_path):
+                        shutil.copy(tc_path, os.path.join(mdir_path, tc))
+                    elif os.path.isdir(tc_path):
+                        os.mkdir(os.path.join(mdir_path, tc))
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
                     txt = prt.message('readme-modules', [
                         os.path.join(dir_path, 'modules', 'mdir'),
                         os.path.join(dir_path, 'modules')], prt=False)
-                    with open(readme_path, 'w') as f:
-                        f.write(txt)
+                    open(readme_path, 'w').write(txt)
 
             if not os.path.exists('models'):
                 os.mkdir(os.path.join('models'))
