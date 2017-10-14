@@ -94,9 +94,8 @@ class Fetcher(object):
                                 '/names.min.json',
                                 timeout=10)
                         except Exception:
-                            prt.message('cant_dl_names'
-                                        [catalog], warning=True)
-                            raise
+                            prt.message(
+                                'cant_dl_names', [catalog], warning=True)
                         else:
                             with open_atomic(
                                     names_paths[ci], 'wb') as f:
@@ -112,7 +111,7 @@ class Fetcher(object):
                                     warning=True)
                         if offline:
                             prt.message('omit_offline')
-                        raise RuntimeError
+                        continue
 
                     if input_name in names[catalog]:
                         events[ei]['name'] = input_name
