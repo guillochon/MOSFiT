@@ -796,7 +796,8 @@ def main():
                     tc_path = os.path.join(full_mdir, tc)
                     if os.path.isfile(tc_path):
                         shutil.copy(tc_path, os.path.join(mdir_path, tc))
-                    elif os.path.isdir(tc_path):
+                    elif os.path.isdir(tc_path) and not os.path.exists(
+                            os.path.join(mdir_path, tc)):
                         os.mkdir(os.path.join(mdir_path, tc))
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
