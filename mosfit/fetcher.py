@@ -37,6 +37,12 @@ class Fetcher(object):
                     'https://tde.space/astrocats/astrocats/'
                     'tidaldisruptions/output'),
                 'web': 'https://tde.space/tde/'
+            }),
+            ('OKC', {
+                'json': (
+                    'https://kilonova.space/astrocats/astrocats/'
+                    'kilonovae/output'),
+                'web': 'https://kilonova.space/kne/'
             })
         ))
 
