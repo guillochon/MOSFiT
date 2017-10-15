@@ -72,6 +72,7 @@ class SED(Module):
         -------
         new_seds : array
             The result of summing the new and existing SEDs.
+
         """
         old_seds = kwargs.get('seds', None)
         if old_seds is not None:
