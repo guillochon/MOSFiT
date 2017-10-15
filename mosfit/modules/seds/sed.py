@@ -54,6 +54,8 @@ class SED(Module):
                         raise RuntimeError(
                             'Could not construct wavelengths for bandpass.')
 
+            # Note: Many of these will just be 0 - 1, but faster to have a
+            # single type numpy array than a ragged list of lists.
             self._sample_wavelengths = np.array(self._sample_wavelengths,
                                                 dtype=float)
         self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
