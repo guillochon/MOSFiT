@@ -54,6 +54,9 @@ class Converter(object):
 
     _DEFAULT_SOURCE = 'MOSFiT paper'
 
+    _TRUE_VALS = ['t', 'true', 'T', 'True', '1', 'y', 'Y']
+    _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
+
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
         self._inflect = inflect.engine()
@@ -390,11 +393,24 @@ class Converter(object):
                             for key in cidict:
                                 if key in self._bool_keys:
                                     rval = row[cidict[key]]
+
+                                    if rval in self._FALSE_VALS:
+                                        rval = False
+                                    elif rval in self._TRUE_VALS:
+                                        rval = True
+
+                                    if type(rval) != 'bool':
+                                        try:
+                                            rval = bool(rval)
+                                        except Exception:
+                                            pass
+
                                     if type(rval) != 'bool':
                                         try:
                                             rval = bool(float(rval))
                                         except Exception:
                                             rval = True
+
                                     if not rval:
                                         continue
                                     row[cidict[key]] = rval
