@@ -730,6 +730,10 @@
         ],
         "telescopes": [
             "",
+            "PAN-STARRS",
+            "Pan-STARRS",
+            "PAN-STARRS1",
+            "Pan-STARRS1",
             "PS1"
         ],
         "instruments": [
