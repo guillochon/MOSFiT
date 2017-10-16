@@ -10,7 +10,7 @@ from scipy import interpolate
 # Important: Only define one ``Module`` class per file.
 
 
-class RProcess(Engine):
+class RProcess2(Engine):
     """r-process decay engine.
 
     input luminosity adapted from Metzger 2016: 2016arXiv161009381M
@@ -47,7 +47,6 @@ class RProcess(Engine):
         therm_func_b = interpolate.interp2d(barnes_M,barnes_v,barnes_b)
         therm_func_d = interpolate.interp2d(barnes_M,barnes_v,barnes_d)
 
-
         ts = [
             np.inf
             if self._rest_texplosion > x else (x - self._rest_texplosion)
@@ -58,7 +57,7 @@ class RProcess(Engine):
                 (t * 86400. - 1.3) / 0.11)) ** 1.3 * 0.36 *
             (np.exp(-therm_func_a(self._mass/self.M_sun,self._vejecta/self.c)[0] * t) +
              np.log(1.0 + 2.0 * therm_func_b(self._mass/self.M_sun,self._vejecta/self.c)[0] *
-                    (t) ** therm_func_d(self._mass/self.M_sun,self._vejecta/self.c))[0] /
+                    (t) ** therm_func_d(self._mass/self.M_sun,self._vejecta/self.c)[0]) /
              (2.0 * therm_func_b(self._mass/self.M_sun,self._vejecta/self.c)[0] * (t) **
               therm_func_d(self._mass/self.M_sun,self._vejecta/self.c)[0])) for t in ts
         ]

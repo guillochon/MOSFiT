@@ -35,6 +35,7 @@ class RProcess(Engine):
         self._mass = kwargs[self.key('mejecta')] * self.M_sun
         self._rest_texplosion = kwargs[self.key('resttexplosion')]
         self._vejecta = kwargs[self.key('vejecta')]
+        self._theta = kwargs[self.key('theta')]
 
 
         barnes_M = np.asarray([1.e-3,1.e-3,1.e-3,5.e-3,5.e-3,5.e-3,1.e-2,1.e-2,1.e-2,5.e-2,5.e-2,5.e-2,])
@@ -54,7 +55,7 @@ class RProcess(Engine):
             for x in self._times
         ]
         luminosities = [
-            self._mass * 4.0e18 * (0.5 - (1. / np.pi) * np.arctan(
+            (2.0 * (1.0 - np.cos(self._theta/2.0)))**-1 * self._mass * 4.0e18 * (0.5 - (1. / np.pi) * np.arctan(
                 (t * 86400. - 1.3) / 0.11)) ** 1.3 * 0.36 *
             (np.exp(-therm_func_a(self._mass/self.M_sun,self._vejecta/self.c)[0] * t) +
              np.log(1.0 + 2.0 * therm_func_b(self._mass/self.M_sun,self._vejecta/self.c)[0] *

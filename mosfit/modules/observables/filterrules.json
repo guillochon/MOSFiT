@@ -5,8 +5,8 @@
     {
         "filters": {
             "white": {
-                "min_wavelength": 2000.0,
-                "max_wavelength": 11000.0,
+                "min_wavelength": 1000.0,
+                "max_wavelength": 18000.0,
                 "delta_wavelength": 50.0
             }
         }
@@ -285,6 +285,46 @@
             },
             "R": {
                 "SVO": "Generic/Bessell.R",
+                "offset": 0.0
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "",
+            "DECam"
+        ],
+        "instruments": [
+            "",
+            "DECam"
+        ],
+        "systems": [
+            "",
+            "AB"
+        ],
+        "filters": {
+            "u": {
+                "SVO": "CTIO/DECam.u",
+                "offset": 0.0
+            },
+            "g": {
+                "SVO": "CTIO/DECam.g",
+                "offset": 0.0
+            },
+            "r": {
+                "SVO": "CTIO/DECam.r",
+                "offset": 0.0
+            },
+            "i": {
+                "SVO": "CTIO/DECam.i",
+                "offset": 0.0
+            },
+            "z": {
+                "SVO": "CTIO/DECam.z",
+                "offset": 0.0
+            },
+            "Y": {
+                "SVO": "CTIO/DECam.Y",
                 "offset": 0.0
             }
         }
@@ -609,7 +649,9 @@
             "",
             "WFC3",
             "UVIS",
-            "UVIS1"
+            "UVIS1",
+            "ACS_WFC",
+            "WFC3_IR"
         ],
         "filters": {
             "F218W": {
@@ -654,6 +696,30 @@
             },
             "F814W": {
                 "SVO": "HST/WFC3_UVIS1.F814W",
+                "offset": 0.0
+            },
+            "F475W_ACS": {
+                "SVO": "HST/ACS_WFC.F475W_81",
+                "offset": 0.0
+            },
+            "F625W_ACS": {
+                "SVO": "HST/ACS_WFC.F625W_81",
+                "offset": 0.0
+            },
+            "F775W_ACS": {
+                "SVO": "HST/ACS_WFC.F775W_81",
+                "offset": 0.0
+            },
+            "F850W_ACS": {
+                "SVO": "HST/ACS_WFC.F850LP_81",
+                "offset": 0.0
+            },
+            "F110W_IR": {
+                "SVO": "HST/WFC3_IR.F110W",
+                "offset": 0.0
+            },
+            "F160W_IR": {
+                "SVO": "HST/WFC3_IR.F160W",
                 "offset": 0.0
             }
         }
@@ -814,6 +880,30 @@
             "y": {
                 "SVO": "LSST/LSST.y",
                 "offset": 0.0
+            }
+        }
+    },
+    {
+        "telescopes": [
+            "",
+            "Subaru"
+        ],
+        "instruments": [
+            "",
+            "HSC",
+            "MOIRCS"
+        ],
+        "bandsets": [
+            "",
+            "HSC"
+        ],
+        "filters": {
+            "z": {
+                "SVO": "Subaru/HSC.z_filter",
+                "offset": 0.0
+            },
+            "Ks": {
+                "SVO": "Subaru/MOIRCS.Y"
             }
         }
     },

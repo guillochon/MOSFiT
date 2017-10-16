@@ -51,10 +51,10 @@ class Line(SED):
                     seds.append([0.0])
                 continue
             if bi >= 0:
-                rest_wavs = self._sample_wavelengths[bi] / zp1
+                rest_wavs = (self._sample_wavelengths[bi] *
+                             u.Angstrom.cgs.scale / zp1)
             else:
-                rest_wavs = [cc / (self._frequencies[li] * zp1 /
-                             u.Angstrom.cgs.scale)]
+                rest_wavs = [cc / (self._frequencies[li] * zp1)]  # noqa: F841
 
             amp = lum * amps[li]
 

@@ -73,7 +73,8 @@ class SED(Module):
         """
         old_seds = kwargs.get('seds', None)
         if old_seds is not None:
-            new_seds += old_seds
+            for i,thing in enumerate(new_seds):
+                new_seds[i] = old_seds[i] + new_seds[i]
         return new_seds
 
     def send_request(self, request):

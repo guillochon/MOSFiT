@@ -39,7 +39,6 @@ class Blackbody(SED):
         zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         evaled = False
-
         for li, lum in enumerate(self._luminosities):
             radius_phot = self._radius_phot[li]  # noqa: F841
             temperature_phot = self._temperature_phot[li]  # noqa: F841
@@ -68,5 +67,4 @@ class Blackbody(SED):
 
             seds.append(sed)
         seds = self.add_to_existing_seds(seds, **kwargs)
-
         return {'sample_wavelengths': self._sample_wavelengths, self.key('seds'): seds}

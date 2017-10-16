@@ -351,12 +351,12 @@ class Photometry(Module):
     def process(self, **kwargs):
         """Process module."""
         self.preprocess(**kwargs)
-        kwargs = self.prepare_input('luminosities', **kwargs)
+        kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
         self._band_indices = kwargs['all_band_indices']
         self._observation_types = np.array(kwargs['observation_types'])
         self._dist_const = FOUR_PI * (kwargs['lumdist'] * MPC_CGS) ** 2
         self._ldist_const = np.log10(self._dist_const)
-        self._luminosities = kwargs['luminosities']
+        self._luminosities = kwargs[self.key('luminosities')]
         self._frequencies = kwargs['all_frequencies']
         zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
