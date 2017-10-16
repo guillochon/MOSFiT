@@ -1,0 +1,36 @@
+{
+    "nhhost":{
+        "value":0.0
+    },
+    "fnickel":{
+        "min_value":0.4,
+        "max_value":0.6
+    },
+    "texplosion":{
+        "min_value":0.0,
+        "max_value":0.0
+    },
+    "mejecta":{
+        "min_value":120,
+        "max_value":140
+    },
+    "kinetic_energy":{
+        "min_value":80,
+        "max_value":90
+    },
+    "variance":{
+        "min_value":1.0e-3,
+        "max_value":100.0,
+        "log":true
+    },
+    "codeltatime":{
+        "min_value":1.0e-3,
+        "max_value":1.0e3,
+        "log":true
+    },
+    "codeltalambda":{
+        "min_value":1.0e-1,
+        "max_value":1.0e6,
+        "log":true
+    }
+}

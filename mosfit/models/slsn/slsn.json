@@ -12,17 +12,20 @@
         "kind":"parameter",
         "value":1.0e18,
         "class":"parameter",
-        "latex":"n_{\\rm H,host}",
+        "latex":"n_{\\rm H}^{\\rm host}\\,({\\rm cm}^{-2})",
         "derived_keys":"avhost"
     },
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
         "class":"parameter",
-        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
-        "requests":{
-            "min_times": "transient"
-        }
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+    },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cut}\\,(\\AA)"
     },
     "Pspin":{
         "kind":"parameter",
@@ -34,17 +37,17 @@
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"B"
+        "latex":"B_{\\perp}\\,(10^{14}\\,{\\rm G})"
     },
     "Mns":{
         "kind":"parameter",
-        "value":2.0,
+        "value":1.4,
         "class":"parameter",
         "latex":"M_{\\rm NS}\\,(M_\\odot)"
     },
     "thetaPB":{
         "kind":"parameter",
-        "value":0.785398163,
+        "value":1.570796,
         "class":"parameter",
         "latex":"\\theta_{\\rm PB}"
     },
@@ -58,7 +61,7 @@
         "kind":"parameter",
         "value":10.0,
         "class":"parameter",
-        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+        "latex":"\\kappa_\\gamma"
     },
     "mejecta":{
         "kind":"parameter",
@@ -68,21 +71,15 @@
     },
     "vejecta":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":1.5e4,
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
     "temperature":{
         "kind":"parameter",
-        "value":5.0e3,
+        "value":6.0e3,
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
-    },
-    "cutoff_wavelength":{
-        "kind":"parameter",
-        "value":3000.0,
-        "class":"parameter",
-        "latex":"\\lambda_{\\rm cutoff}"
     },
     "neutrino_energy":{
         "kind":"parameter",

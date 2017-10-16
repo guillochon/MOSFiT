@@ -8,6 +8,18 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
+    "lumdist":{
+        "kind":"parameter",
+        "value":1.0e-5,
+        "class":"parameter",
+        "latex":"R_{\\rm V, host}" 
+   },
+   "redshift":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"R_{\\rm V, host}"
+   },
     "rvhost":{
         "kind":"parameter",
         "value":3.1,

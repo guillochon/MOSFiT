@@ -10,10 +10,22 @@
     },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e18,
+        "value":1.0e16,
         "class":"parameter",
         "latex":"n_{\\rm H,host}",
         "derived_keys":"avhost"
+    },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"z"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":1.0e-5,
+        "class":"parameter",
+        "latex":"d"
     },
     "texplosion":{
         "kind":"parameter",
@@ -38,7 +50,7 @@
     },
     "Mns":{
         "kind":"parameter",
-        "value":2.0,
+        "value":1.4,
         "class":"parameter",
         "latex":"M_{\\rm NS}\\,(M_\\odot)"
     },
@@ -50,13 +62,13 @@
     },
     "kappa":{
         "kind":"parameter",
-        "value":0.2,
+        "value":0.1,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
     "kappagamma":{
         "kind":"parameter",
-        "value":10.0,
+        "value":1000.0,
         "class":"parameter",
         "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
@@ -66,11 +78,18 @@
         "class":"parameter",
         "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
-    "vejecta":{
+    "kinetic_energy":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":1.0,
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "homologous_expansion":{
+        "kind":"energetic",
+        "inputs":[
+            "kinetic_energy",
+            "mejecta"
+        ]
     },
     "magnetar":{
         "kind":"engine",
@@ -92,7 +111,7 @@
             "kappagamma",
             "mejecta",
             "texplosion",
-            "vejecta"
+            "homologous_expansion"
         ]
     },
     "densecore":{

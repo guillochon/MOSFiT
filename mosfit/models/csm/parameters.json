@@ -1,18 +1,4 @@
 {
-    "nhhost":{
-        "min_value":1.0e16,
-        "max_value":1.0e23,
-        "log":true
-    },
-    "texplosion":{
-        "min_value":-500.0,
-        "max_value":0.0
-    },
-    "temperature":{
-        "min_value":1.0,
-        "max_value":10000,
-        "log":true
-    },
     "n":{
         "value":12.0
     },
@@ -20,22 +6,18 @@
         "value":0.0
     },
     "r0":{
-        "value":6.685
+        "value":67
     },
     "mcsm":{
         "min_value":0.1,
-        "max_value":30.0,
+        "max_value":5.0,
         "log":true
     },
     "mejecta":{
-        "min_value":0.1,
-        "max_value":30.0,
-        "log":true
+        "value":5.0
     },
     "vejecta":{
-        "min_value":1.0e3,
-        "max_value":1.0e5,
-        "log":true
+        "value":5790
     },
     "rho":{
         "min_value":1.0e-15,
@@ -49,12 +31,12 @@
     },
     "codeltatime":{
         "min_value":1.0e-3,
-        "max_value":1.0e2,
+        "max_value":1.0e3,
         "log":true
     },
     "codeltalambda":{
         "min_value":1.0e-1,
-        "max_value":1.0e4,
+        "max_value":1.0e6,
         "log":true
     }
 }

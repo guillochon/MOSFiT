@@ -16,10 +16,22 @@
     },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e18,
+        "value":0.0,
         "class":"parameter",
         "latex":"n_{\\rm H,host}",
         "derived_keys":"avhost"
+    },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"z"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":1.0e-5,
+        "class":"parameter",
+        "latex":"d"
     },
     "texplosion":{
         "kind":"parameter",
@@ -32,7 +44,7 @@
     },
     "temperature":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":100,
         "class":"parameter",
         "latex":"T_{\\min}\\,{\\rm (K)}"
     },
@@ -50,7 +62,7 @@
     },
     "Mns":{
         "kind":"parameter",
-        "value":2.0,
+        "value":1.4,
         "class":"parameter",
         "latex":"M_{\\rm NS}\\,(M_\\odot)"
     },
@@ -78,11 +90,18 @@
         "class":"parameter",
         "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },
-    "vejecta":{
+    "kinetic_energy":{
         "kind":"parameter",
-        "value":1.0e4,
+        "value":1.0e51,
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+        "homologous_expansion":{
+        "kind":"energetic",
+        "inputs":[
+            "kinetic_energy",
+            "mejecta"
+        ]
     },
     "nickelcobalt":{
         "kind":"engine",
@@ -134,7 +153,7 @@
             "kappagamma",
             "mejecta",
             "texplosion",
-            "vejecta"
+            "homologous_expansion"
         ]
     },
     "densecore":{

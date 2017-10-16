@@ -1,0 +1,33 @@
+{
+    "texplosion":{
+        "value":-0.47406
+    },
+    "mejecta":{
+        "min_value":0.012,
+        "max_value":0.019,
+        "log":false
+    },
+    "vejecta":{
+        "min_value":76450,
+        "max_value":81160,
+        "log":false
+    },
+    "temperature":{
+        "value":3393
+    },
+    "variance":{
+        "min_value":1.0e-3,
+        "max_value":100.0,
+        "log":true
+    },
+    "codeltatime":{
+        "min_value":1.0e-3,
+        "max_value":1.0e2,
+        "log":true
+    },
+    "codeltalambda":{
+        "min_value":1.0e-1,
+        "max_value":1.0e4,
+        "log":true
+    }
+}

@@ -1,7 +1,7 @@
 {
     "ebv":{
         "kind":"parameter",
-        "value":0.0,
+        "value":0.1053,
         "class":"parameter",
         "inputs":[
             "transient"
@@ -10,10 +10,22 @@
     },
     "nhhost":{
         "kind":"parameter",
-        "value":1.0e18,
+        "value":1.0e15,
         "class":"parameter",
         "latex":"n_{\\rm H,host}",
         "derived_keys":"avhost"
+    },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.009727,
+        "class":"parameter",
+        "latex":"z"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":43.36,
+        "class":"parameter",
+        "latex":"d"
     },
     "texplosion":{
         "kind":"parameter",
@@ -32,7 +44,7 @@
     },
     "kappa":{
         "kind":"parameter",
-        "value":10.0,
+        "value":12.0,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },

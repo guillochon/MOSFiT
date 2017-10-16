@@ -1,0 +1,51 @@
+{
+    "nhhost":{
+        "min_value":1.0e16,
+        "max_value":1.0e23,
+        "log":true
+    },
+    "fnickel":{
+        "min_value":1.0e-3,
+        "max_value":1.0,
+        "log":true
+    },
+    "texplosion":{
+        "min_value":-1000.0,
+        "max_value":0.0
+    },
+    "temperature":{
+        "class":"powerlaw",
+        "alpha":-2.0,
+        "min_value":1.0e3,
+        "max_value":1.0e5,
+        "log":true
+    },
+    "kappagamma":{
+        "class":"gaussian",
+        "mu":1.0e2,
+        "sigma":1.0,
+        "min_value":0.1,
+        "max_value":1.0e4,
+        "log":true
+    },
+    "mejecta":{
+        "class":"powerlaw",
+        "alpha":3.0,
+        "min_value": 1.0,
+        "max_value": 10.0,
+        "log":false
+    },
+    "vejecta":{
+        "class":"gaussian",
+        "mu":1.0e4,
+        "sigma":0.5e3,
+        "min_value":1.0e3,
+        "max_value":1.0e5,
+        "log":false
+    },
+    "variance":{
+        "min_value":1.0,
+        "max_value":1.0,
+        "log":true
+    }
+}

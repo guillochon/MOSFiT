@@ -1,36 +1,11 @@
 {
-    "nhhost":{
-        "min_value":1.0e16,
-        "max_value":1.0e23,
-        "log":true
-    },
     "Pspin":{
-        "min_value":1.0,
-        "max_value":10.0
+        "min_value":0.7,
+        "max_value":20.0
     },
     "Bfield":{
-        "min_value":0.1,
-        "max_value":10.0
-    },
-    "Mns":{
-        "min_value":1.0,
-        "max_value":2.0
-    },
-    "thetaPB":{
-        "min_value":0.0,
-        "max_value":1.57079632679
-    },
-    "texplosion":{
-        "min_value":-500.0,
-        "max_value":0.0
-    },
-    "kappa":{
-        "min_value":0.05,
-        "max_value":0.2
-    },
-    "kappagamma":{
-        "min_value":0.1,
-        "max_value":1.0e4,
+        "min_value":0.01,
+        "max_value":10.0,
         "log":true
     },
     "mejecta":{
@@ -38,13 +13,53 @@
         "max_value":100.0,
         "log":true
     },
+    "redshift":{
+        "min_value":0.01,
+        "max_value":2.9,
+        "mu":1.0,
+        "sigma":0.01,
+        "a":2.25422444,
+        "b":-6.38110690e+01,
+        "c":5.88854844e+02,
+        "d":-2.65886350e+03,
+        "e":6.64408049e+03,
+        "f":-9.37991115e+03,
+        "g":7.09219889e+03,
+        "h":-2.53661095e+03,
+        "i":4.53982408e+02,
+        "j":-1.15931810e+01,
+        "k":-2.45049319e-01
+    },
     "vejecta":{
-        "min_value":5.0e3,
-        "max_value":2.0e4
+        "class":"gaussian",
+        "mu":1.47e4,
+        "sigma":4.3e3,
+        "min_value":1.0e3,
+        "max_value":3.0e4
+    },
+    "kappa":{
+        "min_value":0.05,
+        "max_value":0.2
+    },
+    "kappagamma":{
+        "min_value":0.01,
+        "max_value":100.0,
+        "log":true
+    },
+    "Mns":{
+        "min_value":1.4,
+        "max_value":2.2
     },
     "temperature":{
+        "class":"gaussian",
+        "mu":6.0e3,
+        "sigma":1.0e3,
         "min_value":3.0e3,
         "max_value":1.0e4
+    },
+    "nhhost":{
+        "min_value":1.8e16,
+        "max_value":9.0e20
     },
     "variance":{
         "min_value":1.0e-3,
@@ -53,12 +68,12 @@
     },
     "codeltatime":{
         "min_value":1.0e-3,
-        "max_value":1.0e2,
+        "max_value":1.0e3,
         "log":true
     },
     "codeltalambda":{
         "min_value":1.0e-1,
-        "max_value":1.0e4,
+        "max_value":1.0e6,
         "log":true
     }
 }

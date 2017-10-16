@@ -8,6 +8,18 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
+    "redshift":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"z"
+    },
+    "lumdist":{
+        "kind":"parameter",
+        "value":1.0e-5,
+        "class":"parameter",
+        "latex":"d"
+    },
     "nhhost":{
         "kind":"parameter",
         "value":0.0,
@@ -32,13 +44,13 @@
     },
     "s":{
         "kind":"parameter",
-        "value":0.0,
+        "value":2.0,
         "class":"parameter",
         "latex":"s"
     },
     "delta":{
         "kind":"parameter",
-        "value":1.0,
+        "value":0.0,
         "class":"parameter",
         "latex":"delta"
     },
@@ -50,7 +62,7 @@
     },
     "mcsm":{
         "kind":"parameter",
-        "value":5.01,
+        "value":1.01,
         "class":"parameter",
         "latex":"M_{\\rm CSM}"
     },
@@ -68,7 +80,7 @@
     },
     "mejecta":{
         "kind":"parameter",
-        "value":1.0,
+        "value":5.0,
         "class":"parameter",
         "latex":"M_{\\rm ej}\\,(M_\\odot)"
     },

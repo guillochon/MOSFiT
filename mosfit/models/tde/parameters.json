@@ -6,29 +6,35 @@
     },
     "nhhost":{
         "min_value":1.0e16,
-        "max_value":1.0e23,
+        "max_value":2.0e16,
         "log":true
     },
     "b":{
-        "min_value":0.0,
-        "max_value":2.0
+        "min_value":0.99,
+        "max_value":1.1
     },
     "bhmass":{
-        "min_value":1.0e5,
-        "max_value":5.0e8,
+        "min_value":1.0e6,
+        "max_value":1.1e6,
         "log":true
     },
     "starmass":{
-        "min_value":0.1,
-        "max_value":100.0,
-        "log":true
+        "class":"kroupa",
+        "alpha1":-0.3,
+        "alpha2":-1.3,
+        "alpha3":-2.3,
+        "x1":0.08,
+        "x2":0.5,
+        "min_value":1.0,
+        "max_value":1.1,
+        "log":false
     },
     "efficiency":{
         "min_value":0.005,
         "max_value":0.4
     },
     "texplosion":{
-        "min_value":-500.0,
+        "min_value":-1.0,
         "max_value":0.0
     },
     "variance":{
