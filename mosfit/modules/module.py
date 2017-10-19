@@ -85,6 +85,10 @@ class Module(object):
             if new_key == rep:
                 new_key = self._replacements[rep]
                 return new_key
+            elif (new_key.startswith('dense') and
+                  new_key.split('_')[-1] == rep):
+                new_key = 'dense_' + self._replacements[rep]
+                return new_key
         return new_key
 
     def prepare_input(self, key, **kwargs):
