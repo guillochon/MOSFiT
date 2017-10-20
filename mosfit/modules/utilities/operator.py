@@ -19,7 +19,7 @@ class Operator(Utility):
 
     def set_attributes(self, task):
         """Set key replacement dictionary."""
-        super(Operator, self).set_attributes(task)
+        Utility.set_attributes(self, task)
         self._operands = task.get('operands', [])
         if not self._operands:
             raise ValueError('`Operator` must have at least one operand.')
