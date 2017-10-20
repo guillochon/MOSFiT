@@ -23,7 +23,7 @@ class Diffusion(Transform):
 
     def process(self, **kwargs):
         """Process module."""
-        super(Diffusion, self).process(**kwargs)
+        Transform.process(self, **kwargs)
         self._kappa = kwargs[self.key('kappa')]
         self._kappa_gamma = kwargs[self.key('kappagamma')]
         self._m_ejecta = kwargs[self.key('mejecta')]

@@ -15,7 +15,7 @@ class Viscous(Transform):
 
     def process(self, **kwargs):
         """Process module."""
-        super(Viscous, self).process(**kwargs)
+        Transform.process(self, **kwargs)
 
         tvisc = kwargs['Tviscous']
 

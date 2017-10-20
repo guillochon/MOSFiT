@@ -18,7 +18,7 @@ class DiffusionCSM(Transform):
 
     def process(self, **kwargs):
         """Process module."""
-        super(DiffusionCSM, self).process(**kwargs)
+        Transform.process(self, **kwargs)
         self._kappa = kwargs[self.key('kappa')]
         self._mass = kwargs[self.key('mcsm')] * M_SUN_CGS
         self._R0 = kwargs[self.key('r0')] * AU_CGS  # AU to cm
