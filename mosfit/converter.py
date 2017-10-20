@@ -54,6 +54,9 @@ class Converter(object):
 
     _DEFAULT_SOURCE = 'MOSFiT paper'
 
+    _TRUE_VALS = ['t', 'true', 'T', 'True', '1', 'y', 'Y']
+    _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
+
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
         self._inflect = inflect.engine()
@@ -85,7 +88,8 @@ class Converter(object):
             (PHOTOMETRY.E_UPPER_MAGNITUDE, [a + ' ' + b for a, b in chain(
                 product(self._emagstrs, ['plus', 'upper']),
                 product(['plus', 'upper'], self._emagstrs))]),
-            (PHOTOMETRY.UPPER_LIMIT, ['upper limit', 'upperlimit', 'l_mag']),
+            (PHOTOMETRY.UPPER_LIMIT, [
+             'upper limit', 'upperlimit', 'l_mag', 'limit']),
             (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
             (PHOTOMETRY.E_COUNT_RATE, [
                 'e_counts', 'count error', 'count rate error']),
@@ -356,8 +360,8 @@ class Converter(object):
                                      strip_cols])
 
                     if (PHOTOMETRY.TIME in cidict and
-                            (not isinstance(cidict[PHOTOMETRY.TIME], list)
-                             or len(cidict[PHOTOMETRY.TIME]) <= 2)):
+                            (not isinstance(cidict[PHOTOMETRY.TIME], list) or
+                             len(cidict[PHOTOMETRY.TIME]) <= 2)):
                         bi = cidict[PHOTOMETRY.TIME]
 
                         if isinstance(bi, list) and not isinstance(
@@ -389,11 +393,24 @@ class Converter(object):
                             for key in cidict:
                                 if key in self._bool_keys:
                                     rval = row[cidict[key]]
+
+                                    if rval in self._FALSE_VALS:
+                                        rval = False
+                                    elif rval in self._TRUE_VALS:
+                                        rval = True
+
+                                    if type(rval) != 'bool':
+                                        try:
+                                            rval = bool(rval)
+                                        except Exception:
+                                            pass
+
                                     if type(rval) != 'bool':
                                         try:
                                             rval = bool(float(rval))
                                         except Exception:
                                             rval = True
+
                                     if not rval:
                                         continue
                                     row[cidict[key]] = rval
@@ -589,8 +606,8 @@ class Converter(object):
                                     del(photodict[PHOTOMETRY.E_FLUX_DENSITY])
 
                             # Apply offset time if set.
-                            if (PHOTOMETRY.TIME in photodict
-                                    and toffset != Decimal('0')):
+                            if (PHOTOMETRY.TIME in photodict and
+                                    toffset != Decimal('0')):
                                 photodict[PHOTOMETRY.TIME] = str(
                                     Decimal(photodict[PHOTOMETRY.TIME]) +
                                     toffset)
@@ -795,17 +812,17 @@ class Converter(object):
                 continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for x in colinds
-                            if any(is_number(y) for y in columns[x])
-                            and x not in selected_cols]
+                            if any(is_number(y) for y in columns[x]) and
+                            x not in selected_cols]
             elif key.type == KEY_TYPES.TIME:
                 lcolinds = [x for x in colinds
                             if any(is_date(y) or is_number(y)
-                                   for y in columns[x])
-                            and x not in selected_cols]
+                                   for y in columns[x]) and
+                            x not in selected_cols]
             elif key.type == KEY_TYPES.STRING:
                 lcolinds = [x for x in colinds
-                            if any(not is_number(y) for y in columns[x])
-                            and x not in selected_cols]
+                            if any(not is_number(y) for y in columns[x]) and
+                            x not in selected_cols]
             else:
                 lcolinds = [x for x in colinds if x not in selected_cols]
             select = False
