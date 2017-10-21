@@ -1406,6 +1406,6 @@ class Fitter(object):
         mom = np.mean(np.mean(chain, axis=1))
         b = n / float(m - 1) * np.sum(
             (np.mean(chain, axis=1) - mom) ** 2)
-        w = np.mean(np.var(chain, axis=1))
+        w = np.mean(np.var(chain, axis=1, ddof=1))
         v = float(n - 1) / float(n) * w + (b / float(n))
         return np.sqrt(v / w)
