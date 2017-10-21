@@ -52,10 +52,11 @@ class DiffusionCSM(Transform):
             tb = max(np.sqrt(max(te2 - tbarg, 0.0)), min_te)
             int_times = np.linspace(tb, te, self.N_INT_TIMES)
             dt = int_times[1] - int_times[0]
-            td = self._tau_diff
+            td = self._tau_diff  # noqa: F841
 
-            int_lums = np.interp(int_times, self._dense_times_since_exp,
-                                 self._dense_luminosities)
+            int_lums = np.interp(  # noqa: F841
+                int_times, self._dense_times_since_exp,
+                self._dense_luminosities)
 
             if not evaled:
                 int_arg = ne.evaluate('int_lums * int_times / td**2 * '

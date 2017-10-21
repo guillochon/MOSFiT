@@ -1,3 +1,4 @@
+"""Initilization procedure for `Constraint` modules."""
 import inspect
 import os
 import sys

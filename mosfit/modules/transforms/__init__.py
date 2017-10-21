@@ -1,3 +1,4 @@
+"""Initilization procedure for `Transform` modules."""
 import inspect
 import os
 import sys

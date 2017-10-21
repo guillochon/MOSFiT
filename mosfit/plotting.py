@@ -24,11 +24,11 @@ bandreps = {
 # Some bands are uniquely tied to an instrument/telescope/system, add this
 # info here.
 bandmeta = {
-    'M2':     {'telescope': 'Swift', 'instrument': 'UVOT'},
-    'W1':     {'telescope': 'Swift', 'instrument': 'UVOT'},
-    'W2':     {'telescope': 'Swift', 'instrument': 'UVOT'},
-    'F110W':  {'telescope': 'Hubble', 'instrument': 'WFC3'},
-    'F775W':  {'telescope': 'Hubble', 'instrument': 'WFC3'},
+    'M2': {'telescope': 'Swift', 'instrument': 'UVOT'},
+    'W1': {'telescope': 'Swift', 'instrument': 'UVOT'},
+    'W2': {'telescope': 'Swift', 'instrument': 'UVOT'},
+    'F110W': {'telescope': 'Hubble', 'instrument': 'WFC3'},
+    'F775W': {'telescope': 'Hubble', 'instrument': 'WFC3'},
     'F850LP': {'telescope': 'Hubble', 'instrument': 'WFC3'}
 }
 
@@ -157,6 +157,7 @@ xraycolordict = dict(list(zip(xraycodes, xraycolors)))
 
 
 def bandrepf(code):
+    """Replace code with band name."""
     for rep in bandreps:
         if code in bandreps[rep]:
             return rep
@@ -164,6 +165,7 @@ def bandrepf(code):
 
 
 def bandcolorf(code):
+    """Replace band code with color."""
     newcode = bandrepf(code)
     if newcode in bandcolordict:
         return bandcolordict[newcode]
@@ -171,18 +173,21 @@ def bandcolorf(code):
 
 
 def radiocolorf(freq):
-    ffreq = (float(freq) - 1.0)/(45.0 - 1.0)
+    """Replace radio code with color."""
+    ffreq = (float(freq) - 1.0) / (45.0 - 1.0)
     pal = sns.diverging_palette(200, 60, l=80, as_cmap=True, center="dark")
     return rgb2hex(pal(ffreq))
 
 
 def xraycolorf(code):
+    """Replace xray code with color."""
     if code in xraycolordict:
         return xraycolordict[code]
     return 'black'
 
 
 def bandaliasf(code):
+    """Replace band alias with name."""
     newcode = bandrepf(code)
     if newcode in bandaliases:
         return bandaliases[newcode]
@@ -190,6 +195,7 @@ def bandaliasf(code):
 
 
 def bandgroupf(code):
+    """Replace band code with group."""
     newcode = bandrepf(code)
     for group in bandgroups:
         if newcode in bandgroups[group]:
@@ -198,6 +204,7 @@ def bandgroupf(code):
 
 
 def bandshortaliasf(code):
+    """Replace band code with short alias."""
     newcode = bandrepf(code)
     if newcode in bandshortaliases:
         return bandshortaliases[newcode]
@@ -205,6 +212,7 @@ def bandshortaliasf(code):
 
 
 def bandwavef(code):
+    """Replace band code with wavelength."""
     newcode = bandrepf(code)
     if newcode in bandwavelengths:
         return bandwavelengths[newcode]
@@ -212,6 +220,7 @@ def bandwavef(code):
 
 
 def bandmetaf(band, field):
+    """Replace band with meta."""
     if band in bandmeta:
         if field in bandmeta[band]:
             return bandmeta[band][field]

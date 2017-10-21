@@ -132,8 +132,9 @@ class Transient(Module):
                         if exclude_bands is not False and x == 'band':
                             if (entry.get(x, '') in exclude_bands and
                                 (not exclude_instruments or entry.get(
-                                    'instrument', '') in exclude_instruments)
-                                and (not exclude_systems or entry.get(
+                                    'instrument', '') in
+                                 exclude_instruments) and (
+                                     not exclude_systems or entry.get(
                                     'system', '') in exclude_systems)):
                                 skip_entry = True
                                 break
@@ -141,8 +142,9 @@ class Transient(Module):
                                 x == 'instrument'):
                             if (entry.get(x, '') in exclude_instruments and
                                 (not exclude_bands or
-                                 entry.get('band', '') in exclude_bands)
-                                and (not exclude_systems or entry.get(
+                                 entry.get('band', '') in
+                                 exclude_bands) and (
+                                     not exclude_systems or entry.get(
                                     'system', '') in exclude_systems)):
                                 skip_entry = True
                                 break
@@ -150,8 +152,9 @@ class Transient(Module):
                                 x == 'system'):
                             if (entry.get(x, '') in exclude_systems and
                                 (not exclude_bands or
-                                 entry.get('band', '') in exclude_bands)
-                                and (not exclude_instruments or entry.get(
+                                 entry.get('band', '') in
+                                 exclude_bands) and (
+                                     not exclude_instruments or entry.get(
                                     'instrument', '') in exclude_instruments)):
                                 skip_entry = True
                                 break
@@ -159,9 +162,9 @@ class Transient(Module):
                                 x == 'source'):
                             val = entry.get(x, '')
                             if (any([x in exclude_sources
-                                     for x in val.split(',')])
-                                or any([src_dict.get(x, '') in exclude_sources
-                                        for x in val.split(',')])):
+                                     for x in val.split(',')]) or
+                                any([src_dict.get(x, '') in exclude_sources
+                                     for x in val.split(',')])):
                                 skip_entry = True
                                 break
                     if skip_entry:

@@ -361,8 +361,8 @@ class Fitter(object):
                         ptxt = prt.text('acquire_recommended', [
                             ', '.join(list(urk))])
                         while event and len(urk) and (
-                            alt_name or self._download_recommended_data
-                            or prt.prompt(
+                            alt_name or self._download_recommended_data or
+                            prt.prompt(
                                 ptxt, [', '.join(urk)], kind='bool')):
                             try:
                                 pool = MPIPool()

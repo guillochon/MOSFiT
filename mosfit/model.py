@@ -594,8 +594,8 @@ class Model(object):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
-            elif (cur_task['kind'] == 'parameter'
-                  and task in extra_fixed_parameters):
+            elif (cur_task['kind'] == 'parameter' and
+                  task in extra_fixed_parameters):
                 self._user_fixed_parameters.append(task)
         self._num_free_parameters = len(self._free_parameters)
 
