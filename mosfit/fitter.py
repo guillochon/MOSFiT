@@ -773,15 +773,7 @@ class Fitter(object):
                                 vchain = cur_chain[
                                     ti, :, int(np.floor(
                                         self._burn_in / sli)):, xi]
-                                m = len(vchain)
-                                n = len(vchain[0])
-                                mom = np.mean(np.mean(vchain, axis=1))
-                                b = n / float(m - 1) * np.sum(
-                                    (np.mean(vchain, axis=1) - mom) ** 2)
-                                w = np.mean(np.var(vchain, axis=1))
-                                v = float(n - 1) / n * w + \
-                                    float(m + 1) / (m * n) * b
-                                vws[ti][xi] = np.sqrt(v / w)
+                                vws[ti][xi] = self.psrf(vchain)
                         psrf = np.max(vws)
                         if np.isnan(psrf):
                             psrf = np.inf
@@ -1406,3 +1398,14 @@ class Fitter(object):
             data[name]['photometry'].append(photodict)
 
         return data
+
+    def psrf(self, chain):
+        """Calculate PSRF for a chain."""
+        m = len(chain)
+        n = len(chain[0])
+        mom = np.mean(np.mean(chain, axis=1))
+        b = n / float(m - 1) * np.sum(
+            (np.mean(chain, axis=1) - mom) ** 2)
+        w = np.mean(np.var(chain, axis=1))
+        v = float(n - 1) / float(n) * w + (b / float(n))
+        return np.sqrt(v / w)
