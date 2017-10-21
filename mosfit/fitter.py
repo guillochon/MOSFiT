@@ -63,7 +63,7 @@ class Fitter(object):
 
     _MAX_ACORC = 5
     _REPLACE_AGE = 20
-    _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
+    _DEFAULT_SOURCE = {SOURCE.BIBCODE: '2017arXiv171002145G'}
 
     def __init__(self,
                  cuda=False,

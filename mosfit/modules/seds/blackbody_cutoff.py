@@ -22,7 +22,7 @@ class BlackbodyCutoff(SED):
     """
 
     _REFERENCES = [
-        {SOURCE.NAME: 'Nicholl et al. 2017'}
+        {SOURCE.BIBCODE: '2017arXiv170600825N'}
     ]
 
     C_CONST = c.c.cgs.value

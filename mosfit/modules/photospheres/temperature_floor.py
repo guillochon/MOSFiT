@@ -18,7 +18,7 @@ class TemperatureFloor(Photosphere):
     """
 
     _REFERENCES = [
-        {SOURCE.NAME: 'Nicholl et al. 2017'}
+        {SOURCE.BIBCODE: '2017arXiv170600825N'}
     ]
 
     STEF_CONST = (FOUR_PI * c.sigma_sb).cgs.value
