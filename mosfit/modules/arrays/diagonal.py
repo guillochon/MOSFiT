@@ -31,6 +31,12 @@ class Diagonal(Array):
 
         ret = {}
 
+        allowed_otypes = ['countrate', 'magnitude', 'fluxdensity']
+
+        if np.any([x not in allowed_otypes for x in self._o_types]):
+            print([x for x in self._o_types if x not in allowed_otypes])
+            raise ValueError('Unrecognized observation type.')
+
         # Calculate (model - obs) residuals.
         residuals = np.array([
             (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0)

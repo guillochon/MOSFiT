@@ -46,6 +46,8 @@ class Transient(Module):
                  band_modes=[],
                  band_bandsets=[]):
         """Set transient data."""
+        prt = self._printer
+
         self._all_data = all_data
         self._data = OrderedDict()
         if not self._all_data:
@@ -200,7 +202,7 @@ class Transient(Module):
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):
-            self._printer.message('no_fittable_data', [name])
+            prt.message('no_fittable_data', [name])
             return False
 
         for key in list(self._data.keys()):
@@ -278,10 +280,12 @@ class Transient(Module):
                     self._data['u_frequencies'])))
 
             obslist = []
-            for t in alltimes:
+            for ti, t in enumerate(alltimes):
+                new_per = np.round(100.0 * float(ti) / len(alltimes), 1)
+                prt.message('construct_obs_array', [new_per], inline=True)
                 for o in uniqueobs:
                     newobs = tuple([t] + list(o))
-                    if newobs not in obslist and newobs not in currobslist:
+                    if newobs not in currobslist:
                         obslist.append(newobs)
 
             obslist.sort()

@@ -383,9 +383,11 @@ class Model(object):
 
         self.determine_free_parameters(fixed_parameters)
 
-        for task in self._call_stack:
+        for ti, task in enumerate(self._call_stack):
             cur_task = self._call_stack[task]
             self._modules[task].set_event_name(event_name)
+            new_per = np.round(100.0 * float(ti) / len(self._call_stack))
+            prt.message('loading_task', [task, new_per], inline=True)
             if cur_task['kind'] == 'data':
                 success = self._modules[task].set_data(
                     data,
