@@ -345,6 +345,7 @@ class Model(object):
                   exclude_instruments=[],
                   exclude_systems=[],
                   exclude_sources=[],
+                  exclude_kinds=[],
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
@@ -383,9 +384,11 @@ class Model(object):
 
         self.determine_free_parameters(fixed_parameters)
 
-        for task in self._call_stack:
+        for ti, task in enumerate(self._call_stack):
             cur_task = self._call_stack[task]
             self._modules[task].set_event_name(event_name)
+            new_per = np.round(100.0 * float(ti) / len(self._call_stack))
+            prt.message('loading_task', [task, new_per], inline=True)
             if cur_task['kind'] == 'data':
                 success = self._modules[task].set_data(
                     data,
@@ -400,6 +403,7 @@ class Model(object):
                     exclude_instruments=exclude_instruments,
                     exclude_systems=exclude_systems,
                     exclude_sources=exclude_sources,
+                    exclude_kinds=exclude_kinds,
                     band_list=band_list,
                     band_systems=band_systems,
                     band_instruments=band_instruments,
@@ -486,6 +490,15 @@ class Model(object):
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
             prt.prt('\n'.join(filterrows))
+
+            single_freq_inst = list(
+                sorted(set(np.array(outputs['instruments'])[
+                    np.array(outputs['all_band_indices']) == -1])))
+
+            if len(single_freq_inst):
+                prt.message('single_freq')
+            for inst in single_freq_inst:
+                prt.prt('  {}'.format(inst))
 
             if ('unmatched_bands' in outputs and
                     'unmatched_instruments' in outputs):

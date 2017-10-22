@@ -179,6 +179,14 @@ def get_parser():
               "Open Astronomy Catalog page for each transient. "))
 
     parser.add_argument(
+        '--exclude-kinds',
+        dest='exclude_kinds',
+        default=[],
+        nargs='+',
+        help=("List of kinds of observations to exclude when fitting. These "
+              "are specified using keywords such as `radio` or `x-ray`. "))
+
+    parser.add_argument(
         '--fix-parameters',
         '-F',
         dest='user_fixed_parameters',
