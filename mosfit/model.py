@@ -345,6 +345,7 @@ class Model(object):
                   exclude_instruments=[],
                   exclude_systems=[],
                   exclude_sources=[],
+                  exclude_kinds=[],
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
@@ -402,6 +403,7 @@ class Model(object):
                     exclude_instruments=exclude_instruments,
                     exclude_systems=exclude_systems,
                     exclude_sources=exclude_sources,
+                    exclude_kinds=exclude_kinds,
                     band_list=band_list,
                     band_systems=band_systems,
                     band_instruments=band_instruments,
@@ -488,6 +490,15 @@ class Model(object):
             if not all(ois):
                 filterrows.append('  (* = Not observed in this band)')
             prt.prt('\n'.join(filterrows))
+
+            single_freq_inst = list(
+                sorted(set(np.array(outputs['instruments'])[
+                    np.array(outputs['all_band_indices']) == -1])))
+
+            if len(single_freq_inst):
+                prt.message('single_freq')
+            for inst in single_freq_inst:
+                prt.prt('  {}'.format(inst))
 
             if ('unmatched_bands' in outputs and
                     'unmatched_instruments' in outputs):

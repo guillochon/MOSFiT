@@ -97,6 +97,7 @@
     "select_mc_column": "\nSelect a column that has a `{}`:",
     "select_model_walkers": "More than one model output in this file, which model's walkers should we draw from?",
     "select_source": "No reference information was found in the provided file. While a bibcode is preferred, you can use your last name as a placeholder for unpublished works.",
+    "single_freq": "Single frequency instruments (e.g. radio):",
     "small_lumdist": "Luminosity distance less than 1 Mpc (`{}` pc), setting redshift to 0.",
     "specify_column": "None of the above, use the same value for all rows.",
     "specify_mc_value": "\nPlease specify `{}` for this set of `{}s`:",

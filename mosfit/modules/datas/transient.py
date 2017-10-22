@@ -17,6 +17,10 @@ class Transient(Module):
     _REFERENCES = [
         {SOURCE.BIBCODE: '2017arXiv171002145G'}
     ]
+    _EX_REPS = {
+        'rad': 'radio',
+        'xray': 'x-ray'
+    }
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -39,6 +43,7 @@ class Transient(Module):
                  exclude_instruments=[],
                  exclude_systems=[],
                  exclude_sources=[],
+                 exclude_kinds=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -55,6 +60,9 @@ class Transient(Module):
         name = list(self._all_data.keys())[0]
         self._data['name'] = name
         numeric_keys = set()
+
+        ex_kinds = [self._EX_REPS.get(
+            x.lower(), x.lower()) for x in exclude_kinds]
 
         # Construct some source dictionaries for exclusion rules
         src_dict = OrderedDict()
@@ -121,7 +129,22 @@ class Transient(Module):
                             break
 
                 if key == 'photometry':
+                    if ex_kinds is not False:
+                        if 'radio' in ex_kinds:
+                            if ('fluxdensity' in entry and
+                                'magnitude' not in entry and
+                                    'countrate' not in entry):
+                                continue
+                        if 'x-ray' in ex_kinds:
+                            if (('countrate' in entry or
+                                 'unabsorbedflux' in entry or
+                                 'flux' in entry) and
+                                'magnitude' not in entry and
+                                    'fluxdensity' in entry):
+                                continue
+
                     skip_entry = False
+
                     for x in subkeys:
                         if limit_fitting_mjds is not False and x == 'time':
                             val = np.mean([
