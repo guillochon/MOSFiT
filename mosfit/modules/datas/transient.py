@@ -140,7 +140,7 @@ class Transient(Module):
                                  'unabsorbedflux' in entry or
                                  'flux' in entry) and
                                 'magnitude' not in entry and
-                                    'fluxdensity' in entry):
+                                    'fluxdensity' not in entry):
                                 continue
 
                     skip_entry = False
