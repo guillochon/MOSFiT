@@ -35,7 +35,8 @@ class TemperatureFloor(Photosphere):
         self._m_ejecta = kwargs[self.key('mejecta')]
         self._kappa = kwargs[self.key('kappa')]
         self._radius2 = [(self.RAD_CONST *
-                          self._v_ejecta * (x - self._rest_t_explosion)) ** 2
+                          self._v_ejecta * max(
+                              x - self._rest_t_explosion, 0.0)) ** 2
                          for x in self._times]
         self._rec_radius2 = [
             x / (self.STEF_CONST * self._temperature ** 4)
@@ -47,7 +48,9 @@ class TemperatureFloor(Photosphere):
 
             radius2 = self._radius2[li]
             rec_radius2 = self._rec_radius2[li]
-            if radius2 < rec_radius2:
+            if lum == 0.0:
+                temperature = 0.0
+            elif radius2 < rec_radius2:
                 temperature = (lum / (self.STEF_CONST * radius2)) ** 0.25
             else:
                 radius2 = rec_radius2
