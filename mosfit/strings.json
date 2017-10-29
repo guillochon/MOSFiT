@@ -25,6 +25,7 @@
     "copying": "Copying MOSFiT folder hierarchy to current working directory (disable with `--no-copy-at-launch`).",
     "counts_mags_fds": "\nAmbiguous header found in the specified datafile. Are the points presented in the datafile represented as magnitudes, a count rate (per second), or a flux density (Jansky)?",
     "ctrl_c": "\b\bCtrl + C pressed, halting...",
+    "delim": "Unable to automatically determine delimiter, please select which character is used to delimit this file:",
     "dl_svo": "Downloading bandpass `{}` from SVO...",
     "dling_aliases": "Event `{}` interpreted as a transient name, downloading lists of transient aliases...",
     "dling_event": "Found event by primary name `{}` in the `{}`, downloading data...",

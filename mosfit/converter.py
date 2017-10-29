@@ -188,13 +188,23 @@ class Converter(object):
 
                 if table is None:
                     # Count to try and determine delimiter.
-                    delims = [' ', '\t', ',', '|', '&']
-                    dcount = 0
+                    delims = [' ', '\t', ',', ';', '|', '&']
+                    delimnames = [
+                        'Space: ` `', 'Tab: `\t`', 'Comma: `,`',
+                        'Semi-colon: `;`', 'Bar: `|`', 'Ampersand: `&`']
                     delim = None
-                    for x in delims:
-                        if ftxt.count(x) > dcount:
-                            dcount = ftxt.count(x)
-                            delim = x
+                    delimcounts = [ftxt.count(x) for x in delims]
+                    maxdelimcount = max(delimcounts)
+                    delim = delims[delimcounts.index(maxdelimcount)]
+                    # If two delimiter options are close in count, ask user.
+                    for i, x in enumerate(delimcounts):
+                        if x > 0.5 * maxdelimcount and delims[i] != delim:
+                            delim = None
+                    if delim is None:
+                        odelims = list(np.array(delimnames)[
+                            np.array(delimcounts) > 0])
+                        delim = delims[prt.prompt(
+                            'delim', kind='option', options=odelims) - 1]
                     ad = list(delims)
                     ad.remove(delim)
                     ad = ''.join(ad)
