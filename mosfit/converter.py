@@ -106,11 +106,14 @@ class Converter(object):
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
             PHOTOMETRY.FLUX_DENSITY,
-            PHOTOMETRY.BAND, PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.ZERO_POINT]
-        self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
+        self._helpful_keys = [
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.INSTRUMENT,
+            PHOTOMETRY.TELESCOPE]
         self._optional_keys = [
-            PHOTOMETRY.ZERO_POINT, PHOTOMETRY.U_FLUX_DENSITY]
+            PHOTOMETRY.ZERO_POINT, PHOTOMETRY.E_MAGNITUDE,
+            PHOTOMETRY.U_FLUX_DENSITY]
         self._mc_keys = [
             PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
             PHOTOMETRY.FLUX_DENSITY]
@@ -775,6 +778,12 @@ class Converter(object):
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)
             akeys.remove(PHOTOMETRY.ZERO_POINT)
+            if (PHOTOMETRY.MAGNITUDE in akeys and
+                    PHOTOMETRY.E_MAGNITUDE in akeys):
+                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
+                akeys.insert(
+                    akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
+                    PHOTOMETRY.E_MAGNITUDE)
             if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
                     PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
                 akeys.remove(PHOTOMETRY.E_MAGNITUDE)
