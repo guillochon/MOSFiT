@@ -382,20 +382,27 @@ class Converter(object):
                                 bi[0], string_types) and bi[0] == 'jd':
                             bi = bi[-1]
 
-                        mintime = min([float(x[bi])
-                                       for x in flines[self._first_data:]])
+                        mmtimes = [float(x[bi])
+                                   for x in flines[self._first_data:]]
+                        mintime, maxtime = min(mmtimes), max(mmtimes)
 
                         if mintime < 10000:
-                            tofftxt = prt.text('time_offset')
                             while True:
                                 try:
                                     response = prt.prompt(
-                                        tofftxt, kind='string')
+                                        'small_time_offset', kind='string')
                                     if response is not None:
                                         toffset = Decimal(response)
                                     break
                                 except Exception:
                                     pass
+                        elif maxtime > 60000 and cidict[
+                                PHOTOMETRY.TIME][0] != 'jd':
+                            isjd = prt.prompt(
+                                'large_time_offset',
+                                kind='bool', default='y')
+                            if isjd:
+                                toffset = Decimal('-2400000.5')
 
                     for row in flines[self._first_data:]:
                         photodict = {}
