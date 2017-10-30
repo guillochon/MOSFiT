@@ -188,13 +188,23 @@ class Converter(object):
 
                 if table is None:
                     # Count to try and determine delimiter.
-                    delims = [' ', '\t', ',', '|', '&']
-                    dcount = 0
+                    delims = [' ', '\t', ',', ';', '|', '&']
+                    delimnames = [
+                        'Space: ` `', 'Tab: `\t`', 'Comma: `,`',
+                        'Semi-colon: `;`', 'Bar: `|`', 'Ampersand: `&`']
                     delim = None
-                    for x in delims:
-                        if ftxt.count(x) > dcount:
-                            dcount = ftxt.count(x)
-                            delim = x
+                    delimcounts = [ftxt.count(x) for x in delims]
+                    maxdelimcount = max(delimcounts)
+                    delim = delims[delimcounts.index(maxdelimcount)]
+                    # If two delimiter options are close in count, ask user.
+                    for i, x in enumerate(delimcounts):
+                        if x > 0.5 * maxdelimcount and delims[i] != delim:
+                            delim = None
+                    if delim is None:
+                        odelims = list(np.array(delimnames)[
+                            np.array(delimcounts) > 0])
+                        delim = delims[prt.prompt(
+                            'delim', kind='option', options=odelims) - 1]
                     ad = list(delims)
                     ad.remove(delim)
                     ad = ''.join(ad)
@@ -372,20 +382,27 @@ class Converter(object):
                                 bi[0], string_types) and bi[0] == 'jd':
                             bi = bi[-1]
 
-                        mintime = min([float(x[bi])
-                                       for x in flines[self._first_data:]])
+                        mmtimes = [float(x[bi])
+                                   for x in flines[self._first_data:]]
+                        mintime, maxtime = min(mmtimes), max(mmtimes)
 
                         if mintime < 10000:
-                            tofftxt = prt.text('time_offset')
                             while True:
                                 try:
                                     response = prt.prompt(
-                                        tofftxt, kind='string')
+                                        'small_time_offset', kind='string')
                                     if response is not None:
                                         toffset = Decimal(response)
                                     break
                                 except Exception:
                                     pass
+                        elif maxtime > 60000 and cidict[
+                                PHOTOMETRY.TIME][0] != 'jd':
+                            isjd = prt.prompt(
+                                'large_time_offset',
+                                kind='bool', default='y')
+                            if isjd:
+                                toffset = Decimal('-2400000.5')
 
                     for row in flines[self._first_data:]:
                         photodict = {}
