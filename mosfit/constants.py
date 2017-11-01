@@ -7,6 +7,8 @@ import numpy as np
 LIKELIHOOD_FLOOR = -np.inf
 LOCAL_LIKELIHOOD_FLOOR = -1.0e8
 
+IPI = 1.0 / np.pi
+
 ANG_CGS = u.Angstrom.cgs.scale
 AU_CGS = u.au.cgs.scale
 C_CGS = c.c.cgs.value

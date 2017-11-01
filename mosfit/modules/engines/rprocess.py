@@ -3,7 +3,7 @@ from math import isnan
 
 import numpy as np
 from astrocats.catalog.source import SOURCE
-from mosfit.constants import C_CGS, KM_CGS, M_SUN_CGS
+from mosfit.constants import C_CGS, DAY_CGS, IPI, KM_CGS, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
 from scipy.interpolate import RegularGridInterpolator
 
@@ -24,7 +24,6 @@ class RProcess(Engine):
     ]
 
     ckm = C_CGS / KM_CGS
-    ipi = 1.0 / np.pi
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -54,7 +53,7 @@ class RProcess(Engine):
         self._vejecta = kwargs[self.key('vejecta')]
         self._a = self.therm_func_a(
             [self._mass / M_SUN_CGS, self._vejecta / self.ckm])[0]
-        self._b = self.therm_func_b(
+        self._bx2 = 2.0 * self.therm_func_b(
             [self._mass / M_SUN_CGS, self._vejecta / self.ckm])[0]
         self._d = self.therm_func_d(
             [self._mass / M_SUN_CGS, self._vejecta / self.ckm])[0]
@@ -67,11 +66,11 @@ class RProcess(Engine):
 
         self._lscale = self._mass * 4.0e18 * 0.36
         luminosities = [
-            self._lscale * (0.5 - self.ipi * np.arctan(
-                (t * 86400. - 1.3) / 0.11)) ** 1.3 *
+            self._lscale * (0.5 - IPI * np.arctan(
+                (t * DAY_CGS - 1.3) / 0.11)) ** 1.3 *
             (np.exp(-self._a * t) + np.log1p(
-                2.0 * self._b * t ** self._d) /
-             (2.0 * self._b * t ** self._d)) for t in ts
+                self._bx2 * t ** self._d) / (self._bx2 * t ** self._d))
+            for t in ts
         ]
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
