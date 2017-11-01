@@ -197,7 +197,7 @@ class Fitter(object):
         if len(walker_paths):
             try:
                 pool = MPIPool()
-            except  (ImportError, ValueError):
+            except (ImportError, ValueError):
                 pool = SerialPool()
             if pool.is_master():
                 prt.message('walker_file')
@@ -368,7 +368,7 @@ class Fitter(object):
                                 ptxt, [', '.join(urk)], kind='bool')):
                             try:
                                 pool = MPIPool()
-                            except  (ImportError, ValueError):
+                            except (ImportError, ValueError):
                                 pool = SerialPool()
                             if pool.is_master():
                                 en = (alt_name if alt_name
@@ -979,15 +979,15 @@ class Fitter(object):
 
         # Accumulate all the sources and add them to each entry.
         sources = []
-        if len(self._model._references):
-            for ref in self._model._references:
+        for root in self._model._references:
+            for ref in self._model._references[root]:
                 sources.append(entry.add_source(**ref))
         sources.append(entry.add_source(**self._DEFAULT_SOURCE))
         source = ','.join(sources)
 
         usources = []
-        if len(self._model._references):
-            for ref in self._model._references:
+        for root in self._model._references:
+            for ref in self._model._references[root]:
                 usources.append(uentry.add_source(**ref))
         usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
         usource = ','.join(usources)
