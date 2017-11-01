@@ -197,7 +197,7 @@ class Fitter(object):
         if len(walker_paths):
             try:
                 pool = MPIPool()
-            except ValueError:
+            except  (ImportError, ValueError):
                 pool = SerialPool()
             if pool.is_master():
                 prt.message('walker_file')
@@ -261,7 +261,7 @@ class Fitter(object):
 
         try:
             pool = MPIPool()
-        except ValueError:
+        except (ImportError, ValueError):
             pool = SerialPool()
         if pool.is_master():
             fetched_events = self._fetcher.fetch(
@@ -295,7 +295,7 @@ class Fitter(object):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
-                    except Exception:
+                    except (ImportError, ValueError):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
@@ -368,7 +368,7 @@ class Fitter(object):
                                 ptxt, [', '.join(urk)], kind='bool')):
                             try:
                                 pool = MPIPool()
-                            except ValueError:
+                            except  (ImportError, ValueError):
                                 pool = SerialPool()
                             if pool.is_master():
                                 en = (alt_name if alt_name

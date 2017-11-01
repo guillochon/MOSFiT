@@ -43,10 +43,10 @@ class Diagonal(Array):
                 not isnan(x) and ct is not None and x < ct) else 0.0)
             if t == 'countrate' else
             ((abs(x - y) if (not u and y is not None) or (
-                not isnan(x)) and y is not None and x < y else 0.0)
+                not isnan(x) and y is not None and x < y) else 0.0)
              if t == 'magnitude' else
              ((abs(x - fd) if (not u and fd is not None) or (
-                 not isnan(x)) and fd is not None and x > fd else 0.0)
+                 not isnan(x) and fd is not None and x > fd) else 0.0)
               if t == 'fluxdensity' else None))
             for x, y, ct, fd, u, t in zip(
                 self._model_observations, self._mags, self._cts, self._fds,
