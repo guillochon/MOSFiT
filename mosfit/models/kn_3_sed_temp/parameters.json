@@ -1,6 +1,13 @@
 {
+
+    "nhhost":{
+        "min_value":1.0e16,
+        "max_value":1.0e23,
+        "log":true
+    },
     "texplosion":{
-        "value":-0.47406
+        "min_value":-500.0,
+        "max_value":0.0
     },
     "mejecta_blue":{
         "min_value":1.0e-3,
