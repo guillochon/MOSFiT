@@ -1,4 +1,15 @@
 {
+    "@references":[
+        {
+            "bibcode": "2017LRR....20....3M"
+        },
+        {
+            "bibcode": "2017arXiv170708132V"
+        },
+        {
+            "bibcode": "2017arXiv171011576V"
+        }
+    ],
     "ebv":{
         "kind":"parameter",
         "value":0.0,

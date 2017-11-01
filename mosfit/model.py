@@ -56,7 +56,7 @@ class Model(object):
         self._inflect = inflect.engine()
         self._test = test
         self._inflections = {}
-        self._references = []
+        self._references = OrderedDict()
         self._free_parameters = []
         self._user_fixed_parameters = []
 
@@ -163,6 +163,14 @@ class Model(object):
 
         with open(model_path, 'r') as f:
             self._model.update(json.load(f, object_pairs_hook=OrderedDict))
+
+        # Find @ tags, store them, and prune them from `_model`.
+        for tag in list(self._model.keys()):
+            if tag.startswith('@'):
+                if tag == '@references':
+                    self._references.setdefault('base', []).extend(
+                        self._model[tag])
+                del(self._model[tag])
 
         # with open(os.path.join(
         #         self.MODEL_OUTPUT_DIR,
@@ -905,6 +913,12 @@ class Model(object):
         outputs = OrderedDict()
         pos = 0
         cur_depth = self._max_depth_all
+
+        # If this is the first time running this stack, build the ref arrays.
+        build_refs = root not in self._references
+        if build_refs:
+            self._references[root] = []
+
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if root not in cur_task['roots']:
@@ -930,16 +944,17 @@ class Model(object):
             outputs.update(new_outs)
 
             # Append module references
-            self._references.extend(self._modules[task]._REFERENCES)
+            if build_refs:
+                self._references[root].extend(self._modules[task]._REFERENCES)
 
             if '_delete_keys' in outputs:
                 for key in outputs['_delete_keys']:
                     del(outputs[key])
                 del(outputs['_delete_keys'])
 
-            if cur_task['kind'] == root:
-                # Make sure references are unique.
-                self._references = list(map(
-                    dict, set(tuple(sorted(d.items()))
-                              for d in self._references)))
-                return outputs
+        if build_refs:
+            # Make sure references are unique.
+            self._references[root] = list(map(dict, set(tuple(
+                sorted(d.items())) for d in self._references[root])))
+
+        return outputs

@@ -5,5 +5,7 @@
     "Ic":["ic", "default"],
     "Ia":["ia", "default"],
     "IIn":["default"],
-    "Kilonova":["rprocess"]
+    "Kilonova":["kilonova", "rprocess"],
+    "NS + NS":["kilonova"],
+    "BH + NS":["kilonova"]
 }
