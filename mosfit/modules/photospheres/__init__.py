@@ -1,3 +1,4 @@
+"""Initilization procedure for `Photosphere` modules."""
 import inspect
 import os
 import sys

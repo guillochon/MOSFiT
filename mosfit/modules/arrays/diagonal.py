@@ -31,16 +31,23 @@ class Diagonal(Array):
 
         ret = {}
 
+        allowed_otypes = ['countrate', 'magnitude', 'fluxdensity']
+
+        if np.any([x not in allowed_otypes for x in self._o_types]):
+            print([x for x in self._o_types if x not in allowed_otypes])
+            raise ValueError('Unrecognized observation type.')
+
         # Calculate (model - obs) residuals.
         residuals = np.array([
-            (abs(x - ct) if not u or (x < ct and not isnan(x)) else 0.0)
-            if t == 'countrate' and ct is not None
-            else
-            (abs(x - y) if not u or (x < y and not isnan(x)) else 0.0)
-            if t == 'magnitude' and y is not None
-            else
-            (abs(x - fd) if not u or (x > fd and not isnan(x)) else 0.0)
-            if t == 'fluxdensity' and fd is not None else None
+            (abs(x - ct) if (not u and ct is not None) or (
+                not isnan(x) and ct is not None and x < ct) else 0.0)
+            if t == 'countrate' else
+            ((abs(x - y) if (not u and y is not None) or (
+                not isnan(x) and y is not None and x < y) else 0.0)
+             if t == 'magnitude' else
+             ((abs(x - fd) if (not u and fd is not None) or (
+                 not isnan(x) and fd is not None and x > fd) else 0.0)
+              if t == 'fluxdensity' else None))
             for x, y, ct, fd, u, t in zip(
                 self._model_observations, self._mags, self._cts, self._fds,
                 self._upper_limits, self._o_types)
@@ -51,12 +58,12 @@ class Diagonal(Array):
 
         # Observational errors to be put in diagonal of error matrix.
         diag = np.array([
-            ((ctel if x > ct else cteu) ** 2)
-            if t == 'countrate' and ct is not None else
-            ((el if x > y else eu) ** 2)
-            if t == 'magnitude' and y is not None else
-            ((fdel if x < fd else fdeu) ** 2)
-            if t == 'fluxdensity' and fd is not None else None
+            ((ctel if (ct is not None and x > ct) else cteu) ** 2)
+            if t == 'countrate' else
+            ((el if (y is None or x > y) else eu) ** 2)
+            if t == 'magnitude' else
+            ((fdel if (fd is None or x < fd) else fdeu) ** 2)
+            if t == 'fluxdensity' else None
             for x, y, eu, el, fd, fdeu, fdel, ct, ctel, cteu, t in zip(
                 self._model_observations, self._mags,
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,

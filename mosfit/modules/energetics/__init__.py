@@ -1,3 +1,4 @@
+"""Initilization procedure for `Energetic` modules."""
 import inspect
 import os
 import sys

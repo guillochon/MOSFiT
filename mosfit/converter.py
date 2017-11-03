@@ -54,6 +54,9 @@ class Converter(object):
 
     _DEFAULT_SOURCE = 'MOSFiT paper'
 
+    _TRUE_VALS = ['t', 'true', 'T', 'True', '1', 'y', 'Y']
+    _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
+
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
         self._inflect = inflect.engine()
@@ -85,7 +88,8 @@ class Converter(object):
             (PHOTOMETRY.E_UPPER_MAGNITUDE, [a + ' ' + b for a, b in chain(
                 product(self._emagstrs, ['plus', 'upper']),
                 product(['plus', 'upper'], self._emagstrs))]),
-            (PHOTOMETRY.UPPER_LIMIT, ['upper limit', 'upperlimit', 'l_mag']),
+            (PHOTOMETRY.UPPER_LIMIT, [
+             'upper limit', 'upperlimit', 'l_mag', 'limit']),
             (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
             (PHOTOMETRY.E_COUNT_RATE, [
                 'e_counts', 'count error', 'count rate error']),
@@ -102,11 +106,14 @@ class Converter(object):
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
             PHOTOMETRY.FLUX_DENSITY,
-            PHOTOMETRY.BAND, PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.ZERO_POINT]
-        self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
+        self._helpful_keys = [
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.INSTRUMENT,
+            PHOTOMETRY.TELESCOPE]
         self._optional_keys = [
-            PHOTOMETRY.ZERO_POINT, PHOTOMETRY.U_FLUX_DENSITY]
+            PHOTOMETRY.ZERO_POINT, PHOTOMETRY.E_MAGNITUDE,
+            PHOTOMETRY.U_FLUX_DENSITY]
         self._mc_keys = [
             PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
             PHOTOMETRY.FLUX_DENSITY]
@@ -181,13 +188,23 @@ class Converter(object):
 
                 if table is None:
                     # Count to try and determine delimiter.
-                    delims = [' ', '\t', ',', '|', '&']
-                    dcount = 0
+                    delims = [' ', '\t', ',', ';', '|', '&']
+                    delimnames = [
+                        'Space: ` `', 'Tab: `\t`', 'Comma: `,`',
+                        'Semi-colon: `;`', 'Bar: `|`', 'Ampersand: `&`']
                     delim = None
-                    for x in delims:
-                        if ftxt.count(x) > dcount:
-                            dcount = ftxt.count(x)
-                            delim = x
+                    delimcounts = [ftxt.count(x) for x in delims]
+                    maxdelimcount = max(delimcounts)
+                    delim = delims[delimcounts.index(maxdelimcount)]
+                    # If two delimiter options are close in count, ask user.
+                    for i, x in enumerate(delimcounts):
+                        if x > 0.5 * maxdelimcount and delims[i] != delim:
+                            delim = None
+                    if delim is None:
+                        odelims = list(np.array(delimnames)[
+                            np.array(delimcounts) > 0])
+                        delim = delims[prt.prompt(
+                            'delim', kind='option', options=odelims) - 1]
                     ad = list(delims)
                     ad.remove(delim)
                     ad = ''.join(ad)
@@ -356,8 +373,8 @@ class Converter(object):
                                      strip_cols])
 
                     if (PHOTOMETRY.TIME in cidict and
-                            (not isinstance(cidict[PHOTOMETRY.TIME], list)
-                             or len(cidict[PHOTOMETRY.TIME]) <= 2)):
+                            (not isinstance(cidict[PHOTOMETRY.TIME], list) or
+                             len(cidict[PHOTOMETRY.TIME]) <= 2)):
                         bi = cidict[PHOTOMETRY.TIME]
 
                         if isinstance(bi, list) and not isinstance(
@@ -365,20 +382,27 @@ class Converter(object):
                                 bi[0], string_types) and bi[0] == 'jd':
                             bi = bi[-1]
 
-                        mintime = min([float(x[bi])
-                                       for x in flines[self._first_data:]])
+                        mmtimes = [float(x[bi])
+                                   for x in flines[self._first_data:]]
+                        mintime, maxtime = min(mmtimes), max(mmtimes)
 
                         if mintime < 10000:
-                            tofftxt = prt.text('time_offset')
                             while True:
                                 try:
                                     response = prt.prompt(
-                                        tofftxt, kind='string')
+                                        'small_time_offset', kind='string')
                                     if response is not None:
                                         toffset = Decimal(response)
                                     break
                                 except Exception:
                                     pass
+                        elif maxtime > 60000 and cidict[
+                                PHOTOMETRY.TIME][0] != 'jd':
+                            isjd = prt.prompt(
+                                'large_time_offset',
+                                kind='bool', default='y')
+                            if isjd:
+                                toffset = Decimal('-2400000.5')
 
                     for row in flines[self._first_data:]:
                         photodict = {}
@@ -389,11 +413,24 @@ class Converter(object):
                             for key in cidict:
                                 if key in self._bool_keys:
                                     rval = row[cidict[key]]
+
+                                    if rval in self._FALSE_VALS:
+                                        rval = False
+                                    elif rval in self._TRUE_VALS:
+                                        rval = True
+
+                                    if type(rval) != 'bool':
+                                        try:
+                                            rval = bool(rval)
+                                        except Exception:
+                                            pass
+
                                     if type(rval) != 'bool':
                                         try:
                                             rval = bool(float(rval))
                                         except Exception:
                                             rval = True
+
                                     if not rval:
                                         continue
                                     row[cidict[key]] = rval
@@ -589,8 +626,8 @@ class Converter(object):
                                     del(photodict[PHOTOMETRY.E_FLUX_DENSITY])
 
                             # Apply offset time if set.
-                            if (PHOTOMETRY.TIME in photodict
-                                    and toffset != Decimal('0')):
+                            if (PHOTOMETRY.TIME in photodict and
+                                    toffset != Decimal('0')):
                                 photodict[PHOTOMETRY.TIME] = str(
                                     Decimal(photodict[PHOTOMETRY.TIME]) +
                                     toffset)
@@ -758,6 +795,12 @@ class Converter(object):
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)
             akeys.remove(PHOTOMETRY.ZERO_POINT)
+            if (PHOTOMETRY.MAGNITUDE in akeys and
+                    PHOTOMETRY.E_MAGNITUDE in akeys):
+                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
+                akeys.insert(
+                    akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
+                    PHOTOMETRY.E_MAGNITUDE)
             if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
                     PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
                 akeys.remove(PHOTOMETRY.E_MAGNITUDE)
@@ -795,17 +838,17 @@ class Converter(object):
                 continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for x in colinds
-                            if any(is_number(y) for y in columns[x])
-                            and x not in selected_cols]
+                            if any(is_number(y) for y in columns[x]) and
+                            x not in selected_cols]
             elif key.type == KEY_TYPES.TIME:
                 lcolinds = [x for x in colinds
                             if any(is_date(y) or is_number(y)
-                                   for y in columns[x])
-                            and x not in selected_cols]
+                                   for y in columns[x]) and
+                            x not in selected_cols]
             elif key.type == KEY_TYPES.STRING:
                 lcolinds = [x for x in colinds
-                            if any(not is_number(y) for y in columns[x])
-                            and x not in selected_cols]
+                            if any(not is_number(y) for y in columns[x]) and
+                            x not in selected_cols]
             else:
                 lcolinds = [x for x in colinds if x not in selected_cols]
             select = False

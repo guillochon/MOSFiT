@@ -1,3 +1,4 @@
+"""Initilization procedure for `Array` modules."""
 import inspect
 import os
 import sys

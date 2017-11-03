@@ -63,7 +63,7 @@ class Fitter(object):
 
     _MAX_ACORC = 5
     _REPLACE_AGE = 20
-    _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
+    _DEFAULT_SOURCE = {SOURCE.BIBCODE: '2017arXiv171002145G'}
 
     def __init__(self,
                  cuda=False,
@@ -126,6 +126,7 @@ class Fitter(object):
                    exclude_instruments=[],
                    exclude_systems=[],
                    exclude_sources=[],
+                   exclude_kinds=[],
                    suffix='',
                    upload=False,
                    write=False,
@@ -196,7 +197,7 @@ class Fitter(object):
         if len(walker_paths):
             try:
                 pool = MPIPool()
-            except ValueError:
+            except (ImportError, ValueError):
                 pool = SerialPool()
             if pool.is_master():
                 prt.message('walker_file')
@@ -260,7 +261,7 @@ class Fitter(object):
 
         try:
             pool = MPIPool()
-        except ValueError:
+        except (ImportError, ValueError):
             pool = SerialPool()
         if pool.is_master():
             fetched_events = self._fetcher.fetch(
@@ -294,7 +295,7 @@ class Fitter(object):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
-                    except Exception:
+                    except (ImportError, ValueError):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
@@ -339,6 +340,7 @@ class Fitter(object):
                             exclude_instruments=exclude_instruments,
                             exclude_systems=exclude_systems,
                             exclude_sources=exclude_sources,
+                            exclude_kinds=exclude_kinds,
                             band_list=band_list,
                             band_systems=band_systems,
                             band_instruments=band_instruments,
@@ -361,12 +363,12 @@ class Fitter(object):
                         ptxt = prt.text('acquire_recommended', [
                             ', '.join(list(urk))])
                         while event and len(urk) and (
-                            alt_name or self._download_recommended_data
-                            or prt.prompt(
+                            alt_name or self._download_recommended_data or
+                            prt.prompt(
                                 ptxt, [', '.join(urk)], kind='bool')):
                             try:
                                 pool = MPIPool()
-                            except ValueError:
+                            except (ImportError, ValueError):
                                 pool = SerialPool()
                             if pool.is_master():
                                 en = (alt_name if alt_name
@@ -506,7 +508,7 @@ class Fitter(object):
 
         self._method = method
         self._method = 'nester' if method in [
-            'nest', 'nested', 'nested_sampler']
+            'nest', 'nested', 'nested_sampler'] else 'ensembler'
 
         if self._method == 'nester':
             self.nester()
@@ -1122,15 +1124,7 @@ class Fitter(object):
                                 vchain = cur_chain[
                                     ti, :, int(np.floor(
                                         self._burn_in / sli)):, xi]
-                                m = len(vchain)
-                                n = len(vchain[0])
-                                mom = np.mean(np.mean(vchain, axis=1))
-                                b = n / float(m - 1) * np.sum(
-                                    (np.mean(vchain, axis=1) - mom) ** 2)
-                                w = np.mean(np.var(vchain, axis=1))
-                                v = float(n - 1) / n * w + \
-                                    float(m + 1) / (m * n) * b
-                                vws[ti][xi] = np.sqrt(v / w)
+                                vws[ti][xi] = self.psrf(vchain)
                         psrf = np.max(vws)
                         if np.isnan(psrf):
                             psrf = np.inf
@@ -1437,3 +1431,14 @@ class Fitter(object):
             data[name]['photometry'].append(photodict)
 
         return data
+
+    def psrf(self, chain):
+        """Calculate PSRF for a chain."""
+        m = len(chain)
+        n = len(chain[0])
+        mom = np.mean(np.mean(chain, axis=1))
+        b = n / float(m - 1) * np.sum(
+            (np.mean(chain, axis=1) - mom) ** 2)
+        w = np.mean(np.var(chain, axis=1, ddof=1))
+        v = float(n - 1) / float(n) * w + (b / float(n))
+        return np.sqrt(v / w)
