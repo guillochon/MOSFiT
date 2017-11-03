@@ -948,7 +948,7 @@ class Model(object):
                 self._references[root].extend(self._modules[task]._REFERENCES)
 
             if '_delete_keys' in outputs:
-                for key in outputs['_delete_keys']:
+                for key in list(outputs['_delete_keys'].keys()):
                     del(outputs[key])
                 del(outputs['_delete_keys'])
 
