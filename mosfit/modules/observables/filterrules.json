@@ -403,6 +403,48 @@
 	{
 		"telescopes": [
 			"",
+			"skymapper",
+			"SkyMapper"
+		],
+		"instruments": [
+			"",
+			"skymapper",
+			"SkyMapper"
+		],
+		"systems": [
+			"",
+			"AB"
+		],
+		"filters": {
+			"u": {
+				"SVO": "SkyMapper/SkyMapper.u",
+				"offset": 0
+			},
+			"v": {
+				"SVO": "SkyMapper/SkyMapper.v",
+				"offset": 0
+			},
+			"g": {
+				"SVO": "SkyMapper/SkyMapper.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "SkyMapper/SkyMapper.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "SkyMapper/SkyMapper.i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "SkyMapper/SkyMapper.z",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
 			"GALEX"
 		],
 		"instruments": [
