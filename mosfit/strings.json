@@ -15,6 +15,7 @@
     "cant_dl_svo": "Could not download SVO filter (are you online?), using cached filter.",
     "cant_read_names": "Could not read list of {} names!",
     "cant_read_svo": "Error: Could not read SVO filter!",
+    "check_all_files": "Do all the remaining files to be converted have the same format as `{}` (exact same columns, sources, etc.)?",
     "construct_obs_array": "Constructing observation array [ {0:3.1f}% ]",
     "constructing": "\nConstructing output...",
     "converged": "Converged!",

@@ -145,6 +145,8 @@ class Converter(object):
         prt = self._printer
         cidict = OrderedDict()
         intro_shown = False
+        check_all_files = None
+        shared_sources = []
 
         new_event_list = []
         previous_file = None
@@ -283,14 +285,22 @@ class Converter(object):
                             'Number of columns in each row not '
                             'consistent!')
 
-                    if len(cidict) and len(new_event_list):
+                    if len(cidict) and len(
+                            new_event_list) and check_all_files is None:
+                        reps = [previous_file] if previous_file else [''.join(
+                            new_event_list[-1].split('.')[:-1])]
+                        check_all_files = not prt.prompt(
+                            'check_all_files', reps=reps, kind='bool')
+
+                    if check_all_files or check_all_files is None:
+                        shared_sources = []
+
+                    if len(cidict) and len(new_event_list) and check_all_files:
                         msg = ('is_file_same' if
                                previous_file else 'is_event_same')
                         reps = [previous_file] if previous_file else [''.join(
                             new_event_list[-1].split('.')[:-1])]
-                        text = prt.text(msg, reps)
-                        is_same = prt.prompt(text, message=False,
-                                             kind='bool')
+                        is_same = prt.prompt(msg, reps=reps, kind='bool')
                         if not is_same:
                             cidict = OrderedDict()
 
@@ -319,15 +329,15 @@ class Converter(object):
                     else:
                         new_event_name = '.'.join(event.split(
                             '.')[:-1]).split('/')[-1]
-                        text = prt.message(
-                            'is_event_name', [new_event_name], prt=False)
-                        is_name = prt.prompt(text, message=False,
-                                             kind='bool', default='y')
-                        if not is_name:
-                            new_event_name = ''
-                            while new_event_name.strip() == '':
-                                new_event_name = prt.prompt(
-                                    'enter_name', kind='string')
+                        if check_all_files or check_all_files is None:
+                            is_name = prt.prompt(
+                                'is_event_name', reps=[new_event_name],
+                                kind='bool', default='y')
+                            if not is_name:
+                                new_event_name = ''
+                                while new_event_name.strip() == '':
+                                    new_event_name = prt.prompt(
+                                        'enter_name', kind='string')
                         event_names.append(new_event_name)
                         new_events = [new_event_name + '.json']
 
@@ -405,7 +415,7 @@ class Converter(object):
                                 toffset = Decimal('-2400000.5')
 
                     for row in flines[self._first_data:]:
-                        photodict = {}
+                        photodict = OrderedDict()
                         rname = (row[cidict[ENTRY.NAME]]
                                  if ENTRY.NAME in cidict else event_names[0])
                         for pi in range(perms):
@@ -549,7 +559,7 @@ class Converter(object):
                                     set_pd_mag_from_flux_density(
                                         photodict, fd=Decimal(fd) * mult,
                                         efd=Decimal(efd) * mult)
-                            if not len(sources):
+                            if not len(sources) and not len(shared_sources):
                                 if use_self_source is None:
                                     sopts = [
                                         ('Bibcode', 'b'), ('Last name', 'l')]
@@ -565,7 +575,7 @@ class Converter(object):
                                             None if self._require_source else
                                             'Neither, tag MOSFiT as source'))
                                     if skind == 'b':
-                                        rsource = {}
+                                        rsource = OrderedDict()
                                         bibcode = ''
 
                                         while len(bibcode) != 19:
@@ -584,7 +594,7 @@ class Converter(object):
                                             SOURCE.BIBCODE] = bibcode
                                         use_self_source = False
                                     elif skind == 'l':
-                                        rsource = {}
+                                        rsource = OrderedDict()
                                         last_name = prt.prompt(
                                             'last_name', kind='string'
                                         )
@@ -596,9 +606,15 @@ class Converter(object):
                                     elif skind == 'n':
                                         use_self_source = True
 
-                                photodict[
-                                    PHOTOMETRY.SOURCE] = entries[
-                                        rname].add_source(**rsource)
+                                    shared_sources.append(rsource)
+
+                            if len(shared_sources):
+                                src_list = []
+                                for src in shared_sources:
+                                    src_list.append(entries[
+                                        rname].add_source(**src))
+                                    photodict[PHOTOMETRY.SOURCE] = ','.join(
+                                        src_list)
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')

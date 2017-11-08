@@ -225,7 +225,8 @@ class Printer(object):
                 warning=warning, error=error, color=color)
         return text
 
-    def prompt(self, text, wrap_length=None, kind='bool', default=None,
+    def prompt(self, text, reps=[],
+               wrap_length=None, kind='bool', default=None,
                none_string='None of the above.', colorify=True, single=False,
                options=None, translate=True, message=True, color='',
                allow_blank=True):
@@ -303,7 +304,7 @@ class Printer(object):
                 raise ValueError('Unknown prompt kind.')
 
             if message and text in self._strings:
-                text = self.message(text, prt=False)
+                text = self.message(text, reps=reps, prt=False)
             textchoices = text + choices
             if translate:
                 textchoices = self.translate(textchoices)
