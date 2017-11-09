@@ -562,7 +562,8 @@ class Converter(object):
                             if not len(sources) and not len(shared_sources):
                                 if use_self_source is None:
                                     sopts = [
-                                        ('Bibcode', 'b'), ('Last name', 'l')]
+                                        ('Bibcode', 'b'), ('DOI', 'd'),
+                                        ('ArXiv ID', 'a'), ('Last name', 'l')]
                                     if self._require_source:
                                         sel_str = 'must_select_source'
                                     else:
@@ -593,10 +594,25 @@ class Converter(object):
                                         rsource[
                                             SOURCE.BIBCODE] = bibcode
                                         use_self_source = False
+                                    elif skind == 'd':
+                                        rsource = OrderedDict()
+                                        doi = prt.prompt(
+                                            'doi', kind='string',
+                                            allow_blank=False)
+                                        rsource[SOURCE.DOI] = doi.strip()
+                                        use_self_source = False
+                                    elif skind == 'a':
+                                        rsource = OrderedDict()
+                                        arxiv = prt.prompt(
+                                            'arxiv', kind='string',
+                                            allow_blank=False)
+                                        rsource[SOURCE.ARXIVID] = arxiv.strip()
+                                        use_self_source = False
                                     elif skind == 'l':
                                         rsource = OrderedDict()
                                         last_name = prt.prompt(
-                                            'last_name', kind='string'
+                                            'last_name', kind='string',
+                                            allow_blank=False
                                         )
                                         rsource[
                                             SOURCE.NAME] = (

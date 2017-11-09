@@ -1,4 +1,4 @@
-astrocats>=0.3.27
+astrocats>=0.3.28
 astropy>=1.3
 Cython>=0.24.1
 emcee>=2.2.1
