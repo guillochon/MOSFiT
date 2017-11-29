@@ -129,6 +129,8 @@ class Converter(object):
             PHOTOMETRY.E_UPPER_FLUX, PHOTOMETRY.E_UNABSORBED_FLUX,
             PHOTOMETRY.E_LOWER_UNABSORBED_FLUX,
             PHOTOMETRY.E_UPPER_UNABSORBED_FLUX]
+        self._positive_keys = [
+            PHOTOMETRY.MAGNITUDE] + self._purge_non_numeric_keys
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
@@ -690,6 +692,11 @@ class Converter(object):
                                 (PHOTOMETRY.get_key_by_name(x).type ==
                                  KEY_TYPES.NUMERIC)]):
                                 continue
+
+                            # Remove some attributes if not positive.
+                            for attr in self._positive_keys:
+                                if float(photodict.get(attr, 1)) <= 0:
+                                    del(photodict[attr])
 
                             # Skip placeholder values.
                             if float(photodict.get(
