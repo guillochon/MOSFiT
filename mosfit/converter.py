@@ -77,7 +77,7 @@ class Converter(object):
         self._header_keys = OrderedDict((
             (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd'), 'date']),
             (PHOTOMETRY.SYSTEM, ['system']),
-            (PHOTOMETRY.MAGNITUDE, ['mag', 'magnitude']),
+            (PHOTOMETRY.MAGNITUDE, ['vega mag', 'ab mag', 'mag', 'magnitude']),
             (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
             (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
             (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
@@ -121,6 +121,14 @@ class Converter(object):
             PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
             PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.U_FLUX_DENSITY,
             PHOTOMETRY.BAND]
+        self._purge_non_numeric_keys = [
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_LOWER_MAGNITUDE,
+            PHOTOMETRY.E_UPPER_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.E_LOWER_COUNT_RATE, PHOTOMETRY.E_UPPER_COUNT_RATE,
+            PHOTOMETRY.E_FLUX, PHOTOMETRY.E_LOWER_FLUX,
+            PHOTOMETRY.E_UPPER_FLUX, PHOTOMETRY.E_UNABSORBED_FLUX,
+            PHOTOMETRY.E_LOWER_UNABSORBED_FLUX,
+            PHOTOMETRY.E_UPPER_UNABSORBED_FLUX]
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
@@ -219,8 +227,11 @@ class Converter(object):
                         for x in fsplit]
                     flines = []
                     for fs in fsplit:
+                        # Replace repeated spaces if fixed-width
+                        if delim in [' ']:
+                            fsn = re.sub(r'(\s)\1+', r'\1', fs)
                         flines.append(list(
-                            csv.reader([fs], delimiter=delim))[0])
+                            csv.reader([fsn], delimiter=delim))[0])
 
                     flines = [[
                         x.strip(ad + '#$()\\')
@@ -443,7 +454,8 @@ class Converter(object):
 
                                     if not rval:
                                         continue
-                                    row[cidict[key]] = rval
+                                    if rval:
+                                        row[cidict[key]] = rval
                                 elif key == 'reference':
                                     if (isinstance(cidict[key],
                                                    string_types) and
@@ -574,7 +586,8 @@ class Converter(object):
                                         options=sopts, default='b',
                                         none_string=(
                                             None if self._require_source else
-                                            'Neither, tag MOSFiT as source'))
+                                            ('None of the above, '
+                                             'tag MOSFiT as source')))
                                     if skind == 'b':
                                         rsource = OrderedDict()
                                         bibcode = ''
@@ -664,10 +677,15 @@ class Converter(object):
                                     Decimal(photodict[PHOTOMETRY.TIME]) +
                                     toffset)
 
+                            # Remove some attributes if not numeric.
+                            for attr in self._purge_non_numeric_keys:
+                                if not is_number(photodict.get(attr, 0)):
+                                    del(photodict[attr])
+
                             # Skip entries for which key values are not
                             # expected type.
                             if not all([
-                                is_number(photodict.get(x, ''))
+                                is_number(photodict.get(x, 0))
                                 for x in photodict.keys() if
                                 (PHOTOMETRY.get_key_by_name(x).type ==
                                  KEY_TYPES.NUMERIC)]):
@@ -936,7 +954,7 @@ class Converter(object):
                 else:
                     self._use_mc = True
                     select = False
-                    while select is not None:
+                    while select is not None and len(lcolinds):
                         text = prt.message(
                             'select_mc_column', [key], prt=False)
                         select = prt.prompt(
