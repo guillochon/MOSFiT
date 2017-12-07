@@ -39,11 +39,11 @@ class RProcess(Engine):
                               0.74, 1.13, 1.32], [0.6, 0.9, 1.13]])
 
         self.therm_func_a = RegularGridInterpolator(
-            (barnes_M, barnes_v), barnes_a, bounds_error=False, fill_value=1.0)
+            (barnes_M, barnes_v), barnes_a, bounds_error=False, fill_value=None)
         self.therm_func_b = RegularGridInterpolator(
-            (barnes_M, barnes_v), barnes_b, bounds_error=False, fill_value=1.0)
+            (barnes_M, barnes_v), barnes_b, bounds_error=False, fill_value=None)
         self.therm_func_d = RegularGridInterpolator(
-            (barnes_M, barnes_v), barnes_d, bounds_error=False, fill_value=1.0)
+            (barnes_M, barnes_v), barnes_d, bounds_error=False, fill_value=None)
 
     def process(self, **kwargs):
         """Process module."""
