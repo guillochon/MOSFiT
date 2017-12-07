@@ -66,11 +66,11 @@ class Converter(object):
         self._emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
             'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR',
-            'e_', '_e']
+            'e_', '_e', '(err)']
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
             'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
-            "z'", 'C', 'Y'
+            "z'", 'C', 'Y', 'Open'
         ]
         self._emagstrs = self._emagstrs + [a + b for a, b in chain(
             product(self._emagstrs, self._band_names),
@@ -206,7 +206,12 @@ class Converter(object):
                         'Space: ` `', 'Tab: `\t`', 'Comma: `,`',
                         'Semi-colon: `;`', 'Bar: `|`', 'Ampersand: `&`']
                     delim = None
-                    delimcounts = [ftxt.count(x) for x in delims]
+                    delimcounts = [re.sub(
+                        re.escape(y) + '+', y, re.sub(
+                            ' ?[' + ''.join([re.escape(
+                                x) for x in delims if x != y]) + ']' +
+                            ' ?', '', ftxt)).count(
+                                y) for y in delims]
                     maxdelimcount = max(delimcounts)
                     delim = delims[delimcounts.index(maxdelimcount)]
                     # If two delimiter options are close in count, ask user.
@@ -233,6 +238,8 @@ class Converter(object):
                         # Replace repeated spaces if fixed-width
                         if delim in [' ']:
                             fsn = re.sub(r'(\s)\1+', r'\1', fs)
+                        else:
+                            fsn = fs
                         flines.append(list(
                             csv.reader([fsn], delimiter=delim))[0])
 
@@ -768,17 +775,20 @@ class Converter(object):
         mpatt = re.compile('mag', re.IGNORECASE)
 
         for fi, fl in enumerate(flines):
+            print(fl)
             if not any([is_number(x) for x in fl]):
                 # Try to associate column names with common header keys.
                 conflict_keys = []
                 conflict_cis = []
                 for ci, col in enumerate(fl):
                     for key in self._header_keys:
+                        print(key)
                         if any([(x[0] if isinstance(x, tuple)
                                  else x) == col.lower()
                                 for x in self._header_keys[key]]):
                             if key in cidict or ci in used_cis:
                                 # There is a conflict, ask user.
+                                print('hello')
                                 conflict_keys.append(key)
                                 conflict_cis.append(ci)
                             else:
