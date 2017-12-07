@@ -59,7 +59,7 @@
     "is_file_same": "Does this file have the same format as `{}` (exact same columns, sources, etc.)?",
     "iterations_0": "No events specified, running in !mgenerative!e mode (setting iterations to 0).",
     "join_which_columns": "\nSelect the columns to be joined, in the order that they should be joined:",
-    "large_time_offset": "The maximum time found is before the year 1900, suggesting the time is not MJD, but JD. Are the times found in this file in JD?",
+    "large_time_offset": "The maximum time found is after the year 2100, suggesting the time is not MJD, but JD. Are the times found in this file in JD?",
     "last_name": "Please enter the last name of the first author of this work:",
     "loading_bands": "Loading bands [ {0:.0f}% ]",
     "loading_data": "\nLoading data...",

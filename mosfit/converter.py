@@ -56,6 +56,7 @@ class Converter(object):
 
     _TRUE_VALS = ['t', 'true', 'T', 'True', '1', 'y', 'Y']
     _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
+    _EMPTY_VALS = ['nodata']
 
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
@@ -228,6 +229,21 @@ class Converter(object):
                     ad = ''.join(ad)
 
                     fsplit = ftxt.splitlines()
+
+                    # See if we need to append blank errors to upper limits.
+                    tsplit = [
+                        x.replace('$', '').replace('\\pm', delim)
+                        .replace('±', delim)
+                        .strip(ad + '()# ').replace('′', "'")
+                        for x in fsplit]
+
+                    append_missing_errs = False
+                    for fl in tsplit:
+                        if any([is_number(x) for x in fl]) and any([
+                                '(' for x in fl]):
+                            append_missing_errs = True
+                            break
+
                     fsplit = [
                         x.replace('$', '').replace('\\pm', delim)
                         .replace('±', delim).replace('(', delim + '(')
@@ -260,6 +276,13 @@ class Converter(object):
                                     flcopy.insert(fci + 1 + offset, 'e mag')
                                     offset += 1
                         flines[fi] = flcopy
+
+                    # Append blank errors to upper limits.
+                    if append_missing_errs:
+                        flines = [[x for y in [
+                            ([z, '-'] if ('<' in z or '>' in z or
+                                          z in self._EMPTY_VALS) else [z])
+                            for z in fl] for x in y] for fl in flines]
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -408,8 +431,9 @@ class Converter(object):
                              len(cidict[PHOTOMETRY.TIME]) <= 2)):
                         bi = cidict[PHOTOMETRY.TIME]
 
-                        bistr = 'MJD' if not isinstance(
-                            bi, list) else bi[0].upper()
+                        bistr = bi[0].upper() if isinstance(
+                            bi, list) and not isinstance(
+                                bi, string_types) else 'MJD'
 
                         if isinstance(bi, list) and not isinstance(
                             bi, string_types) and isinstance(
@@ -433,8 +457,7 @@ class Converter(object):
                                     break
                                 except Exception:
                                     pass
-                        elif maxtime > 60000 and cidict[
-                                PHOTOMETRY.TIME][0] != 'jd':
+                        elif maxtime > 90000 and bistr != 'JD':
                             isjd = prt.prompt(
                                 'large_time_offset',
                                 kind='bool', default='y')
@@ -775,20 +798,17 @@ class Converter(object):
         mpatt = re.compile('mag', re.IGNORECASE)
 
         for fi, fl in enumerate(flines):
-            print(fl)
             if not any([is_number(x) for x in fl]):
                 # Try to associate column names with common header keys.
                 conflict_keys = []
                 conflict_cis = []
                 for ci, col in enumerate(fl):
                     for key in self._header_keys:
-                        print(key)
                         if any([(x[0] if isinstance(x, tuple)
                                  else x) == col.lower()
                                 for x in self._header_keys[key]]):
                             if key in cidict or ci in used_cis:
                                 # There is a conflict, ask user.
-                                print('hello')
                                 conflict_keys.append(key)
                                 conflict_cis.append(ci)
                             else:
