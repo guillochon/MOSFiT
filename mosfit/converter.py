@@ -65,10 +65,11 @@ class Converter(object):
 
         self._emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR']
+            'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR',
+            'e_', '_e']
         self._band_names = [
-            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "K'", 'u', 'g',
-            'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
+            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
+            'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
             "z'", 'C', 'Y'
         ]
         self._emagstrs = self._emagstrs + [a + b for a, b in chain(
@@ -400,6 +401,9 @@ class Converter(object):
                              len(cidict[PHOTOMETRY.TIME]) <= 2)):
                         bi = cidict[PHOTOMETRY.TIME]
 
+                        bistr = 'MJD' if not isinstance(
+                            bi, list) else bi[0].upper()
+
                         if isinstance(bi, list) and not isinstance(
                             bi, string_types) and isinstance(
                                 bi[0], string_types) and bi[0] == 'jd':
@@ -409,11 +413,14 @@ class Converter(object):
                                    for x in flines[self._first_data:]]
                         mintime, maxtime = min(mmtimes), max(mmtimes)
 
-                        if mintime < 10000:
+                        if (bistr == 'MJD' and mintime < 10000 or
+                                bistr == 'JD' and mintime < 2410000):
                             while True:
                                 try:
                                     response = prt.prompt(
-                                        'small_time_offset', kind='string')
+                                        'small_time_offset', [
+                                            bistr for x in range(3)],
+                                        kind='string')
                                     if response is not None:
                                         toffset = Decimal(response)
                                     break
@@ -758,6 +765,7 @@ class Converter(object):
         akeys = list(self._critical_keys) + list(self._helpful_keys)
         dkeys = list(self._dep_keys)
         prt = self._printer
+        mpatt = re.compile('mag', re.IGNORECASE)
 
         for fi, fl in enumerate(flines):
             if not any([is_number(x) for x in fl]):
@@ -817,11 +825,12 @@ class Converter(object):
                     for ci, col in enumerate(fl):
                         if ci in used_cis:
                             continue
-                        if col in self._band_names:
+                        ccol = mpatt.sub('', col)
+                        if ccol in self._band_names:
                             cidict.setdefault(key, []).append(ci)
                             used_cis[ci] = key
-                            cidict.setdefault(bkey, []).append(col)
-                        elif col in self._emagstrs:
+                            cidict.setdefault(bkey, []).append(ccol)
+                        elif ccol in self._emagstrs:
                             cidict.setdefault(ekey, []).append(ci)
                             used_cis[ci] = ekey
 

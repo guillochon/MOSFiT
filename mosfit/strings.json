@@ -104,7 +104,7 @@
     "select_source": "No reference information was found in the provided file. While a bibcode is preferred, you can use your last name as a placeholder for unpublished works.",
     "single_freq": "Single frequency instruments (e.g. radio):",
     "small_lumdist": "Luminosity distance less than 1 Mpc (`{}` pc), setting redshift to 0.",
-    "small_time_offset": "The minimum time found is before the year 1900, suggesting the time is not MJD, but rather relative to a particular MJD offset. Please enter the MJD offset for the times found in this file (leave blank for no offset):",
+    "small_time_offset": "The minimum time found is before the year 1900, suggesting the time is not {}, but rather relative to a particular {} offset. Please enter the {} offset for the times found in this file (leave blank for no offset):",
     "specify_column": "None of the above, use the same value for all rows.",
     "specify_mc_value": "\nPlease specify `{}` for this set of `{}s`:",
     "specify_value": "\nPlease specify `{}`, which will be assumed for all rows:",
