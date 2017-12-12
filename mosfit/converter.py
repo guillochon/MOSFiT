@@ -60,6 +60,10 @@ class Converter(object):
 
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
+        from mosfit.__init__ import __version__
+        import pickle
+
+        self._path = os.path.dirname(os.path.realpath(__file__))
         self._inflect = inflect.engine()
         self._printer = printer
         self._require_source = require_source
@@ -76,35 +80,51 @@ class Converter(object):
         self._emagstrs = self._emagstrs + [a + b for a, b in chain(
             product(self._emagstrs, self._band_names),
             product(self._band_names, self._emagstrs))]
-        self._header_keys = OrderedDict((
-            (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd'), 'date']),
-            (PHOTOMETRY.SYSTEM, ['system']),
-            (PHOTOMETRY.MAGNITUDE, ['vega mag', 'ab mag', 'mag', 'magnitude']),
-            (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
-            (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
-            (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
-            (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'flt']),
-            (PHOTOMETRY.E_LOWER_MAGNITUDE, [a + ' ' + b for a, b in chain(
-                product(self._emagstrs, ['minus', 'lower']),
-                product(['minus', 'lower'], self._emagstrs))]),
-            (PHOTOMETRY.E_UPPER_MAGNITUDE, [a + ' ' + b for a, b in chain(
-                product(self._emagstrs, ['plus', 'upper']),
-                product(['plus', 'upper'], self._emagstrs))]),
-            (PHOTOMETRY.UPPER_LIMIT, [
-             'upper limit', 'upperlimit', 'l_mag', 'limit']),
-            (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
-            (PHOTOMETRY.E_COUNT_RATE, [
-                'e_counts', 'count error', 'count rate error']),
-            (PHOTOMETRY.FLUX_DENSITY, ['flux density', 'fd', 'f_nu']),
-            (PHOTOMETRY.E_FLUX_DENSITY, [
-                'e_flux_density', 'flux density error', 'e_fd', 'sigma_nu']),
-            (PHOTOMETRY.U_FLUX_DENSITY, []),
-            (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
-            ('reference', ['reference', 'bibcode', 'source', 'origin']),
-            (ENTRY.NAME, [
-                'event', 'transient', 'name', 'supernova', 'sne', 'id',
-                'identifier'])
-        ))
+        key_cache_path = os.path.join(
+            self._path, 'cache', 'key_cache_{}.pickle'.format(__version__))
+        hks_loaded = False
+        if os.path.isfile(key_cache_path):
+            try:
+                self._header_keys = pickle.load(open(key_cache_path, 'rb'))
+                hks_loaded = True
+            except Exception:
+                printer.message('bad_header_pickle', warning=True)
+                if hasattr(self, '_header_keys'):
+                    del(self._header_keys)
+        if not hks_loaded:
+            self._header_keys = OrderedDict((
+                (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd'),
+                                   ('julian date', 'jd'), 'date']),
+                (PHOTOMETRY.SYSTEM, ['system']),
+                (PHOTOMETRY.MAGNITUDE, [
+                 'vega mag', 'ab mag', 'mag', 'magnitude']),
+                (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
+                (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
+                (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
+                (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'flt']),
+                (PHOTOMETRY.E_LOWER_MAGNITUDE, [a + ' ' + b for a, b in chain(
+                    product(self._emagstrs, ['minus', 'lower']),
+                    product(['minus', 'lower'], self._emagstrs))]),
+                (PHOTOMETRY.E_UPPER_MAGNITUDE, [a + ' ' + b for a, b in chain(
+                    product(self._emagstrs, ['plus', 'upper']),
+                    product(['plus', 'upper'], self._emagstrs))]),
+                (PHOTOMETRY.UPPER_LIMIT, [
+                 'upper limit', 'upperlimit', 'l_mag', 'limit']),
+                (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
+                (PHOTOMETRY.E_COUNT_RATE, [
+                    'e_counts', 'count error', 'count rate error']),
+                (PHOTOMETRY.FLUX_DENSITY, ['flux density', 'fd', 'f_nu']),
+                (PHOTOMETRY.E_FLUX_DENSITY, [
+                    'e_flux_density', 'flux density error', 'e_fd',
+                    'sigma_nu']),
+                (PHOTOMETRY.U_FLUX_DENSITY, []),
+                (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
+                ('reference', ['reference', 'bibcode', 'source', 'origin']),
+                (ENTRY.NAME, [
+                    'event', 'transient', 'name', 'supernova', 'sne', 'id',
+                    'identifier'])
+            ))
+
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
             PHOTOMETRY.FLUX_DENSITY,
@@ -141,16 +161,18 @@ class Converter(object):
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
         self._converted = []
 
-        for key in self._header_keys.keys():
-            for val in self._header_keys[key]:
-                for i in range(val.count(' ')):
-                    rep = val.replace(' ', '_', i + 1)
-                    if rep not in self._header_keys[key]:
-                        self._header_keys[key].append(rep)
-                for i in range(val.count(' ')):
-                    rep = val.replace(' ', '', i + 1)
-                    if rep not in self._header_keys[key]:
-                        self._header_keys[key].append(rep)
+        if not hks_loaded:
+            for key in self._header_keys.keys():
+                for val in self._header_keys[key]:
+                    for i in range(val.count(' ')):
+                        rep = val.replace(' ', '_', i + 1)
+                        if rep not in self._header_keys[key]:
+                            self._header_keys[key].append(rep)
+                    for i in range(val.count(' ')):
+                        rep = val.replace(' ', '', i + 1)
+                        if rep not in self._header_keys[key]:
+                            self._header_keys[key].append(rep)
+            pickle.dump(self._header_keys, open(key_cache_path, 'wb'))
 
     def generate_event_list(self, event_list):
         """Generate a list of events and/or convert events to JSON format."""
