@@ -71,7 +71,7 @@ class Converter(object):
         self._emagstrs = [
             'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
             'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR',
-            'e_', '_e', '(err)']
+            'e_', '_e', '(err)', 'uncertainty']
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
             'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
