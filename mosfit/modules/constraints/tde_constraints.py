@@ -21,12 +21,12 @@ class TDEConstraints(Constraint):
         self._score_modifier = 0.0
         self._rp = kwargs[self.key('rp')]  # already in cgs
         self._bhmass = kwargs['bhmass']
-        self._Rs = (2 * c.G.cgs.value * self._bhmass * M_SUN_CGS /
+        self._Rg = (c.G.cgs.value * self._bhmass * M_SUN_CGS /
                     (C_CGS * C_CGS))
 
         # Pericenter radius is getting close to Schwarzschild radius
-        if (self._Rs / self._rp > 0.1):
+        if (self._Rg / self._rp > 0.1):
             # soft limit
-            self._score_modifier -= 100.0**(self._Rs / self._rp)
+            self._score_modifier -= 1000.0**(10.0*(self._Rg / self._rp - 0.9))
 
         return {self.key('score_modifier'): self._score_modifier}
