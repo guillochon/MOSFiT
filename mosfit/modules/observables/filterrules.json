@@ -10,9 +10,9 @@
 				"delta_wavelength": 50
 			},
             "white_extended": {
-                "min_wavelength": 20.0,
-                "max_wavelength": 11000.0,
-                "delta_wavelength": 100.0
+                "min_wavelength": 20,
+                "max_wavelength": 11000,
+                "delta_wavelength": 100
             }
 		}
 	},
@@ -1715,5 +1715,4 @@
 			}
 		}
 	}
->>>>>>> 6027be0298d7b29d54c8cdc2bdbb14742e3da164
 ]
