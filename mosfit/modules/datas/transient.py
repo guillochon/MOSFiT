@@ -14,6 +14,14 @@ from mosfit.utils import listify
 class Transient(Module):
     """Structure to store transient data."""
 
+    _REFERENCES = [
+        {SOURCE.BIBCODE: '2017arXiv171002145G'}
+    ]
+    _EX_REPS = {
+        'rad': 'radio',
+        'xray': 'x-ray'
+    }
+
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Transient, self).__init__(**kwargs)
@@ -35,6 +43,7 @@ class Transient(Module):
                  exclude_instruments=[],
                  exclude_systems=[],
                  exclude_sources=[],
+                 exclude_kinds=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -42,6 +51,8 @@ class Transient(Module):
                  band_modes=[],
                  band_bandsets=[]):
         """Set transient data."""
+        prt = self._printer
+
         self._all_data = all_data
         self._data = OrderedDict()
         if not self._all_data:
@@ -49,6 +60,9 @@ class Transient(Module):
         name = list(self._all_data.keys())[0]
         self._data['name'] = name
         numeric_keys = set()
+
+        ex_kinds = [self._EX_REPS.get(
+            x.lower(), x.lower()) for x in exclude_kinds]
 
         # Construct some source dictionaries for exclusion rules
         src_dict = OrderedDict()
@@ -78,12 +92,16 @@ class Transient(Module):
                 x for x in subkeys if 'exclude' in listify(subkeys[x])
             ]
 
-            if key not in self._all_data[name]:
+            if (key not in self._all_data[name] and not
+                    self._model.is_parameter_fixed_by_user(key)):
                 if subkeys.get('value', None) == 'recommended':
                     self._unset_recommended_keys.add(key)
                 continue
 
-            subdata = self._all_data[name][key]
+            subdata = self._all_data[name].get(key)
+
+            if subdata is None:
+                continue
 
             # Only include data that contains all subkeys
             for entry in subdata:
@@ -111,7 +129,22 @@ class Transient(Module):
                             break
 
                 if key == 'photometry':
+                    if ex_kinds is not False:
+                        if 'radio' in ex_kinds:
+                            if ('fluxdensity' in entry and
+                                'magnitude' not in entry and
+                                    'countrate' not in entry):
+                                continue
+                        if 'x-ray' in ex_kinds:
+                            if (('countrate' in entry or
+                                 'unabsorbedflux' in entry or
+                                 'flux' in entry) and
+                                'magnitude' not in entry and
+                                    'fluxdensity' not in entry):
+                                continue
+
                     skip_entry = False
+
                     for x in subkeys:
                         if limit_fitting_mjds is not False and x == 'time':
                             val = np.mean([
@@ -124,8 +157,9 @@ class Transient(Module):
                         if exclude_bands is not False and x == 'band':
                             if (entry.get(x, '') in exclude_bands and
                                 (not exclude_instruments or entry.get(
-                                    'instrument', '') in exclude_instruments)
-                                and (not exclude_systems or entry.get(
+                                    'instrument', '') in
+                                 exclude_instruments) and (
+                                     not exclude_systems or entry.get(
                                     'system', '') in exclude_systems)):
                                 skip_entry = True
                                 break
@@ -133,8 +167,9 @@ class Transient(Module):
                                 x == 'instrument'):
                             if (entry.get(x, '') in exclude_instruments and
                                 (not exclude_bands or
-                                 entry.get('band', '') in exclude_bands)
-                                and (not exclude_systems or entry.get(
+                                 entry.get('band', '') in
+                                 exclude_bands) and (
+                                     not exclude_systems or entry.get(
                                     'system', '') in exclude_systems)):
                                 skip_entry = True
                                 break
@@ -142,8 +177,9 @@ class Transient(Module):
                                 x == 'system'):
                             if (entry.get(x, '') in exclude_systems and
                                 (not exclude_bands or
-                                 entry.get('band', '') in exclude_bands)
-                                and (not exclude_instruments or entry.get(
+                                 entry.get('band', '') in
+                                 exclude_bands) and (
+                                     not exclude_instruments or entry.get(
                                     'instrument', '') in exclude_instruments)):
                                 skip_entry = True
                                 break
@@ -151,9 +187,9 @@ class Transient(Module):
                                 x == 'source'):
                             val = entry.get(x, '')
                             if (any([x in exclude_sources
-                                     for x in val.split(',')])
-                                or any([src_dict.get(x, '') in exclude_sources
-                                        for x in val.split(',')])):
+                                     for x in val.split(',')]) or
+                                any([src_dict.get(x, '') in exclude_sources
+                                     for x in val.split(',')])):
                                 skip_entry = True
                                 break
                     if skip_entry:
@@ -189,7 +225,7 @@ class Transient(Module):
 
         if 'times' not in self._data or not any([x in self._data for x in [
                 'magnitudes', 'frequencies', 'countrates']]):
-            self._printer.message('no_fittable_data', [name])
+            prt.message('no_fittable_data', [name])
             return False
 
         for key in list(self._data.keys()):
@@ -267,10 +303,12 @@ class Transient(Module):
                     self._data['u_frequencies'])))
 
             obslist = []
-            for t in alltimes:
+            for ti, t in enumerate(alltimes):
+                new_per = np.round(100.0 * float(ti) / len(alltimes), 1)
+                prt.message('construct_obs_array', [new_per], inline=True)
                 for o in uniqueobs:
                     newobs = tuple([t] + list(o))
-                    if newobs not in obslist and newobs not in currobslist:
+                    if newobs not in currobslist:
                         obslist.append(newobs)
 
             obslist.sort()

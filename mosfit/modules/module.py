@@ -82,7 +82,13 @@ class Module(object):
         """Substitute user-defined replacement key names for local names."""
         new_key = key
         for rep in self._replacements:
-            new_key = new_key.replace(rep, self._replacements[rep])
+            if new_key == rep:
+                new_key = self._replacements[rep]
+                return new_key
+            elif (new_key.startswith('dense') and
+                  new_key.split('_')[-1] == rep):
+                new_key = 'dense_' + self._replacements[rep]
+                return new_key
         return new_key
 
     def prepare_input(self, key, **kwargs):

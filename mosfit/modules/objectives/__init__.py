@@ -1,3 +1,4 @@
+"""Initilization procedure for `Objective` modules."""
 import inspect
 import os
 import sys

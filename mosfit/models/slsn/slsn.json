@@ -34,7 +34,7 @@
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"B"
+        "latex":"B\\,(10^{14}\\,{\\rm G})"
     },
     "Mns":{
         "kind":"parameter",

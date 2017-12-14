@@ -179,6 +179,14 @@ def get_parser():
               "Open Astronomy Catalog page for each transient. "))
 
     parser.add_argument(
+        '--exclude-kinds',
+        dest='exclude_kinds',
+        default=[],
+        nargs='+',
+        help=("List of kinds of observations to exclude when fitting. These "
+              "are specified using keywords such as `radio` or `x-ray`. "))
+
+    parser.add_argument(
         '--fix-parameters',
         '-F',
         dest='user_fixed_parameters',
@@ -503,7 +511,9 @@ def get_parser():
         default=[],
         nargs='+',
         help=("Create a separate `Variance` for each type of observation "
-              "specified. Currently `band` is the only valid option."))
+              "specified. Currently `band` is the only valid option, with "
+              "a trailing numeric value indicating the maximum fractional "
+              "difference in wavelength for two bands to be grouped."))
 
     parser.add_argument(
         '--speak',
@@ -567,8 +577,17 @@ def get_parser():
         dest='download_recommended_data',
         default=False,
         action='store_true',
-        help=("Downloads any recommended data from the Open Catalogs if not"
+        help=("Downloads any recommended data from the Open Catalogs if not "
               "provided by the user (without prompting)."))
+
+    parser.add_argument(
+        '--local-data-only',
+        dest='local_data_only',
+        default=False,
+        action='store_true',
+        help=("Will not attempt to acquire any data from the Open Catalogs "
+              "(even from cache), using only data provided locally by the "
+              "user."))
 
     return parser
 
@@ -765,23 +784,35 @@ def main():
                     os.path.join(dir_path, 'jupyter', 'mosfit.ipynb'),
                     os.path.join(os.getcwd(), 'jupyter', 'mosfit.ipynb'))
 
-            # Disabled for now as external modules don't work with MPI.
             if not os.path.exists('modules'):
                 os.mkdir(os.path.join('modules'))
             module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
             for mdir in module_dirs:
                 if mdir.startswith('__'):
                     continue
+                full_mdir = os.path.join(dir_path, 'modules', mdir)
+                copy_path = os.path.join(full_mdir, '.copy')
+                to_copy = []
+                if os.path.isfile(copy_path):
+                    to_copy = list(filter(None, open(
+                        copy_path, 'r').read().split()))
+
                 mdir_path = os.path.join('modules', mdir)
                 if not os.path.exists(mdir_path):
                     os.mkdir(mdir_path)
+                for tc in to_copy:
+                    tc_path = os.path.join(full_mdir, tc)
+                    if os.path.isfile(tc_path):
+                        shutil.copy(tc_path, os.path.join(mdir_path, tc))
+                    elif os.path.isdir(tc_path) and not os.path.exists(
+                            os.path.join(mdir_path, tc)):
+                        os.mkdir(os.path.join(mdir_path, tc))
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
                     txt = prt.message('readme-modules', [
                         os.path.join(dir_path, 'modules', 'mdir'),
                         os.path.join(dir_path, 'modules')], prt=False)
-                    with open(readme_path, 'w') as f:
-                        f.write(txt)
+                    open(readme_path, 'w').write(txt)
 
             if not os.path.exists('models'):
                 os.mkdir(os.path.join('models'))

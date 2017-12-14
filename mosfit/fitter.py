@@ -40,16 +40,16 @@ def draw_walker(test=True, walkers_pool=[], replace=False):
     return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
 
 
-def likelihood(x):
-    """Return a likelihood score using the global model variable."""
+def ln_likelihood(x):
+    """Return ln(likelihood) using the global model variable."""
     global model
-    return model.likelihood(x)  # noqa: F821
+    return model.ln_likelihood(x)  # noqa: F821
 
 
-def prior(x):
-    """Return a prior score using the global model variable."""
+def ln_prior(x):
+    """Return ln(prior) using the global model variable."""
     global model
-    return model.prior(x)  # noqa: F821
+    return model.ln_prior(x)  # noqa: F821
 
 
 def frack(x):
@@ -63,7 +63,7 @@ class Fitter(object):
 
     _MAX_ACORC = 5
     _REPLACE_AGE = 20
-    _DEFAULT_SOURCE = {SOURCE.NAME: 'MOSFiT Paper'}
+    _DEFAULT_SOURCE = {SOURCE.BIBCODE: '2017arXiv171002145G'}
 
     def __init__(self,
                  cuda=False,
@@ -126,6 +126,7 @@ class Fitter(object):
                    exclude_instruments=[],
                    exclude_systems=[],
                    exclude_sources=[],
+                   exclude_kinds=[],
                    suffix='',
                    upload=False,
                    write=False,
@@ -148,6 +149,7 @@ class Fitter(object):
                    catalogs=[],
                    exit_on_prompt=False,
                    download_recommended_data=False,
+                   local_data_only=False,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -159,6 +161,7 @@ class Fitter(object):
         self._debug = False
         self._speak = speak
         self._download_recommended_data = download_recommended_data
+        self._local_data_only = local_data_only
 
         self._draw_above_likelihood = draw_above_likelihood
 
@@ -194,7 +197,7 @@ class Fitter(object):
         if len(walker_paths):
             try:
                 pool = MPIPool()
-            except ValueError:
+            except (ImportError, ValueError):
                 pool = SerialPool()
             if pool.is_master():
                 prt.message('walker_file')
@@ -258,10 +261,11 @@ class Fitter(object):
 
         try:
             pool = MPIPool()
-        except ValueError:
+        except (ImportError, ValueError):
             pool = SerialPool()
         if pool.is_master():
-            fetched_events = self._fetcher.fetch(event_list)
+            fetched_events = self._fetcher.fetch(
+                event_list, offline=self._offline)
 
             for rank in range(1, pool.size + 1):
                 pool.comm.send(fetched_events, dest=rank, tag=0)
@@ -291,7 +295,7 @@ class Fitter(object):
                 for parameter_path in parameter_paths:
                     try:
                         pool = MPIPool()
-                    except Exception:
+                    except (ImportError, ValueError):
                         pool = SerialPool()
                     self._model = Model(
                         model=mod_name,
@@ -336,6 +340,7 @@ class Fitter(object):
                             exclude_instruments=exclude_instruments,
                             exclude_systems=exclude_systems,
                             exclude_sources=exclude_sources,
+                            exclude_kinds=exclude_kinds,
                             band_list=band_list,
                             band_systems=band_systems,
                             band_instruments=band_instruments,
@@ -348,6 +353,9 @@ class Fitter(object):
                         if not success:
                             break
 
+                        if self._local_data_only:
+                            break
+
                         # If our data is missing recommended keys, offer the
                         # user option to pull the missing data from online and
                         # merge with existing data.
@@ -355,18 +363,18 @@ class Fitter(object):
                         ptxt = prt.text('acquire_recommended', [
                             ', '.join(list(urk))])
                         while event and len(urk) and (
-                            alt_name or self._download_recommended_data
-                            or prt.prompt(
+                            alt_name or self._download_recommended_data or
+                            prt.prompt(
                                 ptxt, [', '.join(urk)], kind='bool')):
                             try:
                                 pool = MPIPool()
-                            except ValueError:
+                            except (ImportError, ValueError):
                                 pool = SerialPool()
                             if pool.is_master():
                                 en = (alt_name if alt_name
                                       else self._event_name)
                                 extra_event = self._fetcher.fetch(
-                                    en)[0].get('data')
+                                    en, offline=self._offline)[0].get('data')
 
                                 for rank in range(1, pool.size + 1):
                                     pool.comm.send(extra_event, dest=rank,
@@ -617,7 +625,8 @@ class Fitter(object):
         try:
             if iterations > 0:
                 sampler = MOSSampler(
-                    ntemps, nwalkers, ndim, likelihood, prior, pool=self._pool)
+                    ntemps, nwalkers, ndim, ln_likelihood, ln_prior,
+                    pool=self._pool)
                 st = time.time()
             while (iterations > 0 and (
                     convergence_criteria is not None or ici < len(iter_arr))):
@@ -692,8 +701,8 @@ class Fitter(object):
                                                  tar_x + dxx,
                                                  tar_x - dxx) > 0.0,
                                         tar_x + dxx, tar_x - dxx), 0.0, 1.0)
-                                    new_like = likelihood(new_x)
-                                    new_prob = new_like + prior(new_x)
+                                    new_like = ln_likelihood(new_x)
+                                    new_prob = new_like + ln_prior(new_x)
                                     if new_prob > wprob or np.isnan(wprob):
                                         p[ti][wi] = new_x
                                         lnlike[ti][wi] = new_like
@@ -766,15 +775,7 @@ class Fitter(object):
                                 vchain = cur_chain[
                                     ti, :, int(np.floor(
                                         self._burn_in / sli)):, xi]
-                                m = len(vchain)
-                                n = len(vchain[0])
-                                mom = np.mean(np.mean(vchain, axis=1))
-                                b = n / float(m - 1) * np.sum(
-                                    (np.mean(vchain, axis=1) - mom) ** 2)
-                                w = np.mean(np.var(vchain, axis=1))
-                                v = float(n - 1) / n * w + \
-                                    float(m + 1) / (m * n) * b
-                                vws[ti][xi] = np.sqrt(v / w)
+                                vws[ti][xi] = self.psrf(vchain)
                         psrf = np.max(vws)
                         if np.isnan(psrf):
                             psrf = np.inf
@@ -870,8 +871,8 @@ class Fitter(object):
                         (wi, ti) = tuple(selijs[bhi])
                         if -bh.fun > lnprob[wi][ti]:
                             p[wi][ti] = bh.x
-                            like = likelihood(bh.x)
-                            lnprob[wi][ti] = like + prior(bh.x)
+                            like = ln_likelihood(bh.x)
+                            lnprob[wi][ti] = like + ln_prior(bh.x)
                             lnlike[wi][ti] = like
                     scores = [[-x.fun for x in bhs]]
                     prt.status(
@@ -978,15 +979,15 @@ class Fitter(object):
 
         # Accumulate all the sources and add them to each entry.
         sources = []
-        if len(self._model._references):
-            for ref in self._model._references:
+        for root in self._model._references:
+            for ref in self._model._references[root]:
                 sources.append(entry.add_source(**ref))
         sources.append(entry.add_source(**self._DEFAULT_SOURCE))
         source = ','.join(sources)
 
         usources = []
-        if len(self._model._references):
-            for ref in self._model._references:
+        for root in self._model._references:
+            for ref in self._model._references[root]:
                 usources.append(uentry.add_source(**ref))
         usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
         usource = ','.join(usources)
@@ -1399,3 +1400,14 @@ class Fitter(object):
             data[name]['photometry'].append(photodict)
 
         return data
+
+    def psrf(self, chain):
+        """Calculate PSRF for a chain."""
+        m = len(chain)
+        n = len(chain[0])
+        mom = np.mean(np.mean(chain, axis=1))
+        b = n / float(m - 1) * np.sum(
+            (np.mean(chain, axis=1) - mom) ** 2)
+        w = np.mean(np.var(chain, axis=1, ddof=1))
+        v = float(n - 1) / float(n) * w + (b / float(n))
+        return np.sqrt(v / w)

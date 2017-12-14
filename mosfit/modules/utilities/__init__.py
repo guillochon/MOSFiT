@@ -1,3 +1,4 @@
+"""Initilization procedure for `Utility` modules."""
 import inspect
 import os
 import sys

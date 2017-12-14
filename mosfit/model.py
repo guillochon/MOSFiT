@@ -56,7 +56,9 @@ class Model(object):
         self._inflect = inflect.engine()
         self._test = test
         self._inflections = {}
-        self._references = []
+        self._references = OrderedDict()
+        self._free_parameters = []
+        self._user_fixed_parameters = []
 
         self._draw_limit_reached = False
 
@@ -161,6 +163,14 @@ class Model(object):
 
         with open(model_path, 'r') as f:
             self._model.update(json.load(f, object_pairs_hook=OrderedDict))
+
+        # Find @ tags, store them, and prune them from `_model`.
+        for tag in list(self._model.keys()):
+            if tag.startswith('@'):
+                if tag == '@references':
+                    self._references.setdefault('base', []).extend(
+                        self._model[tag])
+                del(self._model[tag])
 
         # with open(os.path.join(
         #         self.MODEL_OUTPUT_DIR,
@@ -343,6 +353,7 @@ class Model(object):
                   exclude_instruments=[],
                   exclude_systems=[],
                   exclude_sources=[],
+                  exclude_kinds=[],
                   band_list=[],
                   band_systems=[],
                   band_instruments=[],
@@ -359,36 +370,9 @@ class Model(object):
 
         prt.message('loading_data', inline=True)
 
+        # Fix user-specified parameters.
         fixed_parameters = []
         for task in self._call_stack:
-            cur_task = self._call_stack[task]
-            self._modules[task].set_event_name(event_name)
-            if cur_task['kind'] == 'data':
-                success = self._modules[task].set_data(
-                    data,
-                    req_key_values=OrderedDict((
-                        ('band', self._bands),
-                        ('instrument', self._instruments))),
-                    subtract_minimum_keys=['times'],
-                    smooth_times=smooth_times,
-                    extrapolate_time=extrapolate_time,
-                    limit_fitting_mjds=limit_fitting_mjds,
-                    exclude_bands=exclude_bands,
-                    exclude_instruments=exclude_instruments,
-                    exclude_systems=exclude_systems,
-                    exclude_sources=exclude_sources,
-                    band_list=band_list,
-                    band_systems=band_systems,
-                    band_instruments=band_instruments,
-                    band_bandsets=band_bandsets)
-                if not success:
-                    return False
-                fixed_parameters.extend(self._modules[task]
-                                        .get_data_determined_parameters())
-            elif cur_task['kind'] == 'sed':
-                self._modules[task].set_data(band_sampling_points)
-
-            # Fix user-specified parameters.
             for fi, param in enumerate(user_fixed_parameters):
                 if (task == param or
                         self._call_stack[task].get(
@@ -406,6 +390,41 @@ class Model(object):
                     self._modules[task].fix_value(
                         self._call_stack[task]['value'])
 
+        self.determine_free_parameters(fixed_parameters)
+
+        for ti, task in enumerate(self._call_stack):
+            cur_task = self._call_stack[task]
+            self._modules[task].set_event_name(event_name)
+            new_per = np.round(100.0 * float(ti) / len(self._call_stack))
+            prt.message('loading_task', [task, new_per], inline=True)
+            if cur_task['kind'] == 'data':
+                success = self._modules[task].set_data(
+                    data,
+                    req_key_values=OrderedDict((
+                        ('band', self._bands),
+                        ('instrument', self._instruments))),
+                    subtract_minimum_keys=['times'],
+                    smooth_times=smooth_times,
+                    extrapolate_time=extrapolate_time,
+                    limit_fitting_mjds=limit_fitting_mjds,
+                    exclude_bands=exclude_bands,
+                    exclude_instruments=exclude_instruments,
+                    exclude_systems=exclude_systems,
+                    exclude_sources=exclude_sources,
+                    exclude_kinds=exclude_kinds,
+                    band_list=band_list,
+                    band_systems=band_systems,
+                    band_instruments=band_instruments,
+                    band_bandsets=band_bandsets)
+                if not success:
+                    return False
+                fixed_parameters.extend(self._modules[task]
+                                        .get_data_determined_parameters())
+            elif cur_task['kind'] == 'sed':
+                self._modules[task].set_data(band_sampling_points)
+
+        # Determine free parameters again as setting data may have fixed some
+        # more.
         self.determine_free_parameters(fixed_parameters)
 
         self.exchange_requests()
@@ -480,6 +499,15 @@ class Model(object):
                 filterrows.append('  (* = Not observed in this band)')
             prt.prt('\n'.join(filterrows))
 
+            single_freq_inst = list(
+                sorted(set(np.array(outputs['instruments'])[
+                    np.array(outputs['all_band_indices']) == -1])))
+
+            if len(single_freq_inst):
+                prt.message('single_freq')
+            for inst in single_freq_inst:
+                prt.prt('  {}'.format(inst))
+
             if ('unmatched_bands' in outputs and
                     'unmatched_instruments' in outputs):
                 prt.message('unmatched_obs', warning=True)
@@ -503,8 +531,11 @@ class Model(object):
         new_call_stack = OrderedDict()
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if (cur_task.get('class', '') == 'variance' and
-                    'band' in listify(variance_for_each)):
+            vfe = listify(variance_for_each)
+            if task == 'variance' and 'band' in vfe:
+                vfi = vfe.index('band') + 1
+                mwfd = float(vfe[vfi]) if (vfi < len(vfe) and is_number(
+                    vfe[vfi])) else self.MIN_WAVE_FRAC_DIFF
                 # Find photometry in call stack.
                 for ptask in self._call_stack:
                     if ptask == 'photometry':
@@ -518,9 +549,11 @@ class Model(object):
                 variance_bands = []
                 for bi, (awav, band) in enumerate(band_pairs):
                     wave_frac_diff = abs(awav - owav) / (awav + owav)
-                    if wave_frac_diff < self.MIN_WAVE_FRAC_DIFF:
+                    if wave_frac_diff < mwfd:
                         continue
                     new_task_name = '-'.join([task, 'band', band])
+                    if new_task_name in self._call_stack:
+                        continue
                     new_task = deepcopy(cur_task)
                     new_call_stack[new_task_name] = new_task
                     if 'latex' in new_task:
@@ -570,6 +603,7 @@ class Model(object):
     def determine_free_parameters(self, extra_fixed_parameters=[]):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
+        self._user_fixed_parameters = []
         self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
@@ -581,7 +615,14 @@ class Model(object):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
+            elif (cur_task['kind'] == 'parameter' and
+                  task in extra_fixed_parameters):
+                self._user_fixed_parameters.append(task)
         self._num_free_parameters = len(self._free_parameters)
+
+    def is_parameter_fixed_by_user(self, parameter):
+        """Return whether a parameter is fixed by the user."""
+        return parameter in self._user_fixed_parameters
 
     def get_num_free_parameters(self):
         """Return number of free parameters."""
@@ -745,7 +786,7 @@ class Model(object):
                 p = draw
                 score = None
                 break
-            score = self.likelihood(draw)
+            score = self.ln_likelihood(draw)
             if draw_cnt >= self.DRAW_LIMIT and not self._draw_limit_reached:
                 self._printer.message('draw_limit_reached', warning=True)
                 self._draw_limit_reached = True
@@ -798,11 +839,23 @@ class Model(object):
 
     def likelihood(self, x):
         """Return score related to maximum likelihood."""
+        return np.exp(self.ln_likelihood(x))
+
+    def ln_likelihood(self, x):
+        """Return ln(likelihood)."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
+    def free_parameter_names(self, x):
+        """Return list of free parameter names."""
+        return self._free_parameters
+
     def prior(self, x):
         """Return score related to paramater priors."""
+        return np.exp(self.ln_prior(x))
+
+    def ln_prior(self, x):
+        """Return ln(prior)."""
         prior = 0.0
         for pi, par in enumerate(self._free_parameters):
             lprior = self._modules[par].lnprior_pdf(x[pi])
@@ -815,14 +868,14 @@ class Model(object):
         for key in sorted(kwargs):
             x.append(kwargs[key])
 
-        l = self.likelihood(x) + self.prior(x)
+        l = self.ln_likelihood(x) + self.ln_prior(x)
         if not np.isfinite(l):
             return LOCAL_LIKELIHOOD_FLOOR
         return l
 
     def fprob(self, x):
         """Return score for fracking."""
-        l = -(self.likelihood(x) + self.prior(x))
+        l = -(self.ln_likelihood(x) + self.ln_prior(x))
         if not np.isfinite(l):
             return -LOCAL_LIKELIHOOD_FLOOR
         return l
@@ -860,6 +913,12 @@ class Model(object):
         outputs = OrderedDict()
         pos = 0
         cur_depth = self._max_depth_all
+
+        # If this is the first time running this stack, build the ref arrays.
+        build_refs = root not in self._references
+        if build_refs:
+            self._references[root] = []
+
         for task in self._call_stack:
             cur_task = self._call_stack[task]
             if root not in cur_task['roots']:
@@ -885,16 +944,17 @@ class Model(object):
             outputs.update(new_outs)
 
             # Append module references
-            self._references.extend(self._modules[task]._REFERENCES)
+            if build_refs:
+                self._references[root].extend(self._modules[task]._REFERENCES)
 
             if '_delete_keys' in outputs:
-                for key in outputs['_delete_keys']:
+                for key in list(outputs['_delete_keys'].keys()):
                     del(outputs[key])
                 del(outputs['_delete_keys'])
 
-            if cur_task['kind'] == root:
-                # Make sure references are unique.
-                self._references = list(map(
-                    dict, set(tuple(sorted(d.items()))
-                              for d in self._references)))
-                return outputs
+        if build_refs:
+            # Make sure references are unique.
+            self._references[root] = list(map(dict, set(tuple(
+                sorted(d.items())) for d in self._references[root])))
+
+        return outputs
