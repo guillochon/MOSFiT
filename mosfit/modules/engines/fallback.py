@@ -196,6 +196,7 @@ class Fallback(Engine):
         # Read in BD end of M-R relation
         BDfilename = (os.path.dirname(__file__)[:-15] + 'models/tde/data/' +
                       'BD_M-R_Burrows11.txt')
+        # self._BD_m, self._BD_r = np.loadtxt(BDfilename, skiprows=15)
         m, r = np.loadtxt(BDfilename, skiprows=15)
         self._BD_MR_function = interp1d(m, r)
 
@@ -438,6 +439,7 @@ class Fallback(Engine):
             print('Mstar too small, current mass-radius relations fail')
 
         if self._Mstar < 0.1:
+            # self._BD_MR_function = interp1d(self._BD_m, self._BD_r)
             Rstar = self._BD_MR_function(self._Mstar)
 
         else:
