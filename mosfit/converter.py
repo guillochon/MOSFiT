@@ -18,8 +18,9 @@ from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
-from mosfit.utils import (entabbed_json_dump, is_date, is_number, listify,
-                          name_clean)
+from mosfit.constants import KS_DAYS
+from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_date,
+                          is_number, listify, name_clean, replace_multiple)
 from six import string_types
 
 
@@ -60,7 +61,6 @@ class Converter(object):
 
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
-        from mosfit.__init__ import __version__
         import pickle
 
         self._path = os.path.dirname(os.path.realpath(__file__))
@@ -81,7 +81,8 @@ class Converter(object):
             product(self._emagstrs, self._band_names),
             product(self._band_names, self._emagstrs))]
         key_cache_path = os.path.join(
-            self._path, 'cache', 'key_cache_{}.pickle'.format(__version__))
+            self._path, 'cache', 'key_cache_{}.pickle'.format(
+                get_mosfit_hash()))
         hks_loaded = False
         if os.path.isfile(key_cache_path):
             try:
@@ -93,8 +94,9 @@ class Converter(object):
                     del(self._header_keys)
         if not hks_loaded:
             self._header_keys = OrderedDict((
-                (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd'),
-                                   ('julian date', 'jd'), 'date']),
+                (PHOTOMETRY.TIME, [
+                    'time', 'mjd', ('jd', 'jd'), ('julian date', 'jd'),
+                    'date', 'day', ('kiloseconds', 'kiloseconds')]),
                 (PHOTOMETRY.SYSTEM, ['system']),
                 (PHOTOMETRY.MAGNITUDE, [
                  'vega mag', 'ab mag', 'mag', 'magnitude']),
@@ -254,21 +256,23 @@ class Converter(object):
 
                     # See if we need to append blank errors to upper limits.
                     tsplit = [
-                        x.replace('$', '').replace('\\pm', delim)
-                        .replace('±', delim)
+                        replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
                         .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
 
                     append_missing_errs = False
                     for fl in tsplit:
-                        if any([is_number(x) for x in fl]) and any([
-                                '(' for x in fl]):
+                        dfl = list(csv.reader([fl], delimiter=delim))[0]
+                        if any([is_number(x.strip('(<>'))
+                                for x in dfl]) and any([
+                                any([y in x for y in ['(', '<', '>']])
+                                for x in dfl]):
                             append_missing_errs = True
                             break
 
                     fsplit = [
-                        x.replace('$', '').replace('\\pm', delim)
-                        .replace('±', delim).replace('(', delim + '(')
+                        replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
+                        .replace('(', delim + '(')
                         .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
                     flines = []
@@ -295,16 +299,22 @@ class Converter(object):
                                 if (fc in self._band_names and
                                     (fci == len(fl) - 1 or
                                      fl[fci + 1] not in self._emagstrs)):
-                                    flcopy.insert(fci + 1 + offset, 'e mag')
+                                    flcopy.insert(fci + 1 + offset, 'e_' + fc)
                                     offset += 1
                         flines[fi] = flcopy
 
                     # Append blank errors to upper limits.
                     if append_missing_errs:
+                        # Find the most frequent column count. These are
+                        # probably the tables we wish to read.
+                        flens = [len(x) for x in flines]
+                        ncols = Counter(flens).most_common(1)[0][0]
+
                         flines = [[x for y in [
                             ([z, '-'] if ('<' in z or '>' in z or
                                           z in self._EMPTY_VALS) else [z])
-                            for z in fl] for x in y] for fl in flines]
+                            for z in fl] for x in y] if len(
+                                fl) != ncols else fl for fl in flines]
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -459,7 +469,7 @@ class Converter(object):
 
                         if isinstance(bi, list) and not isinstance(
                             bi, string_types) and isinstance(
-                                bi[0], string_types) and bi[0] == 'jd':
+                                bi[0], string_types):
                             bi = bi[-1]
 
                         mmtimes = [float(x[bi])
@@ -467,11 +477,14 @@ class Converter(object):
                         mintime, maxtime = min(mmtimes), max(mmtimes)
 
                         if (bistr == 'MJD' and mintime < 10000 or
-                                bistr == 'JD' and mintime < 2410000):
+                            bistr == 'JD' and mintime < 2410000 or
+                                bistr in ['KILOSECONDS', 'SECONDS']):
                             while True:
+                                pstr = ('s_offset' if bistr in [
+                                    'KILOSECONDS', 'SECONDS'] else
+                                        'small_time_offset')
                                 try:
-                                    response = prt.prompt(
-                                        'small_time_offset', [
+                                    response = prt.prompt(pstr, [
                                             bistr for x in range(3)],
                                         kind='string')
                                     if response is not None:
@@ -543,9 +556,13 @@ class Converter(object):
                                                 x.group()], date)
                                         photodict[key] = str(
                                             astrotime(date, format='isot').mjd)
-                                    elif cidict[key][0] == 'jd':
+                                    elif cidict[key][0].upper() == 'JD':
                                         photodict[key] = str(
                                             jd_to_mjd(Decimal(tval[-1])))
+                                    elif cidict[key][0].upper(
+                                    ) == 'KILOSECONDS':
+                                        photodict[key] = str(Decimal(
+                                            KS_DAYS) * Decimal(tval[-1]))
                                     continue
 
                                 val = cidict[key]
