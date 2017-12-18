@@ -14,6 +14,7 @@ from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import (PHOTOMETRY, set_pd_mag_from_counts,
                                           set_pd_mag_from_flux_density)
+from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
@@ -124,7 +125,17 @@ class Converter(object):
                 ('reference', ['reference', 'bibcode', 'source', 'origin']),
                 (ENTRY.NAME, [
                     'event', 'transient', 'name', 'supernova', 'sne', 'id',
-                    'identifier'])
+                    'identifier', 'object']),
+                (ENTRY.REDSHIFT, ['redshift']),
+                (ENTRY.LUM_DIST, [
+                    'lumdist', 'luminosity distance', 'distance']),
+                (ENTRY.COMOVING_DIST, ['comoving distance']),
+                (ENTRY.RA, ['ra', 'right ascension', 'right_ascension']),
+                (ENTRY.DEC, ['dec', 'declination']),
+                (ENTRY.EBV, ['ebv', 'extinction']),
+                # At the moment transient-specific keys are not in astrocats.
+                ('claimedtype', [
+                    'claimedtype', 'type', 'claimed_type', 'claimed type'])
             ))
 
         self._critical_keys = [
@@ -158,6 +169,9 @@ class Converter(object):
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
+        self._entry_keys = [
+            ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -482,10 +496,10 @@ class Converter(object):
                             while True:
                                 pstr = ('s_offset' if bistr in [
                                     'KILOSECONDS', 'SECONDS'] else
-                                        'small_time_offset')
+                                    'small_time_offset')
                                 try:
                                     response = prt.prompt(pstr, [
-                                            bistr for x in range(3)],
+                                        bistr for x in range(3)],
                                         kind='string')
                                     if response is not None:
                                         toffset = Decimal(response)
@@ -793,6 +807,18 @@ class Converter(object):
                             entries[rname].add_photometry(
                                 **photodict)
 
+                            # Add other entry keys.
+                            for key in self._entry_keys:
+                                if key not in cidict:
+                                    continue
+                                qdict = OrderedDict()
+                                qdict[QUANTITY.VALUE] = row[
+                                    cidict[key]]
+                                if len(shared_sources):
+                                    qdict[QUANTITY.SOURCE] = ','.join(
+                                        src_list)
+                                entries[rname].add_quantity(key, **qdict)
+
                     merge_with_existing = None
                     for ei, entry in enumerate(entries):
                         entries[entry].sanitize()
@@ -925,26 +951,17 @@ class Converter(object):
                 'counts_mags_fds', kind='option',
                 options=['Magnitudes', 'Counts (per second)',
                          'Flux Densities (Jansky)'],
-                none_string=None)
-        if self._data_type in [1, 3]:
+                none_string='No Photometry', default='1')
+        if self._data_type in [1, 3, 'n']:
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)
             akeys.remove(PHOTOMETRY.ZERO_POINT)
-            if (PHOTOMETRY.MAGNITUDE in akeys and
-                    PHOTOMETRY.E_MAGNITUDE in akeys):
-                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
-                akeys.insert(
-                    akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
-                    PHOTOMETRY.E_MAGNITUDE)
-            if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
-                    PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
-                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
-        if self._data_type in [2, 3]:
+        if self._data_type in [2, 3, 'n']:
             akeys.remove(PHOTOMETRY.MAGNITUDE)
             akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
-        if self._data_type in [1, 2]:
+        if self._data_type in [1, 2, 'n']:
             akeys.remove(PHOTOMETRY.FLUX_DENSITY)
             akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             if (PHOTOMETRY.E_LOWER_FLUX_DENSITY in cidict and
@@ -952,6 +969,23 @@ class Converter(object):
                 akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             dkeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             dkeys.remove(PHOTOMETRY.U_FLUX_DENSITY)
+        if self._data_type == 'n':
+            akeys.remove(PHOTOMETRY.TIME)
+            akeys.remove(PHOTOMETRY.BAND)
+            akeys.remove(PHOTOMETRY.INSTRUMENT)
+            akeys.remove(PHOTOMETRY.TELESCOPE)
+
+        # Make sure `E_` keys always appear after the actual measurements.
+        if (PHOTOMETRY.MAGNITUDE in akeys and
+                PHOTOMETRY.E_MAGNITUDE in akeys):
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            akeys.insert(
+                akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
+                PHOTOMETRY.E_MAGNITUDE)
+        # Remove regular `E_` keys if both `E_LOWER_`/`E_UPPER_` exist.
+        if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
+                PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([

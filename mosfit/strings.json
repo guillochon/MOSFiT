@@ -81,6 +81,7 @@
     "no_model_for_type": "No model available that matches the given transient's claimed type.",
     "no_model_type": "No model specified and no claimed type for specified transient.",
     "no_models_avail": "Skipping `{}`, no models available to fit the transient.",
+    "no_photometry": "No photometry available for `{}`, skipping.",
     "no_processes": "MPI was unable to find any processes. This suggests that `mpi4py` was installed while another MPI library other than the one presently installed was active. Try re-installing either openmpi or mpich. Continuing in serial mode.",
     "no_ul_token": "No upload token found! Please visit {} to obtain an upload token for MOSFiT.",
     "no_ul_waic": "WAIC score `{}` below 0.0, not uploading this fit.",
