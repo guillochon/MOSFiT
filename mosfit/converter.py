@@ -277,9 +277,10 @@ class Converter(object):
                     append_missing_errs = False
                     for fl in tsplit:
                         dfl = list(csv.reader([fl], delimiter=delim))[0]
-                        if any([is_number(x.strip('(<>'))
+                        if any([is_number(x.strip('(<>≤≥'))
                                 for x in dfl]) and any([
-                                any([y in x for y in ['(', '<', '>']])
+                                any([y in x for y in [
+                                    '(', '<', '>', '≥', '≤']])
                                 for x in dfl]):
                             append_missing_errs = True
                             break
@@ -325,7 +326,8 @@ class Converter(object):
                         ncols = Counter(flens).most_common(1)[0][0]
 
                         flines = [[x for y in [
-                            ([z, '-'] if ('<' in z or '>' in z or
+                            ([z, '-'] if (any([w in z for w in [
+                                '<', '>', '≤', '≥']]) or
                                           z in self._EMPTY_VALS) else [z])
                             for z in fl] for x in y] if len(
                                 fl) != ncols else fl for fl in flines]
@@ -739,11 +741,11 @@ class Converter(object):
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
-                                    for x in ['<', '>']]):
+                                    for x in ['<', '>', '≤', '≥']]):
                                 photodict[PHOTOMETRY.UPPER_LIMIT] = True
                                 photodict[
                                     PHOTOMETRY.MAGNITUDE] = photodict[
-                                        PHOTOMETRY.MAGNITUDE].strip('<>')
+                                        PHOTOMETRY.MAGNITUDE].strip('<>≤≥')
 
                             if '<' in photodict.get(PHOTOMETRY.COUNT_RATE, ''):
                                 photodict[PHOTOMETRY.UPPER_LIMIT] = True
