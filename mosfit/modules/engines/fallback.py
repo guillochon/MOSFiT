@@ -616,4 +616,4 @@ class Fallback(Engine):
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback_orig': tfallback}
+                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback_orig': float(tfallback)}
