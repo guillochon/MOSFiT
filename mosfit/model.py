@@ -121,7 +121,7 @@ class Model(object):
                             none_string=('None of the above, skip this '
                                          'transient.'))
                         if sel is not None:
-                            self._model_name = type_options[sel]
+                            self._model_name = type_options[sel - 1]
                     if not self._model_name:
                         break
                     if self._model_name == 'Another model not listed here.':
