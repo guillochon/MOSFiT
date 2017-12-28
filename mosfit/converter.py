@@ -14,12 +14,14 @@ from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.key import KEY_TYPES, Key
 from astrocats.catalog.photometry import (PHOTOMETRY, set_pd_mag_from_counts,
                                           set_pd_mag_from_flux_density)
+from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.source import SOURCE
 from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
-from mosfit.utils import (entabbed_json_dump, is_date, is_number, listify,
-                          name_clean)
+from mosfit.constants import KS_DAYS
+from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_date,
+                          is_number, listify, name_clean, replace_multiple)
 from six import string_types
 
 
@@ -60,7 +62,6 @@ class Converter(object):
 
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
-        from mosfit.__init__ import __version__
         import pickle
 
         self._path = os.path.dirname(os.path.realpath(__file__))
@@ -81,7 +82,8 @@ class Converter(object):
             product(self._emagstrs, self._band_names),
             product(self._band_names, self._emagstrs))]
         key_cache_path = os.path.join(
-            self._path, 'cache', 'key_cache_{}.pickle'.format(__version__))
+            self._path, 'cache', 'key_cache_{}.pickle'.format(
+                get_mosfit_hash()))
         hks_loaded = False
         if os.path.isfile(key_cache_path):
             try:
@@ -93,8 +95,9 @@ class Converter(object):
                     del(self._header_keys)
         if not hks_loaded:
             self._header_keys = OrderedDict((
-                (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd'),
-                                   ('julian date', 'jd'), 'date']),
+                (PHOTOMETRY.TIME, [
+                    'time', 'mjd', ('jd', 'jd'), ('julian date', 'jd'),
+                    'date', 'day', ('kiloseconds', 'kiloseconds')]),
                 (PHOTOMETRY.SYSTEM, ['system']),
                 (PHOTOMETRY.MAGNITUDE, [
                  'vega mag', 'ab mag', 'mag', 'magnitude']),
@@ -122,7 +125,17 @@ class Converter(object):
                 ('reference', ['reference', 'bibcode', 'source', 'origin']),
                 (ENTRY.NAME, [
                     'event', 'transient', 'name', 'supernova', 'sne', 'id',
-                    'identifier'])
+                    'identifier', 'object']),
+                (ENTRY.REDSHIFT, ['redshift']),
+                (ENTRY.LUM_DIST, [
+                    'lumdist', 'luminosity distance', 'distance']),
+                (ENTRY.COMOVING_DIST, ['comoving distance']),
+                (ENTRY.RA, ['ra', 'right ascension', 'right_ascension']),
+                (ENTRY.DEC, ['dec', 'declination']),
+                (ENTRY.EBV, ['ebv', 'extinction']),
+                # At the moment transient-specific keys are not in astrocats.
+                ('claimedtype', [
+                    'claimedtype', 'type', 'claimed_type', 'claimed type'])
             ))
 
         self._critical_keys = [
@@ -156,6 +169,9 @@ class Converter(object):
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
+        self._entry_keys = [
+            ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -254,21 +270,24 @@ class Converter(object):
 
                     # See if we need to append blank errors to upper limits.
                     tsplit = [
-                        x.replace('$', '').replace('\\pm', delim)
-                        .replace('±', delim)
+                        replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
                         .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
 
                     append_missing_errs = False
                     for fl in tsplit:
-                        if any([is_number(x) for x in fl]) and any([
-                                '(' for x in fl]):
+                        dfl = list(csv.reader([fl], delimiter=delim))[0]
+                        if any([is_number(x.strip('(<>≤≥'))
+                                for x in dfl]) and any([
+                                any([y in x for y in [
+                                    '(', '<', '>', '≥', '≤']])
+                                for x in dfl]):
                             append_missing_errs = True
                             break
 
                     fsplit = [
-                        x.replace('$', '').replace('\\pm', delim)
-                        .replace('±', delim).replace('(', delim + '(')
+                        replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
+                        .replace('(', delim + '(')
                         .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
                     flines = []
@@ -295,16 +314,23 @@ class Converter(object):
                                 if (fc in self._band_names and
                                     (fci == len(fl) - 1 or
                                      fl[fci + 1] not in self._emagstrs)):
-                                    flcopy.insert(fci + 1 + offset, 'e mag')
+                                    flcopy.insert(fci + 1 + offset, 'e_' + fc)
                                     offset += 1
                         flines[fi] = flcopy
 
                     # Append blank errors to upper limits.
                     if append_missing_errs:
+                        # Find the most frequent column count. These are
+                        # probably the tables we wish to read.
+                        flens = [len(x) for x in flines]
+                        ncols = Counter(flens).most_common(1)[0][0]
+
                         flines = [[x for y in [
-                            ([z, '-'] if ('<' in z or '>' in z or
+                            ([z, '-'] if (any([w in z for w in [
+                                '<', '>', '≤', '≥']]) or
                                           z in self._EMPTY_VALS) else [z])
-                            for z in fl] for x in y] for fl in flines]
+                            for z in fl] for x in y] if len(
+                                fl) != ncols else fl for fl in flines]
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -459,7 +485,7 @@ class Converter(object):
 
                         if isinstance(bi, list) and not isinstance(
                             bi, string_types) and isinstance(
-                                bi[0], string_types) and bi[0] == 'jd':
+                                bi[0], string_types):
                             bi = bi[-1]
 
                         mmtimes = [float(x[bi])
@@ -467,12 +493,15 @@ class Converter(object):
                         mintime, maxtime = min(mmtimes), max(mmtimes)
 
                         if (bistr == 'MJD' and mintime < 10000 or
-                                bistr == 'JD' and mintime < 2410000):
+                            bistr == 'JD' and mintime < 2410000 or
+                                bistr in ['KILOSECONDS', 'SECONDS']):
                             while True:
+                                pstr = ('s_offset' if bistr in [
+                                    'KILOSECONDS', 'SECONDS'] else
+                                    'small_time_offset')
                                 try:
-                                    response = prt.prompt(
-                                        'small_time_offset', [
-                                            bistr for x in range(3)],
+                                    response = prt.prompt(pstr, [
+                                        bistr for x in range(3)],
                                         kind='string')
                                     if response is not None:
                                         toffset = Decimal(response)
@@ -543,9 +572,13 @@ class Converter(object):
                                                 x.group()], date)
                                         photodict[key] = str(
                                             astrotime(date, format='isot').mjd)
-                                    elif cidict[key][0] == 'jd':
+                                    elif cidict[key][0].upper() == 'JD':
                                         photodict[key] = str(
                                             jd_to_mjd(Decimal(tval[-1])))
+                                    elif cidict[key][0].upper(
+                                    ) == 'KILOSECONDS':
+                                        photodict[key] = str(Decimal(
+                                            KS_DAYS) * Decimal(tval[-1]))
                                     continue
 
                                 val = cidict[key]
@@ -708,11 +741,11 @@ class Converter(object):
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
-                                    for x in ['<', '>']]):
+                                    for x in ['<', '>', '≤', '≥']]):
                                 photodict[PHOTOMETRY.UPPER_LIMIT] = True
                                 photodict[
                                     PHOTOMETRY.MAGNITUDE] = photodict[
-                                        PHOTOMETRY.MAGNITUDE].strip('<>')
+                                        PHOTOMETRY.MAGNITUDE].strip('<>≤≥')
 
                             if '<' in photodict.get(PHOTOMETRY.COUNT_RATE, ''):
                                 photodict[PHOTOMETRY.UPPER_LIMIT] = True
@@ -775,6 +808,18 @@ class Converter(object):
                             # Add the photometry.
                             entries[rname].add_photometry(
                                 **photodict)
+
+                            # Add other entry keys.
+                            for key in self._entry_keys:
+                                if key not in cidict:
+                                    continue
+                                qdict = OrderedDict()
+                                qdict[QUANTITY.VALUE] = row[
+                                    cidict[key]]
+                                if len(shared_sources):
+                                    qdict[QUANTITY.SOURCE] = ','.join(
+                                        src_list)
+                                entries[rname].add_quantity(key, **qdict)
 
                     merge_with_existing = None
                     for ei, entry in enumerate(entries):
@@ -908,26 +953,17 @@ class Converter(object):
                 'counts_mags_fds', kind='option',
                 options=['Magnitudes', 'Counts (per second)',
                          'Flux Densities (Jansky)'],
-                none_string=None)
-        if self._data_type in [1, 3]:
+                none_string='No Photometry', default='1')
+        if self._data_type in [1, 3, 'n']:
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)
             akeys.remove(PHOTOMETRY.ZERO_POINT)
-            if (PHOTOMETRY.MAGNITUDE in akeys and
-                    PHOTOMETRY.E_MAGNITUDE in akeys):
-                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
-                akeys.insert(
-                    akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
-                    PHOTOMETRY.E_MAGNITUDE)
-            if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
-                    PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
-                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
-        if self._data_type in [2, 3]:
+        if self._data_type in [2, 3, 'n']:
             akeys.remove(PHOTOMETRY.MAGNITUDE)
             akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
-        if self._data_type in [1, 2]:
+        if self._data_type in [1, 2, 'n']:
             akeys.remove(PHOTOMETRY.FLUX_DENSITY)
             akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             if (PHOTOMETRY.E_LOWER_FLUX_DENSITY in cidict and
@@ -935,6 +971,23 @@ class Converter(object):
                 akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             dkeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             dkeys.remove(PHOTOMETRY.U_FLUX_DENSITY)
+        if self._data_type == 'n':
+            akeys.remove(PHOTOMETRY.TIME)
+            akeys.remove(PHOTOMETRY.BAND)
+            akeys.remove(PHOTOMETRY.INSTRUMENT)
+            akeys.remove(PHOTOMETRY.TELESCOPE)
+
+        # Make sure `E_` keys always appear after the actual measurements.
+        if (PHOTOMETRY.MAGNITUDE in akeys and
+                PHOTOMETRY.E_MAGNITUDE in akeys):
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            akeys.insert(
+                akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
+                PHOTOMETRY.E_MAGNITUDE)
+        # Remove regular `E_` keys if both `E_LOWER_`/`E_UPPER_` exist.
+        if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
+                PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
