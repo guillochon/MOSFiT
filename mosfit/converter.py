@@ -69,18 +69,25 @@ class Converter(object):
         self._printer = printer
         self._require_source = require_source
 
-        self._emagstrs = [
-            'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR',
-            'e_', '_e', '(err)', 'uncertainty']
+        self._estrs = [
+            'err', '_err', 'err_', 'ERR', 'e_', '_e', '(err)', 'error',
+            'uncertainty', 'sigma']
+        self._emagstrs = self._estrs + [
+            'magnitude error', 'e mag', 'e magnitude', 'dmag',
+            'mag err', 'magerr', 'mag error']
+        self._ecntstrs = self._estrs + [
+            'flux error', 'e flux', 'e counts', 'count err', 'flux err',
+            'countrate error', 'countrate err', 'e_flux']
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
             'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
             "z'", 'C', 'Y', 'Open'
         ]
-        self._emagstrs = self._emagstrs + [a + b for a, b in chain(
-            product(self._emagstrs, self._band_names),
-            product(self._band_names, self._emagstrs))]
+        ebands = [a + b for a, b in chain(
+            product(self._ecntstrs, self._band_names),
+            product(self._band_names, self._estrs))]
+        self._emagstrs += ebands
+        self._ecntstrs += ebands
         key_cache_path = os.path.join(
             self._path, 'cache', 'key_cache_{}.pickle'.format(
                 get_mosfit_hash()))
@@ -112,10 +119,10 @@ class Converter(object):
                     product(self._emagstrs, ['plus', 'upper']),
                     product(['plus', 'upper'], self._emagstrs))]),
                 (PHOTOMETRY.UPPER_LIMIT, [
-                 'upper limit', 'upperlimit', 'l_mag', 'limit']),
-                (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
-                (PHOTOMETRY.E_COUNT_RATE, [
-                    'e_counts', 'count error', 'count rate error']),
+                    'upper limit', 'upperlimit', 'l_mag', 'limit']),
+                (PHOTOMETRY.COUNT_RATE, [
+                    'count', 'counts', 'flux', 'count rate']),
+                (PHOTOMETRY.E_COUNT_RATE, self._ecntstrs),
                 (PHOTOMETRY.FLUX_DENSITY, ['flux density', 'fd', 'f_nu']),
                 (PHOTOMETRY.E_FLUX_DENSITY, [
                     'e_flux_density', 'flux density error', 'e_fd',
