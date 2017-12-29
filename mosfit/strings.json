@@ -3,6 +3,7 @@
     "all_models": "No model specified and no type found for provided transient, please select a model from the list of available models:",
     "all_walkers_written": "All walkers written.",
     "anchoring_variances": "Anchoring variances for the following filters (interpolating variances for the rest): {}",
+    "another_model": "Another model not listed here.",
     "arxiv": "Please enter the ArXiv ID associated with this data (e.g. `1701.12345`):",
     "bad_filter_rule": "Filter rule has incorrect syntax, requires either 'SVO', 'path', or ['min_wavelength', 'max_wavelength', 'delta_wavelength'] in its list of keys.",
     "bad_header_pickle": "Header pickle invalid, rebuilding.",
