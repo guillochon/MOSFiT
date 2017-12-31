@@ -25,12 +25,12 @@ class Kroupa(Parameter):
         value = self.value(x)
 
         if value < 0.08:
-            return (np.log(self._norm * (x / 0.08)**(-0.3)))
+            return np.log(self._norm * (x / 0.08)**(-0.3))
         elif value < 0.5:
-            return(np.log(self._norm * (x / 0.08)**(-1.3)))
+            return np.log(self._norm * (x / 0.08)**(-1.3))
         else:
-            return(np.log(self._norm * (0.5 / 0.08)**(-1.3) * (
-                x / 0.5)**(-2.3)))
+            return np.log(self._norm * (0.5 / 0.08)**(-1.3) * (
+                x / 0.5)**(-2.3))
 
     def kroupa_cdf(self, maxmass, k):
         """Cumulative density function from Kroupa 2001b.

@@ -113,6 +113,7 @@ class Likelihood(Module):
             value = -0.5 * np.sum(
                 residuals ** 2 / (self._o_band_vs ** 2 + diag) +
                 np.log(self._o_band_vs ** 2 + diag))
+            value = 0.0
 
         score = self._score_modifier + value
         if isnan(score) or not np.isfinite(score):
