@@ -104,14 +104,18 @@ class Converter(object):
             self._header_keys = OrderedDict((
                 (PHOTOMETRY.TIME, [
                     'time', 'mjd', ('jd', 'jd'), ('julian date', 'jd'),
-                    'date', 'day', ('kiloseconds', 'kiloseconds')]),
-                (PHOTOMETRY.SYSTEM, ['system']),
+                    ('date', 'yyyy-mm-dd'), 'day', (
+                        'kiloseconds', 'kiloseconds')]),
+                (PHOTOMETRY.SYSTEM, ['system', 'magsys', 'magnitude system']),
                 (PHOTOMETRY.MAGNITUDE, [
                  'vega mag', 'ab mag', 'mag', 'magnitude']),
                 (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
                 (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
                 (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
-                (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'flt']),
+                (PHOTOMETRY.OBSERVER, ['observer']),
+                (PHOTOMETRY.OBSERVATORY, ['observatory']),
+                (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'filt',
+                                   'flt']),
                 (PHOTOMETRY.E_LOWER_MAGNITUDE, [a + ' ' + b for a, b in chain(
                     product(self._emagstrs, ['minus', 'lower']),
                     product(['minus', 'lower'], self._emagstrs))]),
@@ -495,12 +499,18 @@ class Converter(object):
                                 bi[0], string_types):
                             bi = bi[-1]
 
-                        mmtimes = [float(x[bi])
-                                   for x in flines[self._first_data:]]
-                        mintime, maxtime = min(mmtimes), max(mmtimes)
+                        mmtimes = None
+                        try:
+                            mmtimes = [float(x[bi])
+                                       for x in flines[self._first_data:]]
+                            mintime, maxtime = min(mmtimes), max(mmtimes)
+                        except Exception:
+                            pass
 
-                        if (bistr == 'MJD' and mintime < 10000 or
-                            bistr == 'JD' and mintime < 2410000 or
+                        if not mmtimes:
+                            pass
+                        elif (bistr == 'MJD' and mintime < 10000 or
+                              bistr == 'JD' and mintime < 2410000 or
                                 bistr in ['KILOSECONDS', 'SECONDS']):
                             while True:
                                 pstr = ('s_offset' if bistr in [
@@ -586,6 +596,11 @@ class Converter(object):
                                     ) == 'KILOSECONDS':
                                         photodict[key] = str(Decimal(
                                             KS_DAYS) * Decimal(tval[-1]))
+                                    elif cidict[key][0].upper(
+                                    ) == 'YYYY-MM-DD':
+                                        photodict[key] = str(
+                                            astrotime(
+                                                tval[-1].replace('/', '-'), format='isot').mjd)
                                     continue
 
                                 val = cidict[key]
