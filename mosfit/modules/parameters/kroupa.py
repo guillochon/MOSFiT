@@ -15,6 +15,7 @@ class Kroupa(Parameter):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Kroupa, self).__init__(**kwargs)
+        self._norm = 1. / self.kroupa_cdf(self._max_value, 1)
 
     def lnprior_pdf(self, x):
         """Evaluate natural log of probability density function.
@@ -24,12 +25,12 @@ class Kroupa(Parameter):
         value = self.value(x)
 
         if value < 0.08:
-            return (np.log(self._norm * (x / 0.08)**(-0.3)))
+            return np.log(self._norm * (x / 0.08)**(-0.3))
         elif value < 0.5:
-            return(np.log(self._norm * (x / 0.08)**(-1.3)))
+            return np.log(self._norm * (x / 0.08)**(-1.3))
         else:
-            return(np.log(self._norm * (0.5 / 0.08)**(-1.3) * (
-                x / 0.5)**(-2.3)))
+            return np.log(self._norm * (0.5 / 0.08)**(-1.3) * (
+                x / 0.5)**(-2.3))
 
     def kroupa_cdf(self, maxmass, k):
         """Cumulative density function from Kroupa 2001b.
@@ -56,7 +57,6 @@ class Kroupa(Parameter):
         output mass scaled to 0-1 interval
         min mass before scaling = 0.01
         """
-        self._norm = 1. / self.kroupa_cdf(self._max_value, 1)
         if u < self.kroupa_cdf(0.08, self._norm):
             value = (u * (0.7) / self._norm * 0.08**(-0.3) +
                      0.01**0.7)**(1 / 0.7)

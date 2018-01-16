@@ -357,6 +357,13 @@ def all_to_list(array):
         return [array]
 
 
+def replace_multiple(y, xs, rep):
+    """Match multiple strings to replace in sequence."""
+    for x in xs[1:]:
+        y = y.replace(x, rep)
+    return y
+
+
 # Borrowed from astrocats' supernova catalog module.
 def name_clean(name):
     """Clean a transient's name."""

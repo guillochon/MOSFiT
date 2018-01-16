@@ -1,4 +1,5 @@
 """A class for downloading event data from Open Catalogs."""
+import codecs
 import json
 import os
 import re
@@ -208,7 +209,7 @@ class Fetcher(object):
                     webbrowser.open(
                         catalogs[events[ei]['catalog']]['web'] +
                         events[ei]['name'])
-                with open(path, 'r') as f:
+                with codecs.open(path, 'r', encoding='utf-8') as f:
                     events[ei]['data'] = json.load(
                         f, object_pairs_hook=OrderedDict)
                 prt.message('event_file', [path], wrapped=True)

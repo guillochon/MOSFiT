@@ -291,6 +291,12 @@ class Fitter(object):
             ps[ei] = [None for y in range(len(lmodel_list))]
             lnprobs[ei] = [None for y in range(len(lmodel_list))]
 
+            if (event is not None and (not self._event_data or
+                ENTRY.PHOTOMETRY not in self._event_data[
+                    list(self._event_data.keys())[0]])):
+                prt.message('no_photometry', [self._event_name])
+                continue
+
             for mi, mod_name in enumerate(lmodel_list):
                 for parameter_path in parameter_paths:
                     try:

@@ -2,6 +2,7 @@
 """Defines the `Printer` class."""
 from __future__ import print_function, unicode_literals
 
+import codecs
 import datetime
 import json
 import os
@@ -76,7 +77,8 @@ class Printer(object):
     def set_strings(self):
         """Set pre-defined list of strings."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, 'strings.json')) as f:
+        with codecs.open(os.path.join(
+                dir_path, 'strings.json'), encoding='utf-8') as f:
             strings = json.load(f, object_pairs_hook=OrderedDict)
         if self._language == 'en':
             self._strings = strings
@@ -223,7 +225,8 @@ class Printer(object):
                 warning=warning, error=error, color=color)
         return text
 
-    def prompt(self, text, wrap_length=None, kind='bool', default=None,
+    def prompt(self, text, reps=[],
+               wrap_length=None, kind='bool', default=None,
                none_string='None of the above.', colorify=True, single=False,
                options=None, translate=True, message=True, color='',
                allow_blank=True):
@@ -301,7 +304,7 @@ class Printer(object):
                 raise ValueError('Unknown prompt kind.')
 
             if message and text in self._strings:
-                text = self.message(text, prt=False)
+                text = self.message(text, reps=reps, prt=False)
             textchoices = text + choices
             if translate:
                 textchoices = self.translate(textchoices)

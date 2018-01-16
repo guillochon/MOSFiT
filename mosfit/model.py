@@ -97,13 +97,15 @@ class Model(object):
 
             all_models_txt = prt.text('all_models')
             suggested_models_txt = prt.text('suggested_models', [claimed_type])
+            another_model_txt = prt.text('another_model')
 
-            if claimed_type is None:
+            type_options = model_types.get(
+                claimed_type, []) if claimed_type else []
+            if not type_options:
                 type_options = all_models
                 model_prompt_txt = all_models_txt
             else:
-                type_options = model_types.get(claimed_type, []) + [
-                    'Another model not listed here.']
+                type_options.append(another_model_txt)
                 model_prompt_txt = suggested_models_txt
             if not type_options:
                 prt.message('no_model_for_type', warning=True)
@@ -121,10 +123,10 @@ class Model(object):
                             none_string=('None of the above, skip this '
                                          'transient.'))
                         if sel is not None:
-                            self._model_name = type_options[sel]
+                            self._model_name = type_options[sel - 1]
                     if not self._model_name:
                         break
-                    if self._model_name == 'Another model not listed here.':
+                    if self._model_name == another_model_txt:
                         type_options = all_models
                         model_prompt_txt = all_models_txt
                         self._model_name = None
