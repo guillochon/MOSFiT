@@ -20,8 +20,9 @@ from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from mosfit.constants import KS_DAYS
-from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_date,
-                          is_number, listify, name_clean, replace_multiple)
+from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_bibcode,
+                          is_date, is_datum, is_number, listify, name_clean,
+                          replace_multiple)
 from six import string_types
 
 
@@ -320,7 +321,7 @@ class Converter(object):
                     for fi, fl in enumerate(list(flines)):
                         flcopy = list(fl)
                         offset = 0
-                        if not any([is_number(x) for x in fl]):
+                        if not any([is_datum(x) for x in fl]):
                             for fci, fc in enumerate(fl):
                                 if (fc in self._band_names and
                                     (fci == len(fl) - 1 or
@@ -339,7 +340,7 @@ class Converter(object):
                         flines = [[x for y in [
                             ([z, '-'] if (any([w in z for w in [
                                 '<', '>', '≤', '≥']]) or
-                                          z in self._EMPTY_VALS) else [z])
+                                z in self._EMPTY_VALS) else [z])
                             for z in fl] for x in y] if len(
                                 fl) != ncols else fl for fl in flines]
 
@@ -357,20 +358,20 @@ class Converter(object):
                             potential_name = fl[0]
                         if flens[fi] == ncols:
                             if potential_name is not None and any(
-                                    [is_number(x) for x in fl]):
+                                    [is_datum(x) for x in fl]):
                                 newlines.append([potential_name] + list(fl))
                             else:
                                 newlines.append(list(fl))
                     flines = newlines
                     for fi, fl in enumerate(flines):
                         if len(fl) == ncols and potential_name is not None:
-                            if not any([is_number(x) for x in fl]):
+                            if not any([is_datum(x) for x in fl]):
                                 flines[fi] = ['name'] + list(fl)
 
                 # If none of the rows contain numeric data, the file
                 # is likely a list of transient names.
                 if (len(flines) and
-                    (not any(any([is_number(x) or x == '' for x in y])
+                    (not any(any([is_datum(x) or x == '' for x in y])
                              for y in flines) or
                      len(flines) == 1)):
                     new_events = [
@@ -379,7 +380,7 @@ class Converter(object):
                 # If last row is numeric, then likely this is a file with
                 # transient data.
                 elif (len(flines) > 1 and
-                        any([is_number(x) for x in flines[-1]])):
+                        any([is_datum(x) for x in flines[-1]])):
 
                     # Check that each row has the same number of columns.
                     if len(set([len(x) for x in flines])) > 1:
@@ -564,14 +565,19 @@ class Converter(object):
                                     if rval:
                                         row[cidict[key]] = rval
                                 elif key == 'reference':
-                                    if (isinstance(cidict[key],
-                                                   string_types) and
-                                            len(cidict[key]) == 19):
+                                    if (isinstance(row[cidict[key]],
+                                                   string_types)):
+                                        srcdict = OrderedDict()
+                                        if is_bibcode(row[cidict[key]]):
+                                            srcdict[SOURCE.BIBCODE] = row[
+                                                cidict[key]]
+                                        else:
+                                            srcdict[SOURCE.NAME] = row[
+                                                cidict[key]]
                                         new_src = entries[rname].add_source(
-                                            bibcode=cidict[key])
+                                            **srcdict)
                                         sources.update(new_src)
-                                        row[
-                                            cidict[key]] = new_src
+                                        # row[cidict[key]] = new_src
                                 elif key == ENTRY.NAME:
                                     continue
                                 elif (isinstance(key, Key) and
@@ -600,7 +606,8 @@ class Converter(object):
                                     ) == 'YYYY-MM-DD':
                                         photodict[key] = str(
                                             astrotime(
-                                                tval[-1].replace('/', '-'), format='isot').mjd)
+                                                tval[-1].replace('/', '-'),
+                                                format='isot').mjd)
                                     continue
 
                                 val = cidict[key]
@@ -715,10 +722,7 @@ class Converter(object):
                                                 allow_blank=False
                                             )
                                             bibcode = bibcode.strip()
-                                            if (re.search(
-                                                '[0-9]{4}..........[\.0-9]{4}'
-                                                '[A-Za-z]', bibcode)
-                                                    is None):
+                                            if not is_bibcode(bibcode):
                                                 bibcode = ''
                                         rsource[
                                             SOURCE.BIBCODE] = bibcode
@@ -753,13 +757,13 @@ class Converter(object):
 
                                     shared_sources.append(rsource)
 
-                            if len(shared_sources):
-                                src_list = []
+                            if len(sources) or len(shared_sources):
+                                src_list = list(sources)
                                 for src in shared_sources:
                                     src_list.append(entries[
                                         rname].add_source(**src))
-                                    photodict[PHOTOMETRY.SOURCE] = ','.join(
-                                        src_list)
+                                photodict[PHOTOMETRY.SOURCE] = ','.join(
+                                    src_list)
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
@@ -838,7 +842,7 @@ class Converter(object):
                                 qdict = OrderedDict()
                                 qdict[QUANTITY.VALUE] = row[
                                     cidict[key]]
-                                if len(shared_sources):
+                                if len(sources) or len(shared_sources):
                                     qdict[QUANTITY.SOURCE] = ','.join(
                                         src_list)
                                 entries[rname].add_quantity(key, **qdict)
@@ -887,7 +891,7 @@ class Converter(object):
         mpatt = re.compile('mag', re.IGNORECASE)
 
         for fi, fl in enumerate(flines):
-            if not any([is_number(x) for x in fl]):
+            if not any([is_datum(x) for x in fl]):
                 # Try to associate column names with common header keys.
                 conflict_keys = []
                 conflict_cis = []
@@ -939,7 +943,7 @@ class Converter(object):
                 del(cidict[used_cis[ci]])
                 del(used_cis[ci])
             for fi, fl in enumerate(flines):
-                if not any([is_number(x) for x in fl]):
+                if not any([is_datum(x) for x in fl]):
                     # Try to associate column names with common header keys.
                     for ci, col in enumerate(fl):
                         if ci in used_cis:
@@ -1031,16 +1035,16 @@ class Converter(object):
                 continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for x in colinds
-                            if any(is_number(y) for y in columns[x]) and
+                            if any(is_datum(y) for y in columns[x]) and
                             x not in selected_cols]
             elif key.type == KEY_TYPES.TIME:
                 lcolinds = [x for x in colinds
-                            if any(is_date(y) or is_number(y)
+                            if any(is_date(y) or is_datum(y)
                                    for y in columns[x]) and
                             x not in selected_cols]
             elif key.type == KEY_TYPES.STRING:
                 lcolinds = [x for x in colinds
-                            if any(not is_number(y) for y in columns[x]) and
+                            if any(not is_datum(y) for y in columns[x]) and
                             x not in selected_cols]
             else:
                 lcolinds = [x for x in colinds if x not in selected_cols]
