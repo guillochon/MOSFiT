@@ -45,8 +45,8 @@ class Ensembler(Sampler):
 
     def get_samples(self):
         """Return samples from ensembler."""
-        samples = [a for b in self._pout for a in b]
-        probs = [a for b in self._lnprobout for a in b]
+        samples = self._pout
+        probs = self._lnprobout
 
         return samples, probs
 

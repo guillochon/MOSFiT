@@ -524,10 +524,6 @@ class Fitter(object):
 
         self._sampler.run(self._walker_data)
 
-        self._sampler.prepare_output
-
-        samples, probs = self._sampler.get_samples()
-
         prt.message('constructing')
 
         if write:
@@ -603,10 +599,12 @@ class Fitter(object):
 
         modelnum = entry.add_model(**modeldict)
 
+        samples, probs = self._sampler.get_samples()
+
         extras = OrderedDict()
         ri = 1
-        for xi, x in enumerate(self._sampler._pout):
-            for yi, y in enumerate(self._sampler._pout[xi]):
+        for xi, x in enumerate(samples):
+            for yi, y in enumerate(samples[xi]):
                 # Only produce LCs for end walker state.
                 wcnt = xi * self._sampler._nwalkers + yi
                 if wcnt > 0:
