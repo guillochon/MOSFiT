@@ -747,9 +747,9 @@ class Fitter(object):
                         parameters.update({key: {'value': output[key]}})
 
                 realdict = {REALIZATION.PARAMETERS: parameters}
-                if self._sampler._lnprobout is not None:
+                if probs is not None:
                     realdict[REALIZATION.SCORE] = str(
-                        self._sampler._lnprobout[xi][yi])
+                        probs[xi][yi])
                 realdict[REALIZATION.ALIAS] = str(ri)
                 entry[ENTRY.MODELS][0].add_realization(**realdict)
                 urealdict = deepcopy(realdict)
@@ -865,7 +865,7 @@ class Fitter(object):
                         else:
                             raise
 
-        return (entry, self._sampler._pout, self._sampler._lnprobout)
+        return (entry, samples, probs)
 
     def nester(self):
         """Use nested sampling to determine posteriors."""
