@@ -1193,7 +1193,8 @@ class Converter(object):
                 self._system = systems[int(self._system) - 1]
 
         if (PHOTOMETRY.INSTRUMENT not in cidict and
-                PHOTOMETRY.TELESCOPE not in cidict):
+            PHOTOMETRY.TELESCOPE not in cidict and
+                PHOTOMETRY.MAGNITUDE in cidict):
             prt.message('instrument_recommended', warning=True)
 
     def get_converted(self):
