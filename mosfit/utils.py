@@ -96,8 +96,8 @@ def is_datum(s):
 
 def is_bibcode(s):
     """Check if input is a valid bibcode."""
-    return re.search(
-        '[0-9]{4}..........[\.0-9]{4}[A-Za-z]', s) is None
+    return not (re.search(
+        '[0-9]{4}..........[\.0-9]{4}[A-Za-z]', s) is None)
 
 
 def pretty_num(x, sig=4):
