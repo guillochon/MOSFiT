@@ -1,3 +1,4 @@
+"""Initilization procedure for `SED` modules."""
 import inspect
 import os
 import sys

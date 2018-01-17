@@ -1,3 +1,4 @@
+"""Initilization procedure for `Output` modules."""
 import inspect
 import os
 import sys

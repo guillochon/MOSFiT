@@ -1,3 +1,4 @@
+"""Initilization procedure for `Parameter` modules."""
 import inspect
 import os
 import sys

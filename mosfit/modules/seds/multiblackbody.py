@@ -4,9 +4,9 @@ from math import pi
 import numexpr as ne
 import numpy as np
 from astropy import constants as c
-
-from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS
+from mosfit.constants import DAY_CGS, FOUR_PI, KM_CGS, M_SUN_CGS  # noqa: F401
 from mosfit.modules.seds.sed import SED
+
 
 # Important: Only define one ``Module`` class per file.
 
@@ -27,18 +27,19 @@ class MultiBlackbody(SED):
         self._band_indices = kwargs['all_band_indices']
         self._areas = kwargs[self.key('areas')]
         self._temperature_phots = kwargs[self.key('temperaturephots')]
-        xc = self.X_CONST
-        fc = self.FLUX_CONST
+        xc = self.X_CONST  # noqa: F841
+        fc = self.FLUX_CONST  # noqa: F841
         temperature_phot = self._temperature_phot
         zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         for li, lum in enumerate(self._luminosities):
-            cur_band = self._bands[li]
+            cur_band = self._bands[li]  # noqa: F841
             bi = self._band_indices[li]
-            rest_freqs = [x * zp1 for x in self._sample_frequencies[bi]]
-            wav_arr = np.array(self._sample_wavelengths[bi])
-            radius_phot = self._radius_phot[li]
-            temperature_phot = self._temperature_phot[li]
+            rest_freqs = [x * zp1  # noqa: F841
+                          for x in self._sample_frequencies[bi]]
+            wav_arr = np.array(self._sample_wavelengths[bi])  # noqa: F841
+            radius_phot = self._radius_phot[li]  # noqa: F841
+            temperature_phot = self._temperature_phot[li]  # noqa: F841
 
             if li == 0:
                 sed = ne.evaluate(

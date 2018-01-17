@@ -1,3 +1,4 @@
+"""Initilization procedure for `Observable` modules."""
 import inspect
 import os
 import sys

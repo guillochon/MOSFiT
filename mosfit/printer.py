@@ -2,6 +2,7 @@
 """Defines the `Printer` class."""
 from __future__ import print_function, unicode_literals
 
+import codecs
 import datetime
 import json
 import os
@@ -37,15 +38,15 @@ class Printer(object):
 
         BLUE = '\033[0;94m'
         BOLD = '\033[0;1m'
-        CYAN = '\033[0;96m'
+        CYAN = '\033[38;5;6m'
         END = '\033[0m'
         GREEN = '\033[0;92m'
         HEADER = '\033[0;95m'
         MAGENTA = '\033[1;35m'
-        ORANGE = '\033[38;5;214m'
+        ORANGE = '\033[38;5;202m'
         RED = '\033[0;91m'
         UNDERLINE = '\033[4m'
-        YELLOW = '\033[0;93m'
+        YELLOW = '\033[38;5;220m'
 
         codes = {
             '!b': BLUE,
@@ -76,7 +77,8 @@ class Printer(object):
     def set_strings(self):
         """Set pre-defined list of strings."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
-        with open(os.path.join(dir_path, 'strings.json')) as f:
+        with codecs.open(os.path.join(
+                dir_path, 'strings.json'), encoding='utf-8') as f:
             strings = json.load(f, object_pairs_hook=OrderedDict)
         if self._language == 'en':
             self._strings = strings
@@ -223,7 +225,8 @@ class Printer(object):
                 warning=warning, error=error, color=color)
         return text
 
-    def prompt(self, text, wrap_length=None, kind='bool', default=None,
+    def prompt(self, text, reps=[],
+               wrap_length=None, kind='bool', default=None,
                none_string='None of the above.', colorify=True, single=False,
                options=None, translate=True, message=True, color='',
                allow_blank=True):
@@ -301,7 +304,7 @@ class Printer(object):
                 raise ValueError('Unknown prompt kind.')
 
             if message and text in self._strings:
-                text = self.message(text, prt=False)
+                text = self.message(text, reps=reps, prt=False)
             textchoices = text + choices
             if translate:
                 textchoices = self.translate(textchoices)
@@ -424,7 +427,7 @@ class Printer(object):
                 convergence_type, convergence_criteria], prt=False)
             outarr.append(txt)
         elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
-            if fitter._bh_est_t > 0.0 or not fitter._fracking:
+            if fitter._bh_est_t > 0.0 or not fracking:
                 tott = fitter._emcee_est_t + fitter._bh_est_t
             else:
                 tott = 2.0 * fitter._emcee_est_t

@@ -22,7 +22,7 @@ class BlackbodyCutoff(SED):
     """
 
     _REFERENCES = [
-        {SOURCE.NAME: 'Nicholl et al. 2017'}
+        {SOURCE.BIBCODE: '2017arXiv170600825N'}
     ]
 
     C_CONST = c.c.cgs.value
@@ -99,7 +99,8 @@ class BlackbodyCutoff(SED):
             seds[li] = sed
 
         uniq_times = np.unique(self._times)
-        uniq_is = np.searchsorted(self._times, uniq_times)
+        tsort = np.argsort(self._times)
+        uniq_is = np.searchsorted(self._times, uniq_times, sorter=tsort)
         lu = len(uniq_times)
 
         norms = self._luminosities[

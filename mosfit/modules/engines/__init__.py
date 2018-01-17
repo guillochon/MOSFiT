@@ -1,3 +1,4 @@
+"""Initilization procedure for `Engine` modules."""
 import inspect
 import os
 import sys

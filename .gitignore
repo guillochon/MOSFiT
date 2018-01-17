@@ -16,8 +16,7 @@ mosfit.egg-info/
 *.prof
 *.swp
 .DS_Store
-/*.json
-/*.csv
+/*.*
 mosfit/strings-*.json
 *.tags*
 

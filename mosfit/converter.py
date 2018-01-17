@@ -1,21 +1,28 @@
+# -*- coding: UTF-8 -*-
 """A class for converting ASCII inputs to JSON."""
+import csv
 import os
 import re
 from collections import Counter, OrderedDict
 from decimal import Decimal
-from itertools import permutations
+from itertools import chain, product
 
+import inflect
 import numpy as np
-from astrocats.catalog.entry import Entry
+from astrocats.catalog.catalog import Catalog
+from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.key import KEY_TYPES, Key
-from astrocats.catalog.photometry import PHOTOMETRY, set_pd_mag_from_counts
+from astrocats.catalog.photometry import (PHOTOMETRY, set_pd_mag_from_counts,
+                                          set_pd_mag_from_flux_density)
+from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.source import SOURCE
-from astrocats.catalog.utils import is_number, jd_to_mjd
+from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
+from mosfit.constants import KS_DAYS
+from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_date,
+                          is_number, listify, name_clean, replace_multiple)
 from six import string_types
-
-from mosfit.utils import entabbed_json_dump, is_date
 
 
 class Converter(object):
@@ -49,89 +56,166 @@ class Converter(object):
 
     _DEFAULT_SOURCE = 'MOSFiT paper'
 
+    _TRUE_VALS = ['t', 'true', 'T', 'True', '1', 'y', 'Y']
+    _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
+    _EMPTY_VALS = ['nodata']
+
     def __init__(self, printer, require_source=False, **kwargs):
         """Initialize."""
+        import pickle
+
+        self._path = os.path.dirname(os.path.realpath(__file__))
+        self._inflect = inflect.engine()
         self._printer = printer
         self._require_source = require_source
 
-        self._rsource = {SOURCE.NAME: self._DEFAULT_SOURCE}
+        self._estrs = [
+            'err', '_err', 'err_', 'ERR', 'e_', '_e', '(err)', 'error',
+            'uncertainty', 'sigma']
+        self._emagstrs = self._estrs + [
+            'magnitude error', 'e mag', 'e magnitude', 'dmag',
+            'mag err', 'magerr', 'mag error']
+        self._ecntstrs = self._estrs + [
+            'flux error', 'e flux', 'e counts', 'count err', 'flux err',
+            'countrate error', 'countrate err', 'e_flux']
+        self._band_names = [
+            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
+            'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
+            "z'", 'C', 'Y', 'Open'
+        ]
+        ebands = [a + b for a, b in chain(
+            product(self._ecntstrs, self._band_names),
+            product(self._band_names, self._estrs))]
+        self._emagstrs += ebands
+        self._ecntstrs += ebands
+        key_cache_path = os.path.join(
+            self._path, 'cache', 'key_cache_{}.pickle'.format(
+                get_mosfit_hash()))
+        hks_loaded = False
+        if os.path.isfile(key_cache_path):
+            try:
+                self._header_keys = pickle.load(open(key_cache_path, 'rb'))
+                hks_loaded = True
+            except Exception:
+                printer.message('bad_header_pickle', warning=True)
+                if hasattr(self, '_header_keys'):
+                    del(self._header_keys)
+        if not hks_loaded:
+            self._header_keys = OrderedDict((
+                (PHOTOMETRY.TIME, [
+                    'time', 'mjd', ('jd', 'jd'), ('julian date', 'jd'),
+                    ('date', 'yyyy-mm-dd'), 'day', (
+                        'kiloseconds', 'kiloseconds')]),
+                (PHOTOMETRY.SYSTEM, ['system', 'magsys', 'magnitude system']),
+                (PHOTOMETRY.MAGNITUDE, [
+                 'vega mag', 'ab mag', 'mag', 'magnitude']),
+                (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
+                (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
+                (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
+                (PHOTOMETRY.OBSERVER, ['observer']),
+                (PHOTOMETRY.OBSERVATORY, ['observatory']),
+                (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'filt',
+                                   'flt']),
+                (PHOTOMETRY.E_LOWER_MAGNITUDE, [a + ' ' + b for a, b in chain(
+                    product(self._emagstrs, ['minus', 'lower']),
+                    product(['minus', 'lower'], self._emagstrs))]),
+                (PHOTOMETRY.E_UPPER_MAGNITUDE, [a + ' ' + b for a, b in chain(
+                    product(self._emagstrs, ['plus', 'upper']),
+                    product(['plus', 'upper'], self._emagstrs))]),
+                (PHOTOMETRY.UPPER_LIMIT, [
+                    'upper limit', 'upperlimit', 'l_mag', 'limit']),
+                (PHOTOMETRY.COUNT_RATE, [
+                    'count', 'counts', 'flux', 'count rate']),
+                (PHOTOMETRY.E_COUNT_RATE, self._ecntstrs),
+                (PHOTOMETRY.FLUX_DENSITY, ['flux density', 'fd', 'f_nu']),
+                (PHOTOMETRY.E_FLUX_DENSITY, [
+                    'e_flux_density', 'flux density error', 'e_fd',
+                    'sigma_nu']),
+                (PHOTOMETRY.U_FLUX_DENSITY, []),
+                (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
+                ('reference', ['reference', 'bibcode', 'source', 'origin']),
+                (ENTRY.NAME, [
+                    'event', 'transient', 'name', 'supernova', 'sne', 'id',
+                    'identifier', 'object']),
+                (ENTRY.REDSHIFT, ['redshift']),
+                (ENTRY.LUM_DIST, [
+                    'lumdist', 'luminosity distance', 'distance']),
+                (ENTRY.COMOVING_DIST, ['comoving distance']),
+                (ENTRY.RA, ['ra', 'right ascension', 'right_ascension']),
+                (ENTRY.DEC, ['dec', 'declination']),
+                (ENTRY.EBV, ['ebv', 'extinction']),
+                # At the moment transient-specific keys are not in astrocats.
+                ('claimedtype', [
+                    'claimedtype', 'type', 'claimed_type', 'claimed type'])
+            ))
 
-        self._emagstrs = [
-            'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr', 'mag error', 'err']
-        self._header_keys = OrderedDict((
-            (PHOTOMETRY.TIME, ['time', 'mjd', ('jd', 'jd')]),
-            (PHOTOMETRY.SYSTEM, ['system']),
-            (PHOTOMETRY.MAGNITUDE, ['mag', 'magnitude']),
-            (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
-            (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
-            (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
-            (PHOTOMETRY.BAND, ['passband', 'band', 'filter']),
-            (PHOTOMETRY.E_LOWER_MAGNITUDE, [
-                ' '.join(y) for y in (
-                    list(i for s in [
-                        list(permutations(['minus'] + x.split()))
-                        for x in self._emagstrs] for i in s) +
-                    list(i for s in [
-                        list(permutations(['lower'] + x.split()))
-                        for x in self._emagstrs] for i in s))]),
-            (PHOTOMETRY.E_UPPER_MAGNITUDE, [
-                ' '.join(y) for y in (
-                    list(i for s in [
-                        list(permutations(['plus'] + x.split()))
-                        for x in self._emagstrs] for i in s) +
-                    list(i for s in [
-                        list(permutations(['upper'] + x.split()))
-                        for x in self._emagstrs] for i in s))]),
-            (PHOTOMETRY.UPPER_LIMIT, ['upper limit', 'upperlimit', 'l_mag']),
-            (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
-            (PHOTOMETRY.E_COUNT_RATE, [
-                'e_counts', 'count error', 'count rate error']),
-            (PHOTOMETRY.ZERO_POINT, ['zero point', 'zp']),
-            ('reference', ['reference', 'bibcode', 'source', 'origin']),
-            ('event', ['event', 'transient', 'name', 'supernova'])
-        ))
         self._critical_keys = [
             PHOTOMETRY.TIME, PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
-            PHOTOMETRY.BAND, PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
-            PHOTOMETRY.ZERO_POINT]
-        self._helpful_keys = [PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
-        self._optional_keys = [PHOTOMETRY.ZERO_POINT]
-        self._mc_keys = [PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE]
+            PHOTOMETRY.FLUX_DENSITY,
+            PHOTOMETRY.BAND, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.ZERO_POINT]
+        self._helpful_keys = [
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.INSTRUMENT,
+            PHOTOMETRY.TELESCOPE]
+        self._optional_keys = [
+            PHOTOMETRY.ZERO_POINT, PHOTOMETRY.E_MAGNITUDE,
+            PHOTOMETRY.U_FLUX_DENSITY]
+        self._mc_keys = [
+            PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+            PHOTOMETRY.FLUX_DENSITY]
         self._dep_keys = [
-            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE, PHOTOMETRY.BAND]
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.E_FLUX_DENSITY, PHOTOMETRY.U_FLUX_DENSITY,
+            PHOTOMETRY.BAND]
+        self._purge_non_numeric_keys = [
+            PHOTOMETRY.E_MAGNITUDE, PHOTOMETRY.E_LOWER_MAGNITUDE,
+            PHOTOMETRY.E_UPPER_MAGNITUDE, PHOTOMETRY.E_COUNT_RATE,
+            PHOTOMETRY.E_LOWER_COUNT_RATE, PHOTOMETRY.E_UPPER_COUNT_RATE,
+            PHOTOMETRY.E_FLUX, PHOTOMETRY.E_LOWER_FLUX,
+            PHOTOMETRY.E_UPPER_FLUX, PHOTOMETRY.E_UNABSORBED_FLUX,
+            PHOTOMETRY.E_LOWER_UNABSORBED_FLUX,
+            PHOTOMETRY.E_UPPER_UNABSORBED_FLUX]
+        self._positive_keys = [
+            PHOTOMETRY.MAGNITUDE] + self._purge_non_numeric_keys
         self._bool_keys = [PHOTOMETRY.UPPER_LIMIT]
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
-        self._band_names = [
-            'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'u', 'g', 'r', 'i', 'z',
-            'y', 'W1', 'W2', 'M2'
-        ]
+        self._entry_keys = [
+            ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
         self._converted = []
 
-        for key in self._header_keys.keys():
-            for val in self._header_keys[key]:
-                for i in range(val.count(' ')):
-                    rep = val.replace(' ', '_', i + 1)
-                    if rep not in self._header_keys[key]:
-                        self._header_keys[key].append(rep)
-                for i in range(val.count(' ')):
-                    rep = val.replace(' ', '', i + 1)
-                    if rep not in self._header_keys[key]:
-                        self._header_keys[key].append(rep)
+        if not hks_loaded:
+            for key in self._header_keys.keys():
+                for val in self._header_keys[key]:
+                    for i in range(val.count(' ')):
+                        rep = val.replace(' ', '_', i + 1)
+                        if rep not in self._header_keys[key]:
+                            self._header_keys[key].append(rep)
+                    for i in range(val.count(' ')):
+                        rep = val.replace(' ', '', i + 1)
+                        if rep not in self._header_keys[key]:
+                            self._header_keys[key].append(rep)
+            pickle.dump(self._header_keys, open(key_cache_path, 'wb'))
 
     def generate_event_list(self, event_list):
         """Generate a list of events and/or convert events to JSON format."""
         prt = self._printer
-        cidict = {}
+        cidict = OrderedDict()
         intro_shown = False
+        check_all_files = None
+        shared_sources = []
 
         new_event_list = []
+        previous_file = None
         for event in event_list:
+            rsource = {SOURCE.NAME: self._DEFAULT_SOURCE}
+            use_self_source = None
             new_events = []
+            toffset = Decimal('0')
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
                 if not intro_shown:
@@ -166,20 +250,70 @@ class Converter(object):
                         list(x) for x in np.array(table).tolist()]
 
                 if table is None:
+                    # Count to try and determine delimiter.
+                    delims = [' ', '\t', ',', ';', '|', '&']
+                    delimnames = [
+                        'Space: ` `', 'Tab: `\t`', 'Comma: `,`',
+                        'Semi-colon: `;`', 'Bar: `|`', 'Ampersand: `&`']
+                    delim = None
+                    delimcounts = [re.sub(
+                        re.escape(y) + '+', y, re.sub(
+                            ' ?[' + ''.join([re.escape(
+                                x) for x in delims if x != y]) + ']' +
+                            ' ?', '', ftxt)).count(
+                                y) for y in delims]
+                    maxdelimcount = max(delimcounts)
+                    delim = delims[delimcounts.index(maxdelimcount)]
+                    # If two delimiter options are close in count, ask user.
+                    for i, x in enumerate(delimcounts):
+                        if x > 0.5 * maxdelimcount and delims[i] != delim:
+                            delim = None
+                    if delim is None:
+                        odelims = list(np.array(delimnames)[
+                            np.array(delimcounts) > 0])
+                        delim = delims[prt.prompt(
+                            'delim', kind='option', options=odelims) - 1]
+                    ad = list(delims)
+                    ad.remove(delim)
+                    ad = ''.join(ad)
+
                     fsplit = ftxt.splitlines()
-                    fsplit = [x.replace('$', '').replace(',', '\t')
-                              .replace('&', '\t').replace('\\pm', '\t')
-                              .strip(' ()')
-                              for x in fsplit]
-                    flines = [
-                        [y.replace('"', '').replace("'", '') for y in
-                         re.split(
-                             '''\s+(?=(?:[^'"]|'[^']*'|"[^"]*")*$)''',
-                             x)]
+
+                    # See if we need to append blank errors to upper limits.
+                    tsplit = [
+                        replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
+                        .strip(ad + '()# ').replace('′', "'")
                         for x in fsplit]
 
+                    append_missing_errs = False
+                    for fl in tsplit:
+                        dfl = list(csv.reader([fl], delimiter=delim))[0]
+                        if any([is_number(x.strip('(<>≤≥'))
+                                for x in dfl]) and any([
+                                any([y in x for y in [
+                                    '(', '<', '>', '≥', '≤']])
+                                for x in dfl]):
+                            append_missing_errs = True
+                            break
+
+                    fsplit = [
+                        replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
+                        .replace('(', delim + '(')
+                        .strip(ad + '()# ').replace('′', "'")
+                        for x in fsplit]
+                    flines = []
+                    for fs in fsplit:
+                        # Replace repeated spaces if fixed-width
+                        if delim in [' ']:
+                            fsn = re.sub(r'(\s)\1+', r'\1', fs)
+                        else:
+                            fsn = fs
+                        flines.append(list(
+                            csv.reader([fsn], delimiter=delim))[0])
+
                     flines = [[
-                        x.strip(' #$()\\') for x in y] for y in flines]
+                        x.strip(ad + '#$()\\')
+                        for x in y] for y in flines]
 
                     # Find band columns if they exist and insert error columns
                     # if they don't exist.
@@ -190,11 +324,24 @@ class Converter(object):
                             for fci, fc in enumerate(fl):
                                 if (fc in self._band_names and
                                     (fci == len(fl) - 1 or
-                                     fl[fci + 1].lower()
-                                     not in self._emagstrs)):
-                                    flcopy.insert(fci + 1 + offset, 'e mag')
+                                     fl[fci + 1] not in self._emagstrs)):
+                                    flcopy.insert(fci + 1 + offset, 'e_' + fc)
                                     offset += 1
                         flines[fi] = flcopy
+
+                    # Append blank errors to upper limits.
+                    if append_missing_errs:
+                        # Find the most frequent column count. These are
+                        # probably the tables we wish to read.
+                        flens = [len(x) for x in flines]
+                        ncols = Counter(flens).most_common(1)[0][0]
+
+                        flines = [[x for y in [
+                            ([z, '-'] if (any([w in z for w in [
+                                '<', '>', '≤', '≥']]) or
+                                          z in self._EMPTY_VALS) else [z])
+                            for z in fl] for x in y] if len(
+                                fl) != ncols else fl for fl in flines]
 
                     # Find the most frequent column count. These are probably
                     # the tables we wish to read.
@@ -202,13 +349,26 @@ class Converter(object):
                     ncols = Counter(flens).most_common(1)[0][0]
 
                     newlines = []
+                    potential_name = None
                     for fi, fl in enumerate(flines):
+                        if (len(fl) and flens[fi] == 1 and
+                            fi < len(flines) - 1 and
+                                flens[fi + 1] == ncols and not len(newlines)):
+                            potential_name = fl[0]
                         if flens[fi] == ncols:
-                            newlines.append(list(fl))
+                            if potential_name is not None and any(
+                                    [is_number(x) for x in fl]):
+                                newlines.append([potential_name] + list(fl))
+                            else:
+                                newlines.append(list(fl))
                     flines = newlines
+                    for fi, fl in enumerate(flines):
+                        if len(fl) == ncols and potential_name is not None:
+                            if not any([is_number(x) for x in fl]):
+                                flines[fi] = ['name'] + list(fl)
 
                 # If none of the rows contain numeric data, the file
-                # is likely a list of transients.
+                # is likely a list of transient names.
                 if (len(flines) and
                     (not any(any([is_number(x) or x == '' for x in y])
                              for y in flines) or
@@ -216,52 +376,78 @@ class Converter(object):
                     new_events = [
                         it for s in flines for it in s]
 
-                # If last row is numeric, then likely this is a single
-                # transient.
+                # If last row is numeric, then likely this is a file with
+                # transient data.
                 elif (len(flines) > 1 and
                         any([is_number(x) for x in flines[-1]])):
 
                     # Check that each row has the same number of columns.
                     if len(set([len(x) for x in flines])) > 1:
+                        print(set([len(x) for x in flines]))
                         raise ValueError(
                             'Number of columns in each row not '
                             'consistent!')
-                    new_event_name = '.'.join(event.split(
-                        '.')[:-1]).split('/')[-1]
-                    text = prt.message(
-                        'is_event_name', [new_event_name], prt=False)
-                    is_name = prt.prompt(text, message=False,
-                                         kind='bool', default='y')
-                    if not is_name:
-                        new_event_name = ''
-                        while new_event_name.strip() == '':
-                            new_event_name = prt.prompt(
-                                'enter_name', kind='string')
-                    new_events = [new_event_name + '.json']
 
-                    if len(cidict) and len(new_event_list):
-                        text = prt.message(
-                            'is_event_same', [''.join(
-                                new_event_list[-1].split('.')[:-1])],
-                            prt=False)
-                        is_same = prt.prompt(text, message=False,
-                                             kind='bool')
+                    if len(cidict) and len(
+                            new_event_list) and check_all_files is None:
+                        reps = [previous_file] if previous_file else [''.join(
+                            new_event_list[-1].split('.')[:-1])]
+                        check_all_files = not prt.prompt(
+                            'check_all_files', reps=reps, kind='bool')
+
+                    if check_all_files or check_all_files is None:
+                        shared_sources = []
+
+                    if len(cidict) and len(new_event_list) and check_all_files:
+                        msg = ('is_file_same' if
+                               previous_file else 'is_event_same')
+                        reps = [previous_file] if previous_file else [''.join(
+                            new_event_list[-1].split('.')[:-1])]
+                        is_same = prt.prompt(msg, reps=reps, kind='bool')
                         if not is_same:
-                            cidict = {}
+                            cidict = OrderedDict()
 
                     # If the first row has no numbers it is likely a header.
                     if not len(cidict):
                         self.assign_columns(cidict, flines)
 
-                    # Create a new event, populate the photometry, and dump
-                    # to a JSON file in the run directory.
-                    entry = Entry(name=new_event_name)
                     perms = 1
                     for key in cidict:
                         if isinstance(cidict[key], list) and not isinstance(
                                 cidict[key], string_types):
                             if cidict[key][0] != 'j':
                                 perms = len(cidict[key])
+
+                    # Get event name (if single event) or list of names from
+                    # table.
+                    event_names = []
+                    if ENTRY.NAME in cidict:
+                        for fi, fl in enumerate(flines):
+                            flines[fi][cidict[ENTRY.NAME]] = name_clean(
+                                fl[cidict[ENTRY.NAME]])
+                        event_names = list(sorted(set([
+                            x[cidict[ENTRY.NAME]] for x in flines[
+                                self._first_data:]])))
+                        new_events = [x + '.json' for x in event_names]
+                    else:
+                        new_event_name = '.'.join(event.split(
+                            '.')[:-1]).split('/')[-1]
+                        if check_all_files or check_all_files is None:
+                            is_name = prt.prompt(
+                                'is_event_name', reps=[new_event_name],
+                                kind='bool', default='y')
+                            if not is_name:
+                                new_event_name = ''
+                                while new_event_name.strip() == '':
+                                    new_event_name = prt.prompt(
+                                        'enter_name', kind='string')
+                        event_names.append(new_event_name)
+                        new_events = [new_event_name + '.json']
+
+                    # Create a new event, populate the photometry, and dump
+                    # to a JSON file in the run directory.
+                    entries = OrderedDict([(x, Entry(name=x))
+                                           for x in event_names])
 
                     # Clean up the data a bit now that we know the column
                     # identities.
@@ -270,7 +456,7 @@ class Converter(object):
                     if PHOTOMETRY.BAND in cidict:
                         bi = cidict[PHOTOMETRY.BAND]
                         for d in [True, False]:
-                            if not isinstance(bi, int):
+                            if not isinstance(bi, (int, np.integer)):
                                 break
                             strip_cols = []
                             lens = [len(x[bi])
@@ -299,30 +485,95 @@ class Converter(object):
                                          self._first_data + ri][bi])) not in
                                      strip_cols])
 
+                    if (PHOTOMETRY.TIME in cidict and
+                            (not isinstance(cidict[PHOTOMETRY.TIME], list) or
+                             len(cidict[PHOTOMETRY.TIME]) <= 2)):
+                        bi = cidict[PHOTOMETRY.TIME]
+
+                        bistr = bi[0].upper() if isinstance(
+                            bi, list) and not isinstance(
+                                bi, string_types) else 'MJD'
+
+                        if isinstance(bi, list) and not isinstance(
+                            bi, string_types) and isinstance(
+                                bi[0], string_types):
+                            bi = bi[-1]
+
+                        mmtimes = None
+                        try:
+                            mmtimes = [float(x[bi])
+                                       for x in flines[self._first_data:]]
+                            mintime, maxtime = min(mmtimes), max(mmtimes)
+                        except Exception:
+                            pass
+
+                        if not mmtimes:
+                            pass
+                        elif (bistr == 'MJD' and mintime < 10000 or
+                              bistr == 'JD' and mintime < 2410000 or
+                                bistr in ['KILOSECONDS', 'SECONDS']):
+                            while True:
+                                pstr = ('s_offset' if bistr in [
+                                    'KILOSECONDS', 'SECONDS'] else
+                                    'small_time_offset')
+                                try:
+                                    response = prt.prompt(pstr, [
+                                        bistr for x in range(3)],
+                                        kind='string')
+                                    if response is not None:
+                                        toffset = Decimal(response)
+                                    break
+                                except Exception:
+                                    pass
+                        elif maxtime > 90000 and bistr != 'JD':
+                            isjd = prt.prompt(
+                                'large_time_offset',
+                                kind='bool', default='y')
+                            if isjd:
+                                toffset = Decimal('-2400000.5')
+
                     for row in flines[self._first_data:]:
-                        photodict = {}
+                        photodict = OrderedDict()
+                        rname = (row[cidict[ENTRY.NAME]]
+                                 if ENTRY.NAME in cidict else event_names[0])
                         for pi in range(perms):
                             sources = set()
                             for key in cidict:
                                 if key in self._bool_keys:
                                     rval = row[cidict[key]]
+
+                                    if rval in self._FALSE_VALS:
+                                        rval = False
+                                    elif rval in self._TRUE_VALS:
+                                        rval = True
+
+                                    if type(rval) != 'bool':
+                                        try:
+                                            rval = bool(rval)
+                                        except Exception:
+                                            pass
+
                                     if type(rval) != 'bool':
                                         try:
                                             rval = bool(float(rval))
                                         except Exception:
                                             rval = True
+
                                     if not rval:
                                         continue
-                                    row[cidict[key]] = rval
+                                    if rval:
+                                        row[cidict[key]] = rval
                                 elif key == 'reference':
                                     if (isinstance(cidict[key],
                                                    string_types) and
                                             len(cidict[key]) == 19):
-                                        new_src = entry.add_source(
+                                        new_src = entries[rname].add_source(
                                             bibcode=cidict[key])
                                         sources.update(new_src)
                                         row[
                                             cidict[key]] = new_src
+                                elif key == ENTRY.NAME:
+                                    continue
                                 elif (isinstance(key, Key) and
                                         key.type == KEY_TYPES.TIME and
                                         isinstance(cidict[key], list) and not
@@ -338,9 +589,18 @@ class Converter(object):
                                                 x.group()], date)
                                         photodict[key] = str(
                                             astrotime(date, format='isot').mjd)
-                                    elif cidict[key][0] == 'jd':
+                                    elif cidict[key][0].upper() == 'JD':
                                         photodict[key] = str(
                                             jd_to_mjd(Decimal(tval[-1])))
+                                    elif cidict[key][0].upper(
+                                    ) == 'KILOSECONDS':
+                                        photodict[key] = str(Decimal(
+                                            KS_DAYS) * Decimal(tval[-1]))
+                                    elif cidict[key][0].upper(
+                                    ) == 'YYYY-MM-DD':
+                                        photodict[key] = str(
+                                            astrotime(
+                                                tval[-1].replace('/', '-'), format='isot').mjd)
                                     continue
 
                                 val = cidict[key]
@@ -378,27 +638,74 @@ class Converter(object):
                                     isinstance(cidict[
                                         PHOTOMETRY.E_COUNT_RATE], list) else
                                     row[cidict[PHOTOMETRY.E_COUNT_RATE]])
-                                set_pd_mag_from_counts(
-                                    photodict, c=cc, ec=ecc, zp=zpp)
-                            if not len(sources):
-                                if (self._rsource.get(SOURCE.NAME, '') ==
-                                        self._DEFAULT_SOURCE):
+                                if '<' in cc:
+                                    set_pd_mag_from_counts(
+                                        photodict, ec=cc.strip('<'), zp=zpp)
+                                else:
+                                    set_pd_mag_from_counts(
+                                        photodict, c=cc, ec=ecc, zp=zpp)
+                            elif self._data_type == 3:
+                                photodict[
+                                    PHOTOMETRY.U_FLUX_DENSITY] = self._ufd
+                                if PHOTOMETRY.U_FLUX_DENSITY in cidict:
+                                    photodict[PHOTOMETRY.U_FLUX_DENSITY] = (
+                                        row[cidict[
+                                            PHOTOMETRY.U_FLUX_DENSITY][pi]]
+                                        if isinstance(cidict[
+                                            PHOTOMETRY.
+                                            U_FLUX_DENSITY], list) else
+                                        row[cidict[PHOTOMETRY.U_FLUX_DENSITY]])
+                                if photodict[
+                                        PHOTOMETRY.U_FLUX_DENSITY] == '':
+                                    photodict[
+                                        PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                                fd = (
+                                    row[cidict[PHOTOMETRY.FLUX_DENSITY][pi]] if
+                                    isinstance(cidict[
+                                        PHOTOMETRY.FLUX_DENSITY], list) else
+                                    row[cidict[PHOTOMETRY.FLUX_DENSITY]])
+                                efd = (
+                                    row[cidict[
+                                        PHOTOMETRY.E_FLUX_DENSITY][pi]] if
+                                    isinstance(cidict[
+                                        PHOTOMETRY.E_FLUX_DENSITY], list) else
+                                    row[cidict[PHOTOMETRY.E_FLUX_DENSITY]])
+
+                                mult = Decimal('1')
+                                ufd = photodict[PHOTOMETRY.U_FLUX_DENSITY]
+                                if ufd.lower() in [
+                                        'mjy', 'millijy', 'millijansky']:
+                                    mult = Decimal('1e3')
+                                elif ufd.lower() in ['jy', 'jansky']:
+                                    mult = Decimal('1e6')
+
+                                if '<' in fd:
+                                    set_pd_mag_from_flux_density(
+                                        photodict, efd=str(
+                                            Decimal(fd.strip('<')) * mult))
+                                else:
+                                    set_pd_mag_from_flux_density(
+                                        photodict, fd=Decimal(fd) * mult,
+                                        efd=Decimal(efd) * mult)
+                            if not len(sources) and not len(shared_sources):
+                                if use_self_source is None:
                                     sopts = [
-                                        ('Bibcode', 'b'), ('Last name', 'l')]
+                                        ('Bibcode', 'b'), ('DOI', 'd'),
+                                        ('ArXiv ID', 'a'), ('Last name', 'l')]
                                     if self._require_source:
                                         sel_str = 'must_select_source'
                                     else:
                                         sel_str = 'select_source'
-                                    text = prt.message(
-                                        sel_str, [new_event_name], prt=False)
+                                    text = prt.text(sel_str)
                                     skind = prt.prompt(
                                         text, kind='option',
                                         options=sopts, default='b',
                                         none_string=(
                                             None if self._require_source else
-                                            'Neither, tag MOSFiT as source'))
+                                            ('None of the above, '
+                                             'tag MOSFiT as source')))
                                     if skind == 'b':
-                                        self._rsource = {}
+                                        rsource = OrderedDict()
                                         bibcode = ''
 
                                         while len(bibcode) != 19:
@@ -407,43 +714,103 @@ class Converter(object):
                                                 kind='string',
                                                 allow_blank=False
                                             )
+                                            bibcode = bibcode.strip()
                                             if (re.search(
                                                 '[0-9]{4}..........[\.0-9]{4}'
                                                 '[A-Za-z]', bibcode)
                                                     is None):
                                                 bibcode = ''
-                                        self._rsource[
+                                        rsource[
                                             SOURCE.BIBCODE] = bibcode
+                                        use_self_source = False
+                                    elif skind == 'd':
+                                        rsource = OrderedDict()
+                                        doi = prt.prompt(
+                                            'doi', kind='string',
+                                            allow_blank=False)
+                                        rsource[SOURCE.DOI] = doi.strip()
+                                        use_self_source = False
+                                    elif skind == 'a':
+                                        rsource = OrderedDict()
+                                        arxiv = prt.prompt(
+                                            'arxiv', kind='string',
+                                            allow_blank=False)
+                                        rsource[SOURCE.ARXIVID] = arxiv.strip()
+                                        use_self_source = False
                                     elif skind == 'l':
-                                        self._rsource = {}
+                                        rsource = OrderedDict()
                                         last_name = prt.prompt(
-                                            'last_name', kind='string'
+                                            'last_name', kind='string',
+                                            allow_blank=False
                                         )
-                                        self._rsource[
+                                        rsource[
                                             SOURCE.NAME] = (
                                                 last_name.strip().title() +
                                                 ' et al., in preparation')
+                                        use_self_source = False
+                                    elif skind == 'n':
+                                        use_self_source = True
 
-                                photodict[
-                                    PHOTOMETRY.SOURCE] = entry.add_source(
-                                        **self._rsource)
+                                    shared_sources.append(rsource)
+
+                            if len(shared_sources):
+                                src_list = []
+                                for src in shared_sources:
+                                    src_list.append(entries[
+                                        rname].add_source(**src))
+                                    photodict[PHOTOMETRY.SOURCE] = ','.join(
+                                        src_list)
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
-                                    for x in ['<', '>']]):
+                                    for x in ['<', '>', '≤', '≥']]):
                                 photodict[PHOTOMETRY.UPPER_LIMIT] = True
                                 photodict[
                                     PHOTOMETRY.MAGNITUDE] = photodict[
-                                        PHOTOMETRY.MAGNITUDE].strip('<>')
+                                        PHOTOMETRY.MAGNITUDE].strip('<>≤≥')
+
+                            if '<' in photodict.get(PHOTOMETRY.COUNT_RATE, ''):
+                                photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                                photodict[
+                                    PHOTOMETRY.COUNT_RATE] = photodict[
+                                        PHOTOMETRY.COUNT_RATE].strip('<')
+                                if PHOTOMETRY.E_COUNT_RATE in photodict:
+                                    del(photodict[PHOTOMETRY.E_COUNT_RATE])
+
+                            if '<' in photodict.get(
+                                    PHOTOMETRY.FLUX_DENSITY, ''):
+                                photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                                photodict[
+                                    PHOTOMETRY.FLUX_DENSITY] = photodict[
+                                        PHOTOMETRY.FLUX_DENSITY].strip('<')
+                                if PHOTOMETRY.E_FLUX_DENSITY in photodict:
+                                    del(photodict[PHOTOMETRY.E_FLUX_DENSITY])
+
+                            # Apply offset time if set.
+                            if (PHOTOMETRY.TIME in photodict and
+                                    toffset != Decimal('0')):
+                                photodict[PHOTOMETRY.TIME] = str(
+                                    Decimal(photodict[PHOTOMETRY.TIME]) +
+                                    toffset)
+
+                            # Remove some attributes if not numeric.
+                            for attr in self._purge_non_numeric_keys:
+                                if not is_number(photodict.get(attr, 0)):
+                                    del(photodict[attr])
 
                             # Skip entries for which key values are not
                             # expected type.
                             if not all([
-                                is_number(photodict.get(x, ''))
+                                is_number(photodict.get(x, 0))
                                 for x in photodict.keys() if
                                 (PHOTOMETRY.get_key_by_name(x).type ==
                                  KEY_TYPES.NUMERIC)]):
                                 continue
+
+                            # Remove some attributes if not positive.
+                            for attr in self._positive_keys:
+                                if float(photodict.get(attr, 1)) <= 0:
+                                    del(photodict[attr])
 
                             # Skip placeholder values.
                             if float(photodict.get(
@@ -461,19 +828,51 @@ class Converter(object):
                                     del(photodict[key])
 
                             # Add the photometry.
-                            entry.add_photometry(**photodict)
+                            entries[rname].add_photometry(
+                                **photodict)
 
-                    entry.sanitize()
-                    oentry = entry._ordered(entry)
+                            # Add other entry keys.
+                            for key in self._entry_keys:
+                                if key not in cidict:
+                                    continue
+                                qdict = OrderedDict()
+                                qdict[QUANTITY.VALUE] = row[
+                                    cidict[key]]
+                                if len(shared_sources):
+                                    qdict[QUANTITY.SOURCE] = ','.join(
+                                        src_list)
+                                entries[rname].add_quantity(key, **qdict)
 
-                    with open(new_events[0], 'w') as f:
+                    merge_with_existing = None
+                    for ei, entry in enumerate(entries):
+                        entries[entry].sanitize()
+                        if os.path.isfile(new_events[ei]):
+                            if merge_with_existing is None:
+                                merge_with_existing = prt.prompt(
+                                    'merge_with_existing', default='y')
+                            if merge_with_existing:
+                                existing = Entry.init_from_file(
+                                    catalog=None,
+                                    name=event_names[ei],
+                                    path=new_events[ei],
+                                    merge=False,
+                                    pop_schema=False,
+                                    ignore_keys=[ENTRY.MODELS],
+                                    compare_to_existing=False)
+                                Catalog().copy_entry_to_entry(
+                                    existing, entries[entry])
+
+                        oentry = entries[entry]._ordered(entries[entry])
                         entabbed_json_dump(
-                            {new_event_name: oentry}, f,
+                            {entry: oentry}, open(new_events[ei], 'w'),
                             separators=(',', ':'))
 
-                    self._converted.append([new_event_name, new_events[0]])
+                    self._converted.extend([
+                        [event_names[x], new_events[x]]
+                        for x in range(len(event_names))])
 
                 new_event_list.extend(new_events)
+                previous_file = event
             else:
                 new_event_list.append(event)
 
@@ -481,10 +880,11 @@ class Converter(object):
 
     def assign_columns(self, cidict, flines):
         """Assign columns based on header."""
-        used_cis = {}
+        used_cis = OrderedDict()
         akeys = list(self._critical_keys) + list(self._helpful_keys)
         dkeys = list(self._dep_keys)
         prt = self._printer
+        mpatt = re.compile('mag', re.IGNORECASE)
 
         for fi, fl in enumerate(flines):
             if not any([is_number(x) for x in fl]):
@@ -520,10 +920,11 @@ class Converter(object):
                 self._first_data = fi
                 break
 
-        # Look for columns that are band names if no magnitude column was
-        # found.
-        if (PHOTOMETRY.MAGNITUDE not in cidict and
-                PHOTOMETRY.COUNT_RATE not in cidict):
+        # Look for columns that are band names if no mag/counts/flux dens
+        # column was found.
+        if (not any([x in cidict for x in [
+            PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+                PHOTOMETRY.FLUX_DENSITY]])):
             # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
             # for each column).
             key = PHOTOMETRY.MAGNITUDE
@@ -543,11 +944,12 @@ class Converter(object):
                     for ci, col in enumerate(fl):
                         if ci in used_cis:
                             continue
-                        if col in self._band_names:
+                        ccol = mpatt.sub('', col)
+                        if ccol in self._band_names:
                             cidict.setdefault(key, []).append(ci)
                             used_cis[ci] = key
-                            cidict.setdefault(bkey, []).append(col)
-                        elif col.lower() in self._emagstrs:
+                            cidict.setdefault(bkey, []).append(ccol)
+                        elif ccol in self._emagstrs:
                             cidict.setdefault(ekey, []).append(ci)
                             used_cis[ci] = ekey
 
@@ -557,69 +959,106 @@ class Converter(object):
         # First ask the user if this data is in magnitudes or in counts.
         self._data_type = 1
         if (PHOTOMETRY.MAGNITUDE in cidict and
-                PHOTOMETRY.COUNT_RATE not in cidict):
+                PHOTOMETRY.COUNT_RATE not in cidict and
+                PHOTOMETRY.FLUX_DENSITY not in cidict):
             self._data_type = 1
         elif (PHOTOMETRY.MAGNITUDE not in cidict and
-              PHOTOMETRY.COUNT_RATE in cidict):
+              PHOTOMETRY.COUNT_RATE in cidict and
+              PHOTOMETRY.FLUX_DENSITY not in cidict):
             self._data_type = 2
+        elif (PHOTOMETRY.MAGNITUDE not in cidict and
+              PHOTOMETRY.COUNT_RATE not in cidict and
+              PHOTOMETRY.FLUX_DENSITY in cidict):
+            self._data_type = 3
         else:
             self._data_type = prt.prompt(
-                'counts_or_mags', kind='option',
-                options=['Magnitudes', 'Counts (fluxes)'],
-                none_string=None)
-        if self._data_type == 1:
+                'counts_mags_fds', kind='option',
+                options=['Magnitudes', 'Counts (per second)',
+                         'Flux Densities (Jansky)'],
+                none_string='No Photometry', default='1')
+        if self._data_type in [1, 3, 'n']:
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)
             akeys.remove(PHOTOMETRY.ZERO_POINT)
-            if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
-                    PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
-                akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_COUNT_RATE)
-        else:
+        if self._data_type in [2, 3, 'n']:
             akeys.remove(PHOTOMETRY.MAGNITUDE)
             akeys.remove(PHOTOMETRY.E_MAGNITUDE)
             dkeys.remove(PHOTOMETRY.E_MAGNITUDE)
+        if self._data_type in [1, 2, 'n']:
+            akeys.remove(PHOTOMETRY.FLUX_DENSITY)
+            akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
+            if (PHOTOMETRY.E_LOWER_FLUX_DENSITY in cidict and
+                    PHOTOMETRY.E_UPPER_FLUX_DENSITY in cidict):
+                akeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
+            dkeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
+            dkeys.remove(PHOTOMETRY.U_FLUX_DENSITY)
+        if self._data_type == 'n':
+            akeys.remove(PHOTOMETRY.TIME)
+            akeys.remove(PHOTOMETRY.BAND)
+            akeys.remove(PHOTOMETRY.INSTRUMENT)
+            akeys.remove(PHOTOMETRY.TELESCOPE)
+
+        # Make sure `E_` keys always appear after the actual measurements.
+        if (PHOTOMETRY.MAGNITUDE in akeys and
+                PHOTOMETRY.E_MAGNITUDE in akeys):
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
+            akeys.insert(
+                akeys.index(PHOTOMETRY.MAGNITUDE) + 1,
+                PHOTOMETRY.E_MAGNITUDE)
+        # Remove regular `E_` keys if both `E_LOWER_`/`E_UPPER_` exist.
+        if (PHOTOMETRY.E_LOWER_MAGNITUDE in cidict and
+                PHOTOMETRY.E_UPPER_MAGNITUDE in cidict):
+            akeys.remove(PHOTOMETRY.E_MAGNITUDE)
 
         columns = np.array(flines[self._first_data:]).T.tolist()
         colstrs = np.array([
             ', '.join(x[:5]) + ', ...' for x in columns])
-        colinds = np.setdiff1d(np.arange(len(colstrs)),
-                               list([x[-1] if isinstance(x, list)
-                                     else x for x in cidict.values()]))
+        colinds = np.setdiff1d(np.arange(
+            len(colstrs)), list([x[-1] if (
+                isinstance(x, list) and not isinstance(
+                    x, string_types)) else x for x in cidict.values()]))
         ignore = prt.message('ignore_column', prt=False)
         specify = prt.message('specify_column', prt=False)
         for key in akeys:
+            selected_cols = [
+                y for y in [a for b in [
+                    listify(x) for x in list(cidict.values())] for a in b]
+                if isinstance(y, (int, np.integer))]
             if key in cidict:
                 continue
             if key in dkeys and self._use_mc:
                 continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for x in colinds
-                            if any(is_number(y) for y in columns[x])]
+                            if any(is_number(y) for y in columns[x]) and
+                            x not in selected_cols]
             elif key.type == KEY_TYPES.TIME:
                 lcolinds = [x for x in colinds
                             if any(is_date(y) or is_number(y)
-                                   for y in columns[x])]
+                                   for y in columns[x]) and
+                            x not in selected_cols]
             elif key.type == KEY_TYPES.STRING:
                 lcolinds = [x for x in colinds
-                            if any(not is_number(y) for y in columns[x])]
+                            if any(not is_number(y) for y in columns[x]) and
+                            x not in selected_cols]
             else:
-                lcolinds = list(colinds)
+                lcolinds = [x for x in colinds if x not in selected_cols]
             select = False
-            selmap = np.array(range(len(lcolinds)))
             selects = []
             while select is False:
                 mc = 1
                 if key in self._mc_keys:
+                    pkey = self._inflect.plural(key)
                     text = prt.message(
-                        'one_per_line', [key, key, key], prt=False)
+                        'one_per_line', [key, pkey, pkey],
+                        prt=False)
                     mc = prt.prompt(
                         text, kind='option', message=False,
                         none_string=None,
                         options=[
                             'One `{}` per row'.format(key),
-                            'Multiple `{}s` per row'.format(
-                                key)])
+                            'Multiple `{}` per row'.format(pkey)])
                 if mc == 1:
                     text = prt.message(
                         'no_matching_column', [key], prt=False)
@@ -654,12 +1093,11 @@ class Converter(object):
                                 ])
                             if jsel != 'd':
                                 selects.append(lcolinds[jsel - 1])
-                                selmap = np.delete(selmap, jsel - 1)
                                 lcolinds = np.delete(lcolinds, jsel - 1)
                 else:
                     self._use_mc = True
                     select = False
-                    while select is not None:
+                    while select is not None and len(lcolinds):
                         text = prt.message(
                             'select_mc_column', [key], prt=False)
                         select = prt.prompt(
@@ -669,7 +1107,6 @@ class Converter(object):
                             options=colstrs[lcolinds].tolist())
                         if select is not None and select is not False:
                             selects.append(lcolinds[select - 1])
-                            selmap = np.delete(selmap, select - 1)
                             lcolinds = np.delete(lcolinds, select - 1)
                         else:
                             break
@@ -686,7 +1123,6 @@ class Converter(object):
                                         options=colstrs[lcolinds].tolist())
                                     if dksel is not None:
                                         selects.append(lcolinds[dksel - 1])
-                                        selmap = np.delete(selmap, dksel - 1)
                                         lcolinds = np.delete(
                                             lcolinds, dksel - 1)
                                 else:
@@ -710,16 +1146,18 @@ class Converter(object):
                 if selects[0] == 'j':
                     cidict[key] = selects
                 else:
-                    allk = [key] + dkeys
+                    kdkeys = [key] + dkeys
+                    allk = list(OrderedDict.fromkeys(kdkeys).keys())
                     for ki, k in enumerate(allk):
                         cidict[k] = [
-                            lcolinds[s - 1] if isinstance(s, int) else s
+                            colinds[s - 1] if isinstance(s, (
+                                int, np.integer)) else s
                             for s in selects[ki::len(allk)]]
                     for s in selects:
-                        if not isinstance(s, int):
+                        if not isinstance(s, (int, np.integer)):
                             continue
                         colinds = np.delete(colinds, np.argwhere(
-                            colinds == lcolinds[s - 1]))
+                            colinds == s - 1))
             elif key in self._specify_keys:
                 msg = ('specify_value_blank' if key in self._helpful_keys else
                        'specify_value')
@@ -732,6 +1170,13 @@ class Converter(object):
         if self._data_type == 2 and PHOTOMETRY.ZERO_POINT not in cidict:
             while not is_number(self._zp):
                 self._zp = prt.prompt('zeropoint', kind='string')
+
+        self._ufd = None
+        if self._data_type == 3 and PHOTOMETRY.U_FLUX_DENSITY not in cidict:
+            while ((self._ufd.lower() if self._ufd is not None else None)
+                   not in ['µjy', 'mjy', 'jy', 'microjy', 'millijy', 'jy',
+                           'microjansky', 'millijansky', 'jansky', '']):
+                self._ufd = prt.prompt('u_flux_density', kind='string')
 
         self._system = None
         if self._data_type == 1 and PHOTOMETRY.SYSTEM not in cidict:

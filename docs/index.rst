@@ -2,7 +2,9 @@
 MOSFiT
 ======
 
-Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients)! Please see the links below for information on how to install and run the package.
+Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients), a Python 2.7/3.x package for fitting, sharing, and estimating the parameters of transients via user-contributed transient models.
+
+Please see the links below for information on how to install and run the package.
 
 ------------
 Using MOSFiT
@@ -16,10 +18,11 @@ Using MOSFiT
    models.rst
    fitting.rst
    outputs.rst
-   evaluation.rst
+   package.rst
+   assessing.rst
    error.rst
    accessibility.rst
-   faq.rst
+   help.rst
    command_line.rst
    api.rst
 
