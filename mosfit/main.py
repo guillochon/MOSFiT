@@ -589,6 +589,17 @@ def get_parser():
               "(even from cache), using only data provided locally by the "
               "user."))
 
+    parser.add_argument(
+        '--method',
+        '-D',
+        dest='method',
+        type=str,
+        const='select',
+        default='ensembler',
+        nargs='?',
+        help=("Method for computing posteriors. Current options are "
+              "`ensembler` and `nester`."))
+
     return parser
 
 

@@ -362,6 +362,7 @@ class Printer(object):
                 return user_input
 
     def status(self,
+               sampler,
                desc='',
                scores='',
                accepts='',
@@ -422,15 +423,15 @@ class Printer(object):
                 progressstring = (
                     self._strings['progress'] + ': [ {} ]'.format(progress[0]))
             outarr.append(progressstring)
-        if fitter._emcee_est_t < 0.0:
+        if sampler._emcee_est_t < 0.0:
             txt = self.message('run_until_converged', [
                 convergence_type, convergence_criteria], prt=False)
             outarr.append(txt)
-        elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
-            if fitter._bh_est_t > 0.0 or not fracking:
-                tott = fitter._emcee_est_t + fitter._bh_est_t
+        elif sampler._emcee_est_t + sampler._bh_est_t > 0.0:
+            if sampler._bh_est_t > 0.0 or not fracking:
+                tott = sampler._emcee_est_t + sampler._bh_est_t
             else:
-                tott = 2.0 * fitter._emcee_est_t
+                tott = 2.0 * sampler._emcee_est_t
             timestring = self.get_timestring(tott)
             outarr.append(timestring)
         if acor is not None:
