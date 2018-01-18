@@ -42,6 +42,7 @@ class Ensembler(Sampler):
         self._frack_step = frack_step
 
         self._upload_model = None
+        self._WAIC = None
 
     def get_samples(self):
         """Return samples from ensembler."""
