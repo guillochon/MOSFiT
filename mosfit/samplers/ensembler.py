@@ -214,17 +214,18 @@ class Ensembler(Sampler):
         prt.message('initial_draws', inline=True)
         self._p = list(p0)
 
-        sli = 1.0  # Keep track of how many times chain halved
         self._emi = 0
-        tft = 0.0  # Total self._fracking time
         self._acor = None
         self._aacort = -1
         self._aa = 0
         self._psrf = np.inf
-        s_exception = None
-        kmat = None
         self._all_chain = np.array([])
         self._scores = np.ones((self._ntemps, self._nwalkers)) * -np.inf
+
+        tft = 0.0  # Total self._fracking time
+        sli = 1.0  # Keep track of how many times chain halved
+        s_exception = None
+        kmat = None
         ages = np.zeros((self._ntemps, self._nwalkers), dtype=int)
         oldp = self._p
 
