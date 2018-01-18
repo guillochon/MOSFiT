@@ -9,7 +9,6 @@ import numpy as np
 import scipy
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.quantity import QUANTITY
-from dynesty import NestedSampler
 from mosfit.samplers.sampler import Sampler
 from mosfit.utils import pretty_num
 
@@ -64,6 +63,7 @@ class Ensembler(Sampler):
 
     def run(self, walker_data):
         """Use nested sampling to determine posteriors."""
+        from dynesty import NestedSampler
         from mosfit.fitter import draw_walker, frack, ln_likelihood, ln_prior
 
         prt = self._printer
