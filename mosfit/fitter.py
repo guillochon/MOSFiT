@@ -558,15 +558,15 @@ class Fitter(object):
 
         # Accumulate all the sources and add them to each entry.
         sources = []
-        if len(self._model._references):
-            for ref in self._model._references:
+        if len(model._references):
+            for ref in model._references:
                 sources.append(entry.add_source(**ref))
         sources.append(entry.add_source(**self._DEFAULT_SOURCE))
         source = ','.join(sources)
 
         usources = []
-        if len(self._model._references):
-            for ref in self._model._references:
+        if len(model._references):
+            for ref in model._references:
                 usources.append(uentry.add_source(**ref))
         usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
         usource = ','.join(usources)
@@ -579,9 +579,12 @@ class Fitter(object):
                 task_copy.update(model._parameter_json[task])
             model_setup[task] = task_copy
         modeldict = OrderedDict(
-            [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
+            [(MODEL.NAME, model._model_name), (MODEL.SETUP, model_setup),
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
              (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
+
+        self._sampler.prepare_output(
+            modeldict, check_upload_quality, upload)
 
         self._sampler.append_output(modeldict)
 
@@ -590,9 +593,6 @@ class Fitter(object):
         modelhash = get_model_hash(
             umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
         umodelnum = uentry.add_model(**umodeldict)
-
-        self._sampler.prepare_output(
-            modeldict, check_upload_quality, upload)
 
         if self._sampler._upload_model is not None:
             upload_model = self._sampler._upload_model
