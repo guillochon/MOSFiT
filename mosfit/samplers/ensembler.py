@@ -268,7 +268,7 @@ class Ensembler(Sampler):
                                 self._p, iterations=ic, gibbs=self._gibbs if
                                 self._emi >= self._burn_in else True)):
                     if (self._fitter._maximum_walltime is not False and
-                            time.time() - self._start_time >
+                            time.time() - self._fitter._start_time >
                             self._fitter._maximum_walltime):
                         prt.message('exceeded_walltime', warning=True)
                         exceeded_walltime = True
@@ -448,7 +448,7 @@ class Ensembler(Sampler):
                             kmat = np.diag(kdiag + variance)
                     prt.status(
                         self,
-                        desc='self._fracking' if frack_now else
+                        desc='fracking' if frack_now else
                         ('burning' if self._emi < self._burn_in
                          else 'walking'),
                         scores=self._scores,
