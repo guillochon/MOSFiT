@@ -67,8 +67,16 @@ class Parameter(Module):
         """Evaluate cumulative density function."""
         return u
 
+    def prior_icdf(self, u):
+        """Evaluate the inverse cumulative density function."""
+        return self.value(u)
+
     def value(self, f):
-        """Return the value of the parameter in parameter's units."""
+        """Return the value of the parameter in parameter's units.
+
+        Note that this is *not* generally the inverse CDF of the function, use
+        `prior_icdf` for that purpose.
+        """
         value = np.clip(f *
                         (self._max_value - self._min_value) + self._min_value,
                         self._min_value, self._max_value)
