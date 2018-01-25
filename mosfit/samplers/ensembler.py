@@ -570,7 +570,11 @@ class Ensembler(Sampler):
         except Exception:
             raise
 
-        if s_exception:
+        try:
+            s_exception
+        except NameError:
+            pass
+        else:
             self._pool.close()
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()

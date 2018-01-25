@@ -19,7 +19,7 @@ from mosfit.converter import Converter
 from mosfit.fetcher import Fetcher
 from mosfit.printer import Printer
 from mosfit.samplers.ensembler import Ensembler
-from mosfit.samplers.sampler import Sampler
+from mosfit.samplers.nester import Nester
 from mosfit.utils import (all_to_list, entabbed_json_dump, entabbed_json_dumps,
                           flux_density_unit, frequency_unit, get_model_hash,
                           listify, open_atomic, slugify, speak)
@@ -512,10 +512,13 @@ class Fitter(object):
 
         self._method = method
         self._method = 'nester' if method in [
-            'nest', 'nested', 'nested_sampler'] else 'ensembler'
+            'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
         if self._method == 'nester':
-            self._sampler = Sampler(self)
+            self._sampler = Nester(
+                self, model, iterations, burn, post_burn,
+                num_walkers, convergence_criteria, convergence_type, gibbs,
+                fracking, frack_step)
         else:
             self._sampler = Ensembler(
                 self, model, iterations, burn, post_burn, num_temps,

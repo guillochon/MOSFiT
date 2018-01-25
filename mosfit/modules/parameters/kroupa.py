@@ -51,8 +51,8 @@ class Kroupa(Parameter):
                     (k / -1.3) * 0.08**1.3 * (0.5 * maxmass**(-1.3) -
                                               0.5**(-0.3)))
 
-    def prior_cdf(self, u):
-        """Inverse cumulative density function from Kroupa 2001b.
+    def prior_icdf(self, u):
+        """Evaluate inverse cumulative density function from Kroupa 2001b.
 
         output mass scaled to 0-1 interval
         min mass before scaling = 0.01
