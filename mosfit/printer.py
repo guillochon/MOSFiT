@@ -380,6 +380,7 @@ class Printer(object):
                ncall=None,
                eff=None,
                logz=None,
+               loglstar=None,
                stop=None):
         """Print status message showing state of fitting process."""
         if self._quiet:
@@ -479,17 +480,22 @@ class Printer(object):
         if ncall is not None and nc is not None:
             outarr.append('Calls: {} (+{})'.format(ncall, nc))
         if eff is not None:
-            outarr.append('Efficiency: {}%'.format(pretty_num(eff, sig=4)))
+            outarr.append('Efficiency: {}%'.format(pretty_num(eff, sig=3)))
         if logz is not None:
             outarr.append('Log(z): {} ± {}'.format(
                 pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
                 outarr.append('∆Log(z): {} > {}'.format(
                     pretty_num(logz[2], sig=4), pretty_num(logz[3], sig=4)))
-            elif len(logz) == 5:
+        if loglstar is not None:
+            if len(loglstar) == 1:
+                outarr.append('Log(l*): {}'.format(
+                    pretty_num(loglstar[0], sig=4)))
+            else:
                 outarr.append('Log(l*): {} < {} < {}'.format(
-                    pretty_num(logz[2], sig=4), pretty_num(logz[3], sig=4),
-                    pretty_num(logz[4], sig=4)))
+                    pretty_num(loglstar[0], sig=4),
+                    pretty_num(loglstar[1], sig=4),
+                    pretty_num(loglstar[2], sig=4)))
         if stop is not None:
             outarr.append('Stopping Value: {}'.format(pretty_num(stop, sig=4)))
 

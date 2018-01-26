@@ -81,7 +81,7 @@ class Nester(Sampler):
         self._all_chain = np.array([])
         self._scores = np.ones((1, self._nwalkers)) * -np.inf
 
-        nested_dlogz_init = 100.0
+        nested_dlogz_init = 1.0
 
         max_iter = self._iterations
         if max_iter <= 0:
@@ -130,15 +130,23 @@ class Nester(Sampler):
 
                 logzerr = np.sqrt(logzvar)
                 prt.status(
-                    self, 'initial_sample', kmat=kmat,
+                    self, 'baseline', kmat=kmat,
                     progress=[niter, self._iterations],
                     batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[logz, logzerr,
                           delta_logz if delta_logz < 1.e6 else np.inf,
-                          nested_dlogz_init])
+                          nested_dlogz_init],
+                    loglstar=[loglstar])
+
+            prt.status(
+                self, 'starting_batches', kmat=kmat,
+                progress=[niter, self._iterations],
+                batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
+                logz=[logz, logzerr,
+                      delta_logz if delta_logz < 1.e6 else np.inf,
+                      nested_dlogz_init])
 
             n = 1
-            prt.prt('Starting batches...')
             while max_iter >= 0:
                 ncall0 = ncall
                 if (self._fitter._maximum_walltime is not False and
@@ -174,28 +182,14 @@ class Nester(Sampler):
                         niter += 1
 
                         prt.status(
-                            self, 'initial_sample', kmat=kmat,
+                            self, 'batching', kmat=kmat,
                             progress=[niter, self._iterations],
-                            batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
-                            logz=[lnz, lnzerr,
-                                  logl_bounds[0], loglstar,
-                                  logl_bounds[1]],
+                            batch=n, nc=ncall - ncall0, ncall=ncall, eff=eff,
+                            logz=[lnz, lnzerr],
+                            loglstar=[
+                                logl_bounds[0], loglstar,
+                                logl_bounds[1]],
                             stop=stop_val)
-
-                        prt.prt(
-                            "\riter: {:d} | batch: {:d} | "
-                            "nc: {:d} | ncall: {:d} | "
-                            "eff(%): {:6.3f} | "
-                            "loglstar: {:6.3f} < {:6.3f} "
-                            "< {:6.3f} | "
-                            "logz: {:6.3f} +/- {:6.3f} | "
-                            "stop: {:6.3f}    "
-                            .format(
-                                niter, n + 1, nc, ncall,
-                                eff, logl_bounds[0], loglstar,
-                                logl_bounds[1], lnz, lnzerr,
-                                stop_val),
-                            inline=True)
                     sampler.combine_runs()
                 else:
                     break
