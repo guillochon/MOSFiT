@@ -37,6 +37,12 @@ def draw_walker(test=True, walkers_pool=[], replace=False):
     return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
 
 
+def draw_from_icdf(x):
+    """Draw a walker from the global model variable."""
+    global model
+    return model.draw_from_icdf(x)  # noqa: F821
+
+
 def ln_likelihood(x):
     """Return ln(likelihood) using the global model variable."""
     global model

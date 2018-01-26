@@ -36,6 +36,7 @@ class Nester(Sampler):
 
         self._upload_model = None
         self._WAIC = None
+        self._ntemps = 1
 
     def get_samples(self):
         """Return samples from nester."""
@@ -51,18 +52,17 @@ class Nester(Sampler):
 
     def prepare_output(self, check_upload_quality, upload):
         """Prepare output for writing to disk and uploading."""
-        prt = self._printer
-
-        self._pout = self._results.samples_u
-        self._lnprobout = self._results.logl
+        self._pout = [self._results.samples_u]
+        self._lnprobout = [self._results.logl]
 
         if check_upload_quality:
             pass
 
     def run(self, walker_data):
         """Use nested sampling to determine posteriors."""
-        from dynesty import NestedSampler
-        from mosfit.fitter import ln_likelihood
+        from dynesty import DynamicNestedSampler
+        from dynesty.dynamicsampler import stopping_function, weight_function
+        from mosfit.fitter import ln_likelihood, draw_from_icdf
 
         prt = self._printer
 
@@ -81,33 +81,130 @@ class Nester(Sampler):
         self._all_chain = np.array([])
         self._scores = np.ones((1, self._nwalkers)) * -np.inf
 
-        # The argument of the for loop runs emcee, after each iteration of
-        # emcee the contents of the for loop are executed.
-        exceeded_walltime = False
+        nested_dlogz_init = 100.0
+
+        max_iter = self._iterations
+        if max_iter <= 0:
+            return
 
         try:
-            if self._iterations > 0:
-                sampler = NestedSampler(
-                    ln_likelihood, self._model.draw_from_cdf, ndim,
-                    pool=self._pool)
-            while self._iterations > 0:
-                if exceeded_walltime:
+            sampler = DynamicNestedSampler(
+                ln_likelihood, draw_from_icdf, ndim,
+                pool=self._pool, sample='rwalk')
+            # Perform initial sample.
+            ncall = sampler.ncall
+            niter = sampler.it - 1
+            for li, res in enumerate(sampler.sample_initial(
+                dlogz=nested_dlogz_init
+            )):
+                ncall0 = ncall
+                (worst, ustar, vstar, loglstar, logvol,
+                 logwt, logz, logzvar, h, nc, worst_it,
+                 propidx, propiter, eff, delta_logz) = res
+
+                ncall += nc
+                niter += 1
+                max_iter -= 1
+
+                if max_iter < 0:
+                    prt.message('max_iter')
                     break
-                for li, res in enumerate(sampler.sample()):
-                    if (self._fitter._maximum_walltime is not False and
-                            time.time() - self._start_time >
-                            self._fitter._maximum_walltime):
-                        prt.message('exceeded_walltime', warning=True)
-                        exceeded_walltime = True
-                        break
 
-                    self._results = sampler.results
+                self._results = sampler.results
 
-                    self._results.summary()
-                    # prt.nester_status(self, desc='sampling')
+                sout = self._model.run_stack(
+                    self._results.samples_u[np.unravel_index(
+                        np.argmax(self._results.logl),
+                        self._results.logl.shape)],
+                    root='objective')
+                # The above added 1 call.
+                ncall += 1
 
-                sampler.reset()
-                gc.collect()
+                kmat = sout.get('kmat')
+                kdiag = sout.get('kdiagonal')
+                variance = sout.get('obandvs', sout.get('variance'))
+                if kdiag is not None and kmat is not None:
+                    kmat[np.diag_indices_from(kmat)] += kdiag
+                elif kdiag is not None and kmat is None:
+                    kmat = np.diag(kdiag + variance)
+
+                logzerr = np.sqrt(logzvar)
+                prt.status(
+                    self, 'initial_sample', kmat=kmat,
+                    progress=[niter, self._iterations],
+                    batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
+                    logz=[logz, logzerr,
+                          delta_logz if delta_logz < 1.e6 else np.inf,
+                          nested_dlogz_init])
+
+            n = 1
+            prt.prt('Starting batches...')
+            while max_iter >= 0:
+                ncall0 = ncall
+                if (self._fitter._maximum_walltime is not False and
+                        time.time() - self._start_time >
+                        self._fitter._maximum_walltime):
+                    prt.message('exceeded_walltime', warning=True)
+                    break
+
+                self._results = sampler.results
+
+                sout = self._model.run_stack(
+                    self._results.samples_u[np.unravel_index(
+                        np.argmax(self._results.logl),
+                        self._results.logl.shape)],
+                    root='objective')
+                # The above added 1 call.
+                ncall += 1
+
+                stop, stop_vals = stopping_function(
+                    self._results, return_vals=True)
+                stop_post, stop_evid, stop_val = stop_vals
+                if not stop:
+                    logl_bounds = weight_function(self._results)
+                    lnz, lnzerr = self._results.logz[
+                        -1], self._results.logzerr[-1]
+                    for res in sampler.sample_batch(
+                            nlive_new=100,
+                            logl_bounds=logl_bounds):
+                        (worst, ustar, vstar, loglstar, nc,
+                         worst_it, propidx, propiter, eff) = res
+
+                        ncall += nc
+                        niter += 1
+
+                        prt.status(
+                            self, 'initial_sample', kmat=kmat,
+                            progress=[niter, self._iterations],
+                            batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
+                            logz=[lnz, lnzerr,
+                                  logl_bounds[0], loglstar,
+                                  logl_bounds[1]],
+                            stop=stop_val)
+
+                        prt.prt(
+                            "\riter: {:d} | batch: {:d} | "
+                            "nc: {:d} | ncall: {:d} | "
+                            "eff(%): {:6.3f} | "
+                            "loglstar: {:6.3f} < {:6.3f} "
+                            "< {:6.3f} | "
+                            "logz: {:6.3f} +/- {:6.3f} | "
+                            "stop: {:6.3f}    "
+                            .format(
+                                niter, n + 1, nc, ncall,
+                                eff, logl_bounds[0], loglstar,
+                                logl_bounds[1], lnz, lnzerr,
+                                stop_val),
+                            inline=True)
+                    sampler.combine_runs()
+                else:
+                    break
+
+            if max_iter < 0:
+                prt.message('max_iter')
+
+                # self._results.summary()
+                # prt.nester_status(self, desc='sampling')
 
         except (KeyboardInterrupt, SystemExit):
             prt.message('ctrl_c', error=True, prefix=False, color='!r')
@@ -123,3 +220,6 @@ class Nester(Sampler):
             self._pool.close()
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
+
+        sampler.reset()
+        gc.collect()

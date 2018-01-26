@@ -374,7 +374,13 @@ class Printer(object):
                kmat=None,
                make_space=False,
                convergence_type='',
-               convergence_criteria=''):
+               convergence_criteria='',
+               batch=None,
+               nc=None,
+               ncall=None,
+               eff=None,
+               logz=None,
+               stop=None):
         """Print status message showing state of fitting process."""
         if self._quiet:
             return
@@ -384,9 +390,9 @@ class Printer(object):
         if desc:
             if desc == 'burning':
                 descstr = '!o' + self._strings.get(
-                    desc, '?') + '!e'
+                    desc, desc) + '!e'
             else:
-                descstr = self._strings.get(desc, '?')
+                descstr = self._strings.get(desc, desc)
             outarr.append(descstr)
         if isinstance(scores, list):
             scorestring = self._strings[
@@ -423,17 +429,18 @@ class Printer(object):
                 progressstring = (
                     self._strings['progress'] + ': [ {} ]'.format(progress[0]))
             outarr.append(progressstring)
-        if sampler._emcee_est_t < 0.0:
-            txt = self.message('run_until_converged', [
-                convergence_type, convergence_criteria], prt=False)
-            outarr.append(txt)
-        elif sampler._emcee_est_t + sampler._bh_est_t > 0.0:
-            if sampler._bh_est_t > 0.0 or not fracking:
-                tott = sampler._emcee_est_t + sampler._bh_est_t
-            else:
-                tott = 2.0 * sampler._emcee_est_t
-            timestring = self.get_timestring(tott)
-            outarr.append(timestring)
+        if hasattr(sampler, '_emcee_est_t'):
+            if sampler._emcee_est_t < 0.0:
+                txt = self.message('run_until_converged', [
+                    convergence_type, convergence_criteria], prt=False)
+                outarr.append(txt)
+            elif sampler._emcee_est_t + sampler._bh_est_t > 0.0:
+                if sampler._bh_est_t > 0.0 or not fracking:
+                    tott = sampler._emcee_est_t + sampler._bh_est_t
+                else:
+                    tott = 2.0 * sampler._emcee_est_t
+                timestring = self.get_timestring(tott)
+                outarr.append(timestring)
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
@@ -467,6 +474,24 @@ class Printer(object):
                 psrfbstr, psrfstr)
             psrfstring = psrfstring + ('!e' if col else '')
             outarr.append(psrfstring)
+        if batch is not None:
+            outarr.append('Batch: {}'.format(batch))
+        if ncall is not None and nc is not None:
+            outarr.append('Calls: {} (+{})'.format(ncall, nc))
+        if eff is not None:
+            outarr.append('Efficiency: {}%'.format(pretty_num(eff, sig=4)))
+        if logz is not None:
+            outarr.append('Log(z): {} ± {}'.format(
+                pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
+            if len(logz) == 4:
+                outarr.append('∆Log(z): {} > {}'.format(
+                    pretty_num(logz[2], sig=4), pretty_num(logz[3], sig=4)))
+            elif len(logz) == 5:
+                outarr.append('Log(l*): {} < {} < {}'.format(
+                    pretty_num(logz[2], sig=4), pretty_num(logz[3], sig=4),
+                    pretty_num(logz[4], sig=4)))
+        if stop is not None:
+            outarr.append('Stopping Value: {}'.format(pretty_num(stop, sig=4)))
 
         if not isinstance(messages, list):
             raise ValueError('`messages` must be list!')

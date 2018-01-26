@@ -759,7 +759,7 @@ class Model(object):
                     trees[tag]['children'].update(children)
                     simple[tag].update(simple_children)
 
-    def draw_from_cdf(self, draw):
+    def draw_from_icdf(self, draw):
         """Draw parameters into unit interval using parameter inverse CDFs."""
         return [
             self._modules[self._free_parameters[i]].prior_icdf(x)
@@ -779,7 +779,7 @@ class Model(object):
             draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
-            draw = self.draw_from_cdf(draw)
+            draw = self.draw_from_icdf(draw)
             if len(walkers_pool):
                 if not replace:
                     chosen_one = 0
