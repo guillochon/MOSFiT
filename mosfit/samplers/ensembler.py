@@ -96,7 +96,7 @@ class Ensembler(Sampler):
             self._lnlikeout = self._lnlike
 
         weight = 1.0 / (self._nwalkers * self._ntemps)
-        self._weights = [[weight for x in self._nwalkers] for y in self._temps]
+        self._weights = np.full_like(self._lnlikeout, weight)
 
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
