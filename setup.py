@@ -6,14 +6,10 @@ import re
 from setuptools import find_packages, setup
 
 with open(os.path.join('mosfit', 'requirements.txt')) as f:
-    lines = f.read().splitlines()
-    required = []
-    links = []
-    for line in lines:
-        if line.startswith('http://'):
-            links.append(line)
-        else:
-            required.append(line)
+    required = f.read().splitlines()
+
+with open(os.path.join('mosfit', 'dependencies.txt')) as f:
+    dependencies = f.read().splitlines()
 
 dir_path = os.path.dirname(os.path.realpath(__file__))
 
@@ -58,7 +54,7 @@ setup(
     author=__author__,  # noqa
     author_email='guillochon@gmail.com',
     install_requires=required,
-    dependency_links=links,
+    dependency_links=dependencies,
     url='https://github.com/guillochon/mosfit',
     download_url=(
         'https://github.com/guillochon/mosfit/tarball/' + __version__),  # noqa
