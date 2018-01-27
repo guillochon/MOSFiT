@@ -687,13 +687,16 @@ def main():
     elif args.run_until_converged is not None:
         if args.method == 'ensembler':
             args.convergence_type = 'psrf'
-            if args.run_until_converged is None:
-                args.convergence_criteria = 1.1
+            args.convergence_criteria = (
+                1.1 if args.run_until_converged is None else
+                args.run_until_converged)
         else:
             args.convergence_type = 'dlogz'
 
-    if args.run_until_converged is None and args.method == 'nester':
-        args.convergence_criteria = 0.1
+    if args.method == 'nester':
+        args.convergence_criteria = (
+            0.1 if args.run_until_converged is None else
+            args.run_until_converged)
 
     if is_master():
         # Get hash of ourselves
