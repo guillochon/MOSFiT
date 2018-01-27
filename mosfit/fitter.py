@@ -607,162 +607,163 @@ class Fitter(object):
 
         modelnum = entry.add_model(**modeldict)
 
-        samples, probs = self._sampler.get_samples()
+        samples, probs, weights = self._sampler.get_samples()
 
         extras = OrderedDict()
+        samples_to_plot = self._sampler._nwalkers
+
+        icdf = np.cumsum(weights)
+        draws = np.random.rand(samples_to_plot)
+        indices = np.searchsorted(icdf, draws)
+
         ri = 1
         for xi, x in enumerate(samples):
-            for yi, y in enumerate(samples[xi]):
-                # Only produce LCs for end walker state.
-                wcnt = xi * self._sampler._nwalkers + yi
-                if wcnt > 0:
-                    prt.message('outputting_walker', [
-                        wcnt, self._sampler._nwalkers *
-                        self._sampler._ntemps], inline=True)
-                if yi <= self._sampler._nwalkers:
-                    output = model.run_stack(y, root='output')
-                    if extra_outputs:
-                        for key in extra_outputs:
-                            new_val = output.get(key, [])
-                            new_val = all_to_list(new_val)
-                            extras.setdefault(key, []).append(new_val)
-                    for i in range(len(output['times'])):
-                        if not np.isfinite(output['model_observations'][i]):
-                            continue
-                        photodict = {
-                            PHOTOMETRY.TIME:
-                            output['times'][i] + output['min_times'],
-                            PHOTOMETRY.MODEL: modelnum,
-                            PHOTOMETRY.SOURCE: source,
-                            PHOTOMETRY.REALIZATION: str(ri)
-                        }
-                        if output['observation_types'][i] == 'magnitude':
-                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
-                            photodict[PHOTOMETRY.MAGNITUDE] = output[
-                                'model_observations'][i]
-                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
-                                'model_variances'][i]
-                        if output['observation_types'][i] == 'fluxdensity':
-                            photodict[PHOTOMETRY.FREQUENCY] = output[
-                                'frequencies'][i] * frequency_unit('GHz')
-                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                                'model_observations'][
-                                    i] * flux_density_unit('µJy')
-                            photodict[
-                                PHOTOMETRY.
-                                E_LOWER_FLUX_DENSITY] = (
-                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
-                                        10.0 ** (
-                                            np.log10(photodict[
-                                                PHOTOMETRY.FLUX_DENSITY]) -
-                                            output['model_variances'][
-                                                i] / 2.5)) *
-                                    flux_density_unit('µJy'))
-                            photodict[
-                                PHOTOMETRY.
-                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
-                                    np.log10(photodict[
-                                        PHOTOMETRY.FLUX_DENSITY]) +
-                                    output['model_variances'][i] / 2.5) *
-                                    flux_density_unit('µJy') -
-                                    photodict[PHOTOMETRY.FLUX_DENSITY])
-                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
-                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                        if output['observation_types'][i] == 'countrate':
-                            photodict[PHOTOMETRY.COUNT_RATE] = output[
-                                'model_observations'][i]
-                            photodict[
-                                PHOTOMETRY.
-                                E_LOWER_COUNT_RATE] = (
-                                    photodict[PHOTOMETRY.COUNT_RATE] - (
-                                        10.0 ** (
-                                            np.log10(photodict[
-                                                PHOTOMETRY.COUNT_RATE]) -
-                                            output['model_variances'][
-                                                i] / 2.5)))
-                            photodict[
-                                PHOTOMETRY.
-                                E_UPPER_COUNT_RATE] = (10.0 ** (
-                                    np.log10(photodict[
-                                        PHOTOMETRY.COUNT_RATE]) +
-                                    output['model_variances'][i] / 2.5) -
-                                    photodict[PHOTOMETRY.COUNT_RATE])
-                            photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
-                        if ('model_upper_limits' in output and
-                                output['model_upper_limits'][i]):
-                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
-                                'model_upper_limits'][i])
-                        if self._limiting_magnitude is not None:
-                            photodict[PHOTOMETRY.SIMULATED] = True
-                        if 'telescopes' in output and output['telescopes'][i]:
-                            photodict[PHOTOMETRY.TELESCOPE] = output[
-                                'telescopes'][i]
-                        if 'systems' in output and output['systems'][i]:
-                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                        if 'bandsets' in output and output['bandsets'][i]:
-                            photodict[PHOTOMETRY.BAND_SET] = output[
-                                'bandsets'][i]
-                        if 'instruments' in output and output[
-                                'instruments'][i]:
-                            photodict[PHOTOMETRY.INSTRUMENT] = output[
-                                'instruments'][i]
-                        if 'modes' in output and output['modes'][i]:
-                            photodict[PHOTOMETRY.MODE] = output[
-                                'modes'][i]
-                        entry.add_photometry(
-                            compare_to_existing=False, check_for_dupes=False,
-                            **photodict)
-
-                        uphotodict = deepcopy(photodict)
-                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                        uentry.add_photometry(
-                            compare_to_existing=False,
-                            check_for_dupes=False,
-                            **uphotodict)
-                else:
-                    output = model.run_stack(y, root='objective')
-
-                parameters = OrderedDict()
-                derived_keys = set()
-                pi = 0
-                for ti, task in enumerate(model._call_stack):
-                    # if task not in model._free_parameters:
-                    #     continue
-                    if model._call_stack[task]['kind'] != 'parameter':
+            prt.message('outputting_walker', [
+                ri, len(samples)], inline=True)
+            if xi in indices:
+                output = model.run_stack(x, root='output')
+                if extra_outputs:
+                    for key in extra_outputs:
+                        new_val = output.get(key, [])
+                        new_val = all_to_list(new_val)
+                        extras.setdefault(key, []).append(new_val)
+                for i in range(len(output['times'])):
+                    if not np.isfinite(output['model_observations'][i]):
                         continue
-                    paramdict = OrderedDict((
-                        ('latex', model._modules[task].latex()),
-                        ('log', model._modules[task].is_log())
-                    ))
-                    if task in model._free_parameters:
-                        poutput = model._modules[task].process(
-                            **{'fraction': y[pi]})
-                        value = list(poutput.values())[0]
-                        paramdict['value'] = value
-                        paramdict['fraction'] = y[pi]
-                        pi = pi + 1
-                    else:
-                        if output.get(task, None) is not None:
-                            paramdict['value'] = output[task]
-                    parameters.update({model._modules[task].name(): paramdict})
-                    # Dump out any derived parameter keys
-                    derived_keys.update(model._modules[task].get_derived_keys(
-                    ))
+                    photodict = {
+                        PHOTOMETRY.TIME:
+                        output['times'][i] + output['min_times'],
+                        PHOTOMETRY.MODEL: modelnum,
+                        PHOTOMETRY.SOURCE: source,
+                        PHOTOMETRY.REALIZATION: str(ri)
+                    }
+                    if output['observation_types'][i] == 'magnitude':
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = output[
+                            'model_observations'][i]
+                        photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                            'model_variances'][i]
+                    if output['observation_types'][i] == 'fluxdensity':
+                        photodict[PHOTOMETRY.FREQUENCY] = output[
+                            'frequencies'][i] * frequency_unit('GHz')
+                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                            'model_observations'][
+                                i] * flux_density_unit('µJy')
+                        photodict[
+                            PHOTOMETRY.
+                            E_LOWER_FLUX_DENSITY] = (
+                                photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                    10.0 ** (
+                                        np.log10(photodict[
+                                            PHOTOMETRY.FLUX_DENSITY]) -
+                                        output['model_variances'][
+                                            i] / 2.5)) *
+                                flux_density_unit('µJy'))
+                        photodict[
+                            PHOTOMETRY.
+                            E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                np.log10(photodict[
+                                    PHOTOMETRY.FLUX_DENSITY]) +
+                                output['model_variances'][i] / 2.5) *
+                                flux_density_unit('µJy') -
+                                photodict[PHOTOMETRY.FLUX_DENSITY])
+                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                    if output['observation_types'][i] == 'countrate':
+                        photodict[PHOTOMETRY.COUNT_RATE] = output[
+                            'model_observations'][i]
+                        photodict[
+                            PHOTOMETRY.
+                            E_LOWER_COUNT_RATE] = (
+                                photodict[PHOTOMETRY.COUNT_RATE] - (
+                                    10.0 ** (
+                                        np.log10(photodict[
+                                            PHOTOMETRY.COUNT_RATE]) -
+                                        output['model_variances'][
+                                            i] / 2.5)))
+                        photodict[
+                            PHOTOMETRY.
+                            E_UPPER_COUNT_RATE] = (10.0 ** (
+                                np.log10(photodict[
+                                    PHOTOMETRY.COUNT_RATE]) +
+                                output['model_variances'][i] / 2.5) -
+                                photodict[PHOTOMETRY.COUNT_RATE])
+                        photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
+                    if ('model_upper_limits' in output and
+                            output['model_upper_limits'][i]):
+                        photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
+                            'model_upper_limits'][i])
+                    if self._limiting_magnitude is not None:
+                        photodict[PHOTOMETRY.SIMULATED] = True
+                    if 'telescopes' in output and output['telescopes'][i]:
+                        photodict[PHOTOMETRY.TELESCOPE] = output[
+                            'telescopes'][i]
+                    if 'systems' in output and output['systems'][i]:
+                        photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                    if 'bandsets' in output and output['bandsets'][i]:
+                        photodict[PHOTOMETRY.BAND_SET] = output[
+                            'bandsets'][i]
+                    if 'instruments' in output and output[
+                            'instruments'][i]:
+                        photodict[PHOTOMETRY.INSTRUMENT] = output[
+                            'instruments'][i]
+                    if 'modes' in output and output['modes'][i]:
+                        photodict[PHOTOMETRY.MODE] = output[
+                            'modes'][i]
+                    entry.add_photometry(
+                        compare_to_existing=False, check_for_dupes=False,
+                        **photodict)
 
-                for key in list(sorted(list(derived_keys))):
-                    if (output.get(key, None) is not None and
-                            key not in parameters):
-                        parameters.update({key: {'value': output[key]}})
+                    uphotodict = deepcopy(photodict)
+                    uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                    uentry.add_photometry(
+                        compare_to_existing=False,
+                        check_for_dupes=False,
+                        **uphotodict)
+            else:
+                output = model.run_stack(x, root='objective')
 
-                realdict = {REALIZATION.PARAMETERS: parameters}
-                if probs is not None:
-                    realdict[REALIZATION.SCORE] = str(
-                        probs[xi][yi])
-                realdict[REALIZATION.ALIAS] = str(ri)
-                entry[ENTRY.MODELS][0].add_realization(**realdict)
-                urealdict = deepcopy(realdict)
-                uentry[ENTRY.MODELS][0].add_realization(**urealdict)
-                ri = ri + 1
+            parameters = OrderedDict()
+            derived_keys = set()
+            pi = 0
+            for ti, task in enumerate(model._call_stack):
+                # if task not in model._free_parameters:
+                #     continue
+                if model._call_stack[task]['kind'] != 'parameter':
+                    continue
+                paramdict = OrderedDict((
+                    ('latex', model._modules[task].latex()),
+                    ('log', model._modules[task].is_log())
+                ))
+                if task in model._free_parameters:
+                    poutput = model._modules[task].process(
+                        **{'fraction': x[pi]})
+                    value = list(poutput.values())[0]
+                    paramdict['value'] = value
+                    paramdict['fraction'] = x[pi]
+                    pi = pi + 1
+                else:
+                    if output.get(task, None) is not None:
+                        paramdict['value'] = output[task]
+                parameters.update({model._modules[task].name(): paramdict})
+                # Dump out any derived parameter keys
+                derived_keys.update(model._modules[task].get_derived_keys(
+                ))
+
+            for key in list(sorted(list(derived_keys))):
+                if (output.get(key, None) is not None and
+                        key not in parameters):
+                    parameters.update({key: {'value': output[key]}})
+
+            realdict = {REALIZATION.PARAMETERS: parameters}
+            if probs is not None:
+                realdict[REALIZATION.SCORE] = str(
+                    probs[xi])
+            realdict[REALIZATION.ALIAS] = str(ri)
+            entry[ENTRY.MODELS][0].add_realization(**realdict)
+            urealdict = deepcopy(realdict)
+            uentry[ENTRY.MODELS][0].add_realization(**urealdict)
+            ri = ri + 1
         prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()

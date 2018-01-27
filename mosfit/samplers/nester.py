@@ -27,7 +27,6 @@ class Nester(Sampler):
         self._iterations = iterations
         self._burn = burn
         self._post_burn = post_burn
-        self._num_walkers = num_walkers
         self._cc = convergence_criteria
         self._ct = convergence_type
         self._gibbs = gibbs
@@ -38,13 +37,6 @@ class Nester(Sampler):
         self._WAIC = None
         self._ntemps = 1
 
-    def get_samples(self):
-        """Return samples from nester."""
-        samples = self._pout
-        probs = self._lnprobout
-
-        return samples, probs
-
     def append_output(self, modeldict):
         """Append output from the nester to the model description."""
         if self._iterations > 0:
@@ -54,6 +46,9 @@ class Nester(Sampler):
         """Prepare output for writing to disk and uploading."""
         self._pout = [self._results.samples_u]
         self._lnprobout = [self._results.logl]
+        self._weights = [np.exp(self._results.logwt)]
+        tweight = np.sum(self._weights)
+        self._weights = [x / tweight for x in self._weights]
 
         if check_upload_quality:
             pass
@@ -71,7 +66,7 @@ class Nester(Sampler):
         if self._num_walkers:
             self._nwalkers = self._num_walkers
         else:
-            self._nwalkers = 2 * ndim
+            self._nwalkers = 20 * ndim
 
         self._lnprob = None
         self._lnlike = None
@@ -90,7 +85,7 @@ class Nester(Sampler):
         try:
             sampler = DynamicNestedSampler(
                 ln_likelihood, draw_from_icdf, ndim,
-                pool=self._pool, sample='rwalk')
+                pool=self._pool, sample='rwalk', nlive=self._nwalkers)
             # Perform initial sample.
             ncall = sampler.ncall
             niter = sampler.it - 1
@@ -173,8 +168,8 @@ class Nester(Sampler):
                     lnz, lnzerr = self._results.logz[
                         -1], self._results.logzerr[-1]
                     for res in sampler.sample_batch(
-                            nlive_new=100,
-                            logl_bounds=logl_bounds):
+                            logl_bounds=logl_bounds,
+                            nlive_new=np.ceil(self._nwalkers / 2)):
                         (worst, ustar, vstar, loglstar, nc,
                          worst_it, propidx, propiter, eff) = res
 

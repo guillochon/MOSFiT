@@ -34,7 +34,6 @@ class Ensembler(Sampler):
         self._burn = burn
         self._post_burn = post_burn
         self._num_temps = num_temps
-        self._num_walkers = num_walkers
         self._cc = convergence_criteria
         self._ct = convergence_type
         self._gibbs = gibbs
@@ -43,13 +42,6 @@ class Ensembler(Sampler):
 
         self._upload_model = None
         self._WAIC = None
-
-    def get_samples(self):
-        """Return samples from ensembler."""
-        samples = self._pout
-        probs = self._lnprobout
-
-        return samples, probs
 
     def append_output(self, modeldict):
         """Append output from the ensembler to the model description."""
@@ -102,6 +94,9 @@ class Ensembler(Sampler):
             self._lnprobout = self._lnprob
             self._lnlikeout = self._lnlike
 
+        weight = 1.0 / (self._nwalkers * self._ntemps)
+        self._weights = [[weight for x in self._nwalkers] for y in self._temps]
+
         # Here, we append to the vector of walkers from the full chain based
         # upon the value of acort (the autocorrelation timescale).
         if self._acor and self._aacort > 0 and self._aa == self._MAX_ACORC:
@@ -116,6 +111,9 @@ class Ensembler(Sampler):
                 self._lnlikeout = np.concatenate(
                     (self._all_lnlike[:, :, -i * self._actc],
                      self._lnlikeout), axis=1)
+                self._weights = np.concatenate(
+                    (0.0 * self._all_lnlike[:, :, -i * self._actc],
+                     self._weights), axis=1)
 
     def run(self, walker_data):
         """Use ensemble sampling to determine posteriors."""

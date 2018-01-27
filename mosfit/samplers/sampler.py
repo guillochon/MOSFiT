@@ -14,9 +14,21 @@ class Sampler(object):
         self._pool = self._fitter._pool
         self._printer = self._fitter._printer
 
+        self._num_walkers = num_walkers
+
     def get_samples(self):
-        """Return samples from the sampler."""
-        pass
+        """Return samples from ensembler."""
+        samples = np.array([a for b in self._pout for a in b])
+        probs = np.array([a for b in self._lnprobout for a in b])
+        weights = np.array([a for b in self._weights for a in b])
+
+        wsis = np.argsort(weights)
+
+        samples = samples[wsis]
+        probs = probs[wsis]
+        weights = weights[wsis]
+
+        return samples, probs, weights
 
     def run(self):
         """Run the sampler."""
