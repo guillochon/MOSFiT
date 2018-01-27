@@ -478,26 +478,27 @@ class Printer(object):
         if batch is not None:
             outarr.append('Batch: {}'.format(batch))
         if ncall is not None and nc is not None:
-            outarr.append('Calls: {} (+{})'.format(ncall, nc))
+            outarr.append('Calls: [ {} (+{}) ]'.format(ncall, nc))
         if eff is not None:
-            outarr.append('Efficiency: {}%'.format(pretty_num(eff, sig=3)))
+            outarr.append('Efficiency: [ {}% ]'.format(pretty_num(eff, sig=3)))
         if logz is not None:
-            outarr.append('Log(z): {} ± {}'.format(
+            outarr.append('Log(z): [ {} ± {} ]'.format(
                 pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
-                outarr.append('∆Log(z): {} > {}'.format(
+                outarr.append('∆Log(z): [ {} > {} ]'.format(
                     pretty_num(logz[2], sig=4), pretty_num(logz[3], sig=4)))
         if loglstar is not None:
             if len(loglstar) == 1:
-                outarr.append('Log(l*): {}'.format(
+                outarr.append('Log(L*): [ {} ]'.format(
                     pretty_num(loglstar[0], sig=4)))
             else:
-                outarr.append('Log(l*): {} < {} < {}'.format(
-                    pretty_num(loglstar[0], sig=4),
-                    pretty_num(loglstar[1], sig=4),
-                    pretty_num(loglstar[2], sig=4)))
+                outarr.append('Log(L*): [ {} < {} < {} ]'.format(
+                    pretty_num(loglstar[0], sig=3),
+                    pretty_num(loglstar[1], sig=3),
+                    pretty_num(loglstar[2], sig=3)))
         if stop is not None:
-            outarr.append('Stopping Value: {}'.format(pretty_num(stop, sig=4)))
+            outarr.append('Stopping Value: [ {} ]'.format(
+                pretty_num(stop, sig=4)))
 
         if not isinstance(messages, list):
             raise ValueError('`messages` must be list!')

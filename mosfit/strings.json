@@ -68,6 +68,7 @@
     "loading_bands": "Loading bands [ {0:.0f}% ]",
     "loading_data": "\nLoading data...",
     "loading_task": "\nLoading module `{}` [ {:.0f}% ] ",
+    "max_iter": "Maximum iterations exceeded, either increase with `-i` or using `-R` to run until converged.",
     "mc_interrupted": "You have interrupted the Monte Carlo. Do you wish to save the incomplete run to disk? Previous results will be overwritten.",
     "merge_with_existing": "Would you like to merge this data with previously converted data in this directory?",
     "min_max_same": "Minimum and maximum values are the same for `{}`, treating variable as a fixed parameter.",

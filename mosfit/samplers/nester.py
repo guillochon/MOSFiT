@@ -44,7 +44,7 @@ class Nester(Sampler):
 
     def prepare_output(self, check_upload_quality, upload):
         """Prepare output for writing to disk and uploading."""
-        self._pout = [self._results.samples_u]
+        self._pout = [self._results.samples]
         self._lnprobout = [self._results.logl]
         self._weights = [np.exp(self._results.logwt)]
         tweight = np.sum(self._weights)
@@ -66,15 +66,14 @@ class Nester(Sampler):
         if self._num_walkers:
             self._nwalkers = self._num_walkers
         else:
-            self._nwalkers = 20 * ndim
+            self._nwalkers = 2 * ndim
+
+        self._nlive = 20 * ndim
 
         self._lnprob = None
         self._lnlike = None
 
         prt.message('nmeas_nfree', [self._model._num_measurements, ndim])
-
-        self._all_chain = np.array([])
-        self._scores = np.ones((1, self._nwalkers)) * -np.inf
 
         nested_dlogz_init = 0.1
 
@@ -82,10 +81,12 @@ class Nester(Sampler):
         if max_iter <= 0:
             return
 
+        s_exception = None
+
         try:
             sampler = DynamicNestedSampler(
                 ln_likelihood, draw_from_icdf, ndim,
-                pool=self._pool, sample='rwalk', nlive=self._nwalkers)
+                pool=self._pool, sample='rwalk', nlive=self._nlive)
             # Perform initial sample.
             ncall = sampler.ncall
             niter = sampler.it - 1
@@ -102,13 +103,12 @@ class Nester(Sampler):
                 max_iter -= 1
 
                 if max_iter < 0:
-                    prt.message('max_iter')
                     break
 
                 self._results = sampler.results
 
                 sout = self._model.run_stack(
-                    self._results.samples_u[np.unravel_index(
+                    self._results.samples[np.unravel_index(
                         np.argmax(self._results.logl),
                         self._results.logl.shape)],
                     root='objective')
@@ -133,14 +133,15 @@ class Nester(Sampler):
                           nested_dlogz_init],
                     loglstar=[loglstar])
 
-            prt.status(
-                self, 'starting_batches', kmat=kmat,
-                progress=[niter, self._iterations],
-                batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
-                logz=[logz, logzerr,
-                      delta_logz if delta_logz < 1.e6 else np.inf,
-                      nested_dlogz_init],
-                loglstar=[loglstar])
+            if max_iter >= 0:
+                prt.status(
+                    self, 'starting_batches', kmat=kmat,
+                    progress=[niter, self._iterations],
+                    batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
+                    logz=[logz, logzerr,
+                          delta_logz if delta_logz < 1.e6 else np.inf,
+                          nested_dlogz_init],
+                    loglstar=[loglstar])
 
             n = 1
             while max_iter >= 0:
@@ -154,7 +155,7 @@ class Nester(Sampler):
                 self._results = sampler.results
 
                 sout = self._model.run_stack(
-                    self._results.samples_u[np.unravel_index(
+                    self._results.samples[np.unravel_index(
                         np.argmax(self._results.logl),
                         self._results.logl.shape)],
                     root='objective')
@@ -170,12 +171,13 @@ class Nester(Sampler):
                         -1], self._results.logzerr[-1]
                     for res in sampler.sample_batch(
                             logl_bounds=logl_bounds,
-                            nlive_new=int(np.ceil(self._nwalkers / 2))):
+                            nlive_new=int(np.ceil(self._nlive / 2))):
                         (worst, ustar, vstar, loglstar, nc,
                          worst_it, propidx, propiter, eff) = res
 
                         ncall += nc
                         niter += 1
+                        max_iter -= 1
 
                         prt.status(
                             self, 'batching', kmat=kmat,
@@ -186,12 +188,12 @@ class Nester(Sampler):
                                 logl_bounds[0], loglstar,
                                 logl_bounds[1]],
                             stop=stop_val)
+
+                        if max_iter < 0:
+                            break
                     sampler.combine_runs()
                 else:
                     break
-
-            if max_iter < 0:
-                prt.message('max_iter')
 
                 # self._results.summary()
                 # prt.nester_status(self, desc='sampling')
@@ -202,11 +204,10 @@ class Nester(Sampler):
         except Exception:
             raise
 
-        try:
-            s_exception
-        except NameError:
-            pass
-        else:
+        if max_iter < 0:
+            prt.message('max_iter')
+
+        if s_exception is not None:
             self._pool.close()
             if (not prt.prompt('mc_interrupted')):
                 sys.exit()
