@@ -77,7 +77,7 @@ class Nester(Sampler):
 
         nested_dlogz_init = self._cc
 
-        max_iter = self._iterations
+        max_iter = self._iterations if self._ct is None else np.inf
         if max_iter <= 0:
             return
 
@@ -126,7 +126,9 @@ class Nester(Sampler):
                 logzerr = np.sqrt(logzvar)
                 prt.status(
                     self, 'baseline', kmat=kmat,
-                    progress=[niter, self._iterations],
+                    iterations=[niter, None if
+                                self._ct is not None else
+                                self._iterations],
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
@@ -134,7 +136,9 @@ class Nester(Sampler):
             if max_iter >= 0:
                 prt.status(
                     self, 'starting_batches', kmat=kmat,
-                    progress=[niter, self._iterations],
+                    iterations=[niter, None if
+                                self._ct is not None else
+                                self._iterations],
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
@@ -177,7 +181,9 @@ class Nester(Sampler):
 
                         prt.status(
                             self, 'batching', kmat=kmat,
-                            progress=[niter, self._iterations],
+                            iterations=[niter, None if
+                                        self._ct is not None else
+                                        self._iterations],
                             batch=n, nc=ncall - ncall0, ncall=ncall, eff=eff,
                             logz=[lnz, lnzerr],
                             loglstar=[

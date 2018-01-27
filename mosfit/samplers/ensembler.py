@@ -188,7 +188,7 @@ class Ensembler(Sampler):
                 prt.status(
                     self,
                     desc='drawing_walkers',
-                    progress=[
+                    iterations=[
                         i * self._nwalkers + len(p0[i]) + 1,
                         self._nwalkers * self._ntemps])
 
@@ -451,9 +451,9 @@ class Ensembler(Sampler):
                         scores=self._scores,
                         kmat=kmat,
                         accepts=accepts,
-                        progress=[self._emi, None if
-                                  self._cc is not None else
-                                  self._iterations],
+                        iterations=[self._emi, None if
+                                    self._cc is not None else
+                                    self._iterations],
                         acor=self._acor,
                         psrf=[self._psrf, self._burn_in],
                         messages=messages,
@@ -512,9 +512,9 @@ class Ensembler(Sampler):
                         scores=self._scores,
                         kmat=kmat,
                         fracking=True,
-                        progress=[self._emi, None if
-                                  self._cc is not None else
-                                  self._iterations],
+                        iterations=[self._emi, None if
+                                    self._cc is not None else
+                                    self._iterations],
                         convergence_type=self._ct,
                         convergence_criteria=self._cc)
                     tft = tft + time.time() - sft

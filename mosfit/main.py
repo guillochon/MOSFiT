@@ -695,7 +695,7 @@ def main():
 
     if args.method == 'nester':
         args.convergence_criteria = (
-            0.1 if args.run_until_converged is None else
+            0.01 if args.run_until_converged is None else
             args.run_until_converged)
 
     if is_master():

@@ -380,7 +380,7 @@ class Printer(object):
                desc='',
                scores='',
                accepts='',
-               progress='',
+               iterations='',
                acor=None,
                psrf=None,
                fracking=False,
@@ -439,14 +439,15 @@ class Printer(object):
                 for x in accepts
             ]) + ' ]'
             outarr.append(scorestring)
-        if isinstance(progress, list):
-            if progress[1]:
+        if isinstance(iterations, list):
+            if iterations[1]:
                 progressstring = (
-                    self._strings['progress'] +
-                    ': [ {}/{} ]'.format(*progress))
+                    self._strings['iterations'] +
+                    ': [ {}/{} ]'.format(*iterations))
             else:
                 progressstring = (
-                    self._strings['progress'] + ': [ {} ]'.format(progress[0]))
+                    self._strings['iterations'] + ': [ {} ]'.format(
+                        iterations[0]))
             outarr.append(progressstring)
         if hasattr(sampler, '_emcee_est_t'):
             if sampler._emcee_est_t < 0.0:
