@@ -7,7 +7,7 @@ import numpy as np
 class Sampler(object):
     """Fit transient events with the provided model."""
 
-    def __init__(self, fitter, **kwargs):
+    def __init__(self, fitter, num_walkers=None, **kwargs):
         """Initialize `Sampler` class."""
         self._printer = kwargs.get('printer')
         self._fitter = fitter

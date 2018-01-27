@@ -27,7 +27,8 @@ class Ensembler(Sampler):
             convergence_type='psrf', gibbs=False, fracking=True,
             frack_step=20, **kwargs):
         """Initialize `Ensembler` class."""
-        super(Ensembler, self).__init__(fitter, **kwargs)
+        super(Ensembler, self).__init__(
+            fitter, num_walkers=num_walkers, **kwargs)
 
         self._model = model
         self._iterations = iterations
@@ -111,9 +112,7 @@ class Ensembler(Sampler):
                 self._lnlikeout = np.concatenate(
                     (self._all_lnlike[:, :, -i * self._actc],
                      self._lnlikeout), axis=1)
-                self._weights = np.concatenate(
-                    (0.0 * self._all_lnlike[:, :, -i * self._actc],
-                     self._weights), axis=1)
+                self._weights = np.full_like(self._lnlikeout, weight)
 
     def run(self, walker_data):
         """Use ensemble sampling to determine posteriors."""

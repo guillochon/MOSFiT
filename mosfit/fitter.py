@@ -111,7 +111,7 @@ class Fitter(object):
                    band_instruments=[],
                    band_bandsets=[],
                    band_sampling_points=17,
-                   iterations=5000,
+                   iterations=10000,
                    num_walkers=None,
                    num_temps=1,
                    parameter_paths=['parameters.json'],

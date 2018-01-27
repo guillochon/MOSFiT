@@ -666,7 +666,7 @@ def main():
             changed_iterations = True
             args.iterations = 0
         else:
-            args.iterations = 5000
+            args.iterations = 10000
 
     if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))

@@ -21,7 +21,7 @@ class Nester(Sampler):
             convergence_type='psrf', gibbs=False, fracking=True,
             frack_step=20, **kwargs):
         """Initialize `Nester` class."""
-        super(Nester, self).__init__(fitter, **kwargs)
+        super(Nester, self).__init__(fitter, num_walkers=num_walkers, **kwargs)
 
         self._model = model
         self._iterations = iterations
@@ -76,7 +76,7 @@ class Nester(Sampler):
         self._all_chain = np.array([])
         self._scores = np.ones((1, self._nwalkers)) * -np.inf
 
-        nested_dlogz_init = 1.0
+        nested_dlogz_init = 0.1
 
         max_iter = self._iterations
         if max_iter <= 0:
@@ -139,7 +139,8 @@ class Nester(Sampler):
                 batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
                 logz=[logz, logzerr,
                       delta_logz if delta_logz < 1.e6 else np.inf,
-                      nested_dlogz_init])
+                      nested_dlogz_init],
+                loglstar=[loglstar])
 
             n = 1
             while max_iter >= 0:
