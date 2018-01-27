@@ -170,7 +170,7 @@ class Nester(Sampler):
                         -1], self._results.logzerr[-1]
                     for res in sampler.sample_batch(
                             logl_bounds=logl_bounds,
-                            nlive_new=np.ceil(self._nwalkers / 2)):
+                            nlive_new=int(np.ceil(self._nwalkers / 2))):
                         (worst, ustar, vstar, loglstar, nc,
                          worst_it, propidx, propiter, eff) = res
 
