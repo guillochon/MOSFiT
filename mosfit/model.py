@@ -852,6 +852,11 @@ class Model(object):
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
 
+    def ln_likelihood_floored(self, x):
+        """Return ln(likelihood), floored to a finite value."""
+        outputs = self.run_stack(x, root='objective')
+        return max(LOCAL_LIKELIHOOD_FLOOR, outputs['value'])
+
     def free_parameter_names(self, x):
         """Return list of free parameter names."""
         return self._free_parameters

@@ -49,6 +49,12 @@ def ln_likelihood(x):
     return model.ln_likelihood(x)  # noqa: F821
 
 
+def ln_likelihood_floored(x):
+    """Return ln(likelihood) using the global model variable."""
+    global model
+    return model.ln_likelihood_floored(x)  # noqa: F821
+
+
 def ln_prior(x):
     """Return ln(prior) using the global model variable."""
     global model
@@ -758,9 +764,11 @@ class Fitter(object):
                 realdict[REALIZATION.SCORE] = str(
                     probs[xi])
             realdict[REALIZATION.ALIAS] = str(ri)
-            entry[ENTRY.MODELS][0].add_realization(**realdict)
+            entry[ENTRY.MODELS][0].add_realization(
+                check_for_dupes=False, **realdict)
             urealdict = deepcopy(realdict)
-            uentry[ENTRY.MODELS][0].add_realization(**urealdict)
+            uentry[ENTRY.MODELS][0].add_realization(
+                check_for_dupes=False, **urealdict)
             ri = ri + 1
         prt.message('all_walkers_written', inline=True)
 
