@@ -75,7 +75,7 @@ class Nester(Sampler):
 
         prt.message('nmeas_nfree', [self._model._num_measurements, ndim])
 
-        nested_dlogz_init = 0.1
+        nested_dlogz_init = self._cc
 
         max_iter = self._iterations
         if max_iter <= 0:
@@ -127,20 +127,16 @@ class Nester(Sampler):
                 prt.status(
                     self, 'baseline', kmat=kmat,
                     progress=[niter, self._iterations],
-                    batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
-                    logz=[logz, logzerr,
-                          delta_logz if delta_logz < 1.e6 else np.inf,
-                          nested_dlogz_init],
+                    nc=ncall - ncall0, ncall=ncall, eff=eff,
+                    logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
 
             if max_iter >= 0:
                 prt.status(
                     self, 'starting_batches', kmat=kmat,
                     progress=[niter, self._iterations],
-                    batch=0, nc=ncall - ncall0, ncall=ncall, eff=eff,
-                    logz=[logz, logzerr,
-                          delta_logz if delta_logz < 1.e6 else np.inf,
-                          nested_dlogz_init],
+                    nc=ncall - ncall0, ncall=ncall, eff=eff,
+                    logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
 
             n = 1

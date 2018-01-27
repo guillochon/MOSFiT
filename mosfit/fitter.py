@@ -517,8 +517,6 @@ class Fitter(object):
             return (None, None, None)
 
         self._method = method
-        self._method = 'nester' if method in [
-            'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
         if self._method == 'nester':
             self._sampler = Nester(
@@ -619,7 +617,7 @@ class Fitter(object):
         ri = 1
         for xi, x in enumerate(samples):
             prt.message('outputting_walker', [
-                ri, len(samples)], inline=True)
+                ri, len(samples)], inline=True, min_time=0.2)
             if xi in indices:
                 output = model.run_stack(x, root='output')
                 if extra_outputs:

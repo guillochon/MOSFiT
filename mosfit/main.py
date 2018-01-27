@@ -397,7 +397,6 @@ def get_parser():
         dest='run_until_converged',
         type=float,
         default=None,
-        const=1.1,
         nargs='?',
         help=("Run each model until the autocorrelation time is measured "
               "accurately and chain has burned in for the specified number "
@@ -674,6 +673,9 @@ def main():
     if args.frack_step == 0:
         args.fracking = False
 
+    args.method = 'nester' if args.method.lower() in [
+        'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
+
     if (args.run_until_uncorrelated is not None and
             args.run_until_converged is not None):
         raise ValueError(
@@ -683,8 +685,15 @@ def main():
         args.convergence_type = 'acor'
         args.convergence_criteria = args.run_until_uncorrelated
     elif args.run_until_converged is not None:
-        args.convergence_type = 'psrf'
-        args.convergence_criteria = args.run_until_converged
+        if args.method == 'ensembler':
+            args.convergence_type = 'psrf'
+            if args.run_until_converged is None:
+                args.convergence_criteria = 1.1
+        else:
+            args.convergence_type = 'dlogz'
+
+    if args.run_until_converged is None and args.method == 'nester':
+        args.convergence_criteria = 0.1
 
     if is_master():
         # Get hash of ourselves

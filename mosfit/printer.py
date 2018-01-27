@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import time
 from builtins import input, str
 from collections import OrderedDict
 from textwrap import fill
@@ -71,8 +72,41 @@ class Printer(object):
         self._exit_on_prompt = exit_on_prompt
 
         self._was_inline = False
+        self._last_prt_time = None
 
         self.set_strings()
+
+    def _check_prt_time(self, min_time):
+        """Check if we should print depending on time of last print."""
+        return (min_time is None or self._last_prt_time is None or (
+            time.time() - self._last_prt_time > min_time))
+
+    def _lines(
+        self, text, colorify=False, center=False, width=None,
+        warning=False, error=False, prefix=True, color='', inline=False,
+            wrap_length=None, wrapped=False, master_only=True, **kwargs):
+        """Generate lines for output."""
+        if self._quiet:
+            return []
+        if master_only and self._pool and not self._pool.is_master():
+            return []
+        if warning:
+            if prefix:
+                text = '!y' + self._strings['warning'] + ': ' + text + '!e'
+        if error:
+            if prefix:
+                text = '!r' + self._strings['error'] + ': ' + text + '!e'
+        if color:
+            text = color + text + '!e'
+        tspl = text.split('\n')
+        if wrapped:
+            if not wrap_length or not is_integer(wrap_length):
+                wrap_length = self._wrap_length
+            ntspl = []
+            for line in tspl:
+                ntspl.extend(fill(line, wrap_length).split('\n'))
+            tspl = ntspl
+        return tspl
 
     def set_strings(self):
         """Set pre-defined list of strings."""
@@ -124,35 +158,12 @@ class Printer(object):
                 output = output.replace(code, self.ansi.codes[code])
         return output
 
-    def _lines(
-        self, text, colorify=False, center=False, width=None,
-        warning=False, error=False, prefix=True, color='', inline=False,
-            wrap_length=None, wrapped=False, master_only=True):
-        """Generate lines for output."""
-        if self._quiet:
-            return []
-        if master_only and self._pool and not self._pool.is_master():
-            return []
-        if warning:
-            if prefix:
-                text = '!y' + self._strings['warning'] + ': ' + text + '!e'
-        if error:
-            if prefix:
-                text = '!r' + self._strings['error'] + ': ' + text + '!e'
-        if color:
-            text = color + text + '!e'
-        tspl = text.split('\n')
-        if wrapped:
-            if not wrap_length or not is_integer(wrap_length):
-                wrap_length = self._wrap_length
-            ntspl = []
-            for line in tspl:
-                ntspl.extend(fill(line, wrap_length).split('\n'))
-            tspl = ntspl
-        return tspl
-
     def prt(self, text='', **kwargs):
         """Print text without modification."""
+        min_time = kwargs.get('min_time', None)
+        if not self._check_prt_time(min_time):
+            return
+
         warning = kwargs.get('warning', False)
         error = kwargs.get('error', False)
         color = kwargs.get('color', '')
@@ -160,6 +171,7 @@ class Printer(object):
         center = kwargs.get('center', False)
         width = kwargs.get('width', None)
         colorify = kwargs.get('colorify', True)
+
         tspl = self._lines(text, **kwargs)
         if warning or error or color:
             colorify = True
@@ -190,6 +202,8 @@ class Printer(object):
             except UnicodeEncodeError:
                 print(rline.encode('ascii', 'replace').decode(), flush=True)
 
+        self._last_prt_time = time.time()
+
     def string(self, text, **kwargs):
         """Return message string."""
         center = kwargs.get('center', False)
@@ -210,7 +224,7 @@ class Printer(object):
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
-                colorify=True, width=None, prt=True, color=''):
+                colorify=True, width=None, prt=True, color='', min_time=None):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -222,7 +236,7 @@ class Printer(object):
             self.prt(
                 text, center=center, colorify=colorify, width=width,
                 prefix=prefix, inline=inline, wrapped=wrapped,
-                warning=warning, error=error, color=color)
+                warning=warning, error=error, color=color, min_time=min_time)
         return text
 
     def prompt(self, text, reps=[],
@@ -381,9 +395,13 @@ class Printer(object):
                eff=None,
                logz=None,
                loglstar=None,
-               stop=None):
+               stop=None,
+               min_time=0.2):
         """Print status message showing state of fitting process."""
         if self._quiet:
+            return
+
+        if not self._check_prt_time(min_time):
             return
 
         fitter = self._fitter
@@ -485,8 +503,10 @@ class Printer(object):
             outarr.append('Log(z): [ {} ± {} ]'.format(
                 pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
+                dlogz = pretty_num(
+                    logz[2], sig=4) if logz[2] < 1.e6 else '∞'
                 outarr.append('∆Log(z): [ {} > {} ]'.format(
-                    pretty_num(logz[2], sig=4), pretty_num(logz[3], sig=4)))
+                    dlogz, pretty_num(logz[3], sig=4)))
         if loglstar is not None:
             if len(loglstar) == 1:
                 outarr.append('Log(L*): [ {} ]'.format(
