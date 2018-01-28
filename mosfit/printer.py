@@ -43,6 +43,7 @@ class Printer(object):
         GREEN = '\033[0;92m'
         HEADER = '\033[0;95m'
         MAGENTA = '\033[1;35m'
+        LAVENDER = '\033[38;5;189m'
         ORANGE = '\033[38;5;202m'
         RED = '\033[0;91m'
         UNDERLINE = '\033[4m'
@@ -54,6 +55,7 @@ class Printer(object):
             '!e': END,
             '!g': GREEN,
             '!m': MAGENTA,
+            '!l': LAVENDER,
             '!o': ORANGE,
             '!r': RED,
             '!u': UNDERLINE,
@@ -381,11 +383,7 @@ class Printer(object):
         fitter = self._fitter
         outarr = [fitter._event_name]
         if desc:
-            if desc == 'burning':
-                descstr = '!o' + self._strings.get(
-                    desc, '?') + '!e'
-            else:
-                descstr = self._strings.get(desc, '?')
+            descstr = self._strings.get(desc, desc)
             outarr.append(descstr)
         if isinstance(scores, list):
             scorestring = self._strings[

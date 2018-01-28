@@ -319,7 +319,11 @@ class Photometry(Module):
         for bi, bnd in enumerate(self._unique_bands):
             # Band name *must* match (case-sensitive), all other matches
             # optional and case-insensitive.
-            if band != bnd['name']:
+            nmismatches = sum(
+                [(band != bnd['name']) & (band != ''),
+                 (linst != self._band_insts[bi].lower()) & (linst != ''),
+                 (ltele != self._band_teles[bi].lower()) & (ltele != '')])
+            if nmismatches > 0:
                 continue
             matches = [lsyst == self._band_systs[bi].lower(),
                        lmode == self._band_modes[bi].lower(),
@@ -342,10 +346,8 @@ class Photometry(Module):
             self._band_index_cache[cache_key] = bbi
             return bbi
         raise ValueError(
-            'Cannot find band index for `{}` band of bandset `{}` '
-            'in mode `{}` with '
-            'instrument `{}` on telescope `{}` in the `{}` system!'.format(
-                band, bandset, mode, instrument, telescope, system))
+            self._printer.text('band_not_found', reps=[
+                band, bandset, mode, instrument, telescope, system]))
 
     def preprocess(self, **kwargs):
         """Preprocess module."""

@@ -498,7 +498,7 @@ class Model(object):
                                           s[0] != 'AB') else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
-                filterrows.append('  (* = Not observed in this band)')
+                filterrows.append(prt.text('not_observed'))
             prt.prt('\n'.join(filterrows))
 
             single_freq_inst = list(
