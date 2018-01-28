@@ -616,9 +616,9 @@ class Fitter(object):
         extras = OrderedDict()
         samples_to_plot = self._sampler._nwalkers
 
-        icdf = np.cumsum(weights)
+        icdf = np.cumsum(np.concatenate(([0.0], weights)))
         draws = np.random.rand(samples_to_plot)
-        indices = np.searchsorted(icdf, draws)
+        indices = np.searchsorted(icdf, draws) - 1
 
         ri = 1
         for xi, x in enumerate(samples):
@@ -764,6 +764,7 @@ class Fitter(object):
                 realdict[REALIZATION.SCORE] = str(
                     probs[xi])
             realdict[REALIZATION.ALIAS] = str(ri)
+            realdict[REALIZATION.WEIGHT] = str(weights[xi])
             entry[ENTRY.MODELS][0].add_realization(
                 check_for_dupes=False, **realdict)
             urealdict = deepcopy(realdict)

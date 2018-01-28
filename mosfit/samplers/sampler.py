@@ -5,7 +5,9 @@ import numpy as np
 
 
 class Sampler(object):
-    """Fit transient events with the provided model."""
+    """Sample the posterior distribution of a model against an observation."""
+
+    _MIN_WEIGHT = 1e-10
 
     def __init__(self, fitter, num_walkers=None, **kwargs):
         """Initialize `Sampler` class."""
@@ -21,6 +23,13 @@ class Sampler(object):
         samples = np.array([a for b in self._pout for a in b])
         probs = np.array([a for b in self._lnprobout for a in b])
         weights = np.array([a for b in self._weights for a in b])
+
+        min_weight = self._MIN_WEIGHT / len(samples)
+
+        sel = weights > min_weight
+        samples = samples[sel]
+        probs = probs[sel]
+        weights = weights[sel]
 
         wsis = np.argsort(weights)
 

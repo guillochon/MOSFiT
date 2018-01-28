@@ -46,7 +46,8 @@ class Nester(Sampler):
         """Prepare output for writing to disk and uploading."""
         self._pout = [self._results.samples]
         self._lnprobout = [self._results.logl]
-        self._weights = [np.exp(self._results.logwt)]
+        self._weights = [np.exp(self._results.logwt - max(
+            self._results.logwt))]
         tweight = np.sum(self._weights)
         self._weights = [x / tweight for x in self._weights]
 
