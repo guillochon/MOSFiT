@@ -313,21 +313,26 @@ class Photometry(Module):
             band, telescope, instrument, mode, bandset, system])
         if cache_key in self._band_index_cache:
             return self._band_index_cache[cache_key]
+        ltele, linst, lmode, lbset, lsyst = tuple([x.lower() for x in [
+            telescope, instrument, mode, bandset, system]])
+
         for bi, bnd in enumerate(self._unique_bands):
-            matches = [band == bnd['name'],
-                       system == self._band_systs[bi],
-                       mode == self._band_modes[bi],
-                       instrument == self._band_insts[bi],
-                       telescope == self._band_teles[bi],
-                       bandset == self._band_bsets[bi]]
+            # Band name *must* match (case-sensitive), all other matches
+            # optional and case-insensitive.
+            if band != bnd['name']:
+                continue
+            matches = [lsyst == self._band_systs[bi].lower(),
+                       lmode == self._band_modes[bi].lower(),
+                       linst == self._band_insts[bi].lower(),
+                       ltele == self._band_teles[bi].lower(),
+                       lbset == self._band_bsets[bi].lower()]
             lmatch = sum(matches)
             nbmatch = sum(
-                [(band == bnd['name']) & (band != ''),
-                 (system == self._band_systs[bi]) & (system != ''),
-                 (mode == self._band_modes[bi]) & (mode != ''),
-                 (instrument == self._band_insts[bi]) & (instrument != ''),
-                 (telescope == self._band_teles[bi]) & (telescope != ''),
-                 (bandset == self._band_bsets[bi]) & (bandset != '')])
+                [(lsyst == self._band_systs[bi].lower()) & (lsyst != ''),
+                 (lmode == self._band_modes[bi].lower()) & (lmode != ''),
+                 (linst == self._band_insts[bi].lower()) & (linst != ''),
+                 (ltele == self._band_teles[bi].lower()) & (ltele != ''),
+                 (lbset == self._band_bsets[bi].lower()) & (lbset != '')])
             if lmatch > bmatch and nbmatch > 0:
                 bmatch = lmatch
                 bbi = bi
