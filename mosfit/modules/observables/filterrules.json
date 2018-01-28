@@ -1161,12 +1161,12 @@
 			"AB"
 		],
 		"filters": {
-			"i2": {
-				"SVO": "Subaru/HSC.i2_filter",
+			"g": {
+				"SVO": "Subaru/HSC.g_filter",
 				"offset": 0
 			},
-			"I2": {
-				"SVO": "Subaru/HSC.i2_filter",
+			"G": {
+				"SVO": "Subaru/HSC.g_filter",
 				"offset": 0
 			},
 			"r2": {
@@ -1175,6 +1175,14 @@
 			},
 			"R2": {
 				"SVO": "Subaru/HSC.r2_filter",
+				"offset": 0
+			},
+			"i2": {
+				"SVO": "Subaru/HSC.i2_filter",
+				"offset": 0
+			},
+			"I2": {
+				"SVO": "Subaru/HSC.i2_filter",
 				"offset": 0
 			},
 			"y": {
