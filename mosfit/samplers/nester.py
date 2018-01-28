@@ -83,6 +83,7 @@ class Nester(Sampler):
             return
 
         s_exception = None
+        iter_denom = None if self._ct is not None else self._iterations
 
         try:
             sampler = DynamicNestedSampler(
@@ -127,9 +128,7 @@ class Nester(Sampler):
                 logzerr = np.sqrt(logzvar)
                 prt.status(
                     self, 'baseline', kmat=kmat,
-                    iterations=[niter, None if
-                                self._ct is not None else
-                                self._iterations],
+                    iterations=[niter, iter_denom],
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
@@ -137,16 +136,13 @@ class Nester(Sampler):
             if max_iter >= 0:
                 prt.status(
                     self, 'starting_batches', kmat=kmat,
-                    iterations=[niter, None if
-                                self._ct is not None else
-                                self._iterations],
+                    iterations=[niter, iter_denom],
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
 
             n = 1
             while max_iter >= 0:
-                ncall0 = ncall
                 if (self._fitter._maximum_walltime is not False and
                         time.time() - self._start_time >
                         self._fitter._maximum_walltime):
@@ -170,6 +166,7 @@ class Nester(Sampler):
                     logl_bounds = weight_function(self._results)
                     lnz, lnzerr = self._results.logz[
                         -1], self._results.logzerr[-1]
+                    ncall0 = ncall
                     for res in sampler.sample_batch(
                             logl_bounds=logl_bounds,
                             nlive_new=int(np.ceil(self._nlive / 2))):
@@ -182,9 +179,7 @@ class Nester(Sampler):
 
                         prt.status(
                             self, 'batching', kmat=kmat,
-                            iterations=[niter, None if
-                                        self._ct is not None else
-                                        self._iterations],
+                            iterations=[niter, iter_denom],
                             batch=n, nc=ncall - ncall0, ncall=ncall, eff=eff,
                             logz=[lnz, lnzerr],
                             loglstar=[
