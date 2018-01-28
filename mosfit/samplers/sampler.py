@@ -7,7 +7,7 @@ import numpy as np
 class Sampler(object):
     """Sample the posterior distribution of a model against an observation."""
 
-    _MIN_WEIGHT = 1e-10
+    _MIN_WEIGHT = 1e-6
 
     def __init__(self, fitter, num_walkers=None, **kwargs):
         """Initialize `Sampler` class."""
