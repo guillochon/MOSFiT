@@ -164,7 +164,7 @@ class Nester(Sampler):
                 stop_post, stop_evid, stop_val = stop_vals
                 if not stop:
                     logl_bounds = weight_function(self._results)
-                    lnz, lnzerr = self._results.logz[
+                    logz, logzerr = self._results.logz[
                         -1], self._results.logzerr[-1]
                     ncall0 = ncall
                     for res in sampler.sample_batch(
@@ -181,11 +181,9 @@ class Nester(Sampler):
                             self, 'batching', kmat=kmat,
                             iterations=[niter, iter_denom],
                             batch=n, nc=ncall - ncall0, ncall=ncall, eff=eff,
-                            logz=[lnz, lnzerr],
-                            loglstar=[
+                            logz=[logz, logzerr], loglstar=[
                                 logl_bounds[0], loglstar,
-                                logl_bounds[1]],
-                            stop=stop_val)
+                                logl_bounds[1]], stop=stop_val)
 
                         if max_iter < 0:
                             break
