@@ -1,5 +1,5 @@
 <p align="center"><img src="logo.png" align="left" alt="MOSFiT" width="300"/></p>
-<a href="https://travis-ci.org/guillochon/MOSFiT"><img src="https://img.shields.io/travis/guillochon/MOSFiT.svg" alt="Build Status"></a>
+<a href="https://travis-ci.org/guillochon/MOSFiT"><img src="https://img.shields.io/travis/guillochon/MOSFiT.svg?branch=master" alt="Build Status"></a>
 <a href="https://coveralls.io/github/guillochon/MOSFiT?branch=master"><img src="https://coveralls.io/repos/github/guillochon/MOSFiT/badge.svg?branch=master" alt="Coverage Status"></a>
 <a href="https://www.python.org"><img src="https://img.shields.io/badge/python-2.7%2C%203.4%2C%203.5%2C%203.6-blue.svg" alt="Python Version"></a>
 <a href="https://badge.fury.io/py/mosfit"><img src="https://badge.fury.io/py/mosfit.svg" alt="PyPI version"></a>
