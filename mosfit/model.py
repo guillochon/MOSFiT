@@ -218,6 +218,7 @@ class Model(object):
         self._modules = OrderedDict()
         self._bands = []
         self._instruments = []
+        self._telescopes = []
 
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
@@ -282,6 +283,7 @@ class Model(object):
                 cur_task.update(self._parameter_json[task])
             self._modules[task] = self._load_task_module(task)
             if mod_name == 'photometry':
+                self._telescopes = self._modules[task].telescopes()
                 self._instruments = self._modules[task].instruments()
                 self._bands = self._modules[task].bands()
             self._modules[task].set_attributes(cur_task)
@@ -404,7 +406,8 @@ class Model(object):
                     data,
                     req_key_values=OrderedDict((
                         ('band', self._bands),
-                        ('instrument', self._instruments))),
+                        ('instrument', self._instruments),
+                        ('telescope', self._telescopes))),
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
@@ -498,7 +501,7 @@ class Model(object):
                                           s[0] != 'AB') else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
-                filterrows.append('  (* = Not observed in this band)')
+                filterrows.append(prt.text('not_observed'))
             prt.prt('\n'.join(filterrows))
 
             single_freq_inst = list(
