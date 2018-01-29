@@ -516,7 +516,7 @@ class Printer(object):
                     pretty_num(loglstar[1], sig=3),
                     pretty_num(loglstar[2], sig=3)))
         if stop is not None:
-            outarr.append('Stopping Value: [ {} ]'.format(
+            outarr.append('Stopping Value: [ {} > 1 ]'.format(
                 pretty_num(stop, sig=4)))
 
         if not isinstance(messages, list):

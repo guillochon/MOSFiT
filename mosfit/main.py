@@ -396,7 +396,7 @@ def get_parser():
         '-R',
         dest='run_until_converged',
         type=float,
-        default=None,
+        default=False,
         const=True,
         nargs='?',
         help=("Run each model until the autocorrelation time is measured "
@@ -678,14 +678,14 @@ def main():
         'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
     if (args.run_until_uncorrelated is not None and
-            args.run_until_converged is not None):
+            args.run_until_converged):
         raise ValueError(
             '`-R` and `-U` options are incompatible, please use one or the '
             'other.')
     elif args.run_until_uncorrelated is not None:
         args.convergence_type = 'acor'
         args.convergence_criteria = args.run_until_uncorrelated
-    elif args.run_until_converged is not None:
+    elif args.run_until_converged:
         if args.method == 'ensembler':
             args.convergence_type = 'psrf'
             args.convergence_criteria = (

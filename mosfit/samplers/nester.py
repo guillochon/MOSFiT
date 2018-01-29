@@ -37,6 +37,24 @@ class Nester(Sampler):
         self._WAIC = None
         self._ntemps = 1
 
+    def _get_best_kmat(self):
+        """Get the kernel matrix associated with best current scoring model."""
+        sout = self._model.run_stack(
+            self._results.samples[np.unravel_index(
+                np.argmax(self._results.logl),
+                self._results.logl.shape)],
+            root='objective')
+
+        kmat = sout.get('kmat')
+        kdiag = sout.get('kdiagonal')
+        variance = sout.get('obandvs', sout.get('variance'))
+        if kdiag is not None and kmat is not None:
+            kmat[np.diag_indices_from(kmat)] += kdiag
+        elif kdiag is not None and kmat is None:
+            kmat = np.diag(kdiag + variance)
+
+        return kmat
+
     def append_output(self, modeldict):
         """Append output from the nester to the model description."""
         if self._iterations > 0:
@@ -109,21 +127,9 @@ class Nester(Sampler):
 
                 self._results = sampler.results
 
-                sout = self._model.run_stack(
-                    self._results.samples[np.unravel_index(
-                        np.argmax(self._results.logl),
-                        self._results.logl.shape)],
-                    root='objective')
+                kmat = self._get_best_kmat()
                 # The above added 1 call.
                 ncall += 1
-
-                kmat = sout.get('kmat')
-                kdiag = sout.get('kdiagonal')
-                variance = sout.get('obandvs', sout.get('variance'))
-                if kdiag is not None and kmat is not None:
-                    kmat[np.diag_indices_from(kmat)] += kdiag
-                elif kdiag is not None and kmat is None:
-                    kmat = np.diag(kdiag + variance)
 
                 logzerr = np.sqrt(logzvar)
                 prt.status(
@@ -152,14 +158,6 @@ class Nester(Sampler):
 
                 self._results = sampler.results
 
-                sout = self._model.run_stack(
-                    self._results.samples[np.unravel_index(
-                        np.argmax(self._results.logl),
-                        self._results.logl.shape)],
-                    root='objective')
-                # The above added 1 call.
-                ncall += 1
-
                 stop, stop_vals = stopping_function(
                     self._results, return_vals=True)
                 stop_post, stop_evid, stop_val = stop_vals
@@ -167,16 +165,22 @@ class Nester(Sampler):
                     logl_bounds = weight_function(self._results)
                     logz, logzerr = self._results.logz[
                         -1], self._results.logzerr[-1]
-                    ncall0 = ncall
                     for res in sampler.sample_batch(
                             logl_bounds=logl_bounds,
                             nlive_new=int(np.ceil(self._nlive / 2))):
                         (worst, ustar, vstar, loglstar, nc,
                          worst_it, propidx, propiter, eff) = res
+                        ncall0 = ncall
 
                         ncall += nc
                         niter += 1
                         max_iter -= 1
+
+                        self._results = sampler.results
+
+                        kmat = self._get_best_kmat()
+                        # The above added 1 call.
+                        ncall += 1
 
                         prt.status(
                             self, 'batching', kmat=kmat,
