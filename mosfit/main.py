@@ -397,6 +397,7 @@ def get_parser():
         dest='run_until_converged',
         type=float,
         default=None,
+        const=True,
         nargs='?',
         help=("Run each model until the autocorrelation time is measured "
               "accurately and chain has burned in for the specified number "
@@ -688,14 +689,14 @@ def main():
         if args.method == 'ensembler':
             args.convergence_type = 'psrf'
             args.convergence_criteria = (
-                1.1 if args.run_until_converged is None else
+                1.1 if args.run_until_converged is True else
                 args.run_until_converged)
         else:
             args.convergence_type = 'dlogz'
 
     if args.method == 'nester':
         args.convergence_criteria = (
-            0.01 if args.run_until_converged is None else
+            0.01 if args.run_until_converged is True else
             args.run_until_converged)
 
     if is_master():

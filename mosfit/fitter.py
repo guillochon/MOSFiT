@@ -141,7 +141,7 @@ class Fitter(object):
                    check_upload_quality=False,
                    variance_for_each=[],
                    user_fixed_parameters=[],
-                   convergence_type='psrf',
+                   convergence_type=None,
                    convergence_criteria=None,
                    save_full_chain=False,
                    draw_above_likelihood=False,
@@ -485,7 +485,7 @@ class Fitter(object):
                  upload=False,
                  upload_token='',
                  check_upload_quality=True,
-                 convergence_type='psrf',
+                 convergence_type=None,
                  convergence_criteria=None,
                  save_full_chain=False,
                  extra_outputs=[]):
