@@ -141,8 +141,9 @@ class Nester(Sampler):
                     logz=[logz, logzerr, delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
 
-            n = 1
+            n = 0
             while max_iter >= 0:
+                n += 1
                 if (self._fitter._maximum_walltime is not False and
                         time.time() - self._start_time >
                         self._fitter._maximum_walltime):
