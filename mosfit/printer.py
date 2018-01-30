@@ -16,8 +16,8 @@ from textwrap import fill
 import numpy as np
 from scipy import ndimage
 
-from .utils import (calculate_WAIC, congrid, is_integer, open_atomic,
-                    pretty_num, rebin)
+from .utils import (calculate_WAIC, congrid, is_integer, is_number,
+                    open_atomic, pretty_num, rebin)
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -49,6 +49,7 @@ class Printer(object):
         RED = '\033[0;91m'
         UNDERLINE = '\033[4m'
         YELLOW = '\033[38;5;220m'
+        CHARTREUSE = '\033[38;5;70m'
 
         codes = {
             '!b': BLUE,
@@ -60,7 +61,8 @@ class Printer(object):
             '!o': ORANGE,
             '!r': RED,
             '!u': UNDERLINE,
-            '!y': YELLOW
+            '!y': YELLOW,
+            '!h': CHARTREUSE
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -502,10 +504,23 @@ class Printer(object):
             outarr.append('Log(z): [ {} ± {} ]'.format(
                 pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
+                if is_number(logz[1]):
+                    if logz[2] > 1000.0 * logz[1]:
+                        color = '!r'
+                    elif logz[2] > 100.0 * logz[1]:
+                        color = '!o'
+                    elif logz[2] > 10.0 * logz[1]:
+                        color = '!y'
+                    elif logz[2] > logz[1]:
+                        color = '!h'
+                    else:
+                        color = '!g'
+                else:
+                    color = '!w'
                 dlogz = pretty_num(
-                    logz[2], sig=4) if logz[2] < 1.e6 else '∞'
-                outarr.append('∆Log(z): [ {} > {} ]'.format(
-                    dlogz, pretty_num(logz[3], sig=4)))
+                    logz[2], sig=3) if logz[2] < 1.e6 else '∞'
+                outarr.append('∆Log(z): [ {}{}!e > {} ]'.format(
+                    color, dlogz, pretty_num(logz[3], sig=4)))
         if loglstar is not None:
             if len(loglstar) == 1:
                 outarr.append('Log(L*): [ {} ]'.format(
