@@ -511,10 +511,17 @@ class Printer(object):
                 outarr.append('Log(L*): [ {} ]'.format(
                     pretty_num(loglstar[0], sig=4)))
             else:
-                outarr.append('Log(L*): [ {} < {} < {} ]'.format(
-                    pretty_num(loglstar[0], sig=3),
-                    pretty_num(loglstar[1], sig=3),
-                    pretty_num(loglstar[2], sig=3)))
+                if not np.isfinite(loglstar[0]):
+                    outarr.append('Improving z for Log(L*): '
+                                  '[ {} < {} ]'.format(
+                                      pretty_num(loglstar[1], sig=3),
+                                      pretty_num(loglstar[2], sig=3)))
+                else:
+                    outarr.append('Improving posterior for Log(L*): '
+                                  '[ {} < {} < {} ]'.format(
+                                      pretty_num(loglstar[0], sig=3),
+                                      pretty_num(loglstar[1], sig=3),
+                                      pretty_num(loglstar[2], sig=3)))
         if stop is not None:
             outarr.append('Stopping Value: [ {} > 1 ]'.format(
                 pretty_num(stop, sig=4)))
