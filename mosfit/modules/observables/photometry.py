@@ -323,8 +323,10 @@ class Photometry(Module):
             if (band != bnd['name']) and (band != ''):
                 continue
             nmismatches = sum(
-                [(linst != self._band_insts[bi].lower()) & (linst != ''),
-                 (ltele != self._band_teles[bi].lower()) & (ltele != '')])
+                [(linst != self._band_insts[bi].lower()) & (
+                    linst != '') & (self._band_insts[bi] != ''),
+                 (ltele != self._band_teles[bi].lower()) & (
+                    ltele != '') & (self._band_teles[bi] != '')])
             matches = [band == bnd['name'],
                        lsyst == self._band_systs[bi].lower(),
                        lmode == self._band_modes[bi].lower(),
