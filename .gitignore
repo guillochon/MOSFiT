@@ -1,6 +1,7 @@
 build/
 cache/
 products/
+output/
 dist/
 src/
 mosfit/modules/observables/filters/*.dat

@@ -40,6 +40,6 @@ Indices and tables
 License & Attribution
 ---------------------
 
-Copyright 2016-2017, `James Guillochon <mailto:guillochon@gmail.com>`_, Matt Nicholl, and contributors.
+Copyright 2016-2018, `James Guillochon <mailto:guillochon@gmail.com>`_, Matt Nicholl, and contributors.
 
 The source code is made available under the terms of the MIT license.

@@ -396,8 +396,8 @@ def get_parser():
         '-R',
         dest='run_until_converged',
         type=float,
-        default=None,
-        const=1.1,
+        default=False,
+        const=True,
         nargs='?',
         help=("Run each model until the autocorrelation time is measured "
               "accurately and chain has burned in for the specified number "
@@ -589,6 +589,17 @@ def get_parser():
               "(even from cache), using only data provided locally by the "
               "user."))
 
+    parser.add_argument(
+        '--method',
+        '-D',
+        dest='method',
+        type=str,
+        const='select',
+        default='ensembler',
+        nargs='?',
+        help=("Method for computing posteriors. Current options are "
+              "`ensembler` and `nester`."))
+
     return parser
 
 
@@ -655,7 +666,7 @@ def main():
             changed_iterations = True
             args.iterations = 0
         else:
-            args.iterations = 5000
+            args.iterations = 10000
 
     if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))
@@ -663,17 +674,30 @@ def main():
     if args.frack_step == 0:
         args.fracking = False
 
+    args.method = 'nester' if args.method.lower() in [
+        'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
+
     if (args.run_until_uncorrelated is not None and
-            args.run_until_converged is not None):
+            args.run_until_converged):
         raise ValueError(
             '`-R` and `-U` options are incompatible, please use one or the '
             'other.')
     elif args.run_until_uncorrelated is not None:
         args.convergence_type = 'acor'
         args.convergence_criteria = args.run_until_uncorrelated
-    elif args.run_until_converged is not None:
-        args.convergence_type = 'psrf'
-        args.convergence_criteria = args.run_until_converged
+    elif args.run_until_converged:
+        if args.method == 'ensembler':
+            args.convergence_type = 'psrf'
+            args.convergence_criteria = (
+                1.1 if args.run_until_converged is True else
+                args.run_until_converged)
+        else:
+            args.convergence_type = 'dlogz'
+
+    if args.method == 'nester':
+        args.convergence_criteria = (
+            0.01 if args.run_until_converged is True else
+            args.run_until_converged)
 
     if is_master():
         # Get hash of ourselves
