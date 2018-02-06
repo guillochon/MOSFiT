@@ -78,7 +78,6 @@ def get_parser(only=None, printer=None):
         '--walker-paths',
         '-w',
         dest='walker_paths',
-        default=[],
         nargs='+',
         help=prt.text('parser_walker_paths'))
 
@@ -239,7 +238,6 @@ def get_parser(only=None, printer=None):
         '-T',
         dest='num_temps',
         type=int,
-        default=1,
         help=prt.text('parser_num_temps'))
 
     parser.add_argument(
@@ -361,7 +359,6 @@ def get_parser(only=None, printer=None):
         '-d',
         dest='draw_above_likelihood',
         type=float,
-        default=False,
         const=True,
         nargs='?',
         help=prt.text('parser_draw_above_likelihood'))
@@ -370,16 +367,16 @@ def get_parser(only=None, printer=None):
         '--gibbs',
         '-g',
         dest='gibbs',
-        default=False,
-        action='store_true',
+        action='store_const',
+        const=True,
         help=prt.text('parser_gibbs'))
 
     parser.add_argument(
         '--save-full-chain',
         '-c',
         dest='save_full_chain',
-        default=False,
-        action='store_true',
+        action='store_const',
+        const=True,
         help=prt.text('parser_save_full_chain'))
 
     parser.add_argument(
@@ -486,8 +483,7 @@ def get_parser(only=None, printer=None):
         const='select',
         default='ensembler',
         nargs='?',
-        help=("Method for computing posteriors. Current options are "
-              "`ensembler` and `nester`."))
+        help=prt.message('parser_method'))
 
     return parser
 
@@ -549,9 +545,6 @@ def main():
     if args.limiting_magnitude == []:
         args.limiting_magnitude = 20.0
 
-    if args.frack_step is None:
-        args.frack_step = 50
-
     args.return_fits = False
 
     if (isinstance(args.extrapolate_time, list) and
@@ -568,9 +561,6 @@ def main():
     if args.method == 'nester':
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.message('R_i_mutually_exclusive'))
-        if args.frack_step is not None:
-            prt.message('argument_not_used',
-                        reps=['-f', '-D nester'], warning=True)
 
     changed_iterations = False
     if args.iterations == -1:
@@ -580,18 +570,12 @@ def main():
         else:
             args.iterations = 10000
 
-    if args.burn is None and args.post_burn is None:
-        args.burn = int(np.floor(args.iterations / 2))
-
-    if args.frack_step == 0:
-        args.fracking = False
-
     if (args.run_until_uncorrelated is not None and
             args.run_until_converged):
         raise ValueError(
             '`-R` and `-U` options are incompatible, please use one or the '
             'other.')
-    elif args.run_until_uncorrelated is not None:
+    if args.run_until_uncorrelated is not None:
         args.convergence_type = 'acor'
         args.convergence_criteria = args.run_until_uncorrelated
     elif args.run_until_converged:
@@ -636,6 +620,25 @@ def main():
             get_token_from_user = True
 
         upload_token_path = os.path.join(dir_path, 'cache', 'dropbox.token')
+
+        if args.method == 'nester':
+            if args.run_until_converged and args.iterations >= 0:
+                raise ValueError(prt.message('R_i_mutually_exclusive'))
+            unused_args = [
+                [args.burn, '-b'],
+                [args.post_burn, '-p'],
+                [args.frack_step, '-f'],
+                [args.walker_paths, '-w'],
+                [args.num_temps, '-T'],
+                [args.run_until_uncorrelated, '-U'],
+                [args.draw_above_likelihood, '-d'],
+                [args.gibbs, '-g'],
+                [args.save_full_chain, '-c']
+            ]
+            for ua in unused_args:
+                if ua[0] is not None:
+                    prt.message('argument_not_used',
+                                reps=[ua[1], '-D nester'], warning=True)
 
         # Perform a few checks on upload before running (to keep size
         # manageable)
@@ -774,6 +777,24 @@ def main():
                     shutil.copy(
                         os.path.join(dir_path, 'models', mdir, mfil),
                         os.path.join(fil_path))
+
+    # Set some default values that we checked above.
+    if args.frack_step == 0:
+        args.fracking = False
+    elif args.frack_step is None:
+        args.frack_step = 50
+    if args.burn is None and args.post_burn is None:
+        args.burn = int(np.floor(args.iterations / 2))
+    if args.draw_above_likelihood is None:
+        args.draw_above_likelihood = False
+    if args.gibbs is None:
+        args.gibbs = False
+    if args.save_full_chain is None:
+        args.save_full_chain = False
+    if args.num_temps is None:
+        args.num_temps = 1
+    if args.walker_paths is None:
+        args.walker_paths = []
 
     # Then, fit the listed events with the listed models.
     fitargs = vars(args)
