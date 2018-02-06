@@ -72,9 +72,7 @@ def get_parser(only=None, printer=None):
         dest='parameter_paths',
         default=['parameters.json'],
         nargs='+',
-        help=("Paths to parameter files corresponding to each model file; "
-              "length of this list should be equal to the length of the list "
-              "of models"))
+        help=prt.message('parser_parameter_paths'))
 
     parser.add_argument(
         '--walker-paths',
@@ -82,19 +80,14 @@ def get_parser(only=None, printer=None):
         dest='walker_paths',
         default=[],
         nargs='+',
-        help=("List of paths to Open Catalog format files with walkers from "
-              "which to draw initial walker positions. Output data from "
-              "MOSFiT can be loaded with this command. If some variables "
-              "are not contained within the input file(s), they will "
-              "instead be drawn randomly from the specified model priors."))
+        help=prt.message('parser_walker_paths'))
 
     parser.add_argument(
         '--max-time',
         dest='max_time',
         type=float,
         default=1000.,
-        help=("Set the maximum time for model light curves to be plotted "
-              "until."))
+        help=prt.message('parser_max_time'))
 
     parser.add_argument(
         '--limiting-magnitude',
@@ -102,12 +95,7 @@ def get_parser(only=None, printer=None):
         dest='limiting_magnitude',
         default=None,
         nargs='+',
-        help=("Assumed limiting magnitude of a simulated survey. When "
-              "enabled, model light curves will be randomly drawn and "
-              "assigned error bars. If passed one argument, that number "
-              "will be used as the limiting magnitude (default: `20`). "
-              "If provided a second argument, that number will be used "
-              "for observation-to-observation variance in the limit."))
+        help=prt.message('parser_limiting_magnitude'))
 
     parser.add_argument(
         '--band-list',
@@ -115,8 +103,7 @@ def get_parser(only=None, printer=None):
         dest='band_list',
         default=[],
         nargs='+',
-        help=("List of additional bands to plot when plotting model light "
-              "curves that are not being matched to actual transient data."))
+        help=prt.message('parser_band_list'))
 
     parser.add_argument(
         '--band-systems',
@@ -124,8 +111,7 @@ def get_parser(only=None, printer=None):
         dest='band_systems',
         default=[],
         nargs='+',
-        help=("List of photometric systems corresponding to the bands listed "
-              "in `--band-list`."))
+        help=prt.message('parser_band_systems'))
 
     parser.add_argument(
         '--band-instruments',
@@ -133,8 +119,7 @@ def get_parser(only=None, printer=None):
         dest='band_instruments',
         default=[],
         nargs='+',
-        help=("List of instruments corresponding to the bands listed "
-              "in `--band-list`."))
+        help=prt.message('parser_band_instruments'))
 
     parser.add_argument(
         '--band-bandsets',
@@ -142,56 +127,49 @@ def get_parser(only=None, printer=None):
         dest='band_bandsets',
         default=[],
         nargs='+',
-        help=("List of bandsets corresponding to the bands listed "
-              "in `--band-list`."))
+        help=prt.message('parser_band_bandsets'))
 
     parser.add_argument(
         '--band-sampling-points',
         dest='band_sampling_points',
         type=int,
         default=17,
-        help=("Number of wavelengths to sample in each band when modeling "
-              "photometry."))
+        help=prt.message('parser_band_sampling_points'))
 
     parser.add_argument(
         '--exclude-bands',
         dest='exclude_bands',
         default=[],
         nargs='+',
-        help=("List of bands to exclude in fitting."))
+        help=prt.message('parser_exclude_bands'))
 
     parser.add_argument(
         '--exclude-instruments',
         dest='exclude_instruments',
         default=[],
         nargs='+',
-        help=("List of instruments to exclude in fitting corresponding to "
-              "the bands listed in `--exclude-bands`."))
+        help=prt.message('parser_exclude_instruments'))
 
     parser.add_argument(
         '--exclude-systems',
         dest='exclude_systems',
         default=[],
         nargs='+',
-        help=("List of systems to exclude in fitting corresponding to "
-              "the bands listed in `--exclude-bands`."))
+        help=prt.message('parser_exclude_systems'))
 
     parser.add_argument(
         '--exclude-sources',
         dest='exclude_sources',
         default=[],
         nargs='+',
-        help=("List of references to exclude data from when fitting. These "
-              "are specified using the source ID number that is shown on the "
-              "Open Astronomy Catalog page for each transient. "))
+        help=prt.message('parser_exclude_sources'))
 
     parser.add_argument(
         '--exclude-kinds',
         dest='exclude_kinds',
         default=[],
         nargs='+',
-        help=("List of kinds of observations to exclude when fitting. These "
-              "are specified using keywords such as `radio` or `x-ray`. "))
+        help=prt.message('parser_exclude_kinds'))
 
     parser.add_argument(
         '--fix-parameters',
@@ -199,14 +177,7 @@ def get_parser(only=None, printer=None):
         dest='user_fixed_parameters',
         default=[],
         nargs='+',
-        help=("Pairs of parameter names and values to fix for the current "
-              "fit. Example: `-F kappa 1.0 vejecta 1.0e4` would fix the "
-              "`kappa` and `vejecta` parameters to those values. If the "
-              "second value is recognized to be an existing key, the whole "
-              "list will be assumed to just be a list of keys and the "
-              "default values specified in the model JSON files will be "
-              "used. If the name is a parameter class (e.g. `covariance`), "
-              "all variables of that class will be fixed."))
+        help=prt.message('parser_user_fixed_parameters'))
 
     parser.add_argument(
         '--iterations',
@@ -216,10 +187,7 @@ def get_parser(only=None, printer=None):
         const=0,
         default=-1,
         nargs='?',
-        help=("Number of iterations to run emcee for, including burn-in and "
-              "post-burn iterations. Setting this option to `0` (or "
-              "providing no argument) will only draw walker positions "
-              "and immediately exit."))
+        help=prt.message('parser_iterations'))
 
     parser.add_argument(
         '--smooth-times',
@@ -231,14 +199,7 @@ def get_parser(only=None, printer=None):
         default=20,
         nargs='?',
         action='store',
-        help=("Add this many more fictitious observations between the first "
-              "and last observed times. Setting this value to `0` (or "
-              "providing no argument) will "
-              "guarantee that all observed bands/instrument/system "
-              "combinations have a point at all observed epochs, but no other "
-              "times. A negative "
-              "value will only yield model predictions at the observations "
-              "but at no other times (faster but sparser light curves)."))
+        help=prt.message('parser_smooth_times'))
 
     parser.add_argument(
         '--extrapolate-time',
@@ -247,14 +208,7 @@ def get_parser(only=None, printer=None):
         type=float,
         default=0.0,
         nargs='*',
-        help=(
-            "Extend model light curves this many days before/after "
-            "first/last observation. Can be a list of two elements, in which "
-            "case the first element is the amount of time before the first "
-            "observation to extrapolate, and the second element is the amount "
-            "of time before the last observation to extrapolate. Value is set "
-            "to `0.0` days if option not set, `100.0` days "
-            "by default if no arguments are given."))
+        help=prt.message('parser_extrapolate_time'))
 
     parser.add_argument(
         '--limit-fitting-mjds',
@@ -263,19 +217,14 @@ def get_parser(only=None, printer=None):
         type=float,
         default=False,
         nargs=2,
-        help=(
-            "Only include observations with MJDs within the specified range, "
-            "e.g. `-L 54123 54234` will exclude observations outside this "
-            "range. If specified without an argument, any upper limit "
-            "observations before the last upper limit before the first "
-            "detection in a given band will not be included in the fitting."))
+        help=prt.message('parser_limit_fitting_mjds'))
 
     parser.add_argument(
         '--suffix',
         '-s',
         dest='suffix',
         default='',
-        help=("Append custom string to output file name to prevent overwrite"))
+        help=prt.message('parser_suffix'))
 
     parser.add_argument(
         '--num-walkers',
@@ -283,10 +232,7 @@ def get_parser(only=None, printer=None):
         dest='num_walkers',
         type=int,
         default=None,
-        help=("Number of walkers to use in emcee. When fitting, this must be "
-              "set to at least twice the "
-              "total number of free parameters within the model, not "
-              "setting this parameter will set it to this minimum."))
+        help=prt.message('parser_num_walkers'))
 
     parser.add_argument(
         '--num-temps',
@@ -294,67 +240,56 @@ def get_parser(only=None, printer=None):
         dest='num_temps',
         type=int,
         default=1,
-        help=("Number of temperatures to use in the parallel-tempered emcee "
-              "sampler. `-T 1` is equivalent to the standard "
-              "EnsembleSampler."))
+        help=prt.message('parser_num_temps'))
 
     parser.add_argument(
         '--no-fracking',
         dest='fracking',
         default=True,
         action='store_false',
-        help=("Setting this flag will skip the `fracking` step of the "
-              "optimization process."))
+        help=prt.message('parser_fracking'))
 
     parser.add_argument(
         '--no-write',
         dest='write',
         default=True,
         action='store_false',
-        help=("Do not write any results to disk."))
+        help=prt.message('parser_write'))
 
     parser.add_argument(
         '--quiet',
         dest='quiet',
         default=False,
         action='store_true',
-        help=("Print minimal output upon execution. Don't display our "
-              "amazing logo :-("))
+        help=prt.message('parser_quiet'))
 
     parser.add_argument(
         '--cuda',
         dest='cuda',
         default=False,
         action='store_true',
-        help=("Enable CUDA for MOSFiT routines. Requires the `scikit-cuda` "
-              "package (and its dependencies) to be installed."))
+        help=prt.message('parser_cuda'))
 
     parser.add_argument(
         '--no-copy-at-launch',
         dest='copy',
         default=True,
         action='store_false',
-        help=("Setting this flag will prevent MOSFiT from copying the user "
-              "file hierarchy (models/modules/jupyter) to the current working "
-              "directory before fitting."))
+        help=prt.message('parser_copy'))
 
     parser.add_argument(
         '--force-copy-at-launch',
         dest='force_copy',
         default=False,
         action='store_true',
-        help=("Setting this flag will force MOSFiT to overwrite the user "
-              "file hierarchy (models/modules/jupyter) to the current working "
-              "directory. User will be prompted before being allowed to run "
-              "with this flag."))
+        help=prt.message('parser_force_copy'))
 
     parser.add_argument(
         '--offline',
         dest='offline',
         default=False,
         action='store_true',
-        help=("MOSFiT will only use cached data and will not attempt to use "
-              "any online resources."))
+        help=prt.message('parser_offline'))
 
     parser.add_argument(
         '--frack-step',
@@ -362,31 +297,21 @@ def get_parser(only=None, printer=None):
         dest='frack_step',
         type=int,
         default=50,
-        help=("Perform `fracking` every this number of steps while in the "
-              "burn-in phase of the fitting process."))
+        help=prt.message('parser_frack_step'))
 
     parser.add_argument(
         '--burn',
         '-b',
         dest='burn',
         type=int,
-        help=("Burn in the chains for this many iterations. During burn-in, "
-              "global optimization (\"fracking\"), replacement, and a "
-              "Gibbs variant of emcee are used to speed convergence. "
-              "However, as none of these methods preserve detailed "
-              "balance, the posteriors obtained during the burn-in phase "
-              "are very approximate. No convergence information will be "
-              "displayed during burn-in."))
+        help=prt.message('parser_burn'))
 
     parser.add_argument(
         '--post-burn',
         '-p',
         dest='post_burn',
         type=int,
-        help=("Run emcee this many more iterations after the burn-in phase. "
-              "The burn-in phase will thus be run for (i - p) iterations, "
-              "where i is the total number of iterations set with `-i` and "
-              "p is the value of this parameter."))
+        help=prt.message('parser_post_burn'))
 
     parser.add_argument(
         '--upload',
@@ -394,9 +319,7 @@ def get_parser(only=None, printer=None):
         dest='upload',
         default=False,
         action='store_true',
-        help=("Upload results of MOSFiT to appropriate Open Catalog. If "
-              "MOSFiT is only supplied with `-u` and no other arguments, it "
-              "will upload the results of the latest run."))
+        help=prt.message('parser_upload'))
 
     parser.add_argument(
         '--run-until-converged',
@@ -406,11 +329,7 @@ def get_parser(only=None, printer=None):
         default=None,
         const=1.1,
         nargs='?',
-        help=("Run each model until the autocorrelation time is measured "
-              "accurately and chain has burned in for the specified number "
-              "of autocorrelation times [Default: 10.0]. This will run "
-              "beyond the specified number of iterations, and is recommended "
-              "when the `--upload/-u` flag is set."))
+        help=prt.message('parser_run_until_converged'))
 
     parser.add_argument(
         '--run-until-uncorrelated',
@@ -420,11 +339,7 @@ def get_parser(only=None, printer=None):
         default=None,
         const=5,
         nargs='?',
-        help=("Run each model until the autocorrelation time is measured "
-              "accurately and chain has burned in for the specified number "
-              "of autocorrelation times [Default: 10.0]. This will run "
-              "beyond the specified number of iterations, and is recommended "
-              "when the `--upload/-u` flag is set."))
+        help=prt.message('parser_run_until_uncorrelated'))
 
     parser.add_argument(
         '--maximum-walltime',
@@ -432,8 +347,7 @@ def get_parser(only=None, printer=None):
         dest='maximum_walltime',
         type=float,
         default=False,
-        help=("Total execution time (in seconds) constrained to be no "
-              "greater than this value."))
+        help=prt.message('parser_maximum_walltime'))
 
     parser.add_argument(
         '--maximum-memory',
@@ -441,10 +355,7 @@ def get_parser(only=None, printer=None):
         dest='maximum_memory',
         type=float,
         default=np.inf,
-        help=("Maximum memory MOSFiT is allowed to use, in megabytes. The "
-              "memory use is roughly estimated, so it is best to set this "
-              "number at least 1 GB below your system\'s actual memory limit "
-              "per CPU."))
+        help=prt.message('parser_maximum_memory'))
 
     parser.add_argument(
         '--draw-above-likelihood',
@@ -454,10 +365,7 @@ def get_parser(only=None, printer=None):
         default=False,
         const=True,
         nargs='?',
-        help=("When randomly drawing walkers initially, do not accept a draw "
-              "unless a likelihood value is greater than this value. By "
-              "default, any score greater than the likelihood floor will be "
-              "retained."))
+        help=prt.message('parser_draw_above_likelihood'))
 
     parser.add_argument(
         '--gibbs',
@@ -465,10 +373,7 @@ def get_parser(only=None, printer=None):
         dest='gibbs',
         default=False,
         action='store_true',
-        help=("Using a Gibbs-sampling variant of emcee. This is not proven "
-              "to preserve detailed balance, however it has much faster "
-              "convergence than the vanilla emcee stretch-move. Use with "
-              "caution."))
+        help=prt.message('parser_gibbs'))
 
     parser.add_argument(
         '--save-full-chain',
@@ -476,14 +381,14 @@ def get_parser(only=None, printer=None):
         dest='save_full_chain',
         default=False,
         action='store_true',
-        help=("Save the full chain for each model fit."))
+        help=prt.message('parser_save_full_chain'))
 
     parser.add_argument(
         '--print-trees',
         dest='print_trees',
         default=False,
         action='store_true',
-        help=("Print the full dependency trees of each model."))
+        help=prt.message('parser_print_trees'))
 
     parser.add_argument(
         '--set-upload-token',
@@ -491,36 +396,28 @@ def get_parser(only=None, printer=None):
         const=True,
         default=False,
         nargs='?',
-        help=("Set the upload token. If given an argument, expects a 64-"
-              "character token. If given no argument, MOSFiT will prompt "
-              "the user to provide a token."))
+        help=prt.message('parser_set_upload_token'))
 
     parser.add_argument(
         '--ignore-upload-quality',
         dest='check_upload_quality',
         default=True,
         action='store_false',
-        help=("Ignore all quality checks when uploading fits."))
+        help=prt.message('parser_check_upload_quality'))
 
     parser.add_argument(
         '--test',
         dest='test',
         default=False,
         action='store_true',
-        help=("Alters the printing of output messages such that a new line is "
-              "generated with each message. Users are unlikely to need this "
-              "parameter; it is included as Travis requires new lines to be "
-              "produed to detected program output."))
+        help=prt.message('parser_test'))
 
     parser.add_argument(
         '--variance-for-each',
         dest='variance_for_each',
         default=[],
         nargs='+',
-        help=("Create a separate `Variance` for each type of observation "
-              "specified. Currently `band` is the only valid option, with "
-              "a trailing numeric value indicating the maximum fractional "
-              "difference in wavelength for two bands to be grouped."))
+        help=prt.message('parser_variance_for_each'))
 
     parser.add_argument(
         '--speak',
@@ -528,14 +425,14 @@ def get_parser(only=None, printer=None):
         const='en',
         default=False,
         nargs='?',
-        help=("Speak."))
+        help=prt.message('parser_speak'))
 
     parser.add_argument(
         '--version',
         dest='version',
         default=False,
         action='store_true',
-        help=("Print code version info."))
+        help=prt.message('parser_version'))
 
     parser.add_argument(
         '--extra-outputs',
@@ -543,7 +440,7 @@ def get_parser(only=None, printer=None):
         dest='extra_outputs',
         default=[],
         nargs='+',
-        help=("Extra keys to save alongside the default model outputs."))
+        help=prt.message('parser_extra_outputs'))
 
     parser.add_argument(
         '--catalogs',
@@ -551,7 +448,7 @@ def get_parser(only=None, printer=None):
         dest='catalogs',
         default=[],
         nargs='+',
-        help=("Restrict data acquisition to the listed catalogs."))
+        help=prt.message('parser_catalogs'))
 
     parser.add_argument(
         '--open-in-browser',
@@ -559,33 +456,28 @@ def get_parser(only=None, printer=None):
         dest='open_in_browser',
         default=False,
         action='store_true',
-        help=("Open the events listed with `-e` in the user's web "
-              "browser one at a time."))
+        help=prt.message('parser_open_in_browser'))
 
     parser.add_argument(
         '--exit-on-prompt',
         dest='exit_on_prompt',
         default=False,
         action='store_true',
-        help=("Exit immediately if any user prompts are encountered "
-              "(useful for batch jobs)."))
+        help=prt.message('parser_exit_on_prompt'))
 
     parser.add_argument(
         '--download-recommended-data',
         dest='download_recommended_data',
         default=False,
         action='store_true',
-        help=("Downloads any recommended data from the Open Catalogs if not "
-              "provided by the user (without prompting)."))
+        help=prt.message('parser_download_recommended_data'))
 
     parser.add_argument(
         '--local-data-only',
         dest='local_data_only',
         default=False,
         action='store_true',
-        help=("Will not attempt to acquire any data from the Open Catalogs "
-              "(even from cache), using only data provided locally by the "
-              "user."))
+        help=prt.message('parser_local_data_only'))
 
     return parser
 

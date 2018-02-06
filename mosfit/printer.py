@@ -102,7 +102,8 @@ class Printer(object):
             pass
         else:
             self.prt(self.translate(
-                'Translating strings for language `{}`, please wait...\n'
+                'Translating strings for language `{}`, please wait '
+                '(this is only done once)...\n'
                 .format(self._language)), wrapped=True)
             self._strings = OrderedDict()
             for ki, key in enumerate(strings):
