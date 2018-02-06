@@ -483,7 +483,7 @@ def get_parser(only=None, printer=None):
         const='select',
         default='ensembler',
         nargs='?',
-        help=prt.message('parser_method'))
+        help=prt.text('parser_method'))
 
     return parser
 
@@ -559,8 +559,9 @@ def main():
         'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
     if args.method == 'nester':
+        print(args.iterations)
         if args.run_until_converged and args.iterations >= 0:
-            raise ValueError(prt.message('R_i_mutually_exclusive'))
+            raise ValueError(prt.text('R_i_mutually_exclusive'))
 
     changed_iterations = False
     if args.iterations == -1:
@@ -622,8 +623,6 @@ def main():
         upload_token_path = os.path.join(dir_path, 'cache', 'dropbox.token')
 
         if args.method == 'nester':
-            if args.run_until_converged and args.iterations >= 0:
-                raise ValueError(prt.message('R_i_mutually_exclusive'))
             unused_args = [
                 [args.burn, '-b'],
                 [args.post_burn, '-p'],
