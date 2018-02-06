@@ -296,7 +296,6 @@ def get_parser(only=None, printer=None):
         '-f',
         dest='frack_step',
         type=int,
-        default=50,
         help=prt.message('parser_frack_step'))
 
     parser.add_argument(
@@ -550,6 +549,9 @@ def main():
     if args.limiting_magnitude == []:
         args.limiting_magnitude = 20.0
 
+    if args.frack_step is None:
+        args.frack_step = 50
+
     args.return_fits = False
 
     if (isinstance(args.extrapolate_time, list) and
@@ -563,11 +565,12 @@ def main():
     args.method = 'nester' if args.method.lower() in [
         'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
-    if (args.method == 'nester' and args.run_until_converged and
-            args.iterations >= 0):
-        raise ValueError(
-            '`-R` and `-i` options are incompatible when using `-D nester`, '
-            'please use one or the other.')
+    if args.method == 'nester':
+        if args.run_until_converged and args.iterations >= 0:
+            raise ValueError(prt.message('R_i_mutually_exclusive'))
+        if args.frack_step is not None:
+            prt.message('argument_not_used',
+                        reps=['-f', '-D nester'], warning=True)
 
     changed_iterations = False
     if args.iterations == -1:
