@@ -8,6 +8,7 @@ import json
 import os
 import re
 import sys
+import time
 from builtins import input, str
 from collections import OrderedDict
 from textwrap import fill
@@ -15,8 +16,8 @@ from textwrap import fill
 import numpy as np
 from scipy import ndimage
 
-from .utils import (calculate_WAIC, congrid, is_integer, open_atomic,
-                    pretty_num, rebin)
+from .utils import (calculate_WAIC, congrid, is_integer, is_number,
+                    open_atomic, pretty_num, rebin)
 
 if sys.version_info[:2] < (3, 3):
     old_print = print  # noqa
@@ -48,6 +49,7 @@ class Printer(object):
         RED = '\033[0;91m'
         UNDERLINE = '\033[4m'
         YELLOW = '\033[38;5;220m'
+        CHARTREUSE = '\033[38;5;70m'
 
         codes = {
             '!b': BLUE,
@@ -59,7 +61,8 @@ class Printer(object):
             '!o': ORANGE,
             '!r': RED,
             '!u': UNDERLINE,
-            '!y': YELLOW
+            '!y': YELLOW,
+            '!h': CHARTREUSE
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -73,8 +76,41 @@ class Printer(object):
         self._exit_on_prompt = exit_on_prompt
 
         self._was_inline = False
+        self._last_prt_time = None
 
         self.set_strings()
+
+    def _check_prt_time(self, min_time):
+        """Check if we should print depending on time of last print."""
+        return (min_time is None or self._last_prt_time is None or (
+            time.time() - self._last_prt_time > min_time))
+
+    def _lines(
+        self, text, colorify=False, center=False, width=None,
+        warning=False, error=False, prefix=True, color='', inline=False,
+            wrap_length=None, wrapped=False, master_only=True, **kwargs):
+        """Generate lines for output."""
+        if self._quiet:
+            return []
+        if master_only and self._pool and not self._pool.is_master():
+            return []
+        if warning:
+            if prefix:
+                text = '!y' + self._strings['warning'] + ': ' + text + '!e'
+        if error:
+            if prefix:
+                text = '!r' + self._strings['error'] + ': ' + text + '!e'
+        if color:
+            text = color + text + '!e'
+        tspl = text.split('\n')
+        if wrapped:
+            if not wrap_length or not is_integer(wrap_length):
+                wrap_length = self._wrap_length
+            ntspl = []
+            for line in tspl:
+                ntspl.extend(fill(line, wrap_length).split('\n'))
+            tspl = ntspl
+        return tspl
 
     def set_strings(self):
         """Set pre-defined list of strings."""
@@ -130,35 +166,12 @@ class Printer(object):
                 output = output.replace(code, self.ansi.codes[code])
         return output
 
-    def _lines(
-        self, text, colorify=False, center=False, width=None,
-        warning=False, error=False, prefix=True, color='', inline=False,
-            wrap_length=None, wrapped=False, master_only=True):
-        """Generate lines for output."""
-        if self._quiet:
-            return []
-        if master_only and self._pool and not self._pool.is_master():
-            return []
-        if warning:
-            if prefix:
-                text = '!y' + self._strings['warning'] + ': ' + text + '!e'
-        if error:
-            if prefix:
-                text = '!r' + self._strings['error'] + ': ' + text + '!e'
-        if color:
-            text = color + text + '!e'
-        tspl = text.split('\n')
-        if wrapped:
-            if not wrap_length or not is_integer(wrap_length):
-                wrap_length = self._wrap_length
-            ntspl = []
-            for line in tspl:
-                ntspl.extend(fill(line, wrap_length).split('\n'))
-            tspl = ntspl
-        return tspl
-
     def prt(self, text='', **kwargs):
         """Print text without modification."""
+        min_time = kwargs.get('min_time', None)
+        if not self._check_prt_time(min_time):
+            return
+
         warning = kwargs.get('warning', False)
         error = kwargs.get('error', False)
         color = kwargs.get('color', '')
@@ -166,6 +179,7 @@ class Printer(object):
         center = kwargs.get('center', False)
         width = kwargs.get('width', None)
         colorify = kwargs.get('colorify', True)
+
         tspl = self._lines(text, **kwargs)
         if warning or error or color:
             colorify = True
@@ -196,6 +210,8 @@ class Printer(object):
             except UnicodeEncodeError:
                 print(rline.encode('ascii', 'replace').decode(), flush=True)
 
+        self._last_prt_time = time.time()
+
     def string(self, text, **kwargs):
         """Return message string."""
         center = kwargs.get('center', False)
@@ -216,7 +232,7 @@ class Printer(object):
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
-                colorify=True, width=None, prt=True, color=''):
+                colorify=True, width=None, prt=True, color='', min_time=None):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -228,7 +244,7 @@ class Printer(object):
             self.prt(
                 text, center=center, colorify=colorify, width=width,
                 prefix=prefix, inline=inline, wrapped=wrapped,
-                warning=warning, error=error, color=color)
+                warning=warning, error=error, color=color, min_time=min_time)
         return text
 
     def prompt(self, text, reps=[],
@@ -368,10 +384,11 @@ class Printer(object):
                 return user_input
 
     def status(self,
+               sampler,
                desc='',
                scores='',
                accepts='',
-               progress='',
+               iterations='',
                acor=None,
                psrf=None,
                fracking=False,
@@ -379,9 +396,20 @@ class Printer(object):
                kmat=None,
                make_space=False,
                convergence_type='',
-               convergence_criteria=''):
+               convergence_criteria='',
+               batch=None,
+               nc=None,
+               ncall=None,
+               eff=None,
+               logz=None,
+               loglstar=None,
+               stop=None,
+               min_time=0.2):
         """Print status message showing state of fitting process."""
         if self._quiet:
+            return
+
+        if not self._check_prt_time(min_time):
             return
 
         fitter = self._fitter
@@ -415,26 +443,28 @@ class Printer(object):
                 for x in accepts
             ]) + ' ]'
             outarr.append(scorestring)
-        if isinstance(progress, list):
-            if progress[1]:
+        if isinstance(iterations, list):
+            if iterations[1]:
                 progressstring = (
-                    self._strings['progress'] +
-                    ': [ {}/{} ]'.format(*progress))
+                    self._strings['iterations'] +
+                    ': [ {}/{} ]'.format(*iterations))
             else:
                 progressstring = (
-                    self._strings['progress'] + ': [ {} ]'.format(progress[0]))
+                    self._strings['iterations'] + ': [ {} ]'.format(
+                        iterations[0]))
             outarr.append(progressstring)
-        if fitter._emcee_est_t < 0.0:
-            txt = self.message('run_until_converged', [
-                convergence_type, convergence_criteria], prt=False)
-            outarr.append(txt)
-        elif fitter._emcee_est_t + fitter._bh_est_t > 0.0:
-            if fitter._bh_est_t > 0.0 or not fracking:
-                tott = fitter._emcee_est_t + fitter._bh_est_t
-            else:
-                tott = 2.0 * fitter._emcee_est_t
-            timestring = self.get_timestring(tott)
-            outarr.append(timestring)
+        if hasattr(sampler, '_emcee_est_t'):
+            if sampler._emcee_est_t < 0.0:
+                txt = self.message('run_until_converged', [
+                    convergence_type, convergence_criteria], prt=False)
+                outarr.append(txt)
+            elif sampler._emcee_est_t + sampler._bh_est_t > 0.0:
+                if sampler._bh_est_t > 0.0 or not fracking:
+                    tott = sampler._emcee_est_t + sampler._bh_est_t
+                else:
+                    tott = 2.0 * sampler._emcee_est_t
+                timestring = self.get_timestring(tott)
+                outarr.append(timestring)
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
@@ -468,6 +498,54 @@ class Printer(object):
                 psrfbstr, psrfstr)
             psrfstring = psrfstring + ('!e' if col else '')
             outarr.append(psrfstring)
+        if batch is not None:
+            outarr.append('Batch: {}'.format(batch))
+        if ncall is not None and nc is not None:
+            outarr.append('Calls: [ {} (+{}) ]'.format(ncall, nc))
+        if eff is not None:
+            outarr.append('Efficiency: [ {}% ]'.format(pretty_num(eff, sig=3)))
+        if logz is not None:
+            if len(logz) == 2 or (len(logz) == 4 and logz[2] > 1.e6):
+                outarr.append('Log(z): [ {} ± {} ]'.format(
+                    pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
+            if len(logz) == 4:
+                if is_number(logz[1]):
+                    if logz[2] > 1000.0 * logz[1]:
+                        color = '!r'
+                    elif logz[2] > 100.0 * logz[1]:
+                        color = '!o'
+                    elif logz[2] > 10.0 * logz[1]:
+                        color = '!y'
+                    elif logz[2] > logz[1]:
+                        color = '!h'
+                    else:
+                        color = '!g'
+                else:
+                    color = '!w'
+                est_logz = pretty_num(logz[0] + logz[2], sig=3)
+                outarr.append(
+                    'Log(z): [ {} (Prediction: {}{}!e) ± {} ]'.format(
+                        pretty_num(logz[0], sig=4), color, est_logz,
+                        pretty_num(logz[1], sig=4)))
+        if loglstar is not None:
+            if len(loglstar) == 1:
+                outarr.append('Log(L*): [ {} ]'.format(
+                    pretty_num(loglstar[0], sig=4)))
+            else:
+                if not np.isfinite(loglstar[0]):
+                    outarr.append('Improving z for Log(L*): '
+                                  '[ {} < {} ]'.format(
+                                      pretty_num(loglstar[1], sig=3),
+                                      pretty_num(loglstar[2], sig=3)))
+                else:
+                    outarr.append('Improving posterior for Log(L*): '
+                                  '[ {} < {} < {} ]'.format(
+                                      pretty_num(loglstar[0], sig=3),
+                                      pretty_num(loglstar[1], sig=3),
+                                      pretty_num(loglstar[2], sig=3)))
+        if stop is not None:
+            outarr.append('Stopping Value: [ {} > 1 ]'.format(
+                pretty_num(stop, sig=4)))
 
         if not isinstance(messages, list):
             raise ValueError('`messages` must be list!')
