@@ -151,7 +151,7 @@ class Nester(Sampler):
             while max_iter >= 0:
                 n += 1
                 if (self._fitter._maximum_walltime is not False and
-                        time.time() - self._start_time >
+                        time.time() - self._fitter._start_time >
                         self._fitter._maximum_walltime):
                     prt.message('exceeded_walltime', warning=True)
                     break
