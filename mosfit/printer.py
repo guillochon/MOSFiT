@@ -138,10 +138,14 @@ class Printer(object):
             pass
         else:
             self.prt(self.translate(
-                'Building strings for `{}`, please wait...'
+                'Translating strings for language `{}`, please wait '
+                '(this is only done once)...\n'
                 .format(self._language)), wrapped=True)
             self._strings = OrderedDict()
-            for key in strings:
+            for ki, key in enumerate(strings):
+                self.prt('[ {}% ]'.format(pretty_num(
+                    100.0 * ki / len(strings), sig=3)),
+                         inline=True)
                 self._strings[key] = self.translate(strings[key])
             with open_atomic(lsf, 'w') as f:
                 json.dump(self._strings, f)
