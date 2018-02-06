@@ -210,7 +210,7 @@ def get_mosfit_hash(salt=u''):
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     matches = []
-    for root, dirnames, filenames in os.walk(dir_path):
+    for root, dirnames, filenames in sorted(os.walk(dir_path)):
         for filename in fnmatch.filter(filenames, '*.py'):
             matches.append(os.path.join(root, filename))
 
