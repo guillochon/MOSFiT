@@ -501,8 +501,9 @@ class Printer(object):
         if eff is not None:
             outarr.append('Efficiency: [ {}% ]'.format(pretty_num(eff, sig=3)))
         if logz is not None:
-            outarr.append('Log(z): [ {} ± {} ]'.format(
-                pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
+            if len(logz) == 2 or (len(logz) == 4 and logz[2] > 1.e6):
+                outarr.append('Log(z): [ {} ± {} ]'.format(
+                    pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
                 if is_number(logz[1]):
                     if logz[2] > 1000.0 * logz[1]:
@@ -517,10 +518,11 @@ class Printer(object):
                         color = '!g'
                 else:
                     color = '!w'
-                dlogz = pretty_num(
-                    logz[2], sig=3) if logz[2] < 1.e6 else '∞'
-                outarr.append('∆Log(z): [ {}{}!e > {} ]'.format(
-                    color, dlogz, pretty_num(logz[3], sig=4)))
+                est_logz = pretty_num(logz[0] + logz[2], sig=3)
+                outarr.append(
+                    'Log(z): [ {} (Prediction: {}{}!e) ± {} ]'.format(
+                        pretty_num(logz[0], sig=4), color, est_logz,
+                        pretty_num(logz[1], sig=4)))
         if loglstar is not None:
             if len(loglstar) == 1:
                 outarr.append('Log(L*): [ {} ]'.format(
