@@ -56,7 +56,7 @@ def get_parser(only=None, printer=None):
         dest='events',
         default=[],
         nargs='+',
-        help=prt.message('parser_events'))
+        help=prt.text('parser_events'))
 
     parser.add_argument(
         '--models',
@@ -64,7 +64,7 @@ def get_parser(only=None, printer=None):
         dest='models',
         default=[],
         nargs='?',
-        help=prt.message('parser_models'))
+        help=prt.text('parser_models'))
 
     parser.add_argument(
         '--parameter-paths',
@@ -72,7 +72,7 @@ def get_parser(only=None, printer=None):
         dest='parameter_paths',
         default=['parameters.json'],
         nargs='+',
-        help=prt.message('parser_parameter_paths'))
+        help=prt.text('parser_parameter_paths'))
 
     parser.add_argument(
         '--walker-paths',
@@ -80,14 +80,14 @@ def get_parser(only=None, printer=None):
         dest='walker_paths',
         default=[],
         nargs='+',
-        help=prt.message('parser_walker_paths'))
+        help=prt.text('parser_walker_paths'))
 
     parser.add_argument(
         '--max-time',
         dest='max_time',
         type=float,
         default=1000.,
-        help=prt.message('parser_max_time'))
+        help=prt.text('parser_max_time'))
 
     parser.add_argument(
         '--limiting-magnitude',
@@ -95,7 +95,7 @@ def get_parser(only=None, printer=None):
         dest='limiting_magnitude',
         default=None,
         nargs='+',
-        help=prt.message('parser_limiting_magnitude'))
+        help=prt.text('parser_limiting_magnitude'))
 
     parser.add_argument(
         '--band-list',
@@ -103,7 +103,7 @@ def get_parser(only=None, printer=None):
         dest='band_list',
         default=[],
         nargs='+',
-        help=prt.message('parser_band_list'))
+        help=prt.text('parser_band_list'))
 
     parser.add_argument(
         '--band-systems',
@@ -111,7 +111,7 @@ def get_parser(only=None, printer=None):
         dest='band_systems',
         default=[],
         nargs='+',
-        help=prt.message('parser_band_systems'))
+        help=prt.text('parser_band_systems'))
 
     parser.add_argument(
         '--band-instruments',
@@ -119,7 +119,7 @@ def get_parser(only=None, printer=None):
         dest='band_instruments',
         default=[],
         nargs='+',
-        help=prt.message('parser_band_instruments'))
+        help=prt.text('parser_band_instruments'))
 
     parser.add_argument(
         '--band-bandsets',
@@ -127,49 +127,49 @@ def get_parser(only=None, printer=None):
         dest='band_bandsets',
         default=[],
         nargs='+',
-        help=prt.message('parser_band_bandsets'))
+        help=prt.text('parser_band_bandsets'))
 
     parser.add_argument(
         '--band-sampling-points',
         dest='band_sampling_points',
         type=int,
         default=17,
-        help=prt.message('parser_band_sampling_points'))
+        help=prt.text('parser_band_sampling_points'))
 
     parser.add_argument(
         '--exclude-bands',
         dest='exclude_bands',
         default=[],
         nargs='+',
-        help=prt.message('parser_exclude_bands'))
+        help=prt.text('parser_exclude_bands'))
 
     parser.add_argument(
         '--exclude-instruments',
         dest='exclude_instruments',
         default=[],
         nargs='+',
-        help=prt.message('parser_exclude_instruments'))
+        help=prt.text('parser_exclude_instruments'))
 
     parser.add_argument(
         '--exclude-systems',
         dest='exclude_systems',
         default=[],
         nargs='+',
-        help=prt.message('parser_exclude_systems'))
+        help=prt.text('parser_exclude_systems'))
 
     parser.add_argument(
         '--exclude-sources',
         dest='exclude_sources',
         default=[],
         nargs='+',
-        help=prt.message('parser_exclude_sources'))
+        help=prt.text('parser_exclude_sources'))
 
     parser.add_argument(
         '--exclude-kinds',
         dest='exclude_kinds',
         default=[],
         nargs='+',
-        help=prt.message('parser_exclude_kinds'))
+        help=prt.text('parser_exclude_kinds'))
 
     parser.add_argument(
         '--fix-parameters',
@@ -177,7 +177,7 @@ def get_parser(only=None, printer=None):
         dest='user_fixed_parameters',
         default=[],
         nargs='+',
-        help=prt.message('parser_user_fixed_parameters'))
+        help=prt.text('parser_user_fixed_parameters'))
 
     parser.add_argument(
         '--iterations',
@@ -187,7 +187,7 @@ def get_parser(only=None, printer=None):
         const=0,
         default=-1,
         nargs='?',
-        help=prt.message('parser_iterations'))
+        help=prt.text('parser_iterations'))
 
     parser.add_argument(
         '--smooth-times',
@@ -199,7 +199,7 @@ def get_parser(only=None, printer=None):
         default=20,
         nargs='?',
         action='store',
-        help=prt.message('parser_smooth_times'))
+        help=prt.text('parser_smooth_times'))
 
     parser.add_argument(
         '--extrapolate-time',
@@ -208,7 +208,7 @@ def get_parser(only=None, printer=None):
         type=float,
         default=0.0,
         nargs='*',
-        help=prt.message('parser_extrapolate_time'))
+        help=prt.text('parser_extrapolate_time'))
 
     parser.add_argument(
         '--limit-fitting-mjds',
@@ -217,14 +217,14 @@ def get_parser(only=None, printer=None):
         type=float,
         default=False,
         nargs=2,
-        help=prt.message('parser_limit_fitting_mjds'))
+        help=prt.text('parser_limit_fitting_mjds'))
 
     parser.add_argument(
         '--suffix',
         '-s',
         dest='suffix',
         default='',
-        help=prt.message('parser_suffix'))
+        help=prt.text('parser_suffix'))
 
     parser.add_argument(
         '--num-walkers',
@@ -232,7 +232,7 @@ def get_parser(only=None, printer=None):
         dest='num_walkers',
         type=int,
         default=None,
-        help=prt.message('parser_num_walkers'))
+        help=prt.text('parser_num_walkers'))
 
     parser.add_argument(
         '--num-temps',
@@ -240,56 +240,56 @@ def get_parser(only=None, printer=None):
         dest='num_temps',
         type=int,
         default=1,
-        help=prt.message('parser_num_temps'))
+        help=prt.text('parser_num_temps'))
 
     parser.add_argument(
         '--no-fracking',
         dest='fracking',
         default=True,
         action='store_false',
-        help=prt.message('parser_fracking'))
+        help=prt.text('parser_fracking'))
 
     parser.add_argument(
         '--no-write',
         dest='write',
         default=True,
         action='store_false',
-        help=prt.message('parser_write'))
+        help=prt.text('parser_write'))
 
     parser.add_argument(
         '--quiet',
         dest='quiet',
         default=False,
         action='store_true',
-        help=prt.message('parser_quiet'))
+        help=prt.text('parser_quiet'))
 
     parser.add_argument(
         '--cuda',
         dest='cuda',
         default=False,
         action='store_true',
-        help=prt.message('parser_cuda'))
+        help=prt.text('parser_cuda'))
 
     parser.add_argument(
         '--no-copy-at-launch',
         dest='copy',
         default=True,
         action='store_false',
-        help=prt.message('parser_copy'))
+        help=prt.text('parser_copy'))
 
     parser.add_argument(
         '--force-copy-at-launch',
         dest='force_copy',
         default=False,
         action='store_true',
-        help=prt.message('parser_force_copy'))
+        help=prt.text('parser_force_copy'))
 
     parser.add_argument(
         '--offline',
         dest='offline',
         default=False,
         action='store_true',
-        help=prt.message('parser_offline'))
+        help=prt.text('parser_offline'))
 
     parser.add_argument(
         '--frack-step',
@@ -297,21 +297,21 @@ def get_parser(only=None, printer=None):
         dest='frack_step',
         type=int,
         default=50,
-        help=prt.message('parser_frack_step'))
+        help=prt.text('parser_frack_step'))
 
     parser.add_argument(
         '--burn',
         '-b',
         dest='burn',
         type=int,
-        help=prt.message('parser_burn'))
+        help=prt.text('parser_burn'))
 
     parser.add_argument(
         '--post-burn',
         '-p',
         dest='post_burn',
         type=int,
-        help=prt.message('parser_post_burn'))
+        help=prt.text('parser_post_burn'))
 
     parser.add_argument(
         '--upload',
@@ -319,7 +319,7 @@ def get_parser(only=None, printer=None):
         dest='upload',
         default=False,
         action='store_true',
-        help=prt.message('parser_upload'))
+        help=prt.text('parser_upload'))
 
     parser.add_argument(
         '--run-until-converged',
@@ -329,7 +329,7 @@ def get_parser(only=None, printer=None):
         default=None,
         const=1.1,
         nargs='?',
-        help=prt.message('parser_run_until_converged'))
+        help=prt.text('parser_run_until_converged'))
 
     parser.add_argument(
         '--run-until-uncorrelated',
@@ -339,7 +339,7 @@ def get_parser(only=None, printer=None):
         default=None,
         const=5,
         nargs='?',
-        help=prt.message('parser_run_until_uncorrelated'))
+        help=prt.text('parser_run_until_uncorrelated'))
 
     parser.add_argument(
         '--maximum-walltime',
@@ -347,7 +347,7 @@ def get_parser(only=None, printer=None):
         dest='maximum_walltime',
         type=float,
         default=False,
-        help=prt.message('parser_maximum_walltime'))
+        help=prt.text('parser_maximum_walltime'))
 
     parser.add_argument(
         '--maximum-memory',
@@ -355,7 +355,7 @@ def get_parser(only=None, printer=None):
         dest='maximum_memory',
         type=float,
         default=np.inf,
-        help=prt.message('parser_maximum_memory'))
+        help=prt.text('parser_maximum_memory'))
 
     parser.add_argument(
         '--draw-above-likelihood',
@@ -365,7 +365,7 @@ def get_parser(only=None, printer=None):
         default=False,
         const=True,
         nargs='?',
-        help=prt.message('parser_draw_above_likelihood'))
+        help=prt.text('parser_draw_above_likelihood'))
 
     parser.add_argument(
         '--gibbs',
@@ -373,7 +373,7 @@ def get_parser(only=None, printer=None):
         dest='gibbs',
         default=False,
         action='store_true',
-        help=prt.message('parser_gibbs'))
+        help=prt.text('parser_gibbs'))
 
     parser.add_argument(
         '--save-full-chain',
@@ -381,14 +381,14 @@ def get_parser(only=None, printer=None):
         dest='save_full_chain',
         default=False,
         action='store_true',
-        help=prt.message('parser_save_full_chain'))
+        help=prt.text('parser_save_full_chain'))
 
     parser.add_argument(
         '--print-trees',
         dest='print_trees',
         default=False,
         action='store_true',
-        help=prt.message('parser_print_trees'))
+        help=prt.text('parser_print_trees'))
 
     parser.add_argument(
         '--set-upload-token',
@@ -396,28 +396,28 @@ def get_parser(only=None, printer=None):
         const=True,
         default=False,
         nargs='?',
-        help=prt.message('parser_set_upload_token'))
+        help=prt.text('parser_set_upload_token'))
 
     parser.add_argument(
         '--ignore-upload-quality',
         dest='check_upload_quality',
         default=True,
         action='store_false',
-        help=prt.message('parser_check_upload_quality'))
+        help=prt.text('parser_check_upload_quality'))
 
     parser.add_argument(
         '--test',
         dest='test',
         default=False,
         action='store_true',
-        help=prt.message('parser_test'))
+        help=prt.text('parser_test'))
 
     parser.add_argument(
         '--variance-for-each',
         dest='variance_for_each',
         default=[],
         nargs='+',
-        help=prt.message('parser_variance_for_each'))
+        help=prt.text('parser_variance_for_each'))
 
     parser.add_argument(
         '--speak',
@@ -425,14 +425,14 @@ def get_parser(only=None, printer=None):
         const='en',
         default=False,
         nargs='?',
-        help=prt.message('parser_speak'))
+        help=prt.text('parser_speak'))
 
     parser.add_argument(
         '--version',
         dest='version',
         default=False,
         action='store_true',
-        help=prt.message('parser_version'))
+        help=prt.text('parser_version'))
 
     parser.add_argument(
         '--extra-outputs',
@@ -440,7 +440,7 @@ def get_parser(only=None, printer=None):
         dest='extra_outputs',
         default=[],
         nargs='+',
-        help=prt.message('parser_extra_outputs'))
+        help=prt.text('parser_extra_outputs'))
 
     parser.add_argument(
         '--catalogs',
@@ -448,7 +448,7 @@ def get_parser(only=None, printer=None):
         dest='catalogs',
         default=[],
         nargs='+',
-        help=prt.message('parser_catalogs'))
+        help=prt.text('parser_catalogs'))
 
     parser.add_argument(
         '--open-in-browser',
@@ -456,28 +456,28 @@ def get_parser(only=None, printer=None):
         dest='open_in_browser',
         default=False,
         action='store_true',
-        help=prt.message('parser_open_in_browser'))
+        help=prt.text('parser_open_in_browser'))
 
     parser.add_argument(
         '--exit-on-prompt',
         dest='exit_on_prompt',
         default=False,
         action='store_true',
-        help=prt.message('parser_exit_on_prompt'))
+        help=prt.text('parser_exit_on_prompt'))
 
     parser.add_argument(
         '--download-recommended-data',
         dest='download_recommended_data',
         default=False,
         action='store_true',
-        help=prt.message('parser_download_recommended_data'))
+        help=prt.text('parser_download_recommended_data'))
 
     parser.add_argument(
         '--local-data-only',
         dest='local_data_only',
         default=False,
         action='store_true',
-        help=prt.message('parser_local_data_only'))
+        help=prt.text('parser_local_data_only'))
 
     return parser
 
