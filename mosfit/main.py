@@ -660,6 +660,15 @@ def main():
         prt.message('enabling_s')
         args.smooth_times = 0
 
+    args.method = 'nester' if args.method.lower() in [
+        'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
+
+    if (args.method == 'nester' and args.run_until_converged and
+            args.iterations >= 0):
+        raise ValueError(
+            '`-R` and `-i` options are incompatible when using `-D nester`, '
+            'please use one or the other.')
+
     changed_iterations = False
     if args.iterations == -1:
         if len(args.events) == 0:
@@ -673,9 +682,6 @@ def main():
 
     if args.frack_step == 0:
         args.fracking = False
-
-    args.method = 'nester' if args.method.lower() in [
-        'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
     if (args.run_until_uncorrelated is not None and
             args.run_until_converged):
