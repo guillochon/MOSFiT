@@ -632,7 +632,8 @@ def main():
                 [args.run_until_uncorrelated, '-U'],
                 [args.draw_above_likelihood, '-d'],
                 [args.gibbs, '-g'],
-                [args.save_full_chain, '-c']
+                [args.save_full_chain, '-c'],
+                [args.maximum_memory, '-M']
             ]
             for ua in unused_args:
                 if ua[0] is not None:
