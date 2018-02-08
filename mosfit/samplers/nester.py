@@ -6,7 +6,10 @@ import sys
 import time
 
 import numpy as np
+from astrocats.catalog.model import MODEL
+from astrocats.catalog.quantity import QUANTITY
 from mosfit.samplers.sampler import Sampler
+from mosfit.utils import pretty_num
 
 
 class Nester(Sampler):
@@ -34,7 +37,6 @@ class Nester(Sampler):
         self._frack_step = frack_step
 
         self._upload_model = None
-        self._WAIC = None
         self._ntemps = 1
 
     def _get_best_kmat(self):
@@ -57,8 +59,12 @@ class Nester(Sampler):
 
     def append_output(self, modeldict):
         """Append output from the nester to the model description."""
-        if self._iterations > 0:
-            pass
+        modeldict[MODEL.SCORE] = {
+            QUANTITY.VALUE: pretty_num(self._logz, sig=6),
+            QUANTITY.E_VALUE: pretty_num(self._e_logz, sig=6),
+            QUANTITY.KIND: 'Log(z)'
+        }
+        modeldict[MODEL.STEPS] = str(self._niter)
 
     def prepare_output(self, check_upload_quality, upload):
         """Prepare output for writing to disk and uploading."""
@@ -109,17 +115,17 @@ class Nester(Sampler):
                 pool=self._pool, sample='rwalk', nlive=self._nlive)
             # Perform initial sample.
             ncall = sampler.ncall
-            niter = sampler.it - 1
+            self._niter = sampler.it - 1
             for li, res in enumerate(sampler.sample_initial(
                 dlogz=nested_dlogz_init
             )):
                 ncall0 = ncall
                 (worst, ustar, vstar, loglstar, logvol,
-                 logwt, logz, logzvar, h, nc, worst_it,
+                 logwt, self._logz, logzvar, h, nc, worst_it,
                  propidx, propiter, eff, delta_logz) = res
 
                 ncall += nc
-                niter += 1
+                self._niter += 1
                 max_iter -= 1
 
                 if max_iter < 0:
@@ -131,20 +137,22 @@ class Nester(Sampler):
                 # The above added 1 call.
                 ncall += 1
 
-                logzerr = np.sqrt(logzvar)
+                self._e_logz = np.sqrt(logzvar)
                 prt.status(
                     self, 'baseline', kmat=kmat,
-                    iterations=[niter, iter_denom],
+                    iterations=[self._niter, iter_denom],
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
-                    logz=[logz, logzerr, delta_logz, nested_dlogz_init],
+                    logz=[self._logz, self._e_logz,
+                          delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
 
             if max_iter >= 0:
                 prt.status(
                     self, 'starting_batches', kmat=kmat,
-                    iterations=[niter, iter_denom],
+                    iterations=[self._niter, iter_denom],
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
-                    logz=[logz, logzerr, delta_logz, nested_dlogz_init],
+                    logz=[self._logz, self._e_logz,
+                          delta_logz, nested_dlogz_init],
                     loglstar=[loglstar])
 
             n = 0
@@ -163,7 +171,7 @@ class Nester(Sampler):
                 stop_post, stop_evid, stop_val = stop_vals
                 if not stop:
                     logl_bounds = weight_function(self._results)
-                    logz, logzerr = self._results.logz[
+                    self._logz, self._e_logz = self._results.logz[
                         -1], self._results.logzerr[-1]
                     for res in sampler.sample_batch(
                             logl_bounds=logl_bounds,
@@ -173,7 +181,7 @@ class Nester(Sampler):
                         ncall0 = ncall
 
                         ncall += nc
-                        niter += 1
+                        self._niter += 1
                         max_iter -= 1
 
                         self._results = sampler.results
@@ -184,9 +192,9 @@ class Nester(Sampler):
 
                         prt.status(
                             self, 'batching', kmat=kmat,
-                            iterations=[niter, iter_denom],
+                            iterations=[self._niter, iter_denom],
                             batch=n, nc=ncall - ncall0, ncall=ncall, eff=eff,
-                            logz=[logz, logzerr], loglstar=[
+                            logz=[self._logz, self._e_logz], loglstar=[
                                 logl_bounds[0], loglstar,
                                 logl_bounds[1]], stop=stop_val)
 

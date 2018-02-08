@@ -559,7 +559,6 @@ def main():
         'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
     if args.method == 'nester':
-        print(args.iterations)
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.text('R_i_mutually_exclusive'))
 
