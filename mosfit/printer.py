@@ -509,7 +509,7 @@ class Printer(object):
                 outarr.append('Log(z): [ {} ± {} ]'.format(
                     pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
-                if is_number(logz[1]):
+                if is_number(logz[1]) and not np.isnan(logz[1]):
                     if logz[2] > 1000.0 * logz[1]:
                         color = '!r'
                     elif logz[2] > 100.0 * logz[1]:
@@ -521,7 +521,7 @@ class Printer(object):
                     else:
                         color = '!g'
                 else:
-                    color = '!w'
+                    color = ''
                 est_logz = pretty_num(logz[0] + logz[2], sig=3)
                 outarr.append(
                     'Log(z): [ {} (Prediction: {}{}!e) ± {} ]'.format(
