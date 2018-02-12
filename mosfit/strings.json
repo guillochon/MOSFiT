@@ -28,6 +28,7 @@
     "converged": "Converged!",
     "convert_cds": "CDS format detected.",
     "convert_latex": "LaTeX format detected.",
+    "w_nester_mutually_exclusive": "Restarting from a previous output can only be done using the `ensembler` sampler (invoked via `-D ensembler`). This can still be useful for previous `nester` runs when you wish to generate realizations from its results.",
     "converter_info": "\n!gThe ASCII converter in MOSFiT converts flat ASCII tables to the Open Catalog's JSON schema. Inputs are preferably provided by the user in the fixed-width CDS format, but if not, the converter works best if the data:\n1. Uses consistent delimeters throughout (i.e. just tabs, just spaces, etc.).\n2. Has a single header column specifying column contents.\n3. Specifies the instrument and photometric system used for each observation.\n4. Contains a single event per file (not multiple events per file or multiple files per event).\n\n!e!yPlease note that conversions are inherently imperfect and that you should always scan the output JSON file for errors.!e\n",
     "converting_to_json": "Converting input file `{}` to JSON format...\n",
     "copying": "Copying MOSFiT folder hierarchy to current working directory (disable with `--no-copy-at-launch`).",

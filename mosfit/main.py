@@ -561,6 +561,8 @@ def main():
     if args.method == 'nester':
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.text('R_i_mutually_exclusive'))
+        if args.walker_paths is not None:
+            raise ValueError(prt.text('w_nester_mutually_exclusive'))
 
     changed_iterations = False
     if args.iterations == -1:
@@ -626,7 +628,6 @@ def main():
                 [args.burn, '-b'],
                 [args.post_burn, '-p'],
                 [args.frack_step, '-f'],
-                [args.walker_paths, '-w'],
                 [args.num_temps, '-T'],
                 [args.run_until_uncorrelated, '-U'],
                 [args.draw_above_likelihood, '-d'],
