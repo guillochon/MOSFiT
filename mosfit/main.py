@@ -351,7 +351,6 @@ def get_parser(only=None, printer=None):
         '-M',
         dest='maximum_memory',
         type=float,
-        default=np.inf,
         help=prt.text('parser_maximum_memory'))
 
     parser.add_argument(
@@ -787,6 +786,8 @@ def main():
         args.burn = int(np.floor(args.iterations / 2))
     if args.draw_above_likelihood is None:
         args.draw_above_likelihood = False
+    if args.maximum_memory is None:
+        args.maximum_memory = np.inf
     if args.gibbs is None:
         args.gibbs = False
     if args.save_full_chain is None:
