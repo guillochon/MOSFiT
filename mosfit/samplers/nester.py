@@ -112,7 +112,8 @@ class Nester(Sampler):
         try:
             sampler = DynamicNestedSampler(
                 ln_likelihood, draw_from_icdf, ndim,
-                pool=self._pool, sample='rwalk', nlive=self._nlive)
+                pool=self._pool, sample='rwalk', nlive=self._nlive,
+                queue_size=self._pool.size)
             # Perform initial sample.
             ncall = sampler.ncall
             self._niter = sampler.it - 1
