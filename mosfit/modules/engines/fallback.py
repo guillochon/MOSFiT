@@ -579,6 +579,9 @@ class Fallback(Engine):
         tpeak = time[np.argmax(dmdt)]
 
         timeinterpfunc = interp1d(time, dmdt)
+        # For calculating total mass that has fallen back onto black hole
+        dmdt_precut = np.copy(dmdt)
+        time_precut = np.copy(time)
 
         lengthpretimes = len(np.where(self._times < time[0])[0])
         lengthposttimes = len(np.where(self._times > time[-1])[0])
@@ -616,4 +619,5 @@ class Fallback(Engine):
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback_orig': float(tfallback)}
+                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback_orig': float(tfallback),
+                'dmdt_precut': dmdt_precut, 'time_precut': time_precut}
