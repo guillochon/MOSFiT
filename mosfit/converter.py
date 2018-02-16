@@ -182,7 +182,7 @@ class Converter(object):
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._entry_keys = [
-            ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
+            ENTRY.NAME, ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
             ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
         self._use_mc = False
         self._month_rep = re.compile(
@@ -998,10 +998,7 @@ class Converter(object):
             dkeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             dkeys.remove(PHOTOMETRY.U_FLUX_DENSITY)
         if self._data_type == 'n':
-            akeys.remove(PHOTOMETRY.TIME)
-            akeys.remove(PHOTOMETRY.BAND)
-            akeys.remove(PHOTOMETRY.INSTRUMENT)
-            akeys.remove(PHOTOMETRY.TELESCOPE)
+            akeys = self._entry_keys
 
         # Make sure `E_` keys always appear after the actual measurements.
         if (PHOTOMETRY.MAGNITUDE in akeys and
