@@ -139,6 +139,7 @@ class Converter(object):
                     'event', 'transient', 'name', 'supernova', 'sne', 'id',
                     'identifier', 'object']),
                 (ENTRY.REDSHIFT, ['redshift']),
+                (ENTRY.HOST, ['host']),
                 (ENTRY.LUM_DIST, [
                     'lumdist', 'luminosity distance', 'distance']),
                 (ENTRY.COMOVING_DIST, ['comoving distance']),
@@ -183,7 +184,7 @@ class Converter(object):
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._entry_keys = [
             ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
-            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, Key(
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, ENTRY.HOST, Key(
                 'claimedtype', KEY_TYPES.STRING)]
         self._use_mc = False
         self._month_rep = re.compile(
