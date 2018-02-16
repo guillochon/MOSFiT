@@ -146,7 +146,7 @@ class Converter(object):
                 (ENTRY.DEC, ['dec', 'declination']),
                 (ENTRY.EBV, ['ebv', 'extinction']),
                 # At the moment transient-specific keys are not in astrocats.
-                ('claimedtype', [
+                (Key('claimedtype', KEY_TYPES.STRING), [
                     'claimedtype', 'type', 'claimed_type', 'claimed type'])
             ))
 
@@ -182,8 +182,9 @@ class Converter(object):
         self._specify_keys = [
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._entry_keys = [
-            ENTRY.NAME, ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
-            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
+            ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, Key(
+                'claimedtype', KEY_TYPES.STRING)]
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -998,7 +999,11 @@ class Converter(object):
             dkeys.remove(PHOTOMETRY.E_FLUX_DENSITY)
             dkeys.remove(PHOTOMETRY.U_FLUX_DENSITY)
         if self._data_type == 'n':
-            akeys = self._entry_keys
+            akeys.remove(PHOTOMETRY.TIME)
+            akeys.remove(PHOTOMETRY.BAND)
+            akeys.remove(PHOTOMETRY.INSTRUMENT)
+            akeys.remove(PHOTOMETRY.TELESCOPE)
+            akeys.append(ENTRY.NAME)
 
         # Make sure `E_` keys always appear after the actual measurements.
         if (PHOTOMETRY.MAGNITUDE in akeys and
