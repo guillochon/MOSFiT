@@ -371,6 +371,7 @@ class Model(object):
 
         if pool is not None:
             self._pool = pool
+            self._printer._pool = pool
 
         prt.message('loading_data', inline=True)
 
@@ -762,6 +763,13 @@ class Model(object):
                     trees[tag]['children'].update(children)
                     simple[tag].update(simple_children)
 
+    def draw_from_icdf(self, draw):
+        """Draw parameters into unit interval using parameter inverse CDFs."""
+        return [
+            self._modules[self._free_parameters[i]].prior_icdf(x)
+            for i, x in enumerate(draw)
+        ]
+
     def draw_walker(self, test=True, walkers_pool=[], replace=False):
         """Draw a walker randomly.
 
@@ -775,10 +783,7 @@ class Model(object):
             draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
-            draw = [
-                self._modules[self._free_parameters[i]].prior_cdf(x)
-                for i, x in enumerate(draw)
-            ]
+            draw = self.draw_from_icdf(draw)
             if len(walkers_pool):
                 if not replace:
                     chosen_one = 0
@@ -850,6 +855,11 @@ class Model(object):
         """Return ln(likelihood)."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
+
+    def ln_likelihood_floored(self, x):
+        """Return ln(likelihood), floored to a finite value."""
+        outputs = self.run_stack(x, root='objective')
+        return max(LOCAL_LIKELIHOOD_FLOOR, outputs['value'])
 
     def free_parameter_names(self, x):
         """Return list of free parameter names."""
