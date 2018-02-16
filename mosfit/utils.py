@@ -78,6 +78,28 @@ def is_number(s):
             return False
 
 
+def is_coordinate(s):
+    """Check if input is a coordinate."""
+    matches = re.search('([+-]?(:?[0-9]{2}){2,3}\.?([0-9]+)?)', s)
+
+    return False if matches is None else True
+
+
+def is_datum(s):
+    """Check if input is some sort of data."""
+    if is_number(s):
+        return True
+    if is_coordinate(s):
+        return True
+    return False
+
+
+def is_bibcode(s):
+    """Check if input is a valid bibcode."""
+    return not (re.search(
+        '[0-9]{4}..........[\.0-9]{4}[A-Za-z]', s) is None)
+
+
 def pretty_num(x, sig=4):
     """Convert number into string with specified significant digits."""
     if isnan(x) or not np.isfinite(x):
@@ -188,7 +210,7 @@ def get_mosfit_hash(salt=u''):
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     matches = []
-    for root, dirnames, filenames in os.walk(dir_path):
+    for root, dirnames, filenames in sorted(os.walk(dir_path)):
         for filename in fnmatch.filter(filenames, '*.py'):
             matches.append(os.path.join(root, filename))
 

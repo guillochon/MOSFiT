@@ -1,0 +1,1 @@
+http://github.com/joshspeagle/dynesty/tarball/master#egg=dynesty-0.8.3

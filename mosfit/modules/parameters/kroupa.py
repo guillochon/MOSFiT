@@ -25,12 +25,12 @@ class Kroupa(Parameter):
         value = self.value(x)
 
         if value < 0.08:
-            return (np.log(self._norm * (x / 0.08)**(-0.3)))
+            return np.log(self._norm * (x / 0.08)**(-0.3))
         elif value < 0.5:
-            return(np.log(self._norm * (x / 0.08)**(-1.3)))
+            return np.log(self._norm * (x / 0.08)**(-1.3))
         else:
-            return(np.log(self._norm * (0.5 / 0.08)**(-1.3) * (
-                x / 0.5)**(-2.3)))
+            return np.log(self._norm * (0.5 / 0.08)**(-1.3) * (
+                x / 0.5)**(-2.3))
 
     def kroupa_cdf(self, maxmass, k):
         """Cumulative density function from Kroupa 2001b.
@@ -51,15 +51,15 @@ class Kroupa(Parameter):
                     (k / -1.3) * 0.08**1.3 * (0.5 * maxmass**(-1.3) -
                                               0.5**(-0.3)))
 
-    def prior_cdf(self, u):
-        """Inverse cumulative density function from Kroupa 2001b.
+    def prior_icdf(self, u):
+        """Evaluate inverse cumulative density function from Kroupa 2001b.
 
         output mass scaled to 0-1 interval
         min mass before scaling = 0.01
         """
         if u < self.kroupa_cdf(0.08, self._norm):
-            value = (u * (0.7) / self._norm * 0.08**(-0.3) +
-                     0.01**0.7)**(1 / 0.7)
+            value = (u * 0.7 / self._norm * 0.08**(-0.3) +
+                     0.01**0.7)**(1.0 / 0.7)
         elif u < self.kroupa_cdf(0.5, self._norm):
             value = (((u - (self._norm / 0.7 * 0.08**0.3 *
                             (0.08**0.7 - 0.01**0.7))) * (-0.3) / self._norm *
@@ -69,7 +69,7 @@ class Kroupa(Parameter):
                        (0.5**(-0.3) - 0.08**(-0.3)) -
                        (self._norm / 0.7 * 0.08**0.3 *
                         (0.08**0.7 - 0.01**0.7))) * -1.3 / self._norm *
-                      0.5**(-2.3) * (6.25)**1.3 + 0.5**(-1.3))**(1 / -1.3))
+                      0.5**(-2.3) * (6.25)**1.3 + 0.5**(-1.3))**(1.0 / -1.3))
 
         value = (value - self._min_value) / (self._max_value - self._min_value)
         # np.clip in case of python errors in line above

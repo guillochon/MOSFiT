@@ -97,13 +97,15 @@ class Model(object):
 
             all_models_txt = prt.text('all_models')
             suggested_models_txt = prt.text('suggested_models', [claimed_type])
+            another_model_txt = prt.text('another_model')
 
-            if claimed_type is None:
+            type_options = model_types.get(
+                claimed_type, []) if claimed_type else []
+            if not type_options:
                 type_options = all_models
                 model_prompt_txt = all_models_txt
             else:
-                type_options = model_types.get(claimed_type, []) + [
-                    'Another model not listed here.']
+                type_options.append(another_model_txt)
                 model_prompt_txt = suggested_models_txt
             if not type_options:
                 prt.message('no_model_for_type', warning=True)
@@ -121,10 +123,10 @@ class Model(object):
                             none_string=('None of the above, skip this '
                                          'transient.'))
                         if sel is not None:
-                            self._model_name = type_options[sel]
+                            self._model_name = type_options[sel - 1]
                     if not self._model_name:
                         break
-                    if self._model_name == 'Another model not listed here.':
+                    if self._model_name == another_model_txt:
                         type_options = all_models
                         model_prompt_txt = all_models_txt
                         self._model_name = None
@@ -216,6 +218,7 @@ class Model(object):
         self._modules = OrderedDict()
         self._bands = []
         self._instruments = []
+        self._telescopes = []
 
         # Load the call tree for the model. Work our way in reverse from the
         # observables, first constructing a tree for each observable and then
@@ -280,6 +283,7 @@ class Model(object):
                 cur_task.update(self._parameter_json[task])
             self._modules[task] = self._load_task_module(task)
             if mod_name == 'photometry':
+                self._telescopes = self._modules[task].telescopes()
                 self._instruments = self._modules[task].instruments()
                 self._bands = self._modules[task].bands()
             self._modules[task].set_attributes(cur_task)
@@ -367,6 +371,7 @@ class Model(object):
 
         if pool is not None:
             self._pool = pool
+            self._printer._pool = pool
 
         prt.message('loading_data', inline=True)
 
@@ -402,7 +407,8 @@ class Model(object):
                     data,
                     req_key_values=OrderedDict((
                         ('band', self._bands),
-                        ('instrument', self._instruments))),
+                        ('instrument', self._instruments),
+                        ('telescope', self._telescopes))),
                     subtract_minimum_keys=['times'],
                     smooth_times=smooth_times,
                     extrapolate_time=extrapolate_time,
@@ -496,7 +502,7 @@ class Model(object):
                                           s[0] != 'AB') else '')))) +
                 ']').replace(' []', '') for s in list(sorted(filterarr))]
             if not all(ois):
-                filterrows.append('  (* = Not observed in this band)')
+                filterrows.append(prt.text('not_observed'))
             prt.prt('\n'.join(filterrows))
 
             single_freq_inst = list(
@@ -757,6 +763,13 @@ class Model(object):
                     trees[tag]['children'].update(children)
                     simple[tag].update(simple_children)
 
+    def draw_from_icdf(self, draw):
+        """Draw parameters into unit interval using parameter inverse CDFs."""
+        return [
+            self._modules[self._free_parameters[i]].prior_icdf(x)
+            for i, x in enumerate(draw)
+        ]
+
     def draw_walker(self, test=True, walkers_pool=[], replace=False):
         """Draw a walker randomly.
 
@@ -770,10 +783,7 @@ class Model(object):
             draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
-            draw = [
-                self._modules[self._free_parameters[i]].prior_cdf(x)
-                for i, x in enumerate(draw)
-            ]
+            draw = self.draw_from_icdf(draw)
             if len(walkers_pool):
                 if not replace:
                     chosen_one = 0
@@ -845,6 +855,11 @@ class Model(object):
         """Return ln(likelihood)."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
+
+    def ln_likelihood_floored(self, x):
+        """Return ln(likelihood), floored to a finite value."""
+        outputs = self.run_stack(x, root='objective')
+        return max(LOCAL_LIKELIHOOD_FLOOR, outputs['value'])
 
     def free_parameter_names(self, x):
         """Return list of free parameter names."""

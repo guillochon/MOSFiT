@@ -25,8 +25,10 @@ class TDEConstraints(Constraint):
                     (C_CGS * C_CGS))
 
         # Pericenter radius is getting close to Schwarzschild radius
-        if (self._Rg / self._rp > 0.1):
-            # soft limit
-            self._score_modifier -= 1000.0**(10.0*(self._Rg / self._rp - 0.9))
+        # if (self._Rg / self._rp > 0.1):
+        #       soft limit
+        #    self._score_modifier -= 1000.0**(10.0*(self._Rg / self._rp - 0.9))
+
+        self._score_modifier -= 10.0 * (self._Rs / self._rp) ** 3
 
         return {self.key('score_modifier'): self._score_modifier}

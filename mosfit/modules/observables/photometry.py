@@ -102,6 +102,7 @@ class Photometry(Module):
         self._band_yu = np.full(self._n_bands, 1.0)
         self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
         self._band_index_cache = {}
+        self._warned_mismatch = False
 
         for i, band in enumerate(self._unique_bands):
             self._band_xunits[i] = band.get('xunit', 'Angstrom')
@@ -313,34 +314,50 @@ class Photometry(Module):
             band, telescope, instrument, mode, bandset, system])
         if cache_key in self._band_index_cache:
             return self._band_index_cache[cache_key]
+        ltele, linst, lmode, lbset, lsyst = tuple([x.lower() for x in [
+            telescope, instrument, mode, bandset, system]])
+
         for bi, bnd in enumerate(self._unique_bands):
+            # Band name *must* match (case-sensitive), all other matches
+            # optional and case-insensitive.
+            if (band != bnd['name']) and (band != ''):
+                continue
+            nmismatches = sum(
+                [(linst != self._band_insts[bi].lower()) & (
+                    linst != '') & (self._band_insts[bi] != ''),
+                 (ltele != self._band_teles[bi].lower()) & (
+                    ltele != '') & (self._band_teles[bi] != '')])
             matches = [band == bnd['name'],
-                       system == self._band_systs[bi],
-                       mode == self._band_modes[bi],
-                       instrument == self._band_insts[bi],
-                       telescope == self._band_teles[bi],
-                       bandset == self._band_bsets[bi]]
+                       lsyst == self._band_systs[bi].lower(),
+                       lmode == self._band_modes[bi].lower(),
+                       linst == self._band_insts[bi].lower(),
+                       ltele == self._band_teles[bi].lower(),
+                       lbset == self._band_bsets[bi].lower()]
             lmatch = sum(matches)
             nbmatch = sum(
                 [(band == bnd['name']) & (band != ''),
-                 (system == self._band_systs[bi]) & (system != ''),
-                 (mode == self._band_modes[bi]) & (mode != ''),
-                 (instrument == self._band_insts[bi]) & (instrument != ''),
-                 (telescope == self._band_teles[bi]) & (telescope != ''),
-                 (bandset == self._band_bsets[bi]) & (bandset != '')])
+                 (lsyst == self._band_systs[bi].lower()) & (lsyst != ''),
+                 (lmode == self._band_modes[bi].lower()) & (lmode != ''),
+                 (linst == self._band_insts[bi].lower()) & (linst != ''),
+                 (ltele == self._band_teles[bi].lower()) & (ltele != ''),
+                 (lbset == self._band_bsets[bi].lower()) & (lbset != '')])
             if lmatch > bmatch and nbmatch > 0:
                 bmatch = lmatch
                 bbi = bi
+                bmm = nmismatches
             if lmatch == 6 and nbmatch > 0:
                 break
         if bbi is not None:
+            if bmm > 0 and not self._warned_mismatch:
+                self._printer.message('potential_mismatch', reps=[
+                    band, instrument, telescope, self._band_insts[bbi],
+                    self._band_teles[bbi]], warning=True)
+                self._warned_mismatch = True
             self._band_index_cache[cache_key] = bbi
             return bbi
         raise ValueError(
-            'Cannot find band index for `{}` band of bandset `{}` '
-            'in mode `{}` with '
-            'instrument `{}` on telescope `{}` in the `{}` system!'.format(
-                band, bandset, mode, instrument, telescope, system))
+            self._printer.text('band_not_found', reps=[
+                band, bandset, mode, instrument, telescope, system]))
 
     def preprocess(self, **kwargs):
         """Preprocess module."""
@@ -411,6 +428,13 @@ class Photometry(Module):
             return [x for i, x in
                     enumerate(self._band_insts) if i in indices]
         return self._band_insts
+
+    def telescopes(self, indices=None):
+        """Return the list of telescopes."""
+        if indices:
+            return [x for i, x in
+                    enumerate(self._band_teles) if i in indices]
+        return self._band_teles
 
     def abmag(self, eff_fluxes, offsets):
         """Convert fluxes into AB magnitude."""

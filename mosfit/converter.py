@@ -20,8 +20,9 @@ from astrocats.catalog.utils import jd_to_mjd
 from astropy.io.ascii import Cds, Latex, read
 from astropy.time import Time as astrotime
 from mosfit.constants import KS_DAYS
-from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_date,
-                          is_number, listify, name_clean, replace_multiple)
+from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_bibcode,
+                          is_date, is_datum, is_number, listify, name_clean,
+                          replace_multiple)
 from six import string_types
 
 
@@ -69,18 +70,25 @@ class Converter(object):
         self._printer = printer
         self._require_source = require_source
 
-        self._emagstrs = [
-            'magnitude error', 'error', 'e mag', 'e magnitude', 'dmag',
-            'mag err', 'magerr', 'mag error', 'err', '_err', 'err_', 'ERR',
-            'e_', '_e', '(err)', 'uncertainty']
+        self._estrs = [
+            'err', '_err', 'err_', 'ERR', 'e_', '_e', '(err)', 'error',
+            'uncertainty', 'sigma']
+        self._emagstrs = self._estrs + [
+            'magnitude error', 'e mag', 'e magnitude', 'dmag',
+            'mag err', 'magerr', 'mag error']
+        self._ecntstrs = self._estrs + [
+            'flux error', 'e flux', 'e counts', 'count err', 'flux err',
+            'countrate error', 'countrate err', 'e_flux']
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
             'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
             "z'", 'C', 'Y', 'Open'
         ]
-        self._emagstrs = self._emagstrs + [a + b for a, b in chain(
-            product(self._emagstrs, self._band_names),
-            product(self._band_names, self._emagstrs))]
+        ebands = [a + b for a, b in chain(
+            product(self._ecntstrs, self._band_names),
+            product(self._band_names, self._estrs))]
+        self._emagstrs += ebands
+        self._ecntstrs += ebands
         key_cache_path = os.path.join(
             self._path, 'cache', 'key_cache_{}.pickle'.format(
                 get_mosfit_hash()))
@@ -97,14 +105,18 @@ class Converter(object):
             self._header_keys = OrderedDict((
                 (PHOTOMETRY.TIME, [
                     'time', 'mjd', ('jd', 'jd'), ('julian date', 'jd'),
-                    'date', 'day', ('kiloseconds', 'kiloseconds')]),
-                (PHOTOMETRY.SYSTEM, ['system']),
+                    ('date', 'yyyy-mm-dd'), 'day', (
+                        'kiloseconds', 'kiloseconds')]),
+                (PHOTOMETRY.SYSTEM, ['system', 'magsys', 'magnitude system']),
                 (PHOTOMETRY.MAGNITUDE, [
                  'vega mag', 'ab mag', 'mag', 'magnitude']),
                 (PHOTOMETRY.E_MAGNITUDE, self._emagstrs),
                 (PHOTOMETRY.TELESCOPE, ['tel', 'telescope']),
                 (PHOTOMETRY.INSTRUMENT, ['inst', 'instrument']),
-                (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'flt']),
+                (PHOTOMETRY.OBSERVER, ['observer']),
+                (PHOTOMETRY.OBSERVATORY, ['observatory']),
+                (PHOTOMETRY.BAND, ['passband', 'band', 'filter', 'filt',
+                                   'flt']),
                 (PHOTOMETRY.E_LOWER_MAGNITUDE, [a + ' ' + b for a, b in chain(
                     product(self._emagstrs, ['minus', 'lower']),
                     product(['minus', 'lower'], self._emagstrs))]),
@@ -112,10 +124,10 @@ class Converter(object):
                     product(self._emagstrs, ['plus', 'upper']),
                     product(['plus', 'upper'], self._emagstrs))]),
                 (PHOTOMETRY.UPPER_LIMIT, [
-                 'upper limit', 'upperlimit', 'l_mag', 'limit']),
-                (PHOTOMETRY.COUNT_RATE, ['counts', 'flux', 'count rate']),
-                (PHOTOMETRY.E_COUNT_RATE, [
-                    'e_counts', 'count error', 'count rate error']),
+                    'upper limit', 'upperlimit', 'l_mag', 'limit']),
+                (PHOTOMETRY.COUNT_RATE, [
+                    'count', 'counts', 'flux', 'count rate']),
+                (PHOTOMETRY.E_COUNT_RATE, self._ecntstrs),
                 (PHOTOMETRY.FLUX_DENSITY, ['flux density', 'fd', 'f_nu']),
                 (PHOTOMETRY.E_FLUX_DENSITY, [
                     'e_flux_density', 'flux density error', 'e_fd',
@@ -127,6 +139,7 @@ class Converter(object):
                     'event', 'transient', 'name', 'supernova', 'sne', 'id',
                     'identifier', 'object']),
                 (ENTRY.REDSHIFT, ['redshift']),
+                (ENTRY.HOST, ['host']),
                 (ENTRY.LUM_DIST, [
                     'lumdist', 'luminosity distance', 'distance']),
                 (ENTRY.COMOVING_DIST, ['comoving distance']),
@@ -134,7 +147,7 @@ class Converter(object):
                 (ENTRY.DEC, ['dec', 'declination']),
                 (ENTRY.EBV, ['ebv', 'extinction']),
                 # At the moment transient-specific keys are not in astrocats.
-                ('claimedtype', [
+                (Key('claimedtype', KEY_TYPES.STRING), [
                     'claimedtype', 'type', 'claimed_type', 'claimed type'])
             ))
 
@@ -171,7 +184,8 @@ class Converter(object):
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._entry_keys = [
             ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
-            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, ENTRY.HOST, Key(
+                'claimedtype', KEY_TYPES.STRING)]
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -309,7 +323,7 @@ class Converter(object):
                     for fi, fl in enumerate(list(flines)):
                         flcopy = list(fl)
                         offset = 0
-                        if not any([is_number(x) for x in fl]):
+                        if not any([is_datum(x) for x in fl]):
                             for fci, fc in enumerate(fl):
                                 if (fc in self._band_names and
                                     (fci == len(fl) - 1 or
@@ -328,7 +342,7 @@ class Converter(object):
                         flines = [[x for y in [
                             ([z, '-'] if (any([w in z for w in [
                                 '<', '>', '≤', '≥']]) or
-                                          z in self._EMPTY_VALS) else [z])
+                                z in self._EMPTY_VALS) else [z])
                             for z in fl] for x in y] if len(
                                 fl) != ncols else fl for fl in flines]
 
@@ -346,20 +360,20 @@ class Converter(object):
                             potential_name = fl[0]
                         if flens[fi] == ncols:
                             if potential_name is not None and any(
-                                    [is_number(x) for x in fl]):
+                                    [is_datum(x) for x in fl]):
                                 newlines.append([potential_name] + list(fl))
                             else:
                                 newlines.append(list(fl))
                     flines = newlines
                     for fi, fl in enumerate(flines):
                         if len(fl) == ncols and potential_name is not None:
-                            if not any([is_number(x) for x in fl]):
+                            if not any([is_datum(x) for x in fl]):
                                 flines[fi] = ['name'] + list(fl)
 
                 # If none of the rows contain numeric data, the file
                 # is likely a list of transient names.
                 if (len(flines) and
-                    (not any(any([is_number(x) or x == '' for x in y])
+                    (not any(any([is_datum(x) or x == '' for x in y])
                              for y in flines) or
                      len(flines) == 1)):
                     new_events = [
@@ -368,7 +382,7 @@ class Converter(object):
                 # If last row is numeric, then likely this is a file with
                 # transient data.
                 elif (len(flines) > 1 and
-                        any([is_number(x) for x in flines[-1]])):
+                        any([is_datum(x) for x in flines[-1]])):
 
                     # Check that each row has the same number of columns.
                     if len(set([len(x) for x in flines])) > 1:
@@ -488,12 +502,18 @@ class Converter(object):
                                 bi[0], string_types):
                             bi = bi[-1]
 
-                        mmtimes = [float(x[bi])
-                                   for x in flines[self._first_data:]]
-                        mintime, maxtime = min(mmtimes), max(mmtimes)
+                        mmtimes = None
+                        try:
+                            mmtimes = [float(x[bi])
+                                       for x in flines[self._first_data:]]
+                            mintime, maxtime = min(mmtimes), max(mmtimes)
+                        except Exception:
+                            pass
 
-                        if (bistr == 'MJD' and mintime < 10000 or
-                            bistr == 'JD' and mintime < 2410000 or
+                        if not mmtimes:
+                            pass
+                        elif (bistr == 'MJD' and mintime < 10000 or
+                              bistr == 'JD' and mintime < 2410000 or
                                 bistr in ['KILOSECONDS', 'SECONDS']):
                             while True:
                                 pstr = ('s_offset' if bistr in [
@@ -547,14 +567,19 @@ class Converter(object):
                                     if rval:
                                         row[cidict[key]] = rval
                                 elif key == 'reference':
-                                    if (isinstance(cidict[key],
-                                                   string_types) and
-                                            len(cidict[key]) == 19):
+                                    if (isinstance(row[cidict[key]],
+                                                   string_types)):
+                                        srcdict = OrderedDict()
+                                        if is_bibcode(row[cidict[key]]):
+                                            srcdict[SOURCE.BIBCODE] = row[
+                                                cidict[key]]
+                                        else:
+                                            srcdict[SOURCE.NAME] = row[
+                                                cidict[key]]
                                         new_src = entries[rname].add_source(
-                                            bibcode=cidict[key])
+                                            **srcdict)
                                         sources.update(new_src)
-                                        row[
-                                            cidict[key]] = new_src
+                                        # row[cidict[key]] = new_src
                                 elif key == ENTRY.NAME:
                                     continue
                                 elif (isinstance(key, Key) and
@@ -579,6 +604,12 @@ class Converter(object):
                                     ) == 'KILOSECONDS':
                                         photodict[key] = str(Decimal(
                                             KS_DAYS) * Decimal(tval[-1]))
+                                    elif cidict[key][0].upper(
+                                    ) == 'YYYY-MM-DD':
+                                        photodict[key] = str(
+                                            astrotime(
+                                                tval[-1].replace('/', '-'),
+                                                format='isot').mjd)
                                     continue
 
                                 val = cidict[key]
@@ -693,10 +724,7 @@ class Converter(object):
                                                 allow_blank=False
                                             )
                                             bibcode = bibcode.strip()
-                                            if (re.search(
-                                                '[0-9]{4}..........[\.0-9]{4}'
-                                                '[A-Za-z]', bibcode)
-                                                    is None):
+                                            if not is_bibcode(bibcode):
                                                 bibcode = ''
                                         rsource[
                                             SOURCE.BIBCODE] = bibcode
@@ -731,13 +759,13 @@ class Converter(object):
 
                                     shared_sources.append(rsource)
 
-                            if len(shared_sources):
-                                src_list = []
+                            if len(sources) or len(shared_sources):
+                                src_list = list(sources)
                                 for src in shared_sources:
                                     src_list.append(entries[
                                         rname].add_source(**src))
-                                    photodict[PHOTOMETRY.SOURCE] = ','.join(
-                                        src_list)
+                                photodict[PHOTOMETRY.SOURCE] = ','.join(
+                                    src_list)
 
                             if any([x in photodict.get(
                                     PHOTOMETRY.MAGNITUDE, '')
@@ -816,7 +844,7 @@ class Converter(object):
                                 qdict = OrderedDict()
                                 qdict[QUANTITY.VALUE] = row[
                                     cidict[key]]
-                                if len(shared_sources):
+                                if len(sources) or len(shared_sources):
                                     qdict[QUANTITY.SOURCE] = ','.join(
                                         src_list)
                                 entries[rname].add_quantity(key, **qdict)
@@ -865,7 +893,7 @@ class Converter(object):
         mpatt = re.compile('mag', re.IGNORECASE)
 
         for fi, fl in enumerate(flines):
-            if not any([is_number(x) for x in fl]):
+            if not any([is_datum(x) for x in fl]):
                 # Try to associate column names with common header keys.
                 conflict_keys = []
                 conflict_cis = []
@@ -917,7 +945,7 @@ class Converter(object):
                 del(cidict[used_cis[ci]])
                 del(used_cis[ci])
             for fi, fl in enumerate(flines):
-                if not any([is_number(x) for x in fl]):
+                if not any([is_datum(x) for x in fl]):
                     # Try to associate column names with common header keys.
                     for ci, col in enumerate(fl):
                         if ci in used_cis:
@@ -976,6 +1004,7 @@ class Converter(object):
             akeys.remove(PHOTOMETRY.BAND)
             akeys.remove(PHOTOMETRY.INSTRUMENT)
             akeys.remove(PHOTOMETRY.TELESCOPE)
+            akeys.append(ENTRY.NAME)
 
         # Make sure `E_` keys always appear after the actual measurements.
         if (PHOTOMETRY.MAGNITUDE in akeys and
@@ -1009,16 +1038,16 @@ class Converter(object):
                 continue
             if key.type == KEY_TYPES.NUMERIC:
                 lcolinds = [x for x in colinds
-                            if any(is_number(y) for y in columns[x]) and
+                            if any(is_datum(y) for y in columns[x]) and
                             x not in selected_cols]
             elif key.type == KEY_TYPES.TIME:
                 lcolinds = [x for x in colinds
-                            if any(is_date(y) or is_number(y)
+                            if any(is_date(y) or is_datum(y)
                                    for y in columns[x]) and
                             x not in selected_cols]
             elif key.type == KEY_TYPES.STRING:
                 lcolinds = [x for x in colinds
-                            if any(not is_number(y) for y in columns[x]) and
+                            if any(not is_datum(y) for y in columns[x]) and
                             x not in selected_cols]
             else:
                 lcolinds = [x for x in colinds if x not in selected_cols]
@@ -1167,7 +1196,8 @@ class Converter(object):
                 self._system = systems[int(self._system) - 1]
 
         if (PHOTOMETRY.INSTRUMENT not in cidict and
-                PHOTOMETRY.TELESCOPE not in cidict):
+            PHOTOMETRY.TELESCOPE not in cidict and
+                PHOTOMETRY.MAGNITUDE in cidict):
             prt.message('instrument_recommended', warning=True)
 
     def get_converted(self):
