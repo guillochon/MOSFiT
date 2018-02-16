@@ -371,6 +371,7 @@ class Model(object):
 
         if pool is not None:
             self._pool = pool
+            self._printer._pool = pool
 
         prt.message('loading_data', inline=True)
 
