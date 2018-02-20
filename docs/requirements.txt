@@ -1,4 +1,5 @@
-astropy<3.0
+scipy
+astropy
 astrocats
 dropbox
 emcee
