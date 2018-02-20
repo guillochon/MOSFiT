@@ -1,4 +1,9 @@
 {
+    "dmdts":{
+        "kind": "array",
+        "class": "library",
+        "paths": "tde_dmdts/*"
+    },
     "starmass":{
         "kind": "parameter",
         "value": 1,
