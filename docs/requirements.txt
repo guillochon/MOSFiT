@@ -1,5 +1,5 @@
-astrocats
 astropy<3.0
+astrocats
 dropbox
 emcee
 extinction
