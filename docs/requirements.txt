@@ -1,4 +1,4 @@
-scipy
+scipy>=0.19.1
 astropy
 astrocats
 dropbox
