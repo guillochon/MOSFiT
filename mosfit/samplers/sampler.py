@@ -21,6 +21,9 @@ class Sampler(object):
     def get_samples(self):
         """Return samples from ensembler."""
         samples = np.array([a for b in self._pout for a in b])
+        if self._lnprobout is None:
+            return samples, None, np.array([
+                1.0 / len(samples) for x in samples])
         probs = np.array([a for b in self._lnprobout for a in b])
         weights = np.array([a for b in self._weights for a in b])
 
