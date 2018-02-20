@@ -1,6 +1,5 @@
--r requirements-first.txt
-astropy
-astrocats
+astropy<3.0
+astrocats>=0.3.32
 dropbox
 emcee
 extinction
