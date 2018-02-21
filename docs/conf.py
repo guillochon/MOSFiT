@@ -30,7 +30,10 @@ try:
     import types
     import sphinx.util
     import docutils.parsers.rst
+
     class compat(types.ModuleType):
+        """Dummy class to avoid deprecation error."""
+
         Directive = docutils.parsers.rst.Directive
     sphinx.util.compat = compat('sphinx.util.compat')
     sys.modules['sphinx.util.compat'] = sphinx.util.compat
