@@ -61,7 +61,7 @@ setup(
     keywords=['astronomy', 'fitting', 'monte carlo', 'modeling'],
     long_description=long_description,
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',
         'Natural Language :: English',
         'Programming Language :: Python :: 2.7',
