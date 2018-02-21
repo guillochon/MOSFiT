@@ -21,7 +21,7 @@ with open(os.path.join(dir_name, 'contributors.txt')) as f:
         else:
             contributors.append(cont.split('(')[0].strip())
 
-__version__ = '1.0.0rc1'
+__version__ = '1.0.0'
 __author__ = ' & '.join([', '.join(authors[:-1]), authors[-1]])
 __contributors__ = ' & '.join([', '.join(contributors[:-1]), contributors[-1]])
 __license__ = 'MIT'
