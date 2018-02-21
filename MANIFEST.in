@@ -7,13 +7,14 @@ exclude build/
 exclude products/
 exclude dist/
 exclude src/
-exclude output/
+graft mosfit
 global-include *.md
 global-include .gitkeep
 global-exclude .DS_Store
 global-exclude *.prof
 global-exclude *.swp
 global-exclude *.png
-graft mosfit
+global-exclude *.pyc
 prune mosfit/cache/
+include mosfit/cache/.gitkeep
 include mosfit/cache/names.min.json
