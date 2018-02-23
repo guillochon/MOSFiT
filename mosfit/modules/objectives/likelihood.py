@@ -22,6 +22,9 @@ class Likelihood(Module):
         self._cuda_reported = False
         self._use_cpu = None
 
+        if not self._model._fitter._cuda:
+            self._use_cpu = True
+
     def process(self, **kwargs):
         """Calculate the likelihood, returning ln(likelihood)."""
         ret = {'value': LIKELIHOOD_FLOOR}
