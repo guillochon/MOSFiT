@@ -232,7 +232,8 @@ class Printer(object):
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
-                colorify=True, width=None, prt=True, color='', min_time=None):
+                colorify=True, width=None, prt=True, color='', min_time=None,
+                master_only=True):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -244,7 +245,8 @@ class Printer(object):
             self.prt(
                 text, center=center, colorify=colorify, width=width,
                 prefix=prefix, inline=inline, wrapped=wrapped,
-                warning=warning, error=error, color=color, min_time=min_time)
+                warning=warning, error=error, color=color, min_time=min_time,
+                master_only=master_only)
         return text
 
     def prompt(self, text, reps=[],

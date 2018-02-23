@@ -16,6 +16,12 @@ class Likelihood(Module):
 
     MIN_COV_TERM = 1.0e-30
 
+    def __init__(self, **kwargs):
+        """Initialize `Likelihood` module."""
+        super(Likelihood, self).__init__(**kwargs)
+        self._cuda_reported = False
+        self._use_cpu = None
+
     def process(self, **kwargs):
         """Calculate the likelihood, returning ln(likelihood)."""
         ret = {'value': LIKELIHOOD_FLOOR}
@@ -63,12 +69,20 @@ class Likelihood(Module):
             if condn > 1.0e10:
                 return ret
 
-            use_cpu = True
-            if self._model._fitter._cuda:
-                use_cpu = False
+            if self._use_cpu is not True and self._model._fitter._cuda:
                 try:
                     import pycuda.gpuarray as gpuarray
                     import skcuda.linalg as skla
+                except ImportError:
+                    self._use_cpu = True
+                    if not self._cuda_reported:
+                        self._printer.message(
+                            'cuda_not_enabled', master_only=True, warning=True)
+                else:
+                    self._use_cpu = False
+                    if not self._cuda_reported:
+                        self._printer.message('cuda_enabled', master_only=True)
+                        self._cuda_reported = True
 
                     kmat_gpu = gpuarray.to_gpu(kmat)
                     # kmat will now contain the cholesky decomp.
@@ -81,10 +95,8 @@ class Likelihood(Module):
                     value -= (0.5 * (
                         skla.mdot(skla.transpose(res_gpu),
                                   cho_mat_gpu)).get())[0][0]
-                except ImportError:
-                    use_cpu = True
 
-            if use_cpu:
+            if self._use_cpu:
                 try:
                     chol_kmat = scipy.linalg.cholesky(kmat, check_finite=False)
 
