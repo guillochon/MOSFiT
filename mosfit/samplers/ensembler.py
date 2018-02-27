@@ -158,6 +158,7 @@ class Ensembler(Sampler):
         # Generate walker positions based upon loaded walker data, if
         # available.
         walkers_pool = []
+        walker_weights = []
         nmodels = len(set([x[0] for x in walker_data]))
         wp_extra = 0
         while len(walkers_pool) < len(walker_data):
@@ -174,6 +175,7 @@ class Ensembler(Sampler):
                     if param:
                         new_walk[k] = param.fraction(walk_param['value'])
                 walkers_pool.append(new_walk)
+                walker_weights.append(walk[2])
                 appended_walker = True
             if not appended_walker:
                 wp_extra += 1
@@ -195,7 +197,8 @@ class Ensembler(Sampler):
                 if self._pool.size == 0 or pool_len:
                     self._p, score = draw_walker(
                         test_walker, walkers_pool,
-                        replace=pool_len < self._ntemps * self._nwalkers)
+                        replace=pool_len < self._ntemps * self._nwalkers,
+                        weights=walker_weights)
                     p0[i].append(self._p)
                     dwscores.append(score)
                 else:

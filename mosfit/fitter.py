@@ -31,10 +31,11 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
-def draw_walker(test=True, walkers_pool=[], replace=False):
+def draw_walker(test=True, walkers_pool=[], replace=False, weights=None):
     """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
+    return model.draw_walker(
+        test, walkers_pool, replace, weights)  # noqa: F821
 
 
 def draw_from_icdf(x):
@@ -241,7 +242,8 @@ class Fitter(object):
 
                         if choice is not None:
                             walker_data.extend([
-                                [wfi, x[REALIZATION.PARAMETERS]]
+                                [wfi, x[REALIZATION.PARAMETERS], x.get(
+                                    REALIZATION.WEIGHT)]
                                 for x in models[choice][
                                     MODEL.REALIZATIONS]])
 

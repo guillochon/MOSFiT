@@ -86,6 +86,9 @@ class Nester(Sampler):
 
         prt = self._printer
 
+        if len(walker_data):
+            prt.message('nester_not_use_walkers', warning=True)
+
         ndim = self._model._num_free_parameters
 
         if self._num_walkers:

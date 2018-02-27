@@ -770,7 +770,8 @@ class Model(object):
             for i, x in enumerate(draw)
         ]
 
-    def draw_walker(self, test=True, walkers_pool=[], replace=False):
+    def draw_walker(self, test=True, walkers_pool=[], replace=False,
+                    weights=None):
         """Draw a walker randomly.
 
         Draw a walker randomly from the full range of all parameters, reject
@@ -788,7 +789,8 @@ class Model(object):
                 if not replace:
                     chosen_one = 0
                 else:
-                    chosen_one = np.random.choice(range(len(walkers_pool)))
+                    chosen_one = np.random.choice(range(len(walkers_pool)),
+                                                  p=weights)
                 for e, elem in enumerate(walkers_pool[chosen_one]):
                     if elem is not None:
                         draw[e] = elem
@@ -808,6 +810,8 @@ class Model(object):
 
         if not replace and chosen_one is not None:
             del(walkers_pool[chosen_one])
+            if weights is not None:
+                del(weights[chosen_one])
         return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):
