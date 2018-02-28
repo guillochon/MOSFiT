@@ -180,6 +180,11 @@ class Ensembler(Sampler):
             if not appended_walker:
                 wp_extra += 1
 
+        # Make sure weights are normalized.
+        if None not in walker_weights:
+            walker_weights = np.array(walker_weights)
+            walker_weights /= np.sum(walker_weights)
+
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the
         # loaded walker data they will be drawn from their priors instead.
