@@ -812,7 +812,8 @@ class Model(object):
             del(walkers_pool[chosen_one])
             if weights is not None:
                 del(weights[chosen_one])
-                weights = weights / np.sum(weights)
+                if len(weights) and None not in weights:
+                    weights = weights / np.sum(weights)
         return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):
