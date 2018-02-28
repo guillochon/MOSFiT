@@ -182,8 +182,8 @@ class Ensembler(Sampler):
 
         # Make sure weights are normalized.
         if None not in walker_weights:
-            walker_weights = np.array(walker_weights)
-            walker_weights /= np.sum(walker_weights)
+            totw = np.sum(walker_weights)
+            walker_weights = [x / totw for x in walker_weights]
 
         # Draw walker positions. This is either done from the priors or from
         # loaded walker data. If some parameters are not available from the

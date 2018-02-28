@@ -189,6 +189,14 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_iterations'))
 
     parser.add_argument(
+        '--generative',
+        '-G',
+        dest='generative',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_generative'))
+
+    parser.add_argument(
         '--smooth-times',
         '--plot-points',
         '-S',
@@ -563,10 +571,15 @@ def main():
         if args.walker_paths is not None:
             raise ValueError(prt.text('w_nester_mutually_exclusive'))
 
-    changed_iterations = False
+    if args.generative:
+        if args.iterations > 0:
+            prt.message('generative_supercedes', warning=True)
+        args.iterations = 0
+
+    no_events = False
     if args.iterations == -1:
         if len(args.events) == 0:
-            changed_iterations = True
+            no_events = True
             args.iterations = 0
         else:
             args.iterations = 10000
@@ -702,7 +715,7 @@ def main():
 
         args.upload_token = upload_token
 
-        if changed_iterations:
+        if no_events:
             prt.message('iterations_0', wrapped=True)
 
         # Create the user directory structure, if it doesn't already exist.

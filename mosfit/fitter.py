@@ -247,6 +247,10 @@ class Fitter(object):
                                 for x in models[choice][
                                     MODEL.REALIZATIONS]])
 
+                        for i in range(len(walker_data)):
+                            if walker_data[i][2] is not None:
+                                walker_data[i][2] = float(walker_data[i][2])
+
                         if not len(walker_data):
                             prt.message('no_walker_data')
                     else:

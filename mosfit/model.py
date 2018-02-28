@@ -813,7 +813,8 @@ class Model(object):
             if weights is not None:
                 del(weights[chosen_one])
                 if len(weights) and None not in weights:
-                    weights = weights / np.sum(weights)
+                    totw = np.sum(weights)
+                    weights = [x / totw for x in weights]
         return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):
