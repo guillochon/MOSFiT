@@ -22,7 +22,7 @@ from astropy.time import Time as astrotime
 from mosfit.constants import KS_DAYS
 from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_bibcode,
                           is_date, is_datum, is_number, listify, name_clean,
-                          replace_multiple)
+                          replace_multiple, is_coordinate)
 from six import string_types
 
 
@@ -221,12 +221,6 @@ class Converter(object):
             toffset = Decimal('0')
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
-                if not intro_shown:
-                    prt.message('converter_info')
-                    intro_shown = True
-
-                prt.message('converting_to_json', [event])
-
                 with open(event, 'r') as f:
                     ftxt = f.read()
 
@@ -282,6 +276,25 @@ class Converter(object):
 
                     fsplit = ftxt.splitlines()
 
+                # If none of the rows contain numeric data, the file
+                # is likely a list of transient names.
+                flines = fsplit.copy()
+                if (len(flines) and
+                    (not any(any([is_datum(x) or x == '' for x in listify(y)])
+                             for y in flines) or
+                     len(flines) == 1)):
+                    new_events = [
+                        it for s in flines for it in listify(s)]
+                    new_event_list.extend(new_events)
+                    continue
+
+                if not intro_shown:
+                    prt.message('converter_info')
+                    intro_shown = True
+
+                prt.message('converting_to_json', [event])
+
+                if table is None:
                     # See if we need to append blank errors to upper limits.
                     tsplit = [
                         replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
@@ -369,15 +382,6 @@ class Converter(object):
                         if len(fl) == ncols and potential_name is not None:
                             if not any([is_datum(x) for x in fl]):
                                 flines[fi] = ['name'] + list(fl)
-
-                # If none of the rows contain numeric data, the file
-                # is likely a list of transient names.
-                if (len(flines) and
-                    (not any(any([is_datum(x) or x == '' for x in y])
-                             for y in flines) or
-                     len(flines) == 1)):
-                    new_events = [
-                        it for s in flines for it in s]
 
                 # If last row is numeric, then likely this is a file with
                 # transient data.
@@ -881,6 +885,8 @@ class Converter(object):
                 previous_file = event
             else:
                 new_event_list.append(event)
+
+        print(new_event_list)
 
         return new_event_list
 
