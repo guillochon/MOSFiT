@@ -52,10 +52,18 @@ Note that this step is completely optional, users do not have to share their dat
 Sampling Options
 ----------------
 
+``MOSFiT`` at present offers two ways to sample the parameter space: An ensemble-based MCMC (implemented with the ```emcee`` package), and a nested sampling approach (implement with the ``dynesty`` package). The ensemble-based approach is presently the default sampler used in ``MOSFiT``, although the nested sampler is likely to replace it as the default in a future version.
+
+Samplers are selected via the ``-D`` option: ``-D ensembler`` for the ensemble-based approach, ``-D nester`` for the nested sampling approach. The two approaches are described below.
+
 .. _ensembler:
 
 Ensemble-based MCMC
 ===================
+
+In ensemble-based Markov chain Monte Carlo, a collection of parameter positions (called "walkers") are evolved in the parameter space according to simple rules based upon the positions of their neighbors. This approach is simple, flexible, and is able to deal with several pathologies in posteriors that can cause issues in other samplers. In ``MOSFiT`` we implement this sampling using the parallel-tempered sampler available within the ``emcee`` package, although a single temperature is used by default (note that the parallel-tempered sampler is now deprecated as of ``emcee`` version ``3.0``, and ``MOSFiT`` will eventually deprecate this option as well).
+
+While ``MOSFiT`` also performs minimization during the burn-in phase to find the global minima within the posterior, it should be noted that ``emcee`` on its own has been found to have poor convergence to the posterior for problems with greater than about 10 dimensions (`Huijser et al. 2016 <https://arxiv.org/abs/1509.02230>`_). As many models provided with ``MOSFiT`` have a dimension similar to this number, care should be taken when using this sampler to ensure that convergence has been achieved.
 
 .. _initialization:
 
@@ -113,6 +121,11 @@ As an example, the following will run the burn-in phase for 2000 iterations, the
     mosfit -e LSQ12dlf -m slsn -f 100 -i 5000 -b 2000
 
 All :ref:`convergence <convergence>` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence <convergence>` criteria are met beyond the burn-in phase.
+
+.. _nester:
+
+Nested sampling
+===============
 
 .. _io:
 
