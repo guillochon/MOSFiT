@@ -886,8 +886,6 @@ class Converter(object):
             else:
                 new_event_list.append(event)
 
-        print(new_event_list)
-
         return new_event_list
 
     def assign_columns(self, cidict, flines):
