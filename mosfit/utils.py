@@ -80,7 +80,8 @@ def is_number(s):
 
 def is_coordinate(s):
     """Check if input is a coordinate."""
-    matches = re.search('([+-]?(:?[0-9]{2}){2,3}\.?([0-9]+)?)', s)
+    matches = re.search(
+        '([+-]?([0-9]{1,2}):([0-9]{2})(:[0-9]{2})?\.?([0-9]+)?)', s)
 
     return False if matches is None else True
 
