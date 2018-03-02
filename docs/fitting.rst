@@ -46,9 +46,19 @@ If the user so chooses, they may *optionally* upload their data directly to the 
 
 Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``, however it is the fastest way for your data to appear on the Open Catalogs. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`maintainers <maintainers>`.
 
+.. _sampling:
+
+----------------
+Sampling Options
+----------------
+
+.. _ensembler:
+
+Ensemble-based MCMC
+===================
+
 .. _initialization:
 
---------------
 Initialization
 --------------
 
@@ -57,7 +67,7 @@ When initializing, walkers are drawn randomly from the prior distributions of al
 .. _restricting:
 
 Restricting the data used
-=========================
+-------------------------
 
 By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, specific photometric bands using the ``--exclude-bands`` option, and specific sources of data (e.g. papers or surveys) using ``--exclude-sources``. The source is specified using the source ID number, visible on the Open Astronomy Catalog page for each transient as well as in the input file. For example
 
@@ -78,20 +88,19 @@ will limit the data fitted for LSQ12dlf to lie between MJD 55000 and MJD 56000.
 .. _number:
 
 Number of walkers
-=================
+-----------------
 
 The sampler used in ``MOSFiT`` is a variant of ``emcee``'s multi-temperature sampler ``PTSampler``, and thus the user can pass both a number of temperatures to use with ``-T`` in addition to the number of walkers ``-N`` per temperature. If one temperature is used (the default), the total number of walkers is simply whatever is passed to ``-N``, otherwise it is :math:`N*T`.
 
 .. _duration:
 
 Duration of fitting
-===================
+-------------------
 
 The duration of the ``MOSFiT`` run is set with the ``-i`` option, unless the ``-R`` or ``-U`` options are used (see :ref:`convergence <convergence>`). Generally, unless the model has only a few free parameters or was initialized very close to the solution of highest-likelihood, the user should not expect good results unless ``-i`` is set to a few thousand or more.
 
 .. _burning:
 
-------------------
 Burning in a model
 ------------------
 
