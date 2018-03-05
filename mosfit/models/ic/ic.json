@@ -146,6 +146,12 @@
     },
     "photometry":{
         "kind":"observable",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared",
+            "radio"
+        ],
         "inputs":[
             "losextinction",
             "lumdist"

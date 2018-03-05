@@ -153,6 +153,11 @@
     },
     "photometry":{
         "kind":"observable",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
         "inputs":[
             "losextinction",
             "lumdist"

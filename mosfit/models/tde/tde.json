@@ -142,6 +142,11 @@
     },
     "likelihood":{
         "kind":"objective",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
         "inputs":[
             "diagonal",
             "tde_constraints"
