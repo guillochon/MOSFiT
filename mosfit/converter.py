@@ -22,7 +22,7 @@ from astropy.time import Time as astrotime
 from mosfit.constants import KS_DAYS
 from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_bibcode,
                           is_date, is_datum, is_number, listify, name_clean,
-                          replace_multiple, is_coordinate)
+                          replace_multiple)
 from six import string_types
 
 
@@ -278,11 +278,12 @@ class Converter(object):
                 # is likely a list of transient names.
                 flines = fsplit.copy()
                 if (len(flines) and
-                    (not any(any([is_datum(x) or x == '' for x in listify(y)])
+                    (not any(any([is_datum(x.strip()) or x == ''
+                                  for x in y.split(delim)])
                              for y in flines) or
                      len(flines) == 1)):
                     new_events = [
-                        it for s in flines for it in listify(s)]
+                        it.strip() for s in flines for it in s.split(delim)]
                     new_event_list.extend(new_events)
                     continue
 
@@ -383,7 +384,7 @@ class Converter(object):
 
                 # If last row is numeric, then likely this is a file with
                 # transient data.
-                elif (len(flines) > 1 and
+                if (len(flines) > 1 and
                         any([is_datum(x) for x in flines[-1]])):
 
                     # Check that each row has the same number of columns.
