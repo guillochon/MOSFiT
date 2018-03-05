@@ -59,7 +59,7 @@ When initializing, walkers are drawn randomly from the prior distributions of al
 Restricting the data used
 =========================
 
-By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, specific photometric bands using the ``--exclude-bands`` option, and specific sources of data (e.g. papers or surveys) using ``--exclude-sources``. The source is specified using the source ID number, visible on the Open Astronomy Catalog page for each transient as well as in the input file. For example
+By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, specific photometric bands using the ``--exclude-bands`` option, specific sources of data (e.g. papers or surveys) using ``--exclude-sources``, and particular wave bands via ``--exclude-kinds``. The source is specified using the source ID number, visible on the Open Astronomy Catalog page for each transient as well as in the input file. For example
 
 .. code-block:: bash
 
@@ -74,6 +74,14 @@ To exclude times from a fit, the user can specify a range of MJDs that will be i
     mosfit -e LSQ12dlf -m slsn -L 55000 56000
 
 will limit the data fitted for LSQ12dlf to lie between MJD 55000 and MJD 56000.
+
+Finally, ``--exclude-kinds`` can be used to exclude particular wave bands (e.g. radio, X-ray, infrared) from the fitting process. By default, models will not fit against data that is not specified as being supported via a ``'supports'`` attribute in the model JSON file, but this can be overridden by setting ``--exclude-kinds none``.
+
+As an example, assuming a user wants to fit the ``ic`` model to a transient that happens to have radio data, but would like to exclude the radio data from that fit, they would run the following command:
+
+.. code-block:: bash
+
+    mosfit -e SN2004gk -m ic --exclude-kinds radio
 
 .. _number:
 
