@@ -59,6 +59,8 @@ class Model(object):
         self._references = OrderedDict()
         self._free_parameters = []
         self._user_fixed_parameters = []
+        self._kinds_needed = set()
+        self._kinds_supported = set()
 
         self._draw_limit_reached = False
 
@@ -367,11 +369,11 @@ class Model(object):
                   user_fixed_parameters=[],
                   pool=None):
         """Load the data for the specified event."""
-        prt = self._printer
-
         if pool is not None:
             self._pool = pool
             self._printer._pool = pool
+
+        prt = self._printer
 
         prt.message('loading_data', inline=True)
 
@@ -402,6 +404,7 @@ class Model(object):
             self._modules[task].set_event_name(event_name)
             new_per = np.round(100.0 * float(ti) / len(self._call_stack))
             prt.message('loading_task', [task, new_per], inline=True)
+            self._kinds_supported |= set(cur_task.get('supports', []))
             if cur_task['kind'] == 'data':
                 success = self._modules[task].set_data(
                     data,
@@ -428,6 +431,15 @@ class Model(object):
                                         .get_data_determined_parameters())
             elif cur_task['kind'] == 'sed':
                 self._modules[task].set_data(band_sampling_points)
+            self._kinds_needed |= self._modules[task]._kinds_needed
+
+        # Find unsupported wavebands and report to user.
+        unsupported_kinds = self._kinds_needed - self._kinds_supported
+        if len(unsupported_kinds):
+            prt.message(
+                'using_unsupported_kinds' if 'none' in exclude_kinds else
+                'ignoring_unsupported_kinds', [', '.join(
+                    sorted(unsupported_kinds))], warning=True)
 
         # Determine free parameters again as setting data may have fixed some
         # more.

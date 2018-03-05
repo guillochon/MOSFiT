@@ -129,19 +129,28 @@ class Transient(Module):
                             break
 
                 if key == 'photometry':
-                    if ex_kinds is not False:
-                        if 'radio' in ex_kinds:
-                            if ('fluxdensity' in entry and
-                                'magnitude' not in entry and
-                                    'countrate' not in entry):
-                                continue
-                        if 'x-ray' in ex_kinds:
-                            if (('countrate' in entry or
-                                 'unabsorbedflux' in entry or
-                                 'flux' in entry) and
-                                'magnitude' not in entry and
-                                    'fluxdensity' not in entry):
-                                continue
+                    if ('fluxdensity' in entry and
+                        'magnitude' not in entry and
+                            'countrate' not in entry):
+                        self._kinds_needed.add('radio')
+                        if ('radio' in ex_kinds or
+                            (not len(ex_kinds) or 'none' not in ex_kinds) and
+                                'radio' not in self._model._kinds_supported):
+                            continue
+                    if (('countrate' in entry or
+                         'unabsorbedflux' in entry or
+                         'flux' in entry) and
+                        'magnitude' not in entry and
+                            'fluxdensity' not in entry):
+                        self._kinds_needed.add('x-ray')
+                        if ('x-ray' in ex_kinds or
+                            (not len(ex_kinds) or 'none' not in ex_kinds) and
+                                'x-ray' not in self._model._kinds_supported):
+                            continue
+                    if 'magnitude' in entry:
+                        # For now, magnitudes are not excludable.
+                        self._kinds_needed |= set(
+                            ['infrared', 'optical', 'ultraviolet'])
 
                     skip_entry = False
 

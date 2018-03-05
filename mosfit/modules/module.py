@@ -27,6 +27,7 @@ class Module(object):
         self._provide_dense = False
         self._replacements = OrderedDict()
         self._unset_recommended_keys = set()
+        self._kinds_needed = set()
         if not model.printer():
             self._printer = Printer()
         else:

@@ -57,19 +57,21 @@ class Diagonal(Array):
             raise ValueError('Null residual.')
 
         # Observational errors to be put in diagonal of error matrix.
-        diag = np.array([
-            ((ctel if (ct is not None and x > ct) else cteu) ** 2)
+        diag = [
+            ((ctel if (ct is not None and x > ct) else cteu))
             if t == 'countrate' else
-            ((el if (y is None or x > y) else eu) ** 2)
+            ((el if (y is None or x > y) else eu))
             if t == 'magnitude' else
-            ((fdel if (fd is None or x < fd) else fdeu) ** 2)
+            ((fdel if (fd is not None and x > fd) else fdeu))
             if t == 'fluxdensity' else None
             for x, y, eu, el, fd, fdeu, fdel, ct, ctel, cteu, t in zip(
                 self._model_observations, self._mags,
                 self._e_u_mags, self._e_l_mags, self._fds, self._e_u_fds,
                 self._e_l_fds, self._cts, self._e_l_cts, self._e_u_cts,
                 self._o_types)
-        ])
+        ]
+        diag = [0.0 if x is None else x for x in diag]
+        diag = np.array(diag) ** 2
 
         if np.any(diag == None):  # noqa: E711
             raise ValueError('Null error.')
