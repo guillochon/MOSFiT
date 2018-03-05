@@ -11,10 +11,10 @@ fi
 
 mpirun -np 2 $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
 $RUNNER -m mosfit -e SN2009do.json --test -i 1 --no-fracking -m magnetar -T 2 -F covariance
-$RUNNER -m mosfit -e SN2009do.json --test -i 3 -m rprocess -D nester -F covariance
+$RUNNER -m mosfit -e SN2007bg --test -i 3 -m rprocess -D nester -F covariance
 $RUNNER -m mosfit -e mosfit/tests/LSQ12dlf.json --test -i 3 --no-fracking -m csm -F n 6.0 -W 120 -M 0.2 --offline
 $RUNNER -m mosfit -e SN2008ar --test -i 1 --no-fracking -m ia -F covariance
-$RUNNER -m mosfit -e mosfit/tests/event_list.txt --test -i 1 --no-fracking -m tde -F covariance
+$RUNNER -m mosfit -e mosfit/tests/event_list.txt --test -i 1 --no-fracking -m tde -F covariance --offline
 $RUNNER -m mosfit -e mosfit/tests/LSQ12dlf.json --test -i 2 --no-fracking -m kilonova --variance-for-each band --offline -w products/walkers.json
 if [ "$1" = -c ]; then
     $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic --language ru -F covariance
