@@ -135,6 +135,7 @@
     "parser_open_in_browser": "Open the events listed with `-e` in the user's web browser one at a time.",
     "parser_parameter_paths": "Paths to parameter files corresponding to each model file; length of this list should be equal to the length of the list of models",
     "parser_post_burn": "Run emcee this many more iterations after the burn-in phase. The burn-in phase will thus be run for (i - p) iterations, where i is the total number of iterations set with `-i` and p is the value of this parameter.",
+    "parser_prefer_cache": "MOSFiT will prefer to use cached data and will only use online resources if they are not available locally.",
     "parser_print_trees": "Print the full dependency trees of each model.",
     "parser_quiet": "Print minimal output upon execution. Don't display our amazing logo :-(",
     "parser_run_until_converged": "Run each model until the autocorrelation time is measured accurately and chain has burned in for the specified number of autocorrelation times [Default: 10.0]. This will run beyond the specified number of iterations, and is recommended when the `--upload/-u` flag is set.",
