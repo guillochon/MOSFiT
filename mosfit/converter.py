@@ -258,34 +258,50 @@ class Converter(object):
                             ' ?', '', ftxt)).count(
                                 y) for y in delims]
                     maxdelimcount = max(delimcounts)
-                    delim = delims[delimcounts.index(maxdelimcount)]
+                    # Make sure at least one delimeter per line.
+                    maxdelimavg = delimcounts[delimcounts.index(
+                        maxdelimcount)] / len(ftxt.splitlines())
+                    if maxdelimavg >= 1.0:
+                        delim = delims[delimcounts.index(maxdelimcount)]
                     # If two delimiter options are close in count, ask user.
                     for i, x in enumerate(delimcounts):
                         if x > 0.5 * maxdelimcount and delims[i] != delim:
                             delim = None
-                    if delim is None:
+                    if delim is None and maxdelimavg >= 1.0:
                         odelims = list(np.array(delimnames)[
                             np.array(delimcounts) > 0])
-                        delim = delims[prt.prompt(
-                            'delim', kind='option', options=odelims) - 1]
-                    ad = list(delims)
-                    ad.remove(delim)
-                    ad = ''.join(ad)
+                        dchoice = prt.prompt(
+                            'delim', kind='option', options=odelims,
+                            none_string=prt.text('no_delimiter'))
+                        if is_number(dchoice):
+                            delim = delims[dchoice - 1]
+                    if delim is not None:
+                        ad = list(delims)
+                        ad.remove(delim)
+                        ad = ''.join(ad)
 
                     fsplit = ftxt.splitlines()
 
                 # If none of the rows contain numeric data, the file
                 # is likely a list of transient names.
                 flines = list(fsplit)
+
                 if (len(flines) and
                     (not any(any([is_datum(x.strip()) or x == ''
-                                  for x in y.split(delim)])
+                                  for x in (
+                                      y.split(delim) if delim is not None else
+                                      listify(y))])
                              for y in flines) or
                      len(flines) == 1)):
                     new_events = [
-                        it.strip() for s in flines for it in s.split(delim)]
+                        it.strip() for s in flines for it in (
+                            s.split(delim) if delim is not None else
+                            listify(s))]
                     new_event_list.extend(new_events)
                     continue
+
+                if delim is None:
+                    raise ValueError(prt.text('delimiter_not_found'))
 
                 if not intro_shown:
                     prt.message('converter_info')
