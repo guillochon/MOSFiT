@@ -79,6 +79,7 @@ class Fitter(object):
                  language='en',
                  limiting_magnitude=None,
                  offline=False,
+                 prefer_cache=False,
                  open_in_browser=False,
                  pool=None,
                  quiet=False,
@@ -96,6 +97,7 @@ class Fitter(object):
         self._cuda = cuda
         self._limiting_magnitude = limiting_magnitude
         self._offline = offline
+        self._prefer_cache = prefer_cache
         self._open_in_browser = open_in_browser
         self._quiet = quiet
         self._test = test
@@ -279,7 +281,8 @@ class Fitter(object):
             pool = SerialPool()
         if pool.is_master():
             fetched_events = self._fetcher.fetch(
-                event_list, offline=self._offline)
+                event_list, offline=self._offline,
+                prefer_cache=self._prefer_cache)
 
             for rank in range(1, pool.size + 1):
                 pool.comm.send(fetched_events, dest=rank, tag=0)
@@ -395,7 +398,9 @@ class Fitter(object):
                                 en = (alt_name if alt_name
                                       else self._event_name)
                                 extra_event = self._fetcher.fetch(
-                                    en, offline=self._offline)[0].get('data')
+                                    en, offline=self._offline,
+                                    prefer_cache=self._prefer_cache)[0].get(
+                                        'data')
 
                                 for rank in range(1, pool.size + 1):
                                     pool.comm.send(extra_event, dest=rank,

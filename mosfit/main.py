@@ -298,6 +298,13 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_offline'))
 
     parser.add_argument(
+        '--prefer-cache',
+        dest='prefer_cache',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_prefer_cache'))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',

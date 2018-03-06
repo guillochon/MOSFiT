@@ -24,6 +24,7 @@ class Fetcher(object):
         self._printer = Printer() if printer is None else printer
         self._open_in_browser = open_in_browser
 
+        self._names_downloaded = False
         self._excluded_catalogs = []
 
         self._catalogs = OrderedDict((
@@ -54,7 +55,7 @@ class Fetcher(object):
             catalogs = listify(catalogs)
         self._excluded_catalogs.extend([x.upper() for x in catalogs])
 
-    def fetch(self, event_list, offline=False):
+    def fetch(self, event_list, offline=False, prefer_cache=False):
         """Fetch a list of events from the open catalogs."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
         prt = self._printer
@@ -87,8 +88,13 @@ class Fetcher(object):
                 if offline:
                     prt.message('event_interp', [input_name])
                 else:
-                    prt.message('dling_aliases', [input_name])
                     for ci, catalog in enumerate(catalogs):
+                        if self._names_downloaded or (
+                            prefer_cache and os.path.exists(
+                                names_paths[ci])):
+                            continue
+                        if ci == 0:
+                            prt.message('dling_aliases', [input_name])
                         try:
                             response = get_url_file_handle(
                                 catalogs[catalog]['json'] +
@@ -101,6 +107,7 @@ class Fetcher(object):
                             with open_atomic(
                                     names_paths[ci], 'wb') as f:
                                 shutil.copyfileobj(response, f)
+                    self._names_downloaded = True
                 names = OrderedDict()
                 for ci, catalog in enumerate(catalogs):
                     if os.path.exists(names_paths[ci]):
@@ -184,7 +191,7 @@ class Fetcher(object):
                 urlname = events[ei]['name'] + '.json'
                 name_path = os.path.join(dir_path, 'cache', urlname)
 
-                if offline:
+                if offline or (prefer_cache and os.path.exists(name_path)):
                     prt.message('cached_event', [
                         events[ei]['name'], events[ei]['catalog']])
                 else:
