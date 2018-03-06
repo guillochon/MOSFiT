@@ -17,9 +17,9 @@ $RUNNER -m mosfit -e SN2008ar --test -i 1 --no-fracking -m ia -F covariance
 $RUNNER -m mosfit -e mosfit/tests/event_list.txt --test -i 1 --no-fracking -m tde -F covariance --offline
 $RUNNER -m mosfit -e mosfit/tests/LSQ12dlf.json --test -i 2 --no-fracking -m kilonova --variance-for-each band --offline -w products/walkers.json
 if [ "$1" = -c ]; then
-    $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic --language ru -F covariance
+    $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic --language ru -F covariance --prefer-cache
 else
-    $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic -F covariance
+    $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic -F covariance --prefer-cache
 fi
 echo -ne '\n\n1\n1\n1\n\n\n9\n9\n\nu\n9\n\n\n\n\n\n1992ApJ...400L...1W\ny\ny\n' | $RUNNER -m mosfit -m slsn -e mosfit/tests/PTF10hgi.txt -i 1 --no-write -u --test -F covariance
 $RUNNER -m mosfit -e 09do --test -i 1 --no-fracking -m slsn -S 20 -E 10.0 100.0 -g -c --no-copy-at-launch -x radiusphot -F covariance lumdist 500

@@ -149,7 +149,7 @@
     "parser_prefer_cache": "MOSFiT will prefer to use cached data and will only use online resources if they are not available locally.",
     "parser_print_trees": "Print the full dependency trees of each model.",
     "parser_quiet": "Print minimal output upon execution. Don't display our amazing logo :-(",
-    "parser_run_until_converged": "Run each model until the autocorrelation time is measured accurately and chain has burned in for the specified number of autocorrelation times [Default: 10.0]. This will run beyond the specified number of iterations, and is recommended when the `--upload/-u` flag is set.",
+    "parser_run_until_converged": "Run each model until it has converged. This parameter has different meanings depending on the sampler used:\n\nFor the `ensembler`, this parameter corresponds to the PSRF [Default: 1.1].\nFor the `nester`, this parameter controls both the initial dlogz in the static phase of the sampling and the KL-divergence criterion in the dynamic phase of the sampling [Default: 0.02].\n\nThis will run beyond the specified number of iterations, and is recommended when the `--upload/-u` flag is set.",
     "parser_run_until_uncorrelated": "Run each model until the autocorrelation time is measured accurately and chain has burned in for the specified number of autocorrelation times [Default: 10.0]. This will run beyond the specified number of iterations, and is recommended when the `--upload/-u` flag is set.",
     "parser_save_full_chain": "Save the full chain for each model fit.",
     "parser_set_upload_token": "Set the upload token. If given an argument, expects a 64-character token. If given no argument, MOSFiT will prompt the user to provide a token.",

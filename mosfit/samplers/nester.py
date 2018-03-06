@@ -104,6 +104,7 @@ class Nester(Sampler):
         prt.message('nmeas_nfree', [self._model._num_measurements, ndim])
 
         nested_dlogz_init = self._cc
+        post_thresh = self._cc
 
         max_iter = self._iterations if self._ct is None else np.inf
         if max_iter <= 0:
@@ -171,7 +172,7 @@ class Nester(Sampler):
                 self._results = sampler.results
 
                 stop, stop_vals = stopping_function(
-                    self._results, return_vals=True)
+                    self._results, return_vals=True, post_thresh=post_thresh)
                 stop_post, stop_evid, stop_val = stop_vals
                 if not stop:
                     logl_bounds = weight_function(self._results)
