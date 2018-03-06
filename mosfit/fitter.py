@@ -293,11 +293,13 @@ class Fitter(object):
 
         for ei, event in enumerate(fetched_events):
             if event is not None:
-                if 'data' not in event:
-                    continue
                 self._event_name = event.get('name', 'Batch')
                 self._event_path = event.get('path', '')
-                self._event_data = event.get('data', {})
+                if not self._event_path:
+                    continue
+                self._event_data = self._fetcher.load_data(event)
+                if not self._event_data:
+                    continue
 
             if model_list:
                 lmodel_list = model_list

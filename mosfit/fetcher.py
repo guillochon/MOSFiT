@@ -25,6 +25,7 @@ class Fetcher(object):
         self._open_in_browser = open_in_browser
 
         self._names_downloaded = False
+        self._names = OrderedDict()
         self._excluded_catalogs = []
 
         self._catalogs = OrderedDict((
@@ -108,12 +109,13 @@ class Fetcher(object):
                                     names_paths[ci], 'wb') as f:
                                 shutil.copyfileobj(response, f)
                     self._names_downloaded = True
-                names = OrderedDict()
+
                 for ci, catalog in enumerate(catalogs):
                     if os.path.exists(names_paths[ci]):
-                        with open(names_paths[ci], 'r') as f:
-                            names[catalog] = json.load(
-                                f, object_pairs_hook=OrderedDict)
+                        if catalog not in self._names:
+                            with open(names_paths[ci], 'r') as f:
+                                self._names[catalog] = json.load(
+                                    f, object_pairs_hook=OrderedDict)
                     else:
                         prt.message('cant_read_names', [catalog],
                                     warning=True)
@@ -121,14 +123,14 @@ class Fetcher(object):
                             prt.message('omit_offline')
                         continue
 
-                    if input_name in names[catalog]:
+                    if input_name in self._names[catalog]:
                         events[ei]['name'] = input_name
                         events[ei]['catalog'] = catalog
                     else:
-                        for name in names[catalog]:
-                            if (input_name in names[catalog][name] or
+                        for name in self._names[catalog]:
+                            if (input_name in self._names[catalog][name] or
                                     'SN' + input_name in
-                                    names[catalog][name]):
+                                    self._names[catalog][name]):
                                 events[ei]['name'] = name
                                 events[ei]['catalog'] = catalog
                                 break
@@ -136,8 +138,8 @@ class Fetcher(object):
                 if not events[ei].get('name', None):
                     for ci, catalog in enumerate(catalogs):
                         namekeys = []
-                        for name in names[catalog]:
-                            namekeys.extend(names[catalog][name])
+                        for name in self._names[catalog]:
+                            namekeys.extend(self._names[catalog][name])
                         namekeys = list(sorted(set(namekeys)))
                         matches = get_close_matches(
                             event, namekeys, n=5, cutoff=0.8)
@@ -145,7 +147,7 @@ class Fetcher(object):
                         if len(matches) < 5 and is_number(event[0]):
                             prt.message('pef_ext_search')
                             snprefixes = set(('SN19', 'SN20'))
-                            for name in names[catalog]:
+                            for name in self._names[catalog]:
                                 ind = re.search("\d", name)
                                 if ind and ind.start() > 0:
                                     snprefixes.add(name[:ind.start()])
@@ -175,8 +177,8 @@ class Fetcher(object):
                                          else
                                          'try the next catalog.')))
                             if response:
-                                for name in names[catalog]:
-                                    if response in names[
+                                for name in self._names[catalog]:
+                                    if response in self._names[
                                             catalog][name]:
                                         events[ei]['name'] = name
                                         events[ei]['catalog'] = catalog
@@ -216,9 +218,6 @@ class Fetcher(object):
                     webbrowser.open(
                         catalogs[events[ei]['catalog']]['web'] +
                         events[ei]['name'])
-                with codecs.open(path, 'r', encoding='utf-8') as f:
-                    events[ei]['data'] = json.load(
-                        f, object_pairs_hook=OrderedDict)
                 prt.message('event_file', [path], wrapped=True)
             else:
                 prt.message('no_data', [
@@ -229,3 +228,10 @@ class Fetcher(object):
                 raise RuntimeError
 
         return events
+
+    def load_data(self, event):
+        """Return data from specified path."""
+        if not os.path.exists(event['path']):
+            return None
+        with codecs.open(event['path'], 'r', encoding='utf-8') as f:
+            return json.load(f, object_pairs_hook=OrderedDict)
