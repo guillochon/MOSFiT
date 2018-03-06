@@ -401,24 +401,25 @@ class Fitter(object):
                                       else self._event_name)
                                 extra_event = self._fetcher.fetch(
                                     en, offline=self._offline,
-                                    prefer_cache=self._prefer_cache)[0].get(
-                                        'data')
+                                    prefer_cache=self._prefer_cache)[0]
+                                extra_data = self._fetcher.load_data(
+                                    extra_event)
 
                                 for rank in range(1, pool.size + 1):
-                                    pool.comm.send(extra_event, dest=rank,
+                                    pool.comm.send(extra_data, dest=rank,
                                                    tag=4)
                                 pool.close()
                             else:
-                                extra_event = pool.comm.recv(
+                                extra_data = pool.comm.recv(
                                     source=0, tag=4)
                                 pool.wait()
 
-                            if extra_event is not None:
-                                extra_event = extra_event[
-                                    list(extra_event.keys())[0]]
+                            if extra_data is not None:
+                                extra_data = extra_data[
+                                    list(extra_data.keys())[0]]
 
                                 for key in urk:
-                                    new_val = extra_event.get(key)
+                                    new_val = extra_data.get(key)
                                     self._event_data[list(
                                         self._event_data.keys())[0]][
                                             key] = new_val
