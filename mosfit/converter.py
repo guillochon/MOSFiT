@@ -276,7 +276,7 @@ class Converter(object):
 
                 # If none of the rows contain numeric data, the file
                 # is likely a list of transient names.
-                flines = fsplit.copy()
+                flines = list(fsplit)
                 if (len(flines) and
                     (not any(any([is_datum(x.strip()) or x == ''
                                   for x in y.split(delim)])
