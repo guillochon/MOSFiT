@@ -47,7 +47,7 @@
     "exceeded_walltime": "Walltime exceeded, exiting...",
     "extra_not_found": "!yEvent not found in the Open Catalogs.!e Could it possibly be listed under another name aside from `{}`? If so, enter the other name now, otherwise the currently unset recommended parameters will be treated as free parameters:",
     "extra_value": "Value acquired from Open Catalogs for `{}`: `{}`",
-    "files": "Basic model file:\n  {}\nModel file:\n  {}\nParameter file:\n  {}",
+    "files": "\nBasic model file:\n  {}\nModel file:\n  {}\nParameter file:\n  {}",
     "finding_bands": "\nFinding bands...",
     "force_copy": "The flag `--force-copy-at-launch` has been set. Do you really wish to overwrite your local model/module/jupyter file hierarchy? This action cannot be reversed.",
     "fracking_results": "Fracking results",
