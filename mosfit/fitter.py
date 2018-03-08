@@ -209,7 +209,8 @@ class Fitter(object):
                         prt.prt('  {}'.format(walker_path))
                         with open(walker_path, 'r') as f:
                             all_walker_data = json.load(
-                                f, object_pairs_hook=OrderedDict)
+                                f, object_pairs_hook=OrderedDict,
+                                encoding='utf-8')
 
                         # Support both the format where all data stored in a
                         # single-item dictionary (the OAC format) and the older
