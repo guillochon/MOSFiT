@@ -1259,21 +1259,23 @@
 			"",
 			"AB"
 		],
-		"g": {
-			"SVO": "SLOAN/SDSS.g",
-			"offset": 0
-		},
-		"r": {
-			"SVO": "SLOAN/SDSS.r",
-			"offset": 0
-		},
-		"i": {
-			"SVO": "SLOAN/SDSS.i",
-			"offset": 0
-		},
-		"z": {
-			"SVO": "SLOAN/SDSS.z",
-			"offset": 0
+		"filters": {
+			"g": {
+				"SVO": "SLOAN/SDSS.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "SLOAN/SDSS.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "SLOAN/SDSS.i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "SLOAN/SDSS.z",
+				"offset": 0
+			}
 		}
 	},
 	{
@@ -1288,13 +1290,15 @@
 			"",
 			"AB"
 		],
-		"z": {
-			"SVO": "Paranal/VIMOS.z",
-			"offset": 0
-		},
-		"r": {
-			"SVO": "Paranal/VIMOS.r",
-			"offset": 0
+		"filters": {
+			"z": {
+				"SVO": "Paranal/VIMOS.z",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "Paranal/VIMOS.r",
+				"offset": 0
+			}
 		}
 	},
 	{
@@ -1308,17 +1312,19 @@
 			"",
 			"AB"
 		],
-		"Y": {
-			"SVO": "Paranal/VISTA.Y",
-			"offset": 0
-		},
-		"J": {
-			"SVO": "Paranal/VISTA.J",
-			"offset": 0
-		},
-		"Ks": {
-			"SVO": "Paranal/VISTA.Ks",
-			"offset": 0
+		"filters": {
+			"Y": {
+				"SVO": "Paranal/VISTA.Y",
+				"offset": 0
+			},
+			"J": {
+				"SVO": "Paranal/VISTA.J",
+				"offset": 0
+			},
+			"Ks": {
+				"SVO": "Paranal/VISTA.Ks",
+				"offset": 0
+			}
 		}
 	},
 	{
@@ -1332,21 +1338,23 @@
 			"",
 			"AB"
 		],
-		"g": {
-			"SVO": "SLOAN/SDSS.g",
-			"offset": 0
-		},
-		"r": {
-			"SVO": "SLOAN/SDSS.r",
-			"offset": 0
-		},
-		"i": {
-			"SVO": "SLOAN/SDSS.i",
-			"offset": 0
-		},
-		"z": {
-			"SVO": "SLOAN/SDSS.z",
-			"offset": 0
+		"filters":{
+			"g": {
+				"SVO": "SLOAN/SDSS.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "SLOAN/SDSS.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "SLOAN/SDSS.i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "SLOAN/SDSS.z",
+				"offset": 0
+			}
 		}
 	},
 	{
@@ -1360,25 +1368,27 @@
 			"",
 			"AB"
 		],
-		"B": {
-			"SVO": "Generic/Bessell.B",
-			"offset": 0
-		},
-		"g": {
-			"SVO": "SLOAN/SDSS.g",
-			"offset": 0
-		},
-		"V": {
-			"SVO": "Generic/Bessell.V",
-			"offset": 0
-		},
-		"r": {
-			"SVO": "SLOAN/SDSS.r",
-			"offset": 0
-		},
-		"i": {
-			"SVO": "SLOAN/SDSS.i",
-			"offset": 0
+		"filters": {
+			"B": {
+				"SVO": "Generic/Bessell.B",
+				"offset": 0
+			},
+			"g": {
+				"SVO": "SLOAN/SDSS.g",
+				"offset": 0
+			},
+			"V": {
+				"SVO": "Generic/Bessell.V",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "SLOAN/SDSS.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "SLOAN/SDSS.i",
+				"offset": 0
+			}
 		}
 	},
 	{
@@ -1392,17 +1402,19 @@
 			"",
 			"AB"
 		],
-		"g": {
-			"SVO": "SLOAN/SDSS.g",
-			"offset": 0
-		},
-		"r": {
-			"SVO": "SLOAN/SDSS.r",
-			"offset": 0
-		},
-		"i": {
-			"SVO": "SLOAN/SDSS.i",
-			"offset": 0
+		"filters":{
+			"g": {
+				"SVO": "SLOAN/SDSS.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "SLOAN/SDSS.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "SLOAN/SDSS.i",
+				"offset": 0
+			}
 		}
 	},
 	{

@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
+import codecs
 import gc
 import json
 import os
@@ -216,7 +217,8 @@ class Fitter(object):
                 for walker_path in walker_paths:
                     if os.path.exists(walker_path):
                         prt.prt('  {}'.format(walker_path))
-                        with open(walker_path, 'r') as f:
+                        with codecs.open(walker_path, 'r',
+                                         encoding='utf-8') as f:
                             all_walker_data = json.load(
                                 f, object_pairs_hook=OrderedDict)
 
