@@ -172,7 +172,8 @@ class Nester(Sampler):
                 self._results = sampler.results
 
                 stop, stop_vals = stopping_function(
-                    self._results, return_vals=True, post_thresh=post_thresh)
+                    self._results, return_vals=True, args={
+                        'post_thresh': post_thresh})
                 stop_post, stop_evid, stop_val = stop_vals
                 if not stop:
                     logl_bounds = weight_function(self._results)
