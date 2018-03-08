@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
+import codecs
 import gc
 import json
 import os
@@ -207,10 +208,10 @@ class Fitter(object):
                 for walker_path in walker_paths:
                     if os.path.exists(walker_path):
                         prt.prt('  {}'.format(walker_path))
-                        with open(walker_path, 'r') as f:
+                        with codecs.open(walker_path, 'r',
+                                         encoding='utf-8') as f:
                             all_walker_data = json.load(
-                                f, object_pairs_hook=OrderedDict,
-                                encoding='utf-8')
+                                f, object_pairs_hook=OrderedDict)
 
                         # Support both the format where all data stored in a
                         # single-item dictionary (the OAC format) and the older
@@ -298,7 +299,8 @@ class Fitter(object):
             lnprobs[ei] = [None for y in range(len(lmodel_list))]
 
             if (event is not None and (not self._event_data or
-                ENTRY.PHOTOMETRY not in self._event_data[
+                                       ENTRY.PHOTOMETRY not in
+                                       self._event_data[
                     list(self._event_data.keys())[0]])):
                 prt.message('no_photometry', [self._event_name])
                 continue
