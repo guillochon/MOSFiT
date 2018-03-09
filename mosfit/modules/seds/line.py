@@ -5,7 +5,6 @@ from astropy import constants as c
 from astropy import units as u
 from mosfit.modules.seds.sed import SED
 from mosfit.constants import SQRT_2_PI
-from scipy.special import erf
 
 
 # Important: Only define one ``Module`` class per file.
@@ -36,41 +35,50 @@ class Line(SED):
         lw = self._line_wavelength  # noqa: F841
         ls = self._line_width
         cc = self.C_CONST
+
+        # Some temp vars for speed.
         zp1 = 1.0 + kwargs[self.key('redshift')]
-        amps = [
-            self._line_amplitude * np.exp(-0.5 * (
+        czp1A = cc / (zp1 * u.Angstrom.cgs.scale)
+
+        amps = np.array([
+            np.exp(-0.5 * (
                 (x - self._rest_t_explosion - self._line_time) /
-                self._line_duration) ** 2) for x in self._times]
+                self._line_duration) ** 2) for x in self._times]) / (
+                    ls * SQRT_2_PI)
+
+        line_lums = self._luminosities * self._line_amplitude * amps
 
         if self._seds is None:
             raise ValueError(prt.message('line_sed'))
 
-        seds = self._seds
+        seds = [x / (1.0 - amps[xi]) for xi, x in enumerate(self._seds)]
+        amps_dict = {}
         evaled = False
+
         for li, lum in enumerate(self._luminosities):
-            if lum == 0.0 or amps[li] == 0.0:
-                continue
             bi = self._band_indices[li]
+            if lum == 0.0:
+                continue
 
-            # Leave `rest_wavs` in Angstroms.
-            if bi >= 0:
-                rest_wavs = self._sample_wavelengths[bi] / zp1
-            else:
-                rest_wavs = [cc / (self._frequencies[li] * zp1 *  # noqa: F841
-                             u.Angstrom.cgs.scale)]
+            bind = czp1A / self._frequencies[li] if bi < 0 else bi
 
-            amp = lum * amps[li] / (ls * SQRT_2_PI)  # noqa: F841
+            if bind not in amps_dict:
+                # Leave `rest_wavs` in Angstroms.
+                if bi >= 0:
+                    rest_wavs = self._sample_wavelengths[bi] / zp1
+                else:
+                    rest_wavs = np.array([bind])  # noqa: F841
 
-            if not evaled:
-                sed = ne.evaluate(
-                    'amp * exp(-0.5 * ((rest_wavs - lw) / ls) ** 2)')
-                evaled = True
-            else:
-                sed = ne.re_evaluate()
+                if not evaled:
+                    amps_dict[bind] = ne.evaluate(
+                        'exp(-0.5 * ((rest_wavs - lw) / ls) ** 2)')
+                    evaled = True
+                else:
+                    amps_dict[bind] = ne.re_evaluate()
 
-            sed = np.nan_to_num(sed)
+            seds[li] += line_lums[li] * amps_dict[bind]
 
-            seds[li] += sed
+            # seds[li][np.isnan(seds[li])] = 0.0
 
         return {'sample_wavelengths': self._sample_wavelengths,
                 self.key('seds'): seds}

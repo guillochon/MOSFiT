@@ -25,16 +25,15 @@ class NickelCobalt(Engine):
         self._rest_t_explosion = kwargs[self.key('resttexplosion')]
 
         # From 1994ApJS...92..527N
-        ts = [
-            np.inf
-            if self._rest_t_explosion > x else (x - self._rest_t_explosion)
-            for x in self._times
-        ]
-        luminosities = [
-            self._mnickel * (self.NI56_LUM * np.exp(-t / self.NI56_LIFE) +
-                             self.CO56_LUM * np.exp(-t / self.CO56_LIFE))
-            for t in ts
-        ]
-        luminosities = [0.0 if isnan(x) else x for x in luminosities]
+        ts = np.empty_like(self._times)
+        t_inds = ts >= self._rest_t_explosion
+        ts[t_inds] = self._times[t_inds] - self._rest_t_explosion
+
+        luminosities = np.zeros_like(self._times)
+        luminosities[t_inds] = self._mnickel * (
+            self.NI56_LUM * np.exp(-ts[t_inds] / self.NI56_LIFE) +
+            self.CO56_LUM * np.exp(-ts[t_inds] / self.CO56_LIFE))
+
+        luminosities[np.isnan(luminosities)] = 0.0
 
         return {self.dense_key('luminosities'): luminosities}
