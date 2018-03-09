@@ -21,7 +21,7 @@ class Line(SED):
         prt = self._printer
         self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         self._times = kwargs[self.key('rest_times')]
-        self._seds = kwargs[self.key('seds')]
+        self._seds = kwargs.get(self.key('seds'))
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._sample_wavelengths = kwargs['sample_wavelengths']

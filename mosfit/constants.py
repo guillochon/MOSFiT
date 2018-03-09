@@ -15,6 +15,7 @@ C_CGS = c.c.cgs.value
 DAY_CGS = u.day.cgs.scale
 FOE = 1.0e51
 FOUR_PI = 4.0 * np.pi
+SQRT_2_PI = np.sqrt(2.0 * np.pi)
 IPI = 1.0 / np.pi
 KM_CGS = u.km.cgs.scale
 M_SUN_CGS = c.M_sun.cgs.value
