@@ -4,6 +4,7 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 from mosfit.modules.seds.sed import SED
+from mosfit.constants import SQRT_2_PI
 from scipy.special import erf
 
 
@@ -18,9 +19,10 @@ class Line(SED):
     def process(self, **kwargs):
         """Process module."""
         kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
+        prt = self._printer
         self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         self._times = kwargs[self.key('rest_times')]
-        self._seds = kwargs[self.key('seds')]
+        self._seds = kwargs.get(self.key('seds'))
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._sample_wavelengths = kwargs['sample_wavelengths']
@@ -31,7 +33,7 @@ class Line(SED):
         self._line_time = kwargs[self.key('line_time')]
         self._line_duration = kwargs[self.key('line_duration')]
         self._line_amplitude = kwargs[self.key('line_amplitude')]
-        lw = self._line_wavelength
+        lw = self._line_wavelength  # noqa: F841
         ls = self._line_width
         cc = self.C_CONST
         zp1 = 1.0 + kwargs[self.key('redshift')]
@@ -40,23 +42,24 @@ class Line(SED):
                 (x - self._rest_t_explosion - self._line_time) /
                 self._line_duration) ** 2) for x in self._times]
 
+        if self._seds is None:
+            raise ValueError(prt.message('line_sed'))
+
         seds = self._seds
         evaled = False
         for li, lum in enumerate(self._luminosities):
-            bi = self._band_indices[li]
-            if lum == 0.0:
-                if bi >= 0:
-                    seds.append(np.zeros_like(self._sample_wavelengths[bi]))
-                else:
-                    seds.append([0.0])
+            if lum == 0.0 or amps[li] == 0.0:
                 continue
-            if bi >= 0:
-                rest_wavs = (self._sample_wavelengths[bi] *
-                             u.Angstrom.cgs.scale / zp1)
-            else:
-                rest_wavs = [cc / (self._frequencies[li] * zp1)]  # noqa: F841
+            bi = self._band_indices[li]
 
-            amp = lum * amps[li]
+            # Leave `rest_wavs` in Angstroms.
+            if bi >= 0:
+                rest_wavs = self._sample_wavelengths[bi] / zp1
+            else:
+                rest_wavs = [cc / (self._frequencies[li] * zp1 *  # noqa: F841
+                             u.Angstrom.cgs.scale)]
+
+            amp = lum * amps[li] / (ls * SQRT_2_PI)  # noqa: F841
 
             if not evaled:
                 sed = ne.evaluate(
@@ -67,11 +70,7 @@ class Line(SED):
 
             sed = np.nan_to_num(sed)
 
-            norm = (lum + amp / zp1 * np.sqrt(np.pi / 2.0) * (
-                1.0 + erf(lw / (np.sqrt(2.0) * ls)))) / lum
-
             seds[li] += sed
-            seds[li] /= norm
 
         return {'sample_wavelengths': self._sample_wavelengths,
                 self.key('seds'): seds}

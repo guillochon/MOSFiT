@@ -73,6 +73,7 @@
     "join_which_columns": "\nSelect the columns to be joined, in the order that they should be joined:",
     "large_time_offset": "The maximum time found is after the year 2100, suggesting the time is not MJD, but JD. Are the times found in this file in JD?",
     "last_name": "Please enter the last name of the first author of this work:",
+    "line_sed": "`Line` module must be applied to the output of another `SED` module.",
     "loading_bands": "Loading bands [ {0:.0f}% ]",
     "loading_data": "\nLoading data...",
     "loading_task": "\nLoading module `{}` [ {:.0f}% ] ",
