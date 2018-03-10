@@ -4,11 +4,7 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 from mosfit.modules.seds.sed import SED
-<<<<<<< HEAD
-from scipy.special import erf
-=======
 from mosfit.constants import SQRT_2_PI
->>>>>>> 14a003c... BUG: Continue to fix `Line`
 
 
 # Important: Only define one ``Module`` class per file.
@@ -22,6 +18,7 @@ class Line(SED):
     def process(self, **kwargs):
         """Process module."""
         kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
+        prt = self._printer
         self._rest_t_explosion = kwargs[self.key('resttexplosion')]
         self._times = kwargs[self.key('rest_times')]
         self._seds = kwargs[self.key('seds')]
@@ -35,7 +32,7 @@ class Line(SED):
         self._line_time = kwargs[self.key('line_time')]
         self._line_duration = kwargs[self.key('line_duration')]
         self._line_amplitude = kwargs[self.key('line_amplitude')]
-        lw = self._line_wavelength
+        lw = self._line_wavelength  # noqa: F841
         ls = self._line_width
         cc = self.C_CONST
 
