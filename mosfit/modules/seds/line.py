@@ -51,7 +51,7 @@ class Line(SED):
         if self._seds is None:
             raise ValueError(prt.message('line_sed'))
 
-        seds = [x / (1.0 - amps[xi]) for xi, x in enumerate(self._seds)]
+        seds = [x * (1.0 - amps[xi]) for xi, x in enumerate(self._seds)]
         amps_dict = {}
         evaled = False
 
