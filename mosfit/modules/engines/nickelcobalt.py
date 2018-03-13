@@ -1,6 +1,4 @@
 """Definitions for the `NickelCobalt` class."""
-from math import isnan
-
 import numpy as np
 
 from mosfit.modules.engines.engine import Engine
@@ -26,7 +24,7 @@ class NickelCobalt(Engine):
 
         # From 1994ApJS...92..527N
         ts = np.empty_like(self._times)
-        t_inds = ts >= self._rest_t_explosion
+        t_inds = self._times >= self._rest_t_explosion
         ts[t_inds] = self._times[t_inds] - self._rest_t_explosion
 
         luminosities = np.zeros_like(self._times)
