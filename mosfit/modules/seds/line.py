@@ -43,15 +43,13 @@ class Line(SED):
         amps = np.array([
             np.exp(-0.5 * (
                 (x - self._rest_t_explosion - self._line_time) /
-                self._line_duration) ** 2) for x in self._times]) / (
-                    ls * SQRT_2_PI)
-
-        line_lums = self._luminosities * self._line_amplitude * amps
+                self._line_duration) ** 2) for x in self._times])
 
         if self._seds is None:
             raise ValueError(prt.message('line_sed'))
 
         seds = [x * (1.0 - amps[xi]) for xi, x in enumerate(self._seds)]
+        amps *= self._luminosities * self._line_amplitude / (ls * SQRT_2_PI)
         amps_dict = {}
         evaled = False
 
@@ -76,7 +74,7 @@ class Line(SED):
                 else:
                     amps_dict[bind] = ne.re_evaluate()
 
-            seds[li] += line_lums[li] * amps_dict[bind]
+            seds[li] += amps[li] * amps_dict[bind]
 
             # seds[li][np.isnan(seds[li])] = 0.0
 
