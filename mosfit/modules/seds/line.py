@@ -40,7 +40,7 @@ class Line(SED):
         zp1 = 1.0 + kwargs[self.key('redshift')]
         czp1A = cc / (zp1 * u.Angstrom.cgs.scale)
 
-        amps = np.array([
+        amps = self._line_amplitude * np.array([
             np.exp(-0.5 * (
                 (x - self._rest_t_explosion - self._line_time) /
                 self._line_duration) ** 2) for x in self._times])
@@ -49,7 +49,7 @@ class Line(SED):
             raise ValueError(prt.message('line_sed'))
 
         seds = [x * (1.0 - amps[xi]) for xi, x in enumerate(self._seds)]
-        amps *= self._luminosities * self._line_amplitude / (ls * SQRT_2_PI)
+        amps *= self._luminosities / (ls * SQRT_2_PI)
         amps_dict = {}
         evaled = False
 
