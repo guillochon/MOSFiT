@@ -78,6 +78,8 @@ class Printer(object):
         self._was_inline = False
         self._last_prt_time = None
 
+        self._color = self.supports_color()
+
         self.set_strings()
 
     def _check_prt_time(self, min_time):
@@ -100,7 +102,7 @@ class Printer(object):
         if error:
             if prefix:
                 text = '!r' + self._strings['error'] + ': ' + text + '!e'
-        if color:
+        if self._color and color:
             text = color + text + '!e'
         tspl = text.split('\n')
         if wrapped:
@@ -181,7 +183,7 @@ class Printer(object):
         colorify = kwargs.get('colorify', True)
 
         tspl = self._lines(text, **kwargs)
-        if warning or error or color:
+        if warning or error or (self._color and color):
             colorify = True
         if inline and self._fitter is not None:
             inline = not self._fitter._test
@@ -679,3 +681,14 @@ class Printer(object):
             return '*'
         else:
             return '#'
+
+    def supports_color(self):
+        """Return if current terminal supports color or not."""
+        plat = sys.platform
+        supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                      'ANSICON' in os.environ)
+        # isatty is not always implemented, #6223.
+        is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+        if not supported_platform or not is_a_tty:
+            return False
+        return True
