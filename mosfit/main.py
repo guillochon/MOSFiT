@@ -369,6 +369,12 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_maximum_memory'))
 
     parser.add_argument(
+        '--seed',
+        dest='seed',
+        type=int,
+        help=prt.text('parser_seed'))
+
+    parser.add_argument(
         '--draw-above-likelihood',
         '-d',
         dest='draw_above_likelihood',

@@ -162,11 +162,17 @@ class Fitter(object):
                    download_recommended_data=False,
                    local_data_only=False,
                    method=None,
+                   seed=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
         if start_time is False:
             start_time = time.time()
+
+        self._seed = seed
+        if seed is not None:
+            np.random.seed(seed)
+
         self._start_time = start_time
         self._maximum_walltime = maximum_walltime
         self._maximum_memory = maximum_memory

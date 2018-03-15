@@ -2,6 +2,7 @@
 """Definitions for `Nester` class."""
 
 import gc
+import pickle
 import sys
 import time
 
@@ -113,6 +114,9 @@ class Nester(Sampler):
         s_exception = None
         iter_denom = None if self._ct is not None else self._iterations
 
+        # Save a few things from the dynesty run for diagnostic purposes.
+        scales = []
+
         try:
             sampler = DynamicNestedSampler(
                 ln_likelihood, draw_from_icdf, ndim,
@@ -137,6 +141,8 @@ class Nester(Sampler):
                     break
 
                 self._results = sampler.results
+
+                scales.append(sampler.scale)
 
                 kmat = self._get_best_kmat()
                 # The above added 1 call.
@@ -170,6 +176,8 @@ class Nester(Sampler):
                     break
 
                 self._results = sampler.results
+
+                scales.append(sampler.scale)
 
                 stop, stop_vals = stopping_function(
                     self._results, return_vals=True, args={
@@ -217,6 +225,11 @@ class Nester(Sampler):
             prt.message('ctrl_c', error=True, prefix=False, color='!r')
             s_exception = sys.exc_info()
         except Exception:
+            print('Scale history:')
+            print(scales)
+            pickle.dump(sampler.results, open(
+                self._fitter._event_name + '-dynesty.pickle', 'wb'))
+            self._pool.close()
             raise
 
         if max_iter < 0:
