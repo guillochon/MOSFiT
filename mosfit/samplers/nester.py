@@ -142,7 +142,7 @@ class Nester(Sampler):
 
                 self._results = sampler.results
 
-                scales.append(sampler.scale)
+                scales.append(sampler.results.scale)
 
                 kmat = self._get_best_kmat()
                 # The above added 1 call.
@@ -177,7 +177,7 @@ class Nester(Sampler):
 
                 self._results = sampler.results
 
-                scales.append(sampler.scale)
+                scales.append(sampler.results.scale)
 
                 stop, stop_vals = stopping_function(
                     self._results, return_vals=True, args={
