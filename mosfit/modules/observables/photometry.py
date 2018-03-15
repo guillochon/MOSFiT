@@ -164,9 +164,7 @@ class Photometry(Module):
                                     shutil.copyfileobj(response, f)
 
                         if os.path.exists(xml_path):
-                            already_written = (
-                                (self._model._fitter._prefer_cache and
-                                 os.path.exists(path)) or svopath in vo_tabs)
+                            already_written = svopath in vo_tabs
                             if not already_written:
                                 vo_tabs[svopath] = voparse(xml_path)
                             vo_tab = vo_tabs[svopath]
@@ -207,8 +205,10 @@ class Photometry(Module):
                                     ' '.join([str(y) for y in x])
                                     for x in vo_dat
                                 ])
-                                with open_atomic(path, 'w') as f:
-                                    f.write(vo_string)
+                                if (not self._model._fitter._prefer_cache or
+                                        not os.path.exists(path)):
+                                    with open_atomic(path, 'w') as f:
+                                        f.write(vo_string)
                         else:
                             raise RuntimeError(
                                 prt.string('cant_read_svo'))
