@@ -19,6 +19,8 @@ SQRT_2_PI = np.sqrt(2.0 * np.pi)
 IPI = 1.0 / np.pi
 KM_CGS = u.km.cgs.scale
 M_SUN_CGS = c.M_sun.cgs.value
+M_P_CGS = c.m_p.cgs.value
+MEV_CGS = u.MeV.cgs.scale
 MAG_FAC = 2.5
 MPC_CGS = u.Mpc.cgs.scale
 

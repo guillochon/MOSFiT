@@ -144,6 +144,14 @@
             "band_wave_ranges": "photometry"
         }
     },
+    "ia_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "mejecta",
+            "vejecta",
+            "fnickel"
+        ]
+    },
     "losextinction":{
         "kind":"sed",
         "inputs":[
