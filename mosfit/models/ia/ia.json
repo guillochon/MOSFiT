@@ -63,27 +63,32 @@
     "line_wavelength":{
         "kind":"parameter",
         "value":7.5e3,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{\\lambda}"
     },
     "line_width":{
         "kind":"parameter",
         "value":500.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{\\Delta \\lambda}"
     },
     "line_time":{
         "kind":"parameter",
         "value":50.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{t}"
     },
     "line_duration":{
         "kind":"parameter",
         "value":25.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{\\tau}"
     },
     "line_amplitude":{
         "kind":"parameter",
         "value":0.3,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{A}"
     },
     "nickelcobalt":{
         "kind":"engine",
