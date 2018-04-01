@@ -21,6 +21,10 @@ class Transient(Module):
         'rad': 'radio',
         'xray': 'x-ray'
     }
+    _OBS_KEYS = [
+        'times', 'telescopes', 'systems', 'modes', 'instruments',
+        'bandsets', 'bands', 'frequencies', 'u_frequencies', 'measures'
+    ]
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -256,11 +260,15 @@ class Transient(Module):
                     self._data_determined_parameters.append(key)
 
         if 'times' in self._data and smooth_times >= 0:
-            obs = list(
-                zip(*(self._data['telescopes'], self._data['systems'],
-                      self._data['modes'], self._data['instruments'],
-                      self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'], self._data['u_frequencies'])))
+            self._data['measures'] = [(
+                (['magnitude'] if x else []) +
+                (['countrate'] if y else []) +
+                (['fluxdensity'] if x else []))
+                for x, y, z in zip(*(
+                    self._data['magnitudes'],
+                    self._data['countrates'],
+                    self._data['fluxdensities']))]
+            obs = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
             if len(band_list):
                 b_teles = band_telescopes if len(band_telescopes) == len(
                     band_list) else ([band_telescopes[0] for x in band_list]
@@ -284,10 +292,11 @@ class Transient(Module):
                                      ['' for x in band_list])
                 b_freqs = [None for x in band_list]
                 b_u_freqs = ['' for x in band_list]
+                b_measures = [[] for x in band_list]
                 obs.extend(
                     list(
                         zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
-                              band_list, b_freqs, b_u_freqs))))
+                              band_list, b_freqs, b_u_freqs, b_measures))))
 
             uniqueobs = []
             for o in obs:
@@ -305,13 +314,8 @@ class Transient(Module):
                 sorted(
                     set([x for x in self._data['times']] + list(
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
-            currobslist = list(
-                zip(*(
-                    self._data['times'], self._data['telescopes'],
-                    self._data['systems'], self._data['modes'],
-                    self._data['instruments'], self._data['bandsets'],
-                    self._data['bands'], self._data['frequencies'],
-                    self._data['u_frequencies'])))
+            currobslist = list(zip(*(self._data[x] for x in ([
+                'times'] + self._OBS_KEYS))))
 
             obslist = []
             for ti, t in enumerate(alltimes):
@@ -325,11 +329,8 @@ class Transient(Module):
             obslist.sort()
 
             if len(obslist):
-                (self._data['extra_times'], self._data['extra_telescopes'],
-                 self._data['extra_systems'], self._data['extra_modes'],
-                 self._data['extra_instruments'], self._data['extra_bandsets'],
-                 self._data['extra_bands'], self._data['extra_frequencies'],
-                 self._data['extra_u_frequencies']) = zip(*obslist)
+                for x, y in zip(['times'] + self._OBS_KEYS, zip(*obslist)):
+                    self._data[x] = y
 
         for qkey in subtract_minimum_keys:
             if 'upperlimits' in self._data:

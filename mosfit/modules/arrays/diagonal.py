@@ -24,8 +24,6 @@ class Diagonal(Array):
         """Process module."""
         self.preprocess(**kwargs)
         self._model_observations = kwargs['model_observations']
-        self._model_observations[self._cmask] = -2.5 * np.log10(
-            self._model_observations[self._cmask])
         self._model_observations = self._model_observations[self._observed]
         self._o_types = self._observation_types[self._observed]
 
@@ -125,24 +123,24 @@ class Diagonal(Array):
         ]
 
         # Now counts
-        cmask = self._observation_types[self._observed] == 'countrate'
-        self._cts[cmask] = -2.5 * np.log10(self._cts[cmask].astype(np.float64))
         self._cmask = self._observation_types == 'countrate'
+        # Supercede magnitude if countrate present.
+        non_null_cts = np.logical_and(
+            np.in1d(self._mags, np.array([None])).reshape(
+                self._mags.shape),
+            np.logical_not(np.in1d(self._cts, np.array([None])).reshape(
+                self._cts.shape)))
+        self._cmask[non_null_cts] = 'countrate'
+        self._upper_limits[non_null_cts] = False
         self._e_u_cts = [
-            kwargs['default_upper_limit_error']
-            if (e is None and eu is None and self._upper_limits[i]) else
-            (kwargs['default_no_error_bar_error']
-             if (e is None and eu is None) else
-             2.5 * (np.log10(c + (e if eu is None else eu)) - np.log10(c)))
+            c if (e is None and eu is None) else
+            e if eu is None else eu
             for i, (c, e, eu) in enumerate(zip(
                 self._cts, self._e_cts, self._e_u_cts))
         ]
         self._e_l_cts = [
-            kwargs['default_upper_limit_error']
-            if (e is None and el is None and self._upper_limits[i]) else
-            (kwargs['default_no_error_bar_error']
-             if (e is None and el is None) else
-             2.5 * (np.log10(c) - np.log10(c - (e if el is None else el))))
+            c if (e is None and el is None) else
+            e if el is None else el
             for i, (c, e, el) in enumerate(zip(
                 self._cts, self._e_cts, self._e_l_cts))
         ]
