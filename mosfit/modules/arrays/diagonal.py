@@ -29,7 +29,7 @@ class Diagonal(Array):
 
         ret = {}
 
-        allowed_otypes = ['countrate', 'magnitude', 'fluxdensity']
+        allowed_otypes = ['countrate', 'magnitude', 'fluxdensity', 'magcount']
 
         if np.any([x not in allowed_otypes for x in self._o_types]):
             print([x for x in self._o_types if x not in allowed_otypes])
@@ -39,7 +39,7 @@ class Diagonal(Array):
         residuals = np.array([
             (abs(x - ct) if (not u and ct is not None) or (
                 not isnan(x) and ct is not None and x < ct) else 0.0)
-            if t == 'countrate' else
+            if t == 'countrate' or t == 'magcount' else
             ((abs(x - y) if (not u and y is not None) or (
                 not isnan(x) and y is not None and x < y) else 0.0)
              if t == 'magnitude' else
@@ -57,7 +57,7 @@ class Diagonal(Array):
         # Observational errors to be put in diagonal of error matrix.
         diag = [
             ((ctel if (ct is not None and x > ct) else cteu))
-            if t == 'countrate' else
+            if t == 'countrate' or t == 'magcount' else
             ((el if (y is None or x > y) else eu))
             if t == 'magnitude' else
             ((fdel if (fd is not None and x > fd) else fdeu))
@@ -122,13 +122,9 @@ class Diagonal(Array):
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
         ]
 
-        # Supercede magnitude if countrate present.
-        non_null_cts = np.logical_and(
-            np.in1d(self._mags, np.array([None])).reshape(
-                self._mags.shape),
-            np.logical_not(np.in1d(self._cts, np.array([None])).reshape(
-                self._cts.shape)))
-        self._upper_limits[non_null_cts] = False
+        # Ignore upperlimits for countrate if magnitude is present.
+        self._upper_limits[self._observation_types[
+            self._observed] == 'magcount'] = False
         self._e_u_cts = [
             c if (e is None and eu is None) else
             e if eu is None else eu

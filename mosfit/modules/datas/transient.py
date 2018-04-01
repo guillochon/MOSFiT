@@ -325,7 +325,7 @@ class Transient(Module):
             currobslist = list(zip(*(self._data[x] for x in ([
                 'times'] + self._OBS_KEYS))))
 
-            # Create additional fake observations and append them to list.
+            # Create additional fake observations.
             obslist = []
             for ti, t in enumerate(alltimes):
                 new_per = np.round(100.0 * float(ti) / len(alltimes), 1)
@@ -334,7 +334,6 @@ class Transient(Module):
                     newobs = tuple([t] + list(o))
                     if newobs not in currobslist:
                         obslist.append(newobs)
-
             obslist.sort()
 
             # Save these fake observations under keys with `extra_` prefix.

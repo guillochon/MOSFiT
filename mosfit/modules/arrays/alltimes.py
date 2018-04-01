@@ -71,7 +71,7 @@ class AllTimes(Array):
                 in zip(*self._all_observations)
             ])
             self._observation_types = np.array([
-                'countrate' if ('countrate' in msr and 'magnitude' in msr) else
+                'magcount' if ('countrate' in msr and 'magnitude' in msr) else
                 self._photometry._band_kinds[bi] if bi >= 0 else
                 'fluxdensity' for bi, msr in zip(
                     self._all_band_indices, self._measures)
