@@ -122,15 +122,12 @@ class Diagonal(Array):
             for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
         ]
 
-        # Now counts
-        self._cmask = self._observation_types == 'countrate'
         # Supercede magnitude if countrate present.
         non_null_cts = np.logical_and(
             np.in1d(self._mags, np.array([None])).reshape(
                 self._mags.shape),
             np.logical_not(np.in1d(self._cts, np.array([None])).reshape(
                 self._cts.shape)))
-        self._cmask[non_null_cts] = 'countrate'
         self._upper_limits[non_null_cts] = False
         self._e_u_cts = [
             c if (e is None and eu is None) else
