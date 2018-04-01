@@ -330,7 +330,7 @@ class Transient(Module):
 
             if len(obslist):
                 for x, y in zip(['times'] + self._OBS_KEYS, zip(*obslist)):
-                    self._data[x] = y
+                    self._data['extra_' + x] = y
 
         for qkey in subtract_minimum_keys:
             if 'upperlimits' in self._data:
