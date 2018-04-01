@@ -42,6 +42,10 @@ class Kernel(Array):
         # Get band variances
         self._variance = kwargs.get(self.key('variance'), 0.0)
 
+        # Get real observations.
+        self._observations = kwargs.get('kobservations', np.zeros_like(
+            self._all_band_indices))
+
         self._band_v_vars = OrderedDict()
         for key in kwargs:
             if key.startswith('variance-band-'):
@@ -63,6 +67,14 @@ class Kernel(Array):
                 len(self._all_band_indices), self._variance)
 
         self._o_band_vs = self._band_vs[self._observed]
+
+        count_inds = np.logical_or(
+            self._o_otypes == 'magcount', self._o_otypes == 'countrate',
+            self._o_otypes == 'fluxdensity')
+
+        self._o_band_vs[count_inds] = (
+            10.0 ** (self._o_band_vs[
+                count_inds] / 2.5) - 1.0) * self._observations[count_inds]
 
         if self._type == 'full':
             self._band_vs_1 = self._band_vs
@@ -115,10 +127,12 @@ class Kernel(Array):
             C_CGS / self._freqs[i] / ANG_CGS for i, bi in
             enumerate(self._all_band_indices)])
         self._observed = np.array(kwargs.get('observed', []), dtype=bool)
+        self._observation_types = kwargs.get('observation_types')
         self._n_obs = len(self._observed)
 
         self._o_times = self._times[self._observed]
         self._o_waves = self._waves[self._observed]
+        self._o_otypes = self._observation_types[self._observed]
 
         if self._type == 'full':
             self._times_1 = self._times

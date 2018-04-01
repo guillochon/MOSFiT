@@ -35,11 +35,20 @@ class Diagonal(Array):
             print([x for x in self._o_types if x not in allowed_otypes])
             raise ValueError('Unrecognized observation type.')
 
+        # Get array of real observations.
+        observations = np.array([
+            ct if (t == 'countrate' or t == 'magcount') else y if (
+                t == 'magnitude') else fd if t == 'fluxdensity' else None
+            for y, ct, fd, u, t in zip(
+                self._mags, self._cts, self._fds,
+                self._upper_limits, self._o_types)
+        ])
+
         # Calculate (model - obs) residuals.
         residuals = np.array([
             (abs(x - ct) if (not u and ct is not None) or (
                 not isnan(x) and ct is not None and x < ct) else 0.0)
-            if t == 'countrate' or t == 'magcount' else
+            if (t == 'countrate' or t == 'magcount') else
             ((abs(x - y) if (not u and y is not None) or (
                 not isnan(x) and y is not None and x < y) else 0.0)
              if t == 'magnitude' else
@@ -57,7 +66,7 @@ class Diagonal(Array):
         # Observational errors to be put in diagonal of error matrix.
         diag = [
             ((ctel if (ct is not None and x > ct) else cteu))
-            if t == 'countrate' or t == 'magcount' else
+            if (t == 'countrate' or t == 'magcount') else
             ((el if (y is None or x > y) else eu))
             if t == 'magnitude' else
             ((fdel if (fd is not None and x > fd) else fdeu))
@@ -74,6 +83,7 @@ class Diagonal(Array):
         if np.any(diag == None):  # noqa: E711
             raise ValueError('Null error.')
 
+        ret['kobservations'] = observations
         ret['kdiagonal'] = diag
         ret['kresiduals'] = residuals
 
