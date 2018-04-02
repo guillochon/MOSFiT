@@ -25,7 +25,6 @@ class Diagonal(Array):
         self.preprocess(**kwargs)
         self._model_observations = np.copy(kwargs['model_observations'])
         self._model_observations = self._model_observations[self._observed]
-        self._o_types = self._observation_types[self._observed]
 
         ret = {}
 
@@ -103,6 +102,7 @@ class Diagonal(Array):
         self._upper_limits = np.array(kwargs.get('upperlimits', []),
                                       dtype=bool)
         self._observed = np.array(kwargs.get('observed', []), dtype=bool)
+        self._o_types = self._observation_types[self._observed]
 
         # Magnitudes first
         # Note: Upper limits (censored data) currently treated as a

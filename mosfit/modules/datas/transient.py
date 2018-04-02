@@ -23,7 +23,8 @@ class Transient(Module):
     }
     _OBS_KEYS = [
         'times', 'telescopes', 'systems', 'modes', 'instruments',
-        'bandsets', 'bands', 'frequencies', 'u_frequencies', 'measures'
+        'bandsets', 'bands', 'frequencies', 'u_frequencies', 'zeropoints',
+        'measures'
     ]
 
     def __init__(self, **kwargs):
@@ -298,11 +299,13 @@ class Transient(Module):
                                      ['' for x in band_list])
                 b_freqs = [None for x in band_list]
                 b_u_freqs = ['' for x in band_list]
+                b_zerops = [None for x in band_list]
                 b_measures = [[] for x in band_list]
                 obs.extend(
                     list(
                         zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
-                              band_list, b_freqs, b_u_freqs, b_measures))))
+                              band_list, b_freqs, b_u_freqs, b_zerops,
+                              b_measures))))
 
             # Prune extra observations if they are duplicitous to existing.
             uniqueobs = []

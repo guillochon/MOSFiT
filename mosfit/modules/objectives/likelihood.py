@@ -110,6 +110,10 @@ class Likelihood(Module):
         else:
             # Shortcut when matrix is diagonal.
             self._o_band_vs = kwargs['obandvs']
+            # print('likelihood')
+            # print(np.sqrt(diag))
+            # print(self._o_band_vs)
+            # print(residuals)
             value = -0.5 * np.sum(
                 residuals ** 2 / (self._o_band_vs ** 2 + diag) +
                 np.log(self._o_band_vs ** 2 + diag))

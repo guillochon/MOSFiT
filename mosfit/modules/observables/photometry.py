@@ -380,6 +380,8 @@ class Photometry(Module):
         self._ldist_const = np.log10(self._dist_const)
         self._luminosities = kwargs[self.key('luminosities')]
         self._frequencies = kwargs['all_frequencies']
+        self._zps = kwargs.get('all_zeropoints', np.zeros_like(
+            self._luminosities))
         zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
@@ -387,7 +389,8 @@ class Photometry(Module):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if bi >= 0:
-                if self._observation_types[li] == 'magnitude':
+                if (self._observation_types[li] == 'magnitude' or
+                        self._observation_types[li] == 'magcount'):
                     offsets[li] = self._band_offsets[bi]
                     wavs = kwargs['sample_wavelengths'][bi]
                     yvals = np.interp(
@@ -395,13 +398,6 @@ class Photometry(Module):
                         self._transmissions[bi]) * kwargs['seds'][li] / zp1
                     eff_fluxes[li] = np.trapz(
                         yvals, wavs) / self._filter_integrals[bi]
-                elif self._observation_types[li] == 'magcount':
-                    wavs = kwargs['sample_wavelengths'][bi]
-                    yvals = np.interp(
-                        wavs, self._band_wavelengths[bi],
-                        self._transmissions[bi]) * kwargs['seds'][li] / zp1 / (
-                            H_C_ANG_CGS / wavs) / ANG_CGS
-                    eff_fluxes[li] = np.trapz(yvals, wavs)
                 elif self._observation_types[li] == 'countrate':
                     wavs = np.array(kwargs['sample_wavelengths'][bi])
                     yvals = np.interp(
@@ -414,10 +410,17 @@ class Photometry(Module):
             else:
                 eff_fluxes[li] = kwargs['seds'][li][0] / ANG_CGS * (
                     C_CGS / (self._frequencies[li] ** 2))
-        nbs = self._observation_types != 'magnitude'
-        ybs = self._observation_types == 'magnitude'
+        nbs = np.logical_or(
+            self._observation_types == 'countrate',
+            self._observation_types == 'fluxdensity')
+        ybs = np.logical_or(
+            self._observation_types == 'magnitude',
+            self._observation_types == 'magcount')
+        cbs = self._observation_types == 'magcount'
         model_observations[nbs] = eff_fluxes[nbs] / self._dist_const
         model_observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
+        model_observations[cbs] = 10.0 ** (-0.4 * (model_observations[
+            cbs] - np.array(self._zps[cbs], dtype=float)))
         return {'model_observations': model_observations}
 
     def average_wavelengths(self, indices=None):

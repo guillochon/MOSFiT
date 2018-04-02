@@ -81,10 +81,8 @@ class Kernel(Array):
 
         # Compute relative errors for count-based observations.
         self._o_band_vs[self._count_inds] = (
-            10.0 ** (self._o_band_vs[
-                self._count_inds] / 2.5) - 1.0) * np.maximum(
-                    self._model_observations[self._count_inds],
-                    self._observations[self._count_inds])
+            10.0 ** (self._o_band_vs[self._count_inds] / 2.5) - 1.0
+            ) * self._model_observations[self._count_inds]
 
         if self._type == 'full':
             self._band_vs_1 = self._band_vs
