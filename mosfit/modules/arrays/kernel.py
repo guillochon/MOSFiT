@@ -53,8 +53,7 @@ class Kernel(Array):
         ])
 
         # Get array of model observations.
-        self._model_observations = kwargs.get('model_observations', [])[
-            self._observed]
+        self._model_observations = kwargs.get('model_observations', [])
 
         # Handle band-specific variances if that option is enabled.
         self._band_v_vars = OrderedDict()
@@ -77,12 +76,12 @@ class Kernel(Array):
             self._band_vs = np.full(
                 len(self._all_band_indices), self._variance)
 
-        self._o_band_vs = self._band_vs[self._observed]
-
         # Compute relative errors for count-based observations.
-        self._o_band_vs[self._count_inds] = (
-            10.0 ** (self._o_band_vs[self._count_inds] / 2.5) - 1.0
+        self._band_vs[self._count_inds] = (
+            10.0 ** (self._band_vs[self._count_inds] / 2.5) - 1.0
             ) * self._model_observations[self._count_inds]
+
+        self._o_band_vs = self._band_vs[self._observed]
 
         if self._type == 'full':
             self._band_vs_1 = self._band_vs
@@ -140,12 +139,11 @@ class Kernel(Array):
         self._observed = np.array(kwargs.get('observed', []), dtype=bool)
         self._observation_types = kwargs.get('observation_types')
         self._n_obs = len(self._observed)
+        self._count_inds = self._observation_types != 'magnitude'
 
         self._o_times = self._times[self._observed]
         self._o_waves = self._waves[self._observed]
         self._o_otypes = self._observation_types[self._observed]
-
-        self._count_inds = self._o_otypes != 'magnitude'
 
         if self._type == 'full':
             self._times_1 = self._times
