@@ -669,7 +669,30 @@ class Fitter(object):
                             'model_observations'][i]
                         photodict[PHOTOMETRY.E_MAGNITUDE] = output[
                             'model_variances'][i]
-                    if output['observation_types'][i] == 'fluxdensity':
+                    elif output['observation_types'][i] == 'magcount':
+                        if output['model_observations'][i] == 0.0:
+                            continue
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.COUNT_RATE] = output[
+                            'model_observations'][i]
+                        photodict[PHOTOMETRY.E_COUNT_RATE] = output[
+                            'model_variances'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = -2.5 * np.log10(
+                            output['model_observations'][i]) + output[
+                                'all_zeropoints'][i]
+                        photodict[PHOTOMETRY.E_UPPER_MAGNITUDE] = 2.5 * (
+                            np.log10(output['model_observations'][i] +
+                                     output['model_variances'][i]) -
+                            np.log10(output['model_observations'][i]))
+                        if (output['model_variances'][i] > output[
+                                'model_observations'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                        else:
+                            photodict[PHOTOMETRY.E_LOWER_MAGNITUDE] = 2.5 * (
+                                np.log10(output['model_observations'][i]) -
+                                np.log10(output['model_observations'][i] -
+                                         output['model_variances'][i]))
+                    elif output['observation_types'][i] == 'fluxdensity':
                         photodict[PHOTOMETRY.FREQUENCY] = output[
                             'frequencies'][i] * frequency_unit('GHz')
                         photodict[PHOTOMETRY.FLUX_DENSITY] = output[
@@ -695,7 +718,7 @@ class Fitter(object):
                                 photodict[PHOTOMETRY.FLUX_DENSITY])
                         photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                         photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                    if output['observation_types'][i] == 'countrate':
+                    elif output['observation_types'][i] == 'countrate':
                         photodict[PHOTOMETRY.COUNT_RATE] = output[
                             'model_observations'][i]
                         photodict[
