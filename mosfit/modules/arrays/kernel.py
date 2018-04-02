@@ -12,7 +12,7 @@ from mosfit.modules.arrays.array import Array
 
 
 class Kernel(Array):
-    """Calculate the maximum likelihood score for a model."""
+    """Calculate the kernel for use in computing the likelihood score."""
 
     MIN_COV_TERM = 1.0e-30
 
@@ -74,7 +74,9 @@ class Kernel(Array):
 
         self._o_band_vs[count_inds] = (
             10.0 ** (self._o_band_vs[
-                count_inds] / 2.5) - 1.0) * self._observations[count_inds]
+                count_inds] / 2.5) - 1.0) * np.maximum(
+                    self._model_observations[
+                        count_inds], self._observations[count_inds])
 
         if self._type == 'full':
             self._band_vs_1 = self._band_vs
