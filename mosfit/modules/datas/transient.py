@@ -326,8 +326,7 @@ class Transient(Module):
                 sorted(
                     set([x for x in self._data['times']] + list(
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
-            currobslist = list(zip(*(self._data[x] for x in ([
-                'times'] + self._OBS_KEYS))))
+            currobslist = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
 
             # Create additional fake observations.
             obslist = []
@@ -342,7 +341,7 @@ class Transient(Module):
 
             # Save these fake observations under keys with `extra_` prefix.
             if len(obslist):
-                for x, y in zip(['times'] + self._OBS_KEYS, zip(*obslist)):
+                for x, y in zip(self._OBS_KEYS, zip(*obslist)):
                     self._data['extra_' + x] = y
 
         for qkey in subtract_minimum_keys:
