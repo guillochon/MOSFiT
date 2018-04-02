@@ -642,8 +642,9 @@ class Fitter(object):
         draws = np.random.rand(samples_to_plot)
         indices = np.searchsorted(icdf, draws) - 1
 
-        ri = 1
+        ri = 0
         for xi, x in enumerate(samples):
+            ri = ri + 1
             prt.message('outputting_walker', [
                 ri, len(samples)], inline=True, min_time=0.2)
             if xi in indices:
@@ -815,7 +816,6 @@ class Fitter(object):
             urealdict = deepcopy(realdict)
             uentry[ENTRY.MODELS][0].add_realization(
                 check_for_dupes=False, **urealdict)
-            ri = ri + 1
         prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
