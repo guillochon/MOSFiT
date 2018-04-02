@@ -23,7 +23,7 @@ class Diagonal(Array):
     def process(self, **kwargs):
         """Process module."""
         self.preprocess(**kwargs)
-        self._model_observations = kwargs['model_observations']
+        self._model_observations = np.copy(kwargs['model_observations'])
         self._model_observations = self._model_observations[self._observed]
         self._o_types = self._observation_types[self._observed]
 
@@ -34,15 +34,6 @@ class Diagonal(Array):
         if np.any([x not in allowed_otypes for x in self._o_types]):
             print([x for x in self._o_types if x not in allowed_otypes])
             raise ValueError('Unrecognized observation type.')
-
-        # Get array of real observations.
-        observations = np.array([
-            ct if (t == 'countrate' or t == 'magcount') else y if (
-                t == 'magnitude') else fd if t == 'fluxdensity' else None
-            for y, ct, fd, u, t in zip(
-                self._mags, self._cts, self._fds,
-                self._upper_limits, self._o_types)
-        ])
 
         # Calculate (model - obs) residuals.
         residuals = np.array([
@@ -83,7 +74,6 @@ class Diagonal(Array):
         if np.any(diag == None):  # noqa: E711
             raise ValueError('Null error.')
 
-        ret['kobservations'] = observations
         ret['kdiagonal'] = diag
         ret['kresiduals'] = residuals
 

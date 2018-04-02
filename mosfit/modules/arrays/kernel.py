@@ -28,8 +28,10 @@ class Kernel(Array):
         """Process module."""
         self.preprocess(**kwargs)
 
-        ret = {}
+        ret = OrderedDict()
 
+        # If we are trying to krig between observations, we need an array with
+        # dimensions equal to the number of intermediate observations.
         if self._type == 'full':
             kskey = 'kfmat'
         elif self._type == 'oa':
@@ -42,10 +44,19 @@ class Kernel(Array):
         # Get band variances
         self._variance = kwargs.get(self.key('variance'), 0.0)
 
-        # Get real observations.
-        self._observations = kwargs.get('kobservations', np.zeros_like(
-            self._all_band_indices))
+        # Get array of real observations.
+        self._observations = np.array([
+            ct if (t == 'countrate' or t == 'magcount') else y if (
+                t == 'magnitude') else fd if t == 'fluxdensity' else None
+            for y, ct, fd, t in zip(
+                self._mags, self._cts, self._fds, self._o_otypes)
+        ])
 
+        # Get array of model observations.
+        self._model_observations = kwargs.get('model_observations', [])[
+            self._observed]
+
+        # Handle band-specific variances if that option is enabled.
         self._band_v_vars = OrderedDict()
         for key in kwargs:
             if key.startswith('variance-band-'):
@@ -68,15 +79,12 @@ class Kernel(Array):
 
         self._o_band_vs = self._band_vs[self._observed]
 
-        count_inds = np.logical_or(
-            self._o_otypes == 'magcount', self._o_otypes == 'countrate',
-            self._o_otypes == 'fluxdensity')
-
-        self._o_band_vs[count_inds] = (
+        # Compute relative errors for count-based observations.
+        self._o_band_vs[self._count_inds] = (
             10.0 ** (self._o_band_vs[
-                count_inds] / 2.5) - 1.0) * np.maximum(
-                    self._model_observations[
-                        count_inds], self._observations[count_inds])
+                self._count_inds] / 2.5) - 1.0) * np.maximum(
+                    self._model_observations[self._count_inds],
+                    self._observations[self._count_inds])
 
         if self._type == 'full':
             self._band_vs_1 = self._band_vs
@@ -123,6 +131,9 @@ class Kernel(Array):
         self._all_band_indices = kwargs.get('all_band_indices', [])
         self._are_bands = np.array(self._all_band_indices) >= 0
         self._freqs = kwargs.get('all_frequencies', [])
+        self._mags = np.array(kwargs.get('magnitudes', []))
+        self._fds = np.array(kwargs.get('fluxdensities', []))
+        self._cts = np.array(kwargs.get('countrates', []))
         self._u_freqs = kwargs.get('all_u_frequencies', [])
         self._waves = np.array([
             self._average_wavelengths[bi] if bi >= 0 else
@@ -135,6 +146,8 @@ class Kernel(Array):
         self._o_times = self._times[self._observed]
         self._o_waves = self._waves[self._observed]
         self._o_otypes = self._observation_types[self._observed]
+
+        self._count_inds = self._o_otypes != 'magnitude'
 
         if self._type == 'full':
             self._times_1 = self._times

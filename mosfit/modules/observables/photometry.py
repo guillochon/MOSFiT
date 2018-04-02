@@ -10,8 +10,8 @@ import numpy as np
 from astropy import constants as c
 from astropy import units as u
 from astropy.io.votable import parse as voparse
-from mosfit.constants import (ANG_CGS, C_CGS, FOUR_PI, H_C_ANG_CGS, H_C_CGS,
-                              MAG_FAC, MPC_CGS)
+from mosfit.constants import (ANG_CGS, C_CGS, FOUR_PI, H_C_ANG_CGS, MAG_FAC,
+                              MPC_CGS)
 from mosfit.modules.module import Module
 from mosfit.utils import get_url_file_handle, listify, open_atomic, syst_syns
 
@@ -383,7 +383,7 @@ class Photometry(Module):
         zp1 = 1.0 + kwargs['redshift']
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
-        observations = np.zeros_like(self._luminosities)
+        model_observations = np.zeros_like(self._luminosities)
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if bi >= 0:
@@ -399,15 +399,15 @@ class Photometry(Module):
                     wavs = kwargs['sample_wavelengths'][bi]
                     yvals = np.interp(
                         wavs, self._band_wavelengths[bi],
-                        self._transmissions[bi]) * kwargs['seds'][
-                            li] / zp1 / (H_C_ANG_CGS / wavs) / ANG_CGS
+                        self._transmissions[bi]) * kwargs['seds'][li] / zp1 / (
+                            H_C_ANG_CGS / wavs) / ANG_CGS
                     eff_fluxes[li] = np.trapz(yvals, wavs)
                 elif self._observation_types[li] == 'countrate':
                     wavs = np.array(kwargs['sample_wavelengths'][bi])
-                    yvals = (np.interp(
-                        wavs, self._band_wavelengths[bi], self._band_areas[
-                            bi]) * kwargs['seds'][li] / zp1 / (
-                                H_C_ANG_CGS / wavs) / ANG_CGS)
+                    yvals = np.interp(
+                        wavs, self._band_wavelengths[bi],
+                        self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
+                            H_C_ANG_CGS / wavs) / ANG_CGS
                     eff_fluxes[li] = np.trapz(yvals, wavs)
                 else:
                     raise RuntimeError('Unknown observation kind.')
@@ -416,9 +416,9 @@ class Photometry(Module):
                     C_CGS / (self._frequencies[li] ** 2))
         nbs = self._observation_types != 'magnitude'
         ybs = self._observation_types == 'magnitude'
-        observations[nbs] = eff_fluxes[nbs] / self._dist_const
-        observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
-        return {'model_observations': observations}
+        model_observations[nbs] = eff_fluxes[nbs] / self._dist_const
+        model_observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
+        return {'model_observations': model_observations}
 
     def average_wavelengths(self, indices=None):
         """Return average wavelengths for specified band indices."""
