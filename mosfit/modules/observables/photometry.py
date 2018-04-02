@@ -420,7 +420,7 @@ class Photometry(Module):
         model_observations[nbs] = eff_fluxes[nbs] / self._dist_const
         model_observations[ybs] = self.abmag(eff_fluxes[ybs], offsets[ybs])
         model_observations[cbs] = 10.0 ** (-0.4 * (model_observations[
-            cbs] - np.array(self._zps[cbs], dtype=float)))
+            cbs] - self._zps[cbs]))
         return {'model_observations': model_observations}
 
     def average_wavelengths(self, indices=None):
