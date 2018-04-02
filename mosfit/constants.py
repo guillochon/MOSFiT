@@ -12,6 +12,7 @@ LOCAL_LIKELIHOOD_FLOOR = -1.0e8
 ANG_CGS = u.Angstrom.cgs.scale
 AU_CGS = u.au.cgs.scale
 C_CGS = c.c.cgs.value
+H_CGS = c.h.cgs.value
 DAY_CGS = u.day.cgs.scale
 FOE = 1.0e51
 FOUR_PI = 4.0 * np.pi
@@ -25,3 +26,5 @@ MAG_FAC = 2.5
 MPC_CGS = u.Mpc.cgs.scale
 
 KS_DAYS = float(Decimal('1000') / Decimal(DAY_CGS))
+H_C_CGS = H_CGS * C_CGS
+H_C_ANG_CGS = H_C_CGS / ANG_CGS

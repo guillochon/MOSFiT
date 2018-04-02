@@ -8,6 +8,7 @@
                 "e_magnitude":["optional", "numeric"],
                 "e_upper_magnitude":["optional", "numeric"],
                 "e_lower_magnitude":["optional", "numeric"],
+                "zeropoint":"optional",
                 "band":"optional",
                 "frequency":["optional", "numeric"],
                 "u_frequency":"optional",
