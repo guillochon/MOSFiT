@@ -273,7 +273,8 @@ class Transient(Module):
                     self._data['fluxdensities']))]
 
             # Build an observation array out of the real data first.
-            obs = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
+            obs = list(zip(*(self._data[x] for x in self._OBS_KEYS if
+                             x != 'times')))
 
             # Append extra observations if requested.
             if len(band_list):
