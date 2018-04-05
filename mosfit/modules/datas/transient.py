@@ -260,7 +260,8 @@ class Transient(Module):
                     self._data[key] = float(self._data[key])
                     self._data_determined_parameters.append(key)
 
-        if 'times' in self._data and smooth_times >= 0:
+        if any(x in self._data for x in [
+                'magnitudes', 'countrates', 'fluxdensities']):
             # Add a list of tags for each observation to indicate what unit
             # observation is provided in.
             self._data['measures'] = [(
@@ -272,6 +273,7 @@ class Transient(Module):
                     self._data['countrates'],
                     self._data['fluxdensities']))]
 
+        if 'times' in self._data and smooth_times >= 0:
             # Build an observation array out of the real data first.
             obs = list(zip(*(self._data[x] for x in self._OBS_KEYS if
                              x != 'times')))
