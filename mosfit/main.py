@@ -97,6 +97,13 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_limiting_magnitude'))
 
     parser.add_argument(
+        '--prefer-fluxes',
+        dest='prefer_fluxes',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_prefer_fluxes'))
+
+    parser.add_argument(
         '--band-list',
         '--extra-bands',
         dest='band_list',

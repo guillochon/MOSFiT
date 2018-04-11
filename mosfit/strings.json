@@ -148,6 +148,7 @@
     "parser_parameter_paths": "Paths to parameter files corresponding to each model file; length of this list should be equal to the length of the list of models",
     "parser_post_burn": "Run emcee this many more iterations after the burn-in phase. The burn-in phase will thus be run for (i - p) iterations, where i is the total number of iterations set with `-i` and p is the value of this parameter.",
     "parser_prefer_cache": "MOSFiT will prefer to use cached data and will only use online resources if they are not available locally.",
+    "parser_prefer_fluxes": "If magnitudes and fluxes exist for the same observation(s), prefer the flux representation over the magnitude representation.",
     "parser_print_trees": "Print the full dependency trees of each model.",
     "parser_quiet": "Print minimal output upon execution. Don't display our amazing logo :-(",
     "parser_run_until_converged": "Run each model until it has converged. This parameter has different meanings depending on the sampler used:\n\nFor the `ensembler`, this parameter corresponds to the PSRF [Default: 1.1].\nFor the `nester`, this parameter controls both the initial dlogz in the static phase of the sampling and the KL-divergence criterion in the dynamic phase of the sampling [Default: 0.02].\n\nThis will run beyond the specified number of iterations, and is recommended when the `--upload/-u` flag is set.",
