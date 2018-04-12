@@ -60,6 +60,12 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cutoff}"
+    },
     "line_wavelength":{
         "kind":"parameter",
         "value":7.5e3,
@@ -118,12 +124,13 @@
             "temperature"
         ]
     },
-    "blackbody":{
+    "blackbody_cutoff":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor"
+            "temperature_floor",
+            "cutoff_wavelength"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -132,7 +139,7 @@
     "line":{
         "kind":"sed",
         "inputs":[
-            "blackbody",
+            "blackbody_cutoff",
             "redshift",
             "line_wavelength",
             "line_width",
