@@ -1,0 +1,24 @@
+To cite MOSFiT in publications, please use:
+
+Guillochon, J.; Nicholl, M.; Villar, V. A., 2018, ApJS, Accepted
+
+For LaTex and BibTex users:
+
+\bibitem[Turk et al.(2011)]{2011ApJS..192....9T} Turk, M.~J., Smith, B.~D.,
+Oishi, J.~S., et al.\ 2011, The Astrophysical Journal Supplement Series, 192, 9
+
+@ARTICLE{2017arXiv171002145G,
+   author = {{Guillochon}, J. and {Nicholl}, M. and {Villar}, V.~A. and {Mockler}, B. and 
+	{Narayan}, G. and {Mandel}, K.~S. and {Berger}, E. and {Williams}, P.~K.~G.
+	},
+    title = "{MOSFiT: Modular Open-Source Fitter for Transients}",
+  journal = {ArXiv e-prints},
+archivePrefix = "arXiv",
+   eprint = {1710.02145},
+ primaryClass = "astro-ph.IM",
+ keywords = {Astrophysics - Instrumentation and Methods for Astrophysics, Astrophysics - High Energy Astrophysical Phenomena},
+     year = 2017,
+    month = oct,
+   adsurl = {http://adsabs.harvard.edu/abs/2017arXiv171002145G},
+  adsnote = {Provided by the SAO/NASA Astrophysics Data System}
+}
