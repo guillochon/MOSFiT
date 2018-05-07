@@ -12,11 +12,12 @@ from operator import attrgetter
 from unicodedata import normalize
 
 import numpy as np
-
+from astropy.time import Time as astrotime
 from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
+from six import string_types
 
 
 class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -599,9 +600,6 @@ def main():
         prt.message('enabling_s')
         args.smooth_times = 0
 
-    if len(args.time_list):
-        args.time_list = [float(x) for x in args.time_list]
-
     changed_iterations = False
     if args.iterations == -1:
         if len(args.events) == 0:
@@ -609,6 +607,61 @@ def main():
             args.iterations = 0
         else:
             args.iterations = 5000
+
+    if len(args.date_list):
+        if changed_iterations:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = [str(astrotime(x.replace('/', '-')).mjd)
+                              for x in args.date_list]
+            args.time_unit = 'mjd'
+
+    if len(args.mjd_list):
+        if changed_iterations:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = args.mjd_list
+            args.time_unit = 'mjd'
+
+    if len(args.jd_list):
+        if changed_iterations:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = [str(astrotime(
+                float(x), format='jd').mjd) for x in args.jd_list]
+            args.time_unit = 'mjd'
+
+    if len(args.phase_list):
+        if changed_iterations:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = args.phase_list
+            args.time_unit = 'phase'
+
+    if len(args.time_list):
+        if any([any([y in x]) for y in ['-', '/'] for x in args.time_list]):
+            try:
+                args.time_list = [astrotime(
+                    x.replace('/', '-')).mjd for x in args.time_list]
+            except ValueError:
+                if len(args.time_list) == 1 and isinstance(
+                        args.time_list[0], string_types):
+                    args.time_list = args.time_list[0].split()
+                args.time_list = [float(x) for x in args.time_list]
+                args.time_unit = 'phase'
+        else:
+            if any(['+' in x for x in args.time_list]):
+                args.time_unit = 'phase'
+            args.time_list = [float(x) for x in args.time_list]
+
+        if min(args.time_list) > 2400000:
+            prt.message('assuming_jd')
+            args.time_list = [x - 2400000.5 for x in args.time_list]
+            args.time_unit = 'mjd'
+        elif min(args.time_list) > 50000:
+            prt.message('assuming_mjd')
+            args.time_unit = 'mjd'
+        args.time_unit = None
 
     if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))

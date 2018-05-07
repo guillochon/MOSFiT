@@ -78,6 +78,7 @@
     "negative_redshift": "Redshift <= 0 (`{}`), setting luminosity distance to 10 pc.",
     "nmeas_nfree": "\n{} measurements, {} free parameters.",
     "no_data": "\nCould not find data for `{}` locally or in the `{}`.",
+    "no_dates_gen": "Events created in generative mode cannot have custom dates set (only times relative to start of transient).",
     "no_delimiter": "No delimeter (single column of data).",
     "no_event_by_name": "Could not find event by that name, skipping!",
     "no_events_models": "No events or models specified, initializing and then exiting.",
