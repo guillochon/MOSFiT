@@ -85,6 +85,7 @@
     "no_exact_match": "'No exact match to given transient found. Did you mean one of the following transients?",
     "no_fittable_data": "No fittable data in `{}`!",
     "no_matching_column": "\nCould not automatically find a column corresponding to `{}`, which of the following columns correponds to this quantity?",
+    "no_maxdate": "No `maxdate` attribute for this transient, add one into the JSON input file before using the `--extra-phases` option.",
     "no_model_for_type": "No model available that matches the given transient's claimed type.",
     "no_model_type": "No model specified and no claimed type for specified transient.",
     "no_models_avail": "Skipping `{}`, no models available to fit the transient.",
