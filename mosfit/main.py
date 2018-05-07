@@ -98,6 +98,42 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_limiting_magnitude'))
 
     parser.add_argument(
+        '--time-list',
+        '--extra-times',
+        dest='time_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-dates',
+        dest='date_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-mjds',
+        dest='mjd_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-jds',
+        dest='jd_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-phases',
+        dest='phase_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
         '--band-list',
         '--extra-bands',
         dest='band_list',

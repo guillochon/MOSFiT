@@ -101,6 +101,7 @@
     "parser_band_bandsets": "List of bandsets corresponding to the bands listed in `--band-list`.",
     "parser_band_instruments": "List of instruments corresponding to the bands listed in `--band-list`.",
     "parser_band_list": "List of additional bands to plot when plotting model light curves that are not being matched to actual transient data.",
+    "parser_time_list": "List of additional times to generate light curves at. Times can either be specified as dates in YYYY-MM-DD format, MJDs, JDs, or a time relative to the observed maximum (indiciated by prepending a +/- to each time). More specific flags that presume one of these date formats (rather than attempting to guess) are `--extra-dates`, `--extra-mjds`, `--extra-jds`, and `--extra-phases`.",
     "parser_band_sampling_points": "Number of wavelengths to sample in each band when modeling photometry.",
     "parser_band_systems": "List of photometric systems corresponding to the bands listed in `--band-list`.",
     "parser_burn": "Burn in the chains for this many iterations. During burn-in, global optimization (\"fracking\"), replacement, and a Gibbs variant of emcee are used to speed convergence. However, as none of these methods preserve detailed balance, the posteriors obtained during the burn-in phase are very approximate. No convergence information will be displayed during burn-in.",
