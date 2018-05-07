@@ -232,7 +232,7 @@ def get_parser(only=None, printer=None):
         dest='smooth_times',
         type=int,
         const=0,
-        default=20,
+        default=21,
         nargs='?',
         action='store',
         help=prt.text('parser_smooth_times'))
@@ -598,6 +598,9 @@ def main():
     if len(args.band_list) and args.smooth_times == -1:
         prt.message('enabling_s')
         args.smooth_times = 0
+
+    if len(args.time_list):
+        args.time_list = [float(x) for x in args.time_list]
 
     changed_iterations = False
     if args.iterations == -1:

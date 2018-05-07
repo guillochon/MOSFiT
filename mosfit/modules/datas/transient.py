@@ -44,6 +44,7 @@ class Transient(Module):
                  exclude_systems=[],
                  exclude_sources=[],
                  exclude_kinds=[],
+                 time_list=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -255,7 +256,7 @@ class Transient(Module):
                     self._data[key] = float(self._data[key])
                     self._data_determined_parameters.append(key)
 
-        if 'times' in self._data and smooth_times >= 0:
+        if 'times' in self._data and (smooth_times >= 0 or time_list):
             obs = list(
                 zip(*(self._data['telescopes'], self._data['systems'],
                       self._data['modes'], self._data['instruments'],
@@ -301,10 +302,11 @@ class Transient(Module):
                      (extrapolate_time[0], extrapolate_time[0])))
             mint, maxt = (min(self._data['times']) - minet,
                           max(self._data['times']) + maxet)
-            alltimes = list(
-                sorted(
-                    set([x for x in self._data['times']] + list(
-                        np.linspace(mint, maxt, max(smooth_times, 2))))))
+            alltimes = time_list + [x for x in self._data['times']]
+            if smooth_times >= 0:
+                alltimes += list(
+                    np.linspace(mint, maxt, max(smooth_times, 2)))
+            alltimes = list(sorted(set(alltimes)))
             currobslist = list(
                 zip(*(
                     self._data['times'], self._data['telescopes'],

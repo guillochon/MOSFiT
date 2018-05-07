@@ -108,6 +108,7 @@ class Fitter(object):
                    events=[],
                    models=[],
                    max_time='',
+                   time_list=[],
                    band_list=[],
                    band_systems=[],
                    band_instruments=[],
@@ -335,6 +336,7 @@ class Fitter(object):
                         gen_args = {
                             'name': mod_name,
                             'max_time': max_time,
+                            'time_list': time_list,
                             'band_list': band_list,
                             'band_systems': band_systems,
                             'band_instruments': band_instruments,
@@ -357,6 +359,7 @@ class Fitter(object):
                             exclude_systems=exclude_systems,
                             exclude_sources=exclude_sources,
                             exclude_kinds=exclude_kinds,
+                            time_list=time_list,
                             band_list=band_list,
                             band_systems=band_systems,
                             band_instruments=band_instruments,
@@ -1250,7 +1253,7 @@ class Fitter(object):
         uname = '_'.join(
             [self._event_name, entryhash, modelhash])
 
-        if not os.path.exists(output_path):
+        if output_path and not os.path.exists(output_path):
             os.makedirs(output_path)
 
         if not os.path.exists(model.get_products_path()):
@@ -1358,6 +1361,7 @@ class Fitter(object):
     def generate_dummy_data(self,
                             name,
                             max_time=1000.,
+                            time_list=[],
                             band_list=[],
                             band_systems=[],
                             band_instruments=[],
@@ -1366,9 +1370,10 @@ class Fitter(object):
         # Just need 2 plot points for beginning and end.
         plot_points = 2
 
-        time_list = np.linspace(0.0, max_time, plot_points)
+        times = list(sorted(set(
+            list(np.linspace(0.0, max_time, plot_points)) + time_list)))
         band_list_all = ['V'] if len(band_list) == 0 else band_list
-        times = np.repeat(time_list, len(band_list_all))
+        times = np.repeat(times, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
         if isinstance(band_systems, string_types):
@@ -1398,10 +1403,10 @@ class Fitter(object):
                 for x in range(len(band_list_all) - len(band_bandsets))
             ]
 
-        bands = [i for s in [band_list_all for x in time_list] for i in s]
-        systs = [i for s in [band_systems for x in time_list] for i in s]
-        insts = [i for s in [band_instruments for x in time_list] for i in s]
-        bsets = [i for s in [band_bandsets for x in time_list] for i in s]
+        bands = [i for s in [band_list_all for x in times] for i in s]
+        systs = [i for s in [band_systems for x in times] for i in s]
+        insts = [i for s in [band_instruments for x in times] for i in s]
+        bsets = [i for s in [band_bandsets for x in times] for i in s]
 
         data = {name: {'photometry': []}}
         for ti, tim in enumerate(times):
