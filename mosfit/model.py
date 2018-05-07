@@ -28,7 +28,7 @@ from six import string_types
 class Model(object):
     """Define a semi-analytical model to fit transients with."""
 
-    MODEL_OUTPUT_DIR = 'products'
+    MODEL_PRODUCTS_DIR = 'products'
     MIN_WAVE_FRAC_DIFF = 0.1
     DRAW_LIMIT = 10
 
@@ -40,6 +40,7 @@ class Model(object):
                  model='',
                  data={},
                  wrap_length=100,
+                 output_path='',
                  pool=None,
                  test=False,
                  printer=None,
@@ -49,6 +50,8 @@ class Model(object):
         from mosfit.fitter import Fitter
 
         self._model_name = model
+        self._parameter_path = parameter_path
+        self._output_path = output_path
         self._pool = SerialPool() if pool is None else pool
         self._is_master = pool.is_master() if pool else False
         self._wrap_length = wrap_length
@@ -177,7 +180,7 @@ class Model(object):
                 del(self._model[tag])
 
         # with open(os.path.join(
-        #         self.MODEL_OUTPUT_DIR,
+        #         self.get_products_path(),
         #         self._model_name + '.json'), 'w') as f:
         #     json.dump(self._model, f)
 
@@ -187,18 +190,19 @@ class Model(object):
 
         pp = ''
 
-        local_pp = (parameter_path if '/' in parameter_path
-                    else os.path.join('models', model_dir, parameter_path))
+        local_pp = (self._parameter_path if '/' in self._parameter_path
+                    else os.path.join('models', model_dir,
+                                      self._parameter_path))
 
         if os.path.isfile(local_pp):
             selected_pp = local_pp
         else:
             selected_pp = os.path.join(
-                self._dir_path, 'models', model_dir, parameter_path)
+                self._dir_path, 'models', model_dir, self._parameter_path)
 
         # First try user-specified path
-        if parameter_path and os.path.isfile(parameter_path):
-            pp = parameter_path
+        if self._parameter_path and os.path.isfile(self._parameter_path):
+            pp = self._parameter_path
         # Then try directory we are running from
         elif os.path.isfile('parameters.json'):
             pp = 'parameters.json'
@@ -273,7 +277,7 @@ class Model(object):
                     self._call_stack[task] = unsorted_call_stack[task]
 
         # with open(os.path.join(
-        #         self.MODEL_OUTPUT_DIR,
+        #         self.get_products_path(),
         #         self._model_name + '-stack.json'), 'w') as f:
         #     json.dump(self._call_stack, f)
 
@@ -321,6 +325,10 @@ class Model(object):
 
         # Count free parameters.
         self.determine_free_parameters()
+
+    def get_products_path(self):
+        """Get path to products."""
+        return os.path.join(self._output_path, self.MODEL_PRODUCTS_DIR)
 
     def _load_task_module(self, task, call_stack=None):
         if not call_stack:
@@ -799,6 +807,7 @@ class Model(object):
                     chosen_one = np.random.choice(range(len(walkers_pool)))
                 for e, elem in enumerate(walkers_pool[chosen_one]):
                     if elem is not None:
+                        print(elem)
                         draw[e] = elem
             if not test:
                 p = draw

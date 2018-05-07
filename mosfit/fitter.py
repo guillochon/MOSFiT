@@ -130,6 +130,7 @@ class Fitter(object):
                    exclude_systems=[],
                    exclude_sources=[],
                    exclude_kinds=[],
+                   output_path='',
                    suffix='',
                    upload=False,
                    write=False,
@@ -315,6 +316,7 @@ class Fitter(object):
                         model=mod_name,
                         data=self._event_data,
                         parameter_path=parameter_path,
+                        output_path=output_path,
                         wrap_length=self._wrap_length,
                         test=self._test,
                         printer=prt,
@@ -440,6 +442,7 @@ class Fitter(object):
                             frack_step=frack_step,
                             gibbs=gibbs,
                             pool=pool,
+                            output_path=output_path,
                             suffix=suffix,
                             write=write,
                             upload=upload,
@@ -480,6 +483,7 @@ class Fitter(object):
                  fracking=True,
                  gibbs=False,
                  pool=None,
+                 output_path='',
                  suffix='',
                  write=False,
                  upload=False,
@@ -1246,15 +1250,18 @@ class Fitter(object):
         uname = '_'.join(
             [self._event_name, entryhash, modelhash])
 
-        if not os.path.exists(model.MODEL_OUTPUT_DIR):
-            os.makedirs(model.MODEL_OUTPUT_DIR)
+        if not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        if not os.path.exists(model.get_products_path()):
+            os.makedirs(model.get_products_path())
 
         if write:
             prt.message('writing_complete')
             with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                    os.path.join(model.get_products_path(), 'walkers.json'),
                     'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
+                        model.get_products_path(),
                         self._event_name + (
                             ('_' + suffix) if suffix else '') +
                         '.json'), 'w') as feven:
@@ -1264,9 +1271,9 @@ class Fitter(object):
             if save_full_chain:
                 prt.message('writing_full_chain')
                 with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR,
+                    os.path.join(model.get_products_path(),
                                  'chain.json'), 'w') as flast, open_atomic(
-                        os.path.join(model.MODEL_OUTPUT_DIR,
+                        os.path.join(model.get_products_path(),
                                      self._event_name + '_chain' + (
                                          ('_' + suffix) if suffix else '') +
                                      '.json'), 'w') as feven:
@@ -1278,9 +1285,9 @@ class Fitter(object):
             if extra_outputs:
                 prt.message('writing_extras')
                 with open_atomic(os.path.join(
-                    model.MODEL_OUTPUT_DIR, 'extras.json'),
+                    model.get_products_path(), 'extras.json'),
                         'w') as flast, open_atomic(os.path.join(
-                            model.MODEL_OUTPUT_DIR, self._event_name +
+                            model.get_products_path(), self._event_name +
                             '_extras' + (('_' + suffix) if suffix else '') +
                             '.json'), 'w') as feven:
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
@@ -1288,9 +1295,9 @@ class Fitter(object):
 
             prt.message('writing_model')
             with open_atomic(os.path.join(
-                model.MODEL_OUTPUT_DIR, 'upload.json'),
+                model.get_products_path(), 'upload.json'),
                     'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
+                        model.get_products_path(),
                         uname + (('_' + suffix) if suffix else '') +
                         '.json'), 'w') as feven:
                 entabbed_json_dump(ouentry, flast, separators=(',', ':'))

@@ -220,6 +220,13 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_limit_fitting_mjds'))
 
     parser.add_argument(
+        '--output-path',
+        '-o',
+        dest='output_path',
+        default='',
+        help=prt.text('parser_output_path'))
+
+    parser.add_argument(
         '--suffix',
         '-s',
         dest='suffix',

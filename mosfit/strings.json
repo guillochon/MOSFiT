@@ -134,6 +134,7 @@
     "parser_num_walkers": "Number of walkers to use in emcee. When fitting, this must be set to at least twice the total number of free parameters within the model, not setting this parameter will set it to this minimum.",
     "parser_offline": "MOSFiT will only use cached data and will not attempt to use any online resources.",
     "parser_open_in_browser": "Open the events listed with `-e` in the user's web browser one at a time.",
+    "parser_output_directory": "Set the base path for all MOSFiT outputs.",
     "parser_parameter_paths": "Paths to parameter files corresponding to each model file; length of this list should be equal to the length of the list of models",
     "parser_post_burn": "Run emcee this many more iterations after the burn-in phase. The burn-in phase will thus be run for (i - p) iterations, where i is the total number of iterations set with `-i` and p is the value of this parameter.",
     "parser_prefer_cache": "MOSFiT will prefer to use cached data and will only use online resources if they are not available locally.",
