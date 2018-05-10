@@ -811,7 +811,6 @@ class Model(object):
                     chosen_one = np.random.choice(range(len(walkers_pool)))
                 for e, elem in enumerate(walkers_pool[chosen_one]):
                     if elem is not None:
-                        print(elem)
                         draw[e] = elem
             if not test:
                 p = draw

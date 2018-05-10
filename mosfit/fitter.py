@@ -577,11 +577,13 @@ class Fitter(object):
                 new_walk = np.full(model._num_free_parameters, None)
                 for k, key in enumerate(model._free_parameters):
                     param = model._modules[key]
-                    walk_param = walk[1].get(key, None)
-                    if walk_param is None:
+                    walk_param = walk[1].get(key)
+                    if walk_param is None or 'value' not in walk_param:
                         continue
                     if param:
-                        new_walk[k] = param.fraction(walk_param['value'])
+                        val = param.fraction(walk_param['value'])
+                        if not np.isnan(val):
+                            new_walk[k] = val
                 walkers_pool.append(new_walk)
                 appended_walker = True
             if not appended_walker:
