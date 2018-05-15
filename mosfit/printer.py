@@ -48,6 +48,7 @@ class Printer(object):
         RED = '\033[0;91m'
         UNDERLINE = '\033[4m'
         YELLOW = '\033[38;5;220m'
+        BLINK = '\033[5m'
 
         codes = {
             '!b': BLUE,
@@ -59,7 +60,8 @@ class Printer(object):
             '!o': ORANGE,
             '!r': RED,
             '!u': UNDERLINE,
-            '!y': YELLOW
+            '!y': YELLOW,
+            '!B': BLINK
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
