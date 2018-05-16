@@ -649,7 +649,7 @@ def main():
             args.iterations = 5000
 
     if len(args.date_list):
-        if changed_iterations:
+        if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
             args.time_list = [str(astrotime(x.replace('/', '-')).mjd)
@@ -657,14 +657,14 @@ def main():
             args.time_unit = 'mjd'
 
     if len(args.mjd_list):
-        if changed_iterations:
+        if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
             args.time_list = args.mjd_list
             args.time_unit = 'mjd'
 
     if len(args.jd_list):
-        if changed_iterations:
+        if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
             args.time_list = [str(astrotime(
@@ -672,7 +672,7 @@ def main():
             args.time_unit = 'mjd'
 
     if len(args.phase_list):
-        if changed_iterations:
+        if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
             args.time_list = args.phase_list
