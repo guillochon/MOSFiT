@@ -152,6 +152,21 @@ Baselining and batching
 
 Description forthcoming.
 
+.. _switching:
+
+Switching between samplers
+==========================
+
+After completing a nested sampling run, it is often useful to draw parameter combinations from the large collection of samples generated to perform additional analysis (particularly for data-intensive tasks, such as analyzing a collection of model SEDs). This can be easily done by loading the output from the previous run with the ``ensembler`` method (the default), and setting ``MOSFiT`` to run in generative mode with ``-G``,
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -w name-of-output.json -G -N 100
+
+where above we specify that we would like 100 parameter combinations from the ``nester`` output. The weights determined with ``nester`` will be used to proportionately draw walkers for ``ensembler``, yielding a sample that properly maps to the posterior determined by the nested sampling.
+
+As the above does not perform any additional sampling, the user does not need to specify an event to compare against, and can simply omit the ``-e`` flag and its argument(s).
+
 .. _io:
 
 --------------------------

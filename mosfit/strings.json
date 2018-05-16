@@ -86,7 +86,7 @@
     "moves_accepted": "Moves accepted",
     "must_select_source": "You have set the upload flag, but no reference information was found in the provided file. In order to upload data to the Open Catalogs, a reference for the data is required. While a bibcode is preferred, you can use your last name as a placeholder.",
     "negative_redshift": "Redshift <= 0 (`{}`), setting luminosity distance to 10 pc.",
-    "nester_not_use_walkers": "The `nester` sampler does not use walkers for initialization. If you wish to simply re-generate outputs from a prior run (but not resample), use the `ensembler` sampler instead with `-i 0`.",
+    "nester_not_use_walkers": "The `nester` sampler does not use walkers for initialization. If you wish to simply re-generate outputs from a prior run (but not resample), use the `ensembler` sampler instead with `-G`.",
     "nmeas_nfree": "\n{} measurements, {} free parameters.",
     "no_data": "\nCould not find data for `{}` locally or in the `{}`.",
     "no_dates_gen": "Events created in generative mode cannot have custom dates set (only times relative to start of transient).",
