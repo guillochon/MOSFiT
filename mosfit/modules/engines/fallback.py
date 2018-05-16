@@ -231,14 +231,17 @@ class Fallback(Engine):
             self._betas = {'4-3': beta43, '5-3': beta53}
 
         else:
-            print('b outside range, bmin = 0; bmax = 2; b =', self._b)
+            self._printer.prt(
+                'b outside range, bmin = 0; bmax = 2; b = {}'.format(
+                    self._b))
+            self._b = 2.0 if self._b > 2 else 0.0
             beta_outside_range = True
 
         # GET GAMMA VALUE
 
         gamma_interp = False
 
-        self._Mstar = kwargs.get(self.key('starmass'), None)
+        self._Mstar = kwargs.get(self.key('starmass'))
         if self._Mstar <= 0.3 or self._Mstar >= 22:
             gammas = [self._gammas[1]]  # gamma = ['5-3']
             self._beta = self._betas['5-3']
@@ -294,7 +297,7 @@ class Fallback(Engine):
                     beta_interp = True
                     break
 
-            if not beta_outside_range and beta_interp:
+            if beta_interp:
                 # ----------- LINEAR BETA INTERPOLATION --------------
 
                 # get new dmdts  (2 arrays, pre & post peak (peak in array 2))
@@ -337,7 +340,7 @@ class Fallback(Engine):
                 timedict[g] = time
                 dmdtdict[g] = dmdt
 
-            elif not beta_outside_range and not beta_interp:
+            elif not beta_interp:
                 timedict[g] = np.copy(self._premaptime[g][interp_index_low])
                 dmdtdict[g] = np.copy(self._premapdmdt[g][interp_index_low])
 

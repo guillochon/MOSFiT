@@ -44,6 +44,9 @@
             "redshift":{
                 "value":"recommended"
             },
+            "maxdate":{
+                "value":"optional"
+            },
             "sources":{
                 "bibcode":"optional",
                 "arxivid":"optional",

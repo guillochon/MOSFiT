@@ -2,8 +2,9 @@
 from collections import OrderedDict
 
 import numpy as np
-from astrocats.catalog.utils import is_number
 from astrocats.catalog.source import SOURCE
+from astrocats.catalog.utils import is_number
+from astropy.time import Time as astrotime
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
@@ -49,6 +50,8 @@ class Transient(Module):
                  exclude_systems=[],
                  exclude_sources=[],
                  exclude_kinds=[],
+                 time_unit=None,
+                 time_list=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -273,11 +276,13 @@ class Transient(Module):
                     self._data['countrates'],
                     self._data['fluxdensities']))]
 
-        if 'times' in self._data and smooth_times >= 0:
+        if 'times' in self._data and (smooth_times >= 0 or time_list):
             # Build an observation array out of the real data first.
-            obs = list(zip(*(self._data[x] for x in self._OBS_KEYS if
-                             x != 'times')))
-
+            obs = list(
+                zip(*(self._data['telescopes'], self._data['systems'],
+                      self._data['modes'], self._data['instruments'],
+                      self._data['bandsets'], self._data['bands'], self._data[
+                          'frequencies'], self._data['u_frequencies'])))
             # Append extra observations if requested.
             if len(band_list):
                 b_teles = band_telescopes if len(band_telescopes) == len(
@@ -329,6 +334,34 @@ class Transient(Module):
                     set([x for x in self._data['times']] + list(
                         np.linspace(mint, maxt, max(smooth_times, 2))))))
             currobslist = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
+            if time_unit is None:
+                alltimes = time_list + [x for x in self._data['times']]
+            elif time_unit == 'mjd':
+                alltimes = [x - min(self._data[
+                    'times']) for x in time_list] + [
+                        x for x in self._data['times']]
+            elif time_unit == 'phase':
+                if 'maxdate' not in self._data or not len(self._data[
+                        'maxdate']) or 'value' not in self._data['maxdate'][0]:
+                    raise(prt.message('no_maxdate', name))
+                max_mjd = astrotime(self._data['maxdate'][0]['value'].replace(
+                    '/', '-')).mjd
+                alltimes = [x + max_mjd - min(self._data[
+                    'times']) for x in time_list] + [
+                        x for x in self._data['times']]
+            else:
+                raise('Unknown `time_unit`.')
+            if smooth_times >= 0:
+                alltimes += list(
+                    np.linspace(mint, maxt, max(smooth_times, 2)))
+            alltimes = list(sorted(set(alltimes)))
+            currobslist = list(
+                zip(*(
+                    self._data['times'], self._data['telescopes'],
+                    self._data['systems'], self._data['modes'],
+                    self._data['instruments'], self._data['bandsets'],
+                    self._data['bands'], self._data['frequencies'],
+                    self._data['u_frequencies'])))
 
             # Create additional fake observations.
             obslist = []

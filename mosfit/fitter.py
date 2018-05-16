@@ -118,6 +118,8 @@ class Fitter(object):
                    events=[],
                    models=[],
                    max_time='',
+                   time_list=[],
+                   time_unit=None,
                    band_list=[],
                    band_systems=[],
                    band_instruments=[],
@@ -140,6 +142,7 @@ class Fitter(object):
                    exclude_systems=[],
                    exclude_sources=[],
                    exclude_kinds=[],
+                   output_path='',
                    suffix='',
                    upload=False,
                    write=False,
@@ -337,6 +340,7 @@ class Fitter(object):
                         model=mod_name,
                         data=self._event_data,
                         parameter_path=parameter_path,
+                        output_path=output_path,
                         wrap_length=self._wrap_length,
                         test=self._test,
                         printer=prt,
@@ -355,6 +359,7 @@ class Fitter(object):
                         gen_args = {
                             'name': mod_name,
                             'max_time': max_time,
+                            'time_list': time_list,
                             'band_list': band_list,
                             'band_systems': band_systems,
                             'band_instruments': band_instruments,
@@ -377,6 +382,8 @@ class Fitter(object):
                             exclude_systems=exclude_systems,
                             exclude_sources=exclude_sources,
                             exclude_kinds=exclude_kinds,
+                            time_list=time_list,
+                            time_unit=time_unit,
                             band_list=band_list,
                             band_systems=band_systems,
                             band_instruments=band_instruments,
@@ -463,6 +470,7 @@ class Fitter(object):
                             frack_step=frack_step,
                             gibbs=gibbs,
                             pool=pool,
+                            output_path=output_path,
                             suffix=suffix,
                             write=write,
                             upload=upload,
@@ -504,6 +512,7 @@ class Fitter(object):
                  fracking=True,
                  gibbs=False,
                  pool=None,
+                 output_path='',
                  suffix='',
                  write=False,
                  upload=False,
@@ -828,15 +837,18 @@ class Fitter(object):
         uname = '_'.join(
             [self._event_name, entryhash, modelhash])
 
-        if not os.path.exists(model.MODEL_OUTPUT_DIR):
-            os.makedirs(model.MODEL_OUTPUT_DIR)
+        if output_path and not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        if not os.path.exists(model.get_products_path()):
+            os.makedirs(model.get_products_path())
 
         if write:
             prt.message('writing_complete')
             with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                    os.path.join(model.get_products_path(), 'walkers.json'),
                     'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
+                        model.get_products_path(),
                         self._event_name + (
                             ('_' + suffix) if suffix else '') +
                         '.json'), 'w') as feven:
@@ -846,9 +858,9 @@ class Fitter(object):
             if save_full_chain:
                 prt.message('writing_full_chain')
                 with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR,
+                    os.path.join(model.get_products_path(),
                                  'chain.json'), 'w') as flast, open_atomic(
-                        os.path.join(model.MODEL_OUTPUT_DIR,
+                        os.path.join(model.get_products_path(),
                                      self._event_name + '_chain' + (
                                          ('_' + suffix) if suffix else '') +
                                      '.json'), 'w') as feven:
@@ -860,9 +872,9 @@ class Fitter(object):
             if extra_outputs:
                 prt.message('writing_extras')
                 with open_atomic(os.path.join(
-                    model.MODEL_OUTPUT_DIR, 'extras.json'),
+                    model.get_products_path(), 'extras.json'),
                         'w') as flast, open_atomic(os.path.join(
-                            model.MODEL_OUTPUT_DIR, self._event_name +
+                            model.get_products_path(), self._event_name +
                             '_extras' + (('_' + suffix) if suffix else '') +
                             '.json'), 'w') as feven:
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
@@ -870,9 +882,9 @@ class Fitter(object):
 
             prt.message('writing_model')
             with open_atomic(os.path.join(
-                model.MODEL_OUTPUT_DIR, 'upload.json'),
+                model.get_products_path(), 'upload.json'),
                     'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
+                        model.get_products_path(),
                         uname + (('_' + suffix) if suffix else '') +
                         '.json'), 'w') as feven:
                 entabbed_json_dump(ouentry, flast, separators=(',', ':'))
@@ -937,6 +949,7 @@ class Fitter(object):
     def generate_dummy_data(self,
                             name,
                             max_time=1000.,
+                            time_list=[],
                             band_list=[],
                             band_systems=[],
                             band_instruments=[],
@@ -945,9 +958,10 @@ class Fitter(object):
         # Just need 2 plot points for beginning and end.
         plot_points = 2
 
-        time_list = np.linspace(0.0, max_time, plot_points)
+        times = list(sorted(set(
+            list(np.linspace(0.0, max_time, plot_points)) + time_list)))
         band_list_all = ['V'] if len(band_list) == 0 else band_list
-        times = np.repeat(time_list, len(band_list_all))
+        times = np.repeat(times, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
         if isinstance(band_systems, string_types):
@@ -977,10 +991,10 @@ class Fitter(object):
                 for x in range(len(band_list_all) - len(band_bandsets))
             ]
 
-        bands = [i for s in [band_list_all for x in time_list] for i in s]
-        systs = [i for s in [band_systems for x in time_list] for i in s]
-        insts = [i for s in [band_instruments for x in time_list] for i in s]
-        bsets = [i for s in [band_bandsets for x in time_list] for i in s]
+        bands = [i for s in [band_list_all for x in times] for i in s]
+        systs = [i for s in [band_systems for x in times] for i in s]
+        insts = [i for s in [band_instruments for x in times] for i in s]
+        bsets = [i for s in [band_bandsets for x in times] for i in s]
 
         data = {name: {'photometry': []}}
         for ti, tim in enumerate(times):

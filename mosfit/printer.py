@@ -50,6 +50,7 @@ class Printer(object):
         UNDERLINE = '\033[4m'
         YELLOW = '\033[38;5;220m'
         CHARTREUSE = '\033[38;5;70m'
+        BLINK = '\033[5m'
 
         codes = {
             '!b': BLUE,
@@ -62,7 +63,8 @@ class Printer(object):
             '!r': RED,
             '!u': UNDERLINE,
             '!y': YELLOW,
-            '!h': CHARTREUSE
+            '!h': CHARTREUSE,
+            '!B': BLINK
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
