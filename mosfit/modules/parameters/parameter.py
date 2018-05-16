@@ -63,8 +63,8 @@ class Parameter(Module):
         """Evaluate natural log of probability density function."""
         return 0.0
 
-    def prior_cdf(self, u):
-        """Evaluate cumulative density function."""
+    def prior_icdf(self, u):
+        """Evaluate inverse cumulative density function."""
         return u
 
     def value(self, f):

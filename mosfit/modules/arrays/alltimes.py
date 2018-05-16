@@ -21,7 +21,8 @@ class AllTimes(Array):
         super(AllTimes, self).__init__(**kwargs)
         self._obs_keys = [
             'times', 'bands', 'telescopes', 'systems', 'instruments', 'modes',
-            'bandsets', 'frequencies', 'u_frequencies', 'observed']
+            'bandsets', 'frequencies', 'u_frequencies', 'zeropoints',
+            'measures', 'observed']
         self._okeys = [i for i in self._obs_keys if i not in ['observed']]
         for key in self._obs_keys:
             setattr(self, '_' + key, [])
@@ -67,12 +68,16 @@ class AllTimes(Array):
                 (self._photometry.find_band_index(
                     b, telescope=t, instrument=i, mode=m, bandset=bs, system=s)
                  if f is None else -1)
-                for ti, b, t, s, i, m, bs, f, uf, o
+                for ti, b, t, s, i, m, bs, f, uf, zps, msr, o
                 in zip(*self._all_observations)
             ])
             self._observation_types = np.array([
+                'magcount' if ('countrate' in msr and 'magnitude' in msr and
+                               zp is not None and
+                               self._fitter._prefer_fluxes) else
                 self._photometry._band_kinds[bi] if bi >= 0 else
-                'fluxdensity' for bi in self._all_band_indices
+                'fluxdensity' for bi, zp, msr in zip(
+                    self._all_band_indices, self._zeropoints, self._measures)
             ], dtype=object)
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observation_types'] = self._observation_types

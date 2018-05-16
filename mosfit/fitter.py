@@ -4,29 +4,26 @@ import codecs
 import gc
 import json
 import os
-import sys
 import time
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
 
 import numpy as np
-import scipy
 from astrocats.catalog.entry import ENTRY, Entry
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.source import SOURCE
-from emcee.autocorr import AutocorrError
 from mosfit.converter import Converter
 from mosfit.fetcher import Fetcher
-from mosfit.mossampler import MOSSampler
 from mosfit.printer import Printer
-from mosfit.utils import (all_to_list, calculate_WAIC, entabbed_json_dump,
-                          entabbed_json_dumps, flux_density_unit,
-                          frequency_unit, get_model_hash, listify, open_atomic,
-                          pretty_num, slugify, speak)
+from mosfit.samplers.ensembler import Ensembler
+from mosfit.samplers.nester import Nester
+from mosfit.utils import (all_to_list, entabbed_json_dump, entabbed_json_dumps,
+                          flux_density_unit, frequency_unit, get_model_hash,
+                          listify, open_atomic, slugify, speak)
 from schwimmbad import MPIPool, SerialPool
 from six import string_types
 
@@ -35,16 +32,29 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
-def draw_walker(test=True, walkers_pool=[], replace=False):
+def draw_walker(test=True, walkers_pool=[], replace=False, weights=None):
     """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
+    return model.draw_walker(
+        test, walkers_pool, replace, weights)  # noqa: F821
+
+
+def draw_from_icdf(x):
+    """Draw a walker from the global model variable."""
+    global model
+    return model.draw_from_icdf(x)  # noqa: F821
 
 
 def ln_likelihood(x):
     """Return ln(likelihood) using the global model variable."""
     global model
     return model.ln_likelihood(x)  # noqa: F821
+
+
+def ln_likelihood_floored(x):
+    """Return ln(likelihood) using the global model variable."""
+    global model
+    return model.ln_likelihood_floored(x)  # noqa: F821
 
 
 def ln_prior(x):
@@ -62,8 +72,6 @@ def frack(x):
 class Fitter(object):
     """Fit transient events with the provided model."""
 
-    _MAX_ACORC = 5
-    _REPLACE_AGE = 20
     _DEFAULT_SOURCE = {SOURCE.BIBCODE: '2017arXiv171002145G'}
 
     def __init__(self,
@@ -71,6 +79,7 @@ class Fitter(object):
                  exit_on_prompt=False,
                  language='en',
                  limiting_magnitude=None,
+                 prefer_fluxes=False,
                  offline=False,
                  prefer_cache=False,
                  open_in_browser=False,
@@ -89,6 +98,7 @@ class Fitter(object):
 
         self._cuda = cuda
         self._limiting_magnitude = limiting_magnitude
+        self._prefer_fluxes = prefer_fluxes
         self._offline = offline
         self._prefer_cache = prefer_cache
         self._open_in_browser = open_in_browser
@@ -115,7 +125,7 @@ class Fitter(object):
                    band_instruments=[],
                    band_bandsets=[],
                    band_sampling_points=17,
-                   iterations=5000,
+                   iterations=10000,
                    num_walkers=None,
                    num_temps=1,
                    parameter_paths=['parameters.json'],
@@ -140,7 +150,7 @@ class Fitter(object):
                    check_upload_quality=False,
                    variance_for_each=[],
                    user_fixed_parameters=[],
-                   convergence_type='psrf',
+                   convergence_type=None,
                    convergence_criteria=None,
                    save_full_chain=False,
                    draw_above_likelihood=False,
@@ -156,11 +166,18 @@ class Fitter(object):
                    exit_on_prompt=False,
                    download_recommended_data=False,
                    local_data_only=False,
+                   method=None,
+                   seed=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
         if start_time is False:
             start_time = time.time()
+
+        self._seed = seed
+        if seed is not None:
+            np.random.seed(seed)
+
         self._start_time = start_time
         self._maximum_walltime = maximum_walltime
         self._maximum_memory = maximum_memory
@@ -240,9 +257,14 @@ class Fitter(object):
 
                         if choice is not None:
                             walker_data.extend([
-                                [wfi, x[REALIZATION.PARAMETERS]]
+                                [wfi, x[REALIZATION.PARAMETERS], x.get(
+                                    REALIZATION.WEIGHT)]
                                 for x in models[choice][
                                     MODEL.REALIZATIONS]])
+
+                        for i in range(len(walker_data)):
+                            if walker_data[i][2] is not None:
+                                walker_data[i][2] = float(walker_data[i][2])
 
                         if not len(walker_data):
                             prt.message('no_walker_data')
@@ -438,6 +460,7 @@ class Fitter(object):
 
                         entry, p, lnprob = self.fit_data(
                             event_name=self._event_name,
+                            method=method,
                             iterations=iterations,
                             num_walkers=num_walkers,
                             num_temps=num_temps,
@@ -479,7 +502,8 @@ class Fitter(object):
 
     def fit_data(self,
                  event_name='',
-                 iterations=2000,
+                 method=None,
+                 iterations=None,
                  frack_step=20,
                  num_walkers=None,
                  num_temps=1,
@@ -494,7 +518,7 @@ class Fitter(object):
                  upload=False,
                  upload_token='',
                  check_upload_quality=True,
-                 convergence_type='psrf',
+                 convergence_type=None,
                  convergence_criteria=None,
                  save_full_chain=False,
                  extra_outputs=[]):
@@ -509,19 +533,10 @@ class Fitter(object):
         model = self._model
         prt = self._printer
 
-        self._emcee_est_t = 0.0
-        self._bh_est_t = 0.0
-        if burn is not None:
-            self._burn_in = min(burn, iterations)
-        elif post_burn is not None:
-            self._burn_in = max(iterations - post_burn, 0)
-        else:
-            self._burn_in = int(np.round(iterations / 2))
+        upload_model = upload and iterations > 0
 
         if pool is not None:
             self._pool = pool
-
-        upload_model = upload and iterations > 0
 
         if upload:
             try:
@@ -540,438 +555,20 @@ class Fitter(object):
                 pass
             return (None, None, None)
 
-        ntemps, ndim = (num_temps, model._num_free_parameters)
+        self._method = method
 
-        if num_walkers:
-            nwalkers = num_walkers
+        if self._method == 'nester':
+            self._sampler = Nester(
+                self, model, iterations, burn, post_burn,
+                num_walkers, convergence_criteria, convergence_type, gibbs,
+                fracking, frack_step)
         else:
-            nwalkers = 2 * ndim
+            self._sampler = Ensembler(
+                self, model, iterations, burn, post_burn, num_temps,
+                num_walkers, convergence_criteria, convergence_type, gibbs,
+                fracking, frack_step)
 
-        test_walker = iterations > 0
-        lnprob = None
-        lnlike = None
-        pool_size = max(self._pool.size, 1)
-        # Derived so only half a walker redrawn with Gaussian distribution.
-        redraw_mult = 0.5 * np.sqrt(
-            2) * scipy.special.erfinv(float(nwalkers - 1) / nwalkers)
-
-        prt.message('nmeas_nfree', [model._num_measurements, ndim])
-        if test_walker:
-            if model._num_measurements <= ndim:
-                prt.message('too_few_walkers', warning=True)
-            if nwalkers < 10 * ndim:
-                prt.message('want_more_walkers', [10 * ndim, nwalkers],
-                            warning=True)
-        p0 = [[] for x in range(ntemps)]
-
-        # Generate walker positions based upon loaded walker data, if
-        # available.
-        walkers_pool = []
-        nmodels = len(set([x[0] for x in self._walker_data]))
-        wp_extra = 0
-        while len(walkers_pool) < len(self._walker_data):
-            appended_walker = False
-            for walk in self._walker_data:
-                if (len(walkers_pool) + wp_extra) % nmodels != walk[0]:
-                    continue
-                new_walk = np.full(model._num_free_parameters, None)
-                for k, key in enumerate(model._free_parameters):
-                    param = model._modules[key]
-                    walk_param = walk[1].get(key)
-                    if walk_param is None or 'value' not in walk_param:
-                        continue
-                    if param:
-                        val = param.fraction(walk_param['value'])
-                        if not np.isnan(val):
-                            new_walk[k] = val
-                walkers_pool.append(new_walk)
-                appended_walker = True
-            if not appended_walker:
-                wp_extra += 1
-
-        # Draw walker positions. This is either done from the priors or from
-        # loaded walker data. If some parameters are not available from the
-        # loaded walker data they will be drawn from their priors instead.
-        pool_len = len(walkers_pool)
-        for i, pt in enumerate(p0):
-            dwscores = []
-            while len(p0[i]) < nwalkers:
-                prt.status(
-                    desc='drawing_walkers',
-                    progress=[
-                        i * nwalkers + len(p0[i]) + 1, nwalkers * ntemps])
-
-                if self._pool.size == 0 or pool_len:
-                    p, score = draw_walker(
-                        test_walker, walkers_pool,
-                        replace=pool_len < ntemps * nwalkers)
-                    p0[i].append(p)
-                    dwscores.append(score)
-                else:
-                    nmap = min(nwalkers - len(p0[i]), max(self._pool.size, 10))
-                    dws = self._pool.map(draw_walker, [test_walker] * nmap)
-                    p0[i].extend([x[0] for x in dws])
-                    dwscores.extend([x[1] for x in dws])
-
-                if self._draw_above_likelihood is not False:
-                    self._draw_above_likelihood = np.mean(dwscores)
-
-        prt.message('initial_draws', inline=True)
-        p = list(p0)
-
-        sli = 1.0  # Keep track of how many times chain halved
-        emi = 0
-        tft = 0.0  # Total fracking time
-        acor = None
-        aacort = -1
-        aa = 0
-        psrf = np.inf
-        s_exception = None
-        kmat = None
-        all_chain = np.array([])
-        scores = np.ones((ntemps, nwalkers)) * -np.inf
-        ages = np.zeros((ntemps, nwalkers), dtype=int)
-        oldp = p
-
-        max_chunk = 1000
-        kmat_chunk = 5
-        iter_chunks = int(np.ceil(float(iterations) / max_chunk))
-        iter_arr = [max_chunk if xi < iter_chunks - 1 else
-                    iterations - max_chunk * (iter_chunks - 1)
-                    for xi, x in enumerate(range(iter_chunks))]
-        # Make sure a chunk separation is located at self._burn_in
-        chunk_is = sorted(set(
-            np.concatenate(([0, self._burn_in], np.cumsum(iter_arr)))))
-        iter_arr = np.diff(chunk_is)
-
-        # The argument of the for loop runs emcee, after each iteration of
-        # emcee the contents of the for loop are executed.
-        converged = False
-        exceeded_walltime = False
-        ici = 0
-
-        try:
-            if iterations > 0:
-                sampler = MOSSampler(
-                    ntemps, nwalkers, ndim, ln_likelihood, ln_prior,
-                    pool=self._pool)
-                st = time.time()
-            while (iterations > 0 and (
-                    convergence_criteria is not None or ici < len(iter_arr))):
-                slr = int(np.round(sli))
-                ic = (max_chunk if convergence_criteria is not None else
-                      iter_arr[ici])
-                if exceeded_walltime:
-                    break
-                if (convergence_criteria is not None and converged and
-                        emi > iterations):
-                    break
-                for li, (
-                        p, lnprob, lnlike) in enumerate(
-                            sampler.sample(
-                                p, iterations=ic, gibbs=gibbs if
-                                emi >= self._burn_in else True)):
-                    if (self._maximum_walltime is not False and
-                            time.time() - self._start_time >
-                            self._maximum_walltime):
-                        prt.message('exceeded_walltime', warning=True)
-                        exceeded_walltime = True
-                        break
-                    emi = emi + 1
-                    emim1 = emi - 1
-                    messages = []
-
-                    # Increment the age of each walker if their positions are
-                    # unchanged.
-                    for ti in range(ntemps):
-                        for wi in range(nwalkers):
-                            if np.array_equal(p[ti][wi], oldp[ti][wi]):
-                                ages[ti][wi] += 1
-                            else:
-                                ages[ti][wi] = 0
-
-                    # Record then reset sampler proposal/acceptance counts.
-                    accepts = list(
-                        np.mean(sampler.nprop_accepted / sampler.nprop,
-                                axis=1))
-                    sampler.nprop = np.zeros(
-                        (sampler.ntemps, sampler.nwalkers), dtype=np.float)
-                    sampler.nprop_accepted = np.zeros(
-                        (sampler.ntemps, sampler.nwalkers),
-                        dtype=np.float)
-
-                    # During burn-in only, redraw any walkers with scores
-                    # significantly worse than their peers, or those that are
-                    # stale (i.e. remained in the same position for a long
-                    # time).
-                    if emim1 <= self._burn_in:
-                        pmedian = [np.median(x) for x in lnprob]
-                        pmead = [np.mean([abs(y - pmedian) for y in x])
-                                 for x in lnprob]
-                        redraw_count = 0
-                        bad_redraws = 0
-                        for ti, tprob in enumerate(lnprob):
-                            for wi, wprob in enumerate(tprob):
-                                if (wprob <= pmedian[ti] -
-                                    max(redraw_mult * pmead[ti],
-                                        float(nwalkers)) or
-                                        np.isnan(wprob) or
-                                        ages[ti][wi] >= self._REPLACE_AGE):
-                                    redraw_count = redraw_count + 1
-                                    dxx = np.random.normal(
-                                        scale=0.01, size=ndim)
-                                    tar_x = np.array(
-                                        p[np.random.randint(ntemps)][
-                                            np.random.randint(nwalkers)])
-                                    # Reflect if out of bounds.
-                                    new_x = np.clip(np.where(
-                                        np.where(tar_x + dxx < 1.0,
-                                                 tar_x + dxx,
-                                                 tar_x - dxx) > 0.0,
-                                        tar_x + dxx, tar_x - dxx), 0.0, 1.0)
-                                    new_like = ln_likelihood(new_x)
-                                    new_prob = new_like + ln_prior(new_x)
-                                    if new_prob > wprob or np.isnan(wprob):
-                                        p[ti][wi] = new_x
-                                        lnlike[ti][wi] = new_like
-                                        lnprob[ti][wi] = new_prob
-                                    else:
-                                        bad_redraws = bad_redraws + 1
-                        if redraw_count > 0:
-                            messages.append(
-                                '{:.0%} redraw, {}/{} success'.format(
-                                    redraw_count / (nwalkers * ntemps),
-                                    redraw_count - bad_redraws, redraw_count))
-
-                    oldp = p.copy()
-
-                    # Calculate the autocorrelation time.
-                    low = 10
-                    asize = 0.5 * (emim1 - self._burn_in) / low
-                    if asize >= 0 and convergence_type == 'acor':
-                        acorc = max(
-                            1, min(self._MAX_ACORC,
-                                   int(np.floor(0.5 * emi / low))))
-                        aacort = -1.0
-                        aa = 0
-                        ams = self._burn_in
-                        cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
-                            axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li + 1:slr, :])
-                        for a in range(acorc, 1, -1):
-                            ms = self._burn_in
-                            if ms >= emi - low:
-                                break
-                            try:
-                                acorts = sampler.get_autocorr_time(
-                                    chain=cur_chain, low=low, c=a,
-                                    min_step=int(np.round(float(ms) / sli)),
-                                    max_walkers=5, fast=True)
-                                acort = max([
-                                    max(x)
-                                    for x in acorts
-                                ])
-                            except AutocorrError:
-                                continue
-                            else:
-                                aa = a
-                                aacort = acort * sli
-                                ams = ms
-                                break
-                        acor = [aacort, aa, ams]
-
-                        actc = int(np.ceil(aacort / sli))
-                        actn = np.int(float(emi - ams) / actc)
-
-                        if (convergence_criteria is not None and
-                            actn >= convergence_criteria and
-                                emi > iterations):
-                            prt.message('converged')
-                            converged = True
-                            break
-
-                    # Calculate the PSRF (Gelman-Rubin statistic).
-                    if li > 1 and emi > self._burn_in + 2:
-                        cur_chain = (np.concatenate(
-                            (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
-                            axis=2) if len(all_chain) else
-                            sampler.chain[:, :, :li + 1:slr, :])
-                        vws = np.zeros((ntemps, ndim))
-                        for ti in range(ntemps):
-                            for xi in range(ndim):
-                                vchain = cur_chain[
-                                    ti, :, int(np.floor(
-                                        self._burn_in / sli)):, xi]
-                                vws[ti][xi] = self.psrf(vchain)
-                        psrf = np.max(vws)
-                        if np.isnan(psrf):
-                            psrf = np.inf
-
-                        if (convergence_type == 'psrf' and
-                            convergence_criteria is not None and
-                            psrf < convergence_criteria and
-                                emi > iterations):
-                            prt.message('converged')
-                            converged = True
-                            break
-
-                    if convergence_criteria is not None:
-                        self._emcee_est_t = -1.0
-                    else:
-                        self._emcee_est_t = float(
-                            time.time() - st - tft) / emi * (
-                            iterations - emi) + tft / emi * max(
-                                0, self._burn_in - emi)
-
-                    # Perform fracking if we are still in the burn in phase
-                    # and iteration count is a multiple of the frack step.
-                    frack_now = (fracking and frack_step != 0 and
-                                 emi <= self._burn_in and
-                                 emi % frack_step == 0)
-
-                    scores = [np.array(x) for x in lnprob]
-                    if emim1 % kmat_chunk == 0:
-                        sout = model.run_stack(
-                            p[np.unravel_index(
-                                np.argmax(lnprob), lnprob.shape)],
-                            root='objective')
-                        kmat = sout.get('kmat')
-                        kdiag = sout.get('kdiagonal')
-                        variance = sout.get('obandvs', sout.get('variance'))
-                        if kdiag is not None and kmat is not None:
-                            kmat[np.diag_indices_from(kmat)] += kdiag
-                        elif kdiag is not None and kmat is None:
-                            kmat = np.diag(kdiag + variance)
-                    prt.status(
-                        desc='fracking' if frack_now else
-                        ('burning' if emi < self._burn_in else 'walking'),
-                        scores=scores,
-                        kmat=kmat,
-                        accepts=accepts,
-                        progress=[emi, None if
-                                  convergence_criteria is not None else
-                                  iterations],
-                        acor=acor,
-                        psrf=[psrf, self._burn_in],
-                        messages=messages,
-                        make_space=emim1 == 0,
-                        convergence_type=convergence_type,
-                        convergence_criteria=convergence_criteria)
-
-                    if s_exception:
-                        break
-
-                    if not frack_now:
-                        continue
-
-                    # Fracking starts here
-                    sft = time.time()
-                    ijperms = [[x, y] for x in range(ntemps)
-                               for y in range(nwalkers)]
-                    ijprobs = np.array([
-                        1.0
-                        # lnprob[x][y]
-                        for x in range(ntemps) for y in range(nwalkers)
-                    ])
-                    ijprobs -= max(ijprobs)
-                    ijprobs = [np.exp(0.1 * x) for x in ijprobs]
-                    ijprobs /= sum([x for x in ijprobs if not np.isnan(x)])
-                    nonzeros = len([x for x in ijprobs if x > 0.0])
-                    selijs = [
-                        ijperms[x]
-                        for x in np.random.choice(
-                            range(len(ijperms)),
-                            pool_size,
-                            p=ijprobs,
-                            replace=(pool_size > nonzeros))
-                    ]
-
-                    bhwalkers = [p[i][j] for i, j in selijs]
-
-                    seeds = [
-                        int(round(time.time() * 1000.0)) % 4294900000 + x
-                        for x in range(len(bhwalkers))
-                    ]
-                    frack_args = list(zip(bhwalkers, seeds))
-                    bhs = list(self._pool.map(frack, frack_args))
-                    for bhi, bh in enumerate(bhs):
-                        (wi, ti) = tuple(selijs[bhi])
-                        if -bh.fun > lnprob[wi][ti]:
-                            p[wi][ti] = bh.x
-                            like = ln_likelihood(bh.x)
-                            lnprob[wi][ti] = like + ln_prior(bh.x)
-                            lnlike[wi][ti] = like
-                    scores = [[-x.fun for x in bhs]]
-                    prt.status(
-                        desc='fracking_results',
-                        scores=scores,
-                        kmat=kmat,
-                        fracking=True,
-                        progress=[emi, None if
-                                  convergence_criteria is not None else
-                                  iterations],
-                        convergence_type=convergence_type,
-                        convergence_criteria=convergence_criteria)
-                    tft = tft + time.time() - sft
-                    if s_exception:
-                        break
-
-                if ici == 0:
-                    all_chain = sampler.chain[:, :, :li + 1:slr, :]
-                    all_lnprob = sampler.lnprobability[:, :, :li + 1:slr]
-                    all_lnlike = sampler.lnlikelihood[:, :, :li + 1:slr]
-                else:
-                    all_chain = np.concatenate(
-                        (all_chain, sampler.chain[:, :, :li + 1:slr, :]),
-                        axis=2)
-                    all_lnprob = np.concatenate(
-                        (all_lnprob, sampler.lnprobability[:, :, :li + 1:slr]),
-                        axis=2)
-                    all_lnlike = np.concatenate(
-                        (all_lnlike, sampler.lnlikelihood[:, :, :li + 1:slr]),
-                        axis=2)
-
-                mem_mb = (all_chain.nbytes + all_lnprob.nbytes +
-                          all_lnlike.nbytes) / (1024. * 1024.)
-
-                if self._debug:
-                    prt.prt('Memory `{}`'.format(mem_mb), wrapped=True)
-
-                if mem_mb > self._maximum_memory:
-                    sfrac = float(
-                        all_lnprob.shape[-1]) / all_lnprob[:, :, ::2].shape[-1]
-                    all_chain = all_chain[:, :, ::2, :]
-                    all_lnprob = all_lnprob[:, :, ::2]
-                    all_lnlike = all_lnlike[:, :, ::2]
-                    sli *= sfrac
-                    if self._debug:
-                        prt.prt(
-                            'Memory halved, sli: {}'.format(sli),
-                            wrapped=True)
-
-                sampler.reset()
-                gc.collect()
-                ici = ici + 1
-
-        except (KeyboardInterrupt, SystemExit):
-            prt.message('ctrl_c', error=True, prefix=False, color='!r')
-            s_exception = sys.exc_info()
-        except Exception:
-            raise
-
-        if s_exception:
-            self._pool.close()
-            if (not prt.prompt('mc_interrupted')):
-                sys.exit()
-
-        msg_criteria = (
-            1.1 if convergence_criteria is None else convergence_criteria)
-        if (test_walker and convergence_type == 'psrf' and
-                msg_criteria is not None and psrf > msg_criteria):
-            prt.message('not_converged', [
-                'default' if convergence_criteria is None else 'specified',
-                msg_criteria], warning=True)
+        self._sampler.run(self._walker_data)
 
         prt.message('constructing')
 
@@ -1007,15 +604,15 @@ class Fitter(object):
 
         # Accumulate all the sources and add them to each entry.
         sources = []
-        for root in self._model._references:
-            for ref in self._model._references[root]:
+        for root in model._references:
+            for ref in model._references[root]:
                 sources.append(entry.add_source(**ref))
         sources.append(entry.add_source(**self._DEFAULT_SOURCE))
         source = ','.join(sources)
 
         usources = []
-        for root in self._model._references:
-            for ref in self._model._references[root]:
+        for root in model._references:
+            for ref in model._references[root]:
                 usources.append(uentry.add_source(**ref))
         usources.append(uentry.add_source(**self._DEFAULT_SOURCE))
         usource = ','.join(usources)
@@ -1028,225 +625,208 @@ class Fitter(object):
                 task_copy.update(model._parameter_json[task])
             model_setup[task] = task_copy
         modeldict = OrderedDict(
-            [(MODEL.NAME, self._model._model_name), (MODEL.SETUP, model_setup),
+            [(MODEL.NAME, model._model_name), (MODEL.SETUP, model_setup),
              (MODEL.CODE, 'MOSFiT'), (MODEL.DATE, time.strftime("%Y/%m/%d")),
              (MODEL.VERSION, __version__), (MODEL.SOURCE, source)])
 
-        WAIC = None
-        if iterations > 0:
-            WAIC = calculate_WAIC(scores)
-            modeldict[MODEL.SCORE] = {
-                QUANTITY.VALUE: str(WAIC),
-                QUANTITY.KIND: 'WAIC'
-            }
-            modeldict[MODEL.CONVERGENCE] = []
-            if psrf < np.inf:
-                modeldict[MODEL.CONVERGENCE].append(
-                    {
-                        QUANTITY.VALUE: str(psrf),
-                        QUANTITY.KIND: 'psrf'
-                    }
-                )
-            if acor and aacort > 0:
-                acortimes = '<' if aa < self._MAX_ACORC else ''
-                acortimes += str(np.int(float(emi - ams) / actc))
-                modeldict[MODEL.CONVERGENCE].append(
-                    {
-                        QUANTITY.VALUE: str(acortimes),
-                        QUANTITY.KIND: 'autocorrelationtimes'
-                    }
-                )
-            modeldict[MODEL.STEPS] = str(emi)
+        self._sampler.prepare_output(check_upload_quality, upload)
+
+        self._sampler.append_output(modeldict)
 
         umodeldict = deepcopy(modeldict)
         umodeldict[MODEL.SOURCE] = usource
         modelhash = get_model_hash(
             umodeldict, ignore_keys=[MODEL.DATE, MODEL.SOURCE])
         umodelnum = uentry.add_model(**umodeldict)
-        if check_upload_quality:
-            if WAIC is None:
-                upload_model = False
-            elif WAIC is not None and WAIC < 0.0:
-                if upload:
-                    prt.message('no_ul_waic', ['' if WAIC is None
-                                               else pretty_num(WAIC)])
-                upload_model = False
+
+        if self._sampler._upload_model is not None:
+            upload_model = self._sampler._upload_model
 
         modelnum = entry.add_model(**modeldict)
 
-        ri = 1
-        if len(all_chain):
-            pout = all_chain[:, :, -1, :]
-            lnprobout = all_lnprob[:, :, -1]
-            lnlikeout = all_lnlike[:, :, -1]
-        else:
-            pout = p
-            lnprobout = lnprob
-            lnlikeout = lnlike
-
-        # Here, we append to the vector of walkers from the full chain based
-        # upon the value of acort (the autocorrelation timescale).
-        if acor and aacort > 0 and aa == self._MAX_ACORC:
-            actc0 = int(np.ceil(aacort))
-            for i in range(1, np.int(float(emi - ams) / actc0)):
-                pout = np.concatenate(
-                    (all_chain[:, :, -i * actc, :], pout), axis=1)
-                lnprobout = np.concatenate(
-                    (all_lnprob[:, :, -i * actc], lnprobout), axis=1)
-                lnlikeout = np.concatenate(
-                    (all_lnlike[:, :, -i * actc], lnlikeout), axis=1)
+        samples, probs, weights = self._sampler.get_samples()
 
         extras = OrderedDict()
-        for xi, x in enumerate(pout):
-            for yi, y in enumerate(pout[xi]):
-                # Only produce LCs for end walker state.
-                wcnt = xi * nwalkers + yi
-                if wcnt > 0:
-                    prt.message('outputting_walker', [
-                        wcnt, nwalkers * ntemps], inline=True)
-                if yi <= nwalkers:
-                    output = model.run_stack(y, root='output')
-                    if extra_outputs:
-                        for key in extra_outputs:
-                            new_val = output.get(key, [])
-                            new_val = all_to_list(new_val)
-                            extras.setdefault(key, []).append(new_val)
-                    for i in range(len(output['times'])):
-                        if not np.isfinite(output['model_observations'][i]):
-                            continue
-                        photodict = {
-                            PHOTOMETRY.TIME:
-                            output['times'][i] + output['min_times'],
-                            PHOTOMETRY.MODEL: modelnum,
-                            PHOTOMETRY.SOURCE: source,
-                            PHOTOMETRY.REALIZATION: str(ri)
-                        }
-                        if output['observation_types'][i] == 'magnitude':
-                            photodict[PHOTOMETRY.BAND] = output['bands'][i]
-                            photodict[PHOTOMETRY.MAGNITUDE] = output[
-                                'model_observations'][i]
-                            photodict[PHOTOMETRY.E_MAGNITUDE] = output[
-                                'model_variances'][i]
-                        if output['observation_types'][i] == 'fluxdensity':
-                            photodict[PHOTOMETRY.FREQUENCY] = output[
-                                'frequencies'][i] * frequency_unit('GHz')
-                            photodict[PHOTOMETRY.FLUX_DENSITY] = output[
-                                'model_observations'][
-                                    i] * flux_density_unit('µJy')
-                            photodict[
-                                PHOTOMETRY.
-                                E_LOWER_FLUX_DENSITY] = (
-                                    photodict[PHOTOMETRY.FLUX_DENSITY] - (
-                                        10.0 ** (
-                                            np.log10(photodict[
-                                                PHOTOMETRY.FLUX_DENSITY]) -
-                                            output['model_variances'][
-                                                i] / 2.5)) *
-                                    flux_density_unit('µJy'))
-                            photodict[
-                                PHOTOMETRY.
-                                E_UPPER_FLUX_DENSITY] = (10.0 ** (
-                                    np.log10(photodict[
-                                        PHOTOMETRY.FLUX_DENSITY]) +
-                                    output['model_variances'][i] / 2.5) *
-                                    flux_density_unit('µJy') -
-                                    photodict[PHOTOMETRY.FLUX_DENSITY])
-                            photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
-                            photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                        if output['observation_types'][i] == 'countrate':
-                            photodict[PHOTOMETRY.COUNT_RATE] = output[
-                                'model_observations'][i]
-                            photodict[
-                                PHOTOMETRY.
-                                E_LOWER_COUNT_RATE] = (
-                                    photodict[PHOTOMETRY.COUNT_RATE] - (
-                                        10.0 ** (
-                                            np.log10(photodict[
-                                                PHOTOMETRY.COUNT_RATE]) -
-                                            output['model_variances'][
-                                                i] / 2.5)))
-                            photodict[
-                                PHOTOMETRY.
-                                E_UPPER_COUNT_RATE] = (10.0 ** (
-                                    np.log10(photodict[
-                                        PHOTOMETRY.COUNT_RATE]) +
-                                    output['model_variances'][i] / 2.5) -
-                                    photodict[PHOTOMETRY.COUNT_RATE])
-                            photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
-                        if ('model_upper_limits' in output and
-                                output['model_upper_limits'][i]):
-                            photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
-                                'model_upper_limits'][i])
-                        if self._limiting_magnitude is not None:
-                            photodict[PHOTOMETRY.SIMULATED] = True
-                        if 'telescopes' in output and output['telescopes'][i]:
-                            photodict[PHOTOMETRY.TELESCOPE] = output[
-                                'telescopes'][i]
-                        if 'systems' in output and output['systems'][i]:
-                            photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
-                        if 'bandsets' in output and output['bandsets'][i]:
-                            photodict[PHOTOMETRY.BAND_SET] = output[
-                                'bandsets'][i]
-                        if 'instruments' in output and output[
-                                'instruments'][i]:
-                            photodict[PHOTOMETRY.INSTRUMENT] = output[
-                                'instruments'][i]
-                        if 'modes' in output and output['modes'][i]:
-                            photodict[PHOTOMETRY.MODE] = output[
-                                'modes'][i]
-                        entry.add_photometry(
-                            compare_to_existing=False, check_for_dupes=False,
-                            **photodict)
+        samples_to_plot = self._sampler._nwalkers
 
-                        uphotodict = deepcopy(photodict)
-                        uphotodict[PHOTOMETRY.SOURCE] = umodelnum
-                        uentry.add_photometry(
-                            compare_to_existing=False,
-                            check_for_dupes=False,
-                            **uphotodict)
-                else:
-                    output = model.run_stack(y, root='objective')
+        icdf = np.cumsum(np.concatenate(([0.0], weights)))
+        draws = np.random.rand(samples_to_plot)
+        indices = np.searchsorted(icdf, draws) - 1
 
-                parameters = OrderedDict()
-                derived_keys = set()
-                pi = 0
-                for ti, task in enumerate(model._call_stack):
-                    # if task not in model._free_parameters:
-                    #     continue
-                    if model._call_stack[task]['kind'] != 'parameter':
+        ri = 0
+        for xi, x in enumerate(samples):
+            ri = ri + 1
+            prt.message('outputting_walker', [
+                ri, len(samples)], inline=True, min_time=0.2)
+            if xi in indices:
+                output = model.run_stack(x, root='output')
+                if extra_outputs:
+                    for key in extra_outputs:
+                        new_val = output.get(key, [])
+                        new_val = all_to_list(new_val)
+                        extras.setdefault(key, []).append(new_val)
+                for i in range(len(output['times'])):
+                    if not np.isfinite(output['model_observations'][i]):
                         continue
-                    paramdict = OrderedDict((
-                        ('latex', model._modules[task].latex()),
-                        ('log', model._modules[task].is_log())
-                    ))
-                    if task in model._free_parameters:
-                        poutput = model._modules[task].process(
-                            **{'fraction': y[pi]})
-                        value = list(poutput.values())[0]
-                        paramdict['value'] = value
-                        paramdict['fraction'] = y[pi]
-                        pi = pi + 1
-                    else:
-                        if output.get(task, None) is not None:
-                            paramdict['value'] = output[task]
-                    parameters.update({model._modules[task].name(): paramdict})
-                    # Dump out any derived parameter keys
-                    derived_keys.update(model._modules[task].get_derived_keys(
-                    ))
+                    photodict = {
+                        PHOTOMETRY.TIME:
+                        output['times'][i] + output['min_times'],
+                        PHOTOMETRY.MODEL: modelnum,
+                        PHOTOMETRY.SOURCE: source,
+                        PHOTOMETRY.REALIZATION: str(ri)
+                    }
+                    if output['observation_types'][i] == 'magnitude':
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = output[
+                            'model_observations'][i]
+                        photodict[PHOTOMETRY.E_MAGNITUDE] = output[
+                            'model_variances'][i]
+                    elif output['observation_types'][i] == 'magcount':
+                        if output['model_observations'][i] == 0.0:
+                            continue
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.COUNT_RATE] = output[
+                            'model_observations'][i]
+                        photodict[PHOTOMETRY.E_COUNT_RATE] = output[
+                            'model_variances'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = -2.5 * np.log10(
+                            output['model_observations'][i]) + output[
+                                'all_zeropoints'][i]
+                        photodict[PHOTOMETRY.E_UPPER_MAGNITUDE] = 2.5 * (
+                            np.log10(output['model_observations'][i] +
+                                     output['model_variances'][i]) -
+                            np.log10(output['model_observations'][i]))
+                        if (output['model_variances'][i] > output[
+                                'model_observations'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                        else:
+                            photodict[PHOTOMETRY.E_LOWER_MAGNITUDE] = 2.5 * (
+                                np.log10(output['model_observations'][i]) -
+                                np.log10(output['model_observations'][i] -
+                                         output['model_variances'][i]))
+                    elif output['observation_types'][i] == 'fluxdensity':
+                        photodict[PHOTOMETRY.FREQUENCY] = output[
+                            'frequencies'][i] * frequency_unit('GHz')
+                        photodict[PHOTOMETRY.FLUX_DENSITY] = output[
+                            'model_observations'][
+                                i] * flux_density_unit('µJy')
+                        photodict[
+                            PHOTOMETRY.
+                            E_LOWER_FLUX_DENSITY] = (
+                                photodict[PHOTOMETRY.FLUX_DENSITY] - (
+                                    10.0 ** (
+                                        np.log10(photodict[
+                                            PHOTOMETRY.FLUX_DENSITY]) -
+                                        output['model_variances'][
+                                            i] / 2.5)) *
+                                flux_density_unit('µJy'))
+                        photodict[
+                            PHOTOMETRY.
+                            E_UPPER_FLUX_DENSITY] = (10.0 ** (
+                                np.log10(photodict[
+                                    PHOTOMETRY.FLUX_DENSITY]) +
+                                output['model_variances'][i] / 2.5) *
+                                flux_density_unit('µJy') -
+                                photodict[PHOTOMETRY.FLUX_DENSITY])
+                        photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
+                        photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
+                    elif output['observation_types'][i] == 'countrate':
+                        photodict[PHOTOMETRY.COUNT_RATE] = output[
+                            'model_observations'][i]
+                        photodict[
+                            PHOTOMETRY.
+                            E_LOWER_COUNT_RATE] = (
+                                photodict[PHOTOMETRY.COUNT_RATE] - (
+                                    10.0 ** (
+                                        np.log10(photodict[
+                                            PHOTOMETRY.COUNT_RATE]) -
+                                        output['model_variances'][
+                                            i] / 2.5)))
+                        photodict[
+                            PHOTOMETRY.
+                            E_UPPER_COUNT_RATE] = (10.0 ** (
+                                np.log10(photodict[
+                                    PHOTOMETRY.COUNT_RATE]) +
+                                output['model_variances'][i] / 2.5) -
+                                photodict[PHOTOMETRY.COUNT_RATE])
+                        photodict[PHOTOMETRY.U_COUNT_RATE] = 's^-1'
+                    if ('model_upper_limits' in output and
+                            output['model_upper_limits'][i]):
+                        photodict[PHOTOMETRY.UPPER_LIMIT] = bool(output[
+                            'model_upper_limits'][i])
+                    if self._limiting_magnitude is not None:
+                        photodict[PHOTOMETRY.SIMULATED] = True
+                    if 'telescopes' in output and output['telescopes'][i]:
+                        photodict[PHOTOMETRY.TELESCOPE] = output[
+                            'telescopes'][i]
+                    if 'systems' in output and output['systems'][i]:
+                        photodict[PHOTOMETRY.SYSTEM] = output['systems'][i]
+                    if 'bandsets' in output and output['bandsets'][i]:
+                        photodict[PHOTOMETRY.BAND_SET] = output[
+                            'bandsets'][i]
+                    if 'instruments' in output and output[
+                            'instruments'][i]:
+                        photodict[PHOTOMETRY.INSTRUMENT] = output[
+                            'instruments'][i]
+                    if 'modes' in output and output['modes'][i]:
+                        photodict[PHOTOMETRY.MODE] = output[
+                            'modes'][i]
+                    entry.add_photometry(
+                        compare_to_existing=False, check_for_dupes=False,
+                        **photodict)
 
-                for key in list(sorted(list(derived_keys))):
-                    if (output.get(key, None) is not None and
-                            key not in parameters):
-                        parameters.update({key: {'value': output[key]}})
+                    uphotodict = deepcopy(photodict)
+                    uphotodict[PHOTOMETRY.SOURCE] = umodelnum
+                    uentry.add_photometry(
+                        compare_to_existing=False,
+                        check_for_dupes=False,
+                        **uphotodict)
+            else:
+                output = model.run_stack(x, root='objective')
 
-                realdict = {REALIZATION.PARAMETERS: parameters}
-                if lnprobout is not None:
-                    realdict[REALIZATION.SCORE] = str(lnprobout[xi][yi])
-                realdict[REALIZATION.ALIAS] = str(ri)
-                entry[ENTRY.MODELS][0].add_realization(**realdict)
-                urealdict = deepcopy(realdict)
-                uentry[ENTRY.MODELS][0].add_realization(**urealdict)
-                ri = ri + 1
+            parameters = OrderedDict()
+            derived_keys = set()
+            pi = 0
+            for ti, task in enumerate(model._call_stack):
+                # if task not in model._free_parameters:
+                #     continue
+                if model._call_stack[task]['kind'] != 'parameter':
+                    continue
+                paramdict = OrderedDict((
+                    ('latex', model._modules[task].latex()),
+                    ('log', model._modules[task].is_log())
+                ))
+                if task in model._free_parameters:
+                    poutput = model._modules[task].process(
+                        **{'fraction': x[pi]})
+                    value = list(poutput.values())[0]
+                    paramdict['value'] = value
+                    paramdict['fraction'] = x[pi]
+                    pi = pi + 1
+                else:
+                    if output.get(task, None) is not None:
+                        paramdict['value'] = output[task]
+                parameters.update({model._modules[task].name(): paramdict})
+                # Dump out any derived parameter keys
+                derived_keys.update(model._modules[task].get_derived_keys(
+                ))
+
+            for key in list(sorted(list(derived_keys))):
+                if (output.get(key, None) is not None and
+                        key not in parameters):
+                    parameters.update({key: {'value': output[key]}})
+
+            realdict = {REALIZATION.PARAMETERS: parameters}
+            if probs is not None:
+                realdict[REALIZATION.SCORE] = str(
+                    probs[xi])
+            realdict[REALIZATION.ALIAS] = str(ri)
+            realdict[REALIZATION.WEIGHT] = str(weights[xi])
+            entry[ENTRY.MODELS][0].add_realization(
+                check_for_dupes=False, **realdict)
+            urealdict = deepcopy(realdict)
+            uentry[ENTRY.MODELS][0].add_realization(
+                check_for_dupes=False, **urealdict)
         prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
@@ -1284,9 +864,9 @@ class Fitter(object):
                                      self._event_name + '_chain' + (
                                          ('_' + suffix) if suffix else '') +
                                      '.json'), 'w') as feven:
-                    entabbed_json_dump(all_chain.tolist(),
+                    entabbed_json_dump(self._sampler._all_chain.tolist(),
                                        flast, separators=(',', ':'))
-                    entabbed_json_dump(all_chain.tolist(),
+                    entabbed_json_dump(self._sampler._all_chain.tolist(),
                                        feven, separators=(',', ':'))
 
             if extra_outputs:
@@ -1311,7 +891,7 @@ class Fitter(object):
                 entabbed_json_dump(ouentry, feven, separators=(',', ':'))
 
         if upload_model:
-            prt.message('ul_fit', [entryhash, modelhash])
+            prt.message('ul_fit', [entryhash, self._sampler._modelhash])
             upayload = entabbed_json_dumps(ouentry, separators=(',', ':'))
             try:
                 dbx = dropbox.Dropbox(upload_token)
@@ -1360,7 +940,11 @@ class Fitter(object):
                         else:
                             raise
 
-        return (entry, pout, lnprobout)
+        return (entry, samples, probs)
+
+    def nester(self):
+        """Use nested sampling to determine posteriors."""
+        pass
 
     def generate_dummy_data(self,
                             name,
@@ -1433,14 +1017,3 @@ class Fitter(object):
             data[name]['photometry'].append(photodict)
 
         return data
-
-    def psrf(self, chain):
-        """Calculate PSRF for a chain."""
-        m = len(chain)
-        n = len(chain[0])
-        mom = np.mean(np.mean(chain, axis=1))
-        b = n / float(m - 1) * np.sum(
-            (np.mean(chain, axis=1) - mom) ** 2)
-        w = np.mean(np.var(chain, axis=1, ddof=1))
-        v = float(n - 1) / float(n) * w + (b / float(n))
-        return np.sqrt(v / w)

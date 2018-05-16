@@ -46,9 +46,29 @@ If the user so chooses, they may *optionally* upload their data directly to the 
 
 Note that this step is completely optional, users do not have to share their data publicly to use ``MOSFiT``, however it is the fastest way for your data to appear on the Open Catalogs. If a user believes they have uploaded any private data in error, they are encouraged to immediately contact the :ref:`maintainers <maintainers>`.
 
+.. _sampling:
+
+----------------
+Sampling Options
+----------------
+
+``MOSFiT`` at present offers two ways to sample the parameter space: An ensemble-based MCMC (implemented with the ``emcee`` package), and a nested sampling approach (implemented with the ``dynesty`` package). The ensemble-based approach is presently the default sampler used in ``MOSFiT``, although the nested sampler (which in preliminary testing performs better) is likely to replace it as the default in a future version.
+
+Samplers are selected via the ``-D`` option: ``-D ensembler`` for the ensemble-based approach, and ``-D nester`` for the nested sampling approach. The two approaches are described below.
+
+.. _ensembler:
+
+Ensemble-based MCMC
+===================
+
+In ensemble-based Markov chain Monte Carlo, a collection of parameter positions (called "walkers") are evolved in the parameter space according to simple rules based upon the positions of their neighbors. This approach is simple, flexible, and is able to deal with several pathologies in posteriors that can cause issues in other samplers. In ``MOSFiT`` we implement this sampling using the parallel-tempered sampler available within the ``emcee`` package, although a single temperature is used by default (note that the parallel-tempered sampler is now deprecated as of ``emcee`` version ``3.0``, and ``MOSFiT`` will eventually deprecate this option as well).
+
+While ``MOSFiT`` also performs minimization during the burn-in phase to find the global minima within the posterior, it should be noted that ``emcee`` on its own has been found to have poor convergence to the posterior for problems with greater than about 10 dimensions (`Huijser et al. 2015 <https://arxiv.org/abs/1509.02230>`_). As many models provided with ``MOSFiT`` have a dimension similar to this number, care should be taken when using this sampler to ensure that convergence has been achieved.
+
+The ensemble-based MCMC can be selected via the ``-D`` flag: ``-D ensembler``.
+
 .. _initialization:
 
---------------
 Initialization
 --------------
 
@@ -57,7 +77,7 @@ When initializing, walkers are drawn randomly from the prior distributions of al
 .. _restricting:
 
 Restricting the data used
-=========================
+-------------------------
 
 By default, ``MOSFiT`` will attempt to use all available data when fitting a model. If the user wishes, they can exclude specific instruments from the fit using the ``--exclude-instruments`` option, specific photometric bands using the ``--exclude-bands`` option, specific sources of data (e.g. papers or surveys) using ``--exclude-sources``, and particular wave bands via ``--exclude-kinds``. The source is specified using the source ID number, visible on the Open Astronomy Catalog page for each transient as well as in the input file. For example
 
@@ -86,20 +106,19 @@ As an example, assuming a user wants to fit the ``ic`` model to a transient that
 .. _number:
 
 Number of walkers
-=================
+-----------------
 
 The sampler used in ``MOSFiT`` is a variant of ``emcee``'s multi-temperature sampler ``PTSampler``, and thus the user can pass both a number of temperatures to use with ``-T`` in addition to the number of walkers ``-N`` per temperature. If one temperature is used (the default), the total number of walkers is simply whatever is passed to ``-N``, otherwise it is :math:`N*T`.
 
 .. _duration:
 
 Duration of fitting
-===================
+-------------------
 
 The duration of the ``MOSFiT`` run is set with the ``-i`` option, unless the ``-R`` or ``-U`` options are used (see :ref:`convergence <convergence>`). Generally, unless the model has only a few free parameters or was initialized very close to the solution of highest-likelihood, the user should not expect good results unless ``-i`` is set to a few thousand or more.
 
 .. _burning:
 
-------------------
 Burning in a model
 ------------------
 
@@ -112,6 +131,41 @@ As an example, the following will run the burn-in phase for 2000 iterations, the
     mosfit -e LSQ12dlf -m slsn -f 100 -i 5000 -b 2000
 
 All :ref:`convergence <convergence>` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence <convergence>` criteria are met beyond the burn-in phase.
+
+.. _nester:
+
+Nested sampling
+===============
+
+For complicated posteriors with multiple modes or for problems of high dimension (ten dimensions or greater), nested sampling is often a superior choice versus ensemble-based methods. In ``MOSFiT``, nested sampling is implement via the ``dynesty`` package, which uses a modern variant of nested sampling known as *dynamic* nested sampling (`see the full documentation for this package <http://dynesty.rtfd.io>`_).
+
+Whereas ensemble-based approaches can only estimate the information content of their posteriors via heuristic information metrics such as the WAIC (see :ref:`scoring`), nested sampling directly evaluates the evidence for a given model, and provides a (statistical) estimate of its error. Nested sampling also yields many more useful samples of the posterior for the purposes of visualizing its structure; it is not uncommon for a run to provide tens of thousands of informative samples, as compared to ensemble-based approach that may only yield a few hundred.
+
+However, nested sampling is a much more complicated algorithm than ensemble-based MCMC and thus is potentially prone to failures that can be difficult to track down. Additionally, the ``dynesty`` software currently does not offer the ability to restart if the sampling is prematurely terminated; thus, it is advisable to always use the nested sampling routine in conjunction with the ``-R`` flag, which when used with the ``nester`` option specifies the termination criterion based upon the expected remaining evidence gain.
+
+The nested sampler can be selected via the ``-D`` flag: ``-D nester``.
+
+.. _baselining-batching:
+
+Baselining and batching
+-----------------------
+
+Description forthcoming.
+
+.. _switching:
+
+Switching between samplers
+==========================
+
+After completing a nested sampling run, it is often useful to draw parameter combinations from the large collection of samples generated to perform additional analysis (particularly for data-intensive tasks, such as analyzing a collection of model SEDs). This can be easily done by loading the output from the previous run with the ``ensembler`` method (the default), and setting ``MOSFiT`` to run in generative mode with ``-G``,
+
+.. code-block:: bash
+
+    mosfit -e LSQ12dlf -m slsn -w name-of-output.json -G -N 100
+
+where above we specify that we would like 100 parameter combinations from the ``nester`` output. The weights determined with ``nester`` will be used to proportionately draw walkers for ``ensembler``, yielding a sample that properly maps to the posterior determined by the nested sampling. As the above does not perform any additional sampling, the user does not need to specify an event to compare against, and can simply omit the ``-e`` flag and its argument(s).
+
+Because ``nester`` currently does not support restarts, the opposite situation of using ``ensembler`` outputs to initialize ``nester`` is not possible.
 
 .. _io:
 
@@ -191,3 +245,5 @@ The user can use the ensemble parameters from a prior ``MOSFiT`` run to draw the
     mosfit -e LSQ12dlf -m slsn -w LSQ12dlf-suffix.json
 
 If the file contains more walkers than requested by the new run, walker positions will be drawn verbatim from the input file, otherwise walker positions will be "jittered" by a small amount so no two walkers share identical parameters.
+
+Note that while the outputs of nested sampling runs can be initialized *from*, they cannot themselves be initialized from previous runs, as the nested sampling approach must sample from the full prior volume.

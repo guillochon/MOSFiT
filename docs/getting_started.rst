@@ -63,7 +63,7 @@ Using your own data
 
     mosfit -e my_ascii_data_file.csv
 
-``MOSFiT`` will convert the files to JSON format and immediately begin processing the new files (append ``-i 0`` to immediately exit after conversion). For more information, please see the :ref:`Private data` section.
+``MOSFiT`` will convert the files to JSON format and immediately begin processing the new files (append ``-G`` to immediately exit after conversion). For more information, please see the :ref:`Private data` section.
 
 .. _producing-outputs:
 
