@@ -21,7 +21,7 @@ class TDEConstraints(Constraint):
         self._score_modifier = 0.0
         self._rp = kwargs[self.key('rp')]  # already in cgs
         self._bhmass = kwargs['bhmass']
-        self._Rg = (c.G.cgs.value * self._bhmass * M_SUN_CGS /
+        self._Rs = (2 * c.G.cgs.value * self._bhmass * M_SUN_CGS /
                     (C_CGS * C_CGS))
 
         # Pericenter radius is getting close to Schwarzschild radius
