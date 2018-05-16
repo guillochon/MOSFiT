@@ -38,18 +38,19 @@ class Kroupa(Parameter):
         0.01 <= mass, k is normalization
         """
         if maxmass < 0.01:
-            return None
+            prob = None
         elif maxmass < 0.08:
-            return (k / 0.7 * 0.08**0.3 * (maxmass**0.7 - 0.01**0.7))
+            prob = (k / 0.7 * 0.08**0.3 * (maxmass**0.7 - 0.01**0.7))
         elif maxmass < 0.5:
-            return ((k / 0.7 * 0.08**0.3 * (0.08**0.7 - 0.01**0.7)) +
+            prob = ((k / 0.7 * 0.08**0.3 * (0.08**0.7 - 0.01**0.7)) +
                     (k / -0.3) * 0.08**1.3 * (maxmass**(-0.3) -
                                               0.08**(-0.3)))
         else:
-            return ((k / 0.7 * 0.08**0.3 * (0.08**0.7 - 0.01**0.7)) +
+            prob = ((k / 0.7 * 0.08**0.3 * (0.08**0.7 - 0.01**0.7)) +
                     (k / -0.3) * 0.08**1.3 * (0.5**(-0.3) - 0.08**(-0.3)) +
                     (k / -1.3) * 0.08**1.3 * (0.5 * maxmass**(-1.3) -
                                               0.5**(-0.3)))
+        return prob
 
     def prior_cdf(self, u):
         """Inverse cumulative density function from Kroupa 2001b.

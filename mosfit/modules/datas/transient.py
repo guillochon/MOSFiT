@@ -2,8 +2,9 @@
 from collections import OrderedDict
 
 import numpy as np
-from astrocats.catalog.utils import is_number
 from astrocats.catalog.source import SOURCE
+from astrocats.catalog.utils import is_number
+from astropy.time import Time as astrotime
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
@@ -44,6 +45,8 @@ class Transient(Module):
                  exclude_systems=[],
                  exclude_sources=[],
                  exclude_kinds=[],
+                 time_unit=None,
+                 time_list=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -255,7 +258,7 @@ class Transient(Module):
                     self._data[key] = float(self._data[key])
                     self._data_determined_parameters.append(key)
 
-        if 'times' in self._data and smooth_times >= 0:
+        if 'times' in self._data and (smooth_times >= 0 or time_list):
             obs = list(
                 zip(*(self._data['telescopes'], self._data['systems'],
                       self._data['modes'], self._data['instruments'],
@@ -301,10 +304,27 @@ class Transient(Module):
                      (extrapolate_time[0], extrapolate_time[0])))
             mint, maxt = (min(self._data['times']) - minet,
                           max(self._data['times']) + maxet)
-            alltimes = list(
-                sorted(
-                    set([x for x in self._data['times']] + list(
-                        np.linspace(mint, maxt, max(smooth_times, 2))))))
+            if time_unit is None:
+                alltimes = time_list + [x for x in self._data['times']]
+            elif time_unit == 'mjd':
+                alltimes = [x - min(self._data[
+                    'times']) for x in time_list] + [
+                        x for x in self._data['times']]
+            elif time_unit == 'phase':
+                if 'maxdate' not in self._data or not len(self._data[
+                        'maxdate']) or 'value' not in self._data['maxdate'][0]:
+                    raise(prt.message('no_maxdate', name))
+                max_mjd = astrotime(self._data['maxdate'][0]['value'].replace(
+                    '/', '-')).mjd
+                alltimes = [x + max_mjd - min(self._data[
+                    'times']) for x in time_list] + [
+                        x for x in self._data['times']]
+            else:
+                raise('Unknown `time_unit`.')
+            if smooth_times >= 0:
+                alltimes += list(
+                    np.linspace(mint, maxt, max(smooth_times, 2)))
+            alltimes = list(sorted(set(alltimes)))
             currobslist = list(
                 zip(*(
                     self._data['times'], self._data['telescopes'],
