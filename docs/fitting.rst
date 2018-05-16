@@ -163,9 +163,9 @@ After completing a nested sampling run, it is often useful to draw parameter com
 
     mosfit -e LSQ12dlf -m slsn -w name-of-output.json -G -N 100
 
-where above we specify that we would like 100 parameter combinations from the ``nester`` output. The weights determined with ``nester`` will be used to proportionately draw walkers for ``ensembler``, yielding a sample that properly maps to the posterior determined by the nested sampling.
+where above we specify that we would like 100 parameter combinations from the ``nester`` output. The weights determined with ``nester`` will be used to proportionately draw walkers for ``ensembler``, yielding a sample that properly maps to the posterior determined by the nested sampling. As the above does not perform any additional sampling, the user does not need to specify an event to compare against, and can simply omit the ``-e`` flag and its argument(s).
 
-As the above does not perform any additional sampling, the user does not need to specify an event to compare against, and can simply omit the ``-e`` flag and its argument(s).
+Because ``nester`` currently does not support restarts, the opposite situation of using ``ensembler`` outputs to initialize ``nester`` is not possible.
 
 .. _io:
 
