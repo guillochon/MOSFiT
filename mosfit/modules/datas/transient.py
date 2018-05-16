@@ -278,11 +278,8 @@ class Transient(Module):
 
         if 'times' in self._data and (smooth_times >= 0 or time_list):
             # Build an observation array out of the real data first.
-            obs = list(
-                zip(*(self._data['telescopes'], self._data['systems'],
-                      self._data['modes'], self._data['instruments'],
-                      self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'], self._data['u_frequencies'])))
+            obs = list(zip(*(self._data[x] for x in self._OBS_KEYS if
+                             x != 'times')))
             # Append extra observations if requested.
             if len(band_list):
                 b_teles = band_telescopes if len(band_telescopes) == len(
@@ -329,11 +326,7 @@ class Transient(Module):
                      (extrapolate_time[0], extrapolate_time[0])))
             mint, maxt = (min(self._data['times']) - minet,
                           max(self._data['times']) + maxet)
-            alltimes = list(
-                sorted(
-                    set([x for x in self._data['times']] + list(
-                        np.linspace(mint, maxt, max(smooth_times, 2))))))
-            currobslist = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
+
             if time_unit is None:
                 alltimes = time_list + [x for x in self._data['times']]
             elif time_unit == 'mjd':
@@ -355,15 +348,9 @@ class Transient(Module):
                 alltimes += list(
                     np.linspace(mint, maxt, max(smooth_times, 2)))
             alltimes = list(sorted(set(alltimes)))
-            currobslist = list(
-                zip(*(
-                    self._data['times'], self._data['telescopes'],
-                    self._data['systems'], self._data['modes'],
-                    self._data['instruments'], self._data['bandsets'],
-                    self._data['bands'], self._data['frequencies'],
-                    self._data['u_frequencies'])))
 
             # Create additional fake observations.
+            currobslist = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
             obslist = []
             for ti, t in enumerate(alltimes):
                 new_per = np.round(100.0 * float(ti) / len(alltimes), 1)
