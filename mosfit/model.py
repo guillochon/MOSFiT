@@ -787,7 +787,15 @@ class Model(object):
                     trees[tag]['children'].update(children)
                     simple[tag].update(simple_children)
 
-    def draw_walker(self, test=True, walkers_pool=[], replace=False):
+    def draw_from_icdf(self, draw):
+        """Draw parameters into unit interval using parameter inverse CDFs."""
+        return [
+            self._modules[self._free_parameters[i]].prior_icdf(x)
+            for i, x in enumerate(draw)
+        ]
+
+    def draw_walker(self, test=True, walkers_pool=[], replace=False,
+                    weights=None):
         """Draw a walker randomly.
 
         Draw a walker randomly from the full range of all parameters, reject
@@ -800,15 +808,13 @@ class Model(object):
             draw_cnt += 1
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
-            draw = [
-                self._modules[self._free_parameters[i]].prior_cdf(x)
-                for i, x in enumerate(draw)
-            ]
+            draw = self.draw_from_icdf(draw)
             if len(walkers_pool):
                 if not replace:
                     chosen_one = 0
                 else:
-                    chosen_one = np.random.choice(range(len(walkers_pool)))
+                    chosen_one = np.random.choice(range(len(walkers_pool)),
+                                                  p=weights)
                 for e, elem in enumerate(walkers_pool[chosen_one]):
                     if elem is not None:
                         draw[e] = elem
@@ -828,6 +834,11 @@ class Model(object):
 
         if not replace and chosen_one is not None:
             del(walkers_pool[chosen_one])
+            if weights is not None:
+                del(weights[chosen_one])
+                if len(weights) and None not in weights:
+                    totw = np.sum(weights)
+                    weights = [x / totw for x in weights]
         return (p, score)
 
     def get_max_depth(self, tag, parent, max_depth):
@@ -875,6 +886,11 @@ class Model(object):
         """Return ln(likelihood)."""
         outputs = self.run_stack(x, root='objective')
         return outputs['value']
+
+    def ln_likelihood_floored(self, x):
+        """Return ln(likelihood), floored to a finite value."""
+        outputs = self.run_stack(x, root='objective')
+        return max(LOCAL_LIKELIHOOD_FLOOR, outputs['value'])
 
     def free_parameter_names(self, x):
         """Return list of free parameter names."""

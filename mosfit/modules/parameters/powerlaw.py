@@ -31,8 +31,8 @@ class PowerLaw(Parameter):
         return np.log(((value - self._miv) / (self._mav - self._miv)) **
                       self._alpha)
 
-    def prior_cdf(self, u):
-        """Evaluate cumulative density function."""
+    def prior_icdf(self, u):
+        """Evaluate inverse cumulative density function."""
         value = ((self._mivap1 + u * self._miavap1) ** self._cdf_exp)
         if self._log:
             value = np.log(value)

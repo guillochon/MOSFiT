@@ -36,8 +36,8 @@ class Gaussian(Parameter):
             value = np.log(value)
         return -(value - self._mu) ** 2 / (2. * self._sigma ** 2)
 
-    def prior_cdf(self, u):
-        """Evaluate cumulative density function."""
+    def prior_icdf(self, u):
+        """Evaluate inverse cumulative density function."""
         value = (erfinv(2.0 * u - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
         value = (value - self._min_value) / (self._max_value - self._min_value)
 
