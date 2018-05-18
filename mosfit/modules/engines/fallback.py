@@ -193,13 +193,6 @@ class Fallback(Engine):
                 time['lo'] = np.copy(time['hi'])
                 dmdt['lo'] = np.copy(dmdt['hi'])
 
-        # Read in BD end of M-R relation
-        BDfilename = (os.path.dirname(__file__)[:-15] + 'models/tde/data/' +
-                      'BD_M-R_Burrows11.txt')
-        # self._BD_m, self._BD_r = np.loadtxt(BDfilename, skiprows=15)
-        m, r = np.loadtxt(BDfilename, skiprows=15)
-        self._BD_MR_function = interp1d(m, r)
-
     def process(self, **kwargs):
         """Process module."""
         beta_interp = True
@@ -436,59 +429,53 @@ class Fallback(Engine):
         # dmdt ~ Mh^(-1/2)
         self._Mh = kwargs['bhmass']  # in units of solar masses
 
-        # Use Burrows et al. relationships for solar metallicity
-        # 3-5 Gyr BDs (Figure 3)
-        if self._Mstar < 0.01:
-            print('Mstar too small, current mass-radius relations fail')
-
+        # Assume that BDs below 0.1 solar masses are n=1 polytropes
         if self._Mstar < 0.1:
-            # self._BD_MR_function = interp1d(self._BD_m, self._BD_r)
-            Rstar = self._BD_MR_function(self._Mstar)
-
+            Mstar_Tout = 0.1
         else:
             Mstar_Tout = self._Mstar
 
-            # calculate Rstar from Mstar (using Tout et. al. 1996),
-            # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
-            Z = 0.0134  # assume solar metallicity
-            log10_Z_02 = np.log10(Z / 0.02)
+        # calculate Rstar from Mstar (using Tout et. al. 1996),
+        # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
+        Z = 0.0134  # assume solar metallicity
+        log10_Z_02 = np.log10(Z / 0.02)
 
-            # Tout coefficients for calculating Rstar
-            Tout_theta = (1.71535900 + 0.62246212 * log10_Z_02 - 0.92557761 *
-                          log10_Z_02 ** 2 - 1.16996966 * log10_Z_02 ** 3 -
-                          0.30631491 *
-                          log10_Z_02 ** 4)
-            Tout_l = (6.59778800 - 0.42450044 * log10_Z_02 - 12.13339427 *
-                      log10_Z_02 ** 2 - 10.73509484 * log10_Z_02 ** 3 -
-                      2.51487077 * log10_Z_02 ** 4)
-            Tout_kpa = (10.08855000 - 7.11727086 * log10_Z_02 - 31.67119479 *
-                        log10_Z_02 ** 2 - 24.24848322 * log10_Z_02 ** 3 -
-                        5.33608972 * log10_Z_02 ** 4)
-            Tout_lbda = (1.01249500 + 0.32699690 * log10_Z_02 - 0.00923418 *
-                         log10_Z_02 ** 2 - 0.03876858 * log10_Z_02 ** 3 -
-                         0.00412750 * log10_Z_02 ** 4)
-            Tout_mu = (0.07490166 + 0.02410413 * log10_Z_02 + 0.07233664 *
-                       log10_Z_02 ** 2 + 0.03040467 * log10_Z_02 ** 3 +
-                       0.00197741 * log10_Z_02 ** 4)
-            Tout_nu = 0.01077422
-            Tout_eps = (3.08223400 + 0.94472050 * log10_Z_02 - 2.15200882 *
-                        log10_Z_02 ** 2 - 2.49219496 * log10_Z_02 ** 3 -
-                        0.63848738 * log10_Z_02 ** 4)
-            Tout_o = (17.84778000 - 7.45345690 * log10_Z_02 - 48.9606685 *
-                      log10_Z_02 ** 2 - 40.05386135 * log10_Z_02 ** 3 -
-                      9.09331816 * log10_Z_02 ** 4)
-            Tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 + 0.00388783 *
-                       log10_Z_02 ** 2 + 0.00142402 * log10_Z_02 ** 3 -
-                       0.00007671 * log10_Z_02 ** 4)
-            # caculate Rstar in units of Rsolar
-            Rstar = ((Tout_theta * Mstar_Tout ** 2.5 + Tout_l *
-                      Mstar_Tout ** 6.5 +
-                      Tout_kpa * Mstar_Tout ** 11 + Tout_lbda *
-                      Mstar_Tout ** 19 +
-                      Tout_mu * Mstar_Tout ** 19.5) /
-                     (Tout_nu + Tout_eps * Mstar_Tout ** 2 + Tout_o *
-                      Mstar_Tout ** 8.5 + Mstar_Tout ** 18.5 + Tout_pi *
-                      Mstar_Tout ** 19.5))
+        # Tout coefficients for calculating Rstar
+        Tout_theta = (1.71535900 + 0.62246212 * log10_Z_02 - 0.92557761 *
+                      log10_Z_02 ** 2 - 1.16996966 * log10_Z_02 ** 3 -
+                      0.30631491 *
+                      log10_Z_02 ** 4)
+        Tout_l = (6.59778800 - 0.42450044 * log10_Z_02 - 12.13339427 *
+                  log10_Z_02 ** 2 - 10.73509484 * log10_Z_02 ** 3 -
+                  2.51487077 * log10_Z_02 ** 4)
+        Tout_kpa = (10.08855000 - 7.11727086 * log10_Z_02 - 31.67119479 *
+                    log10_Z_02 ** 2 - 24.24848322 * log10_Z_02 ** 3 -
+                    5.33608972 * log10_Z_02 ** 4)
+        Tout_lbda = (1.01249500 + 0.32699690 * log10_Z_02 - 0.00923418 *
+                     log10_Z_02 ** 2 - 0.03876858 * log10_Z_02 ** 3 -
+                     0.00412750 * log10_Z_02 ** 4)
+        Tout_mu = (0.07490166 + 0.02410413 * log10_Z_02 + 0.07233664 *
+                   log10_Z_02 ** 2 + 0.03040467 * log10_Z_02 ** 3 +
+                   0.00197741 * log10_Z_02 ** 4)
+        Tout_nu = 0.01077422
+        Tout_eps = (3.08223400 + 0.94472050 * log10_Z_02 - 2.15200882 *
+                    log10_Z_02 ** 2 - 2.49219496 * log10_Z_02 ** 3 -
+                    0.63848738 * log10_Z_02 ** 4)
+        Tout_o = (17.84778000 - 7.45345690 * log10_Z_02 - 48.9606685 *
+                  log10_Z_02 ** 2 - 40.05386135 * log10_Z_02 ** 3 -
+                  9.09331816 * log10_Z_02 ** 4)
+        Tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 + 0.00388783 *
+                   log10_Z_02 ** 2 + 0.00142402 * log10_Z_02 ** 3 -
+                   0.00007671 * log10_Z_02 ** 4)
+        # caculate Rstar in units of Rsolar
+        Rstar = ((Tout_theta * Mstar_Tout ** 2.5 + Tout_l *
+                  Mstar_Tout ** 6.5 +
+                  Tout_kpa * Mstar_Tout ** 11 + Tout_lbda *
+                  Mstar_Tout ** 19 +
+                  Tout_mu * Mstar_Tout ** 19.5) /
+                 (Tout_nu + Tout_eps * Mstar_Tout ** 2 + Tout_o *
+                  Mstar_Tout ** 8.5 + Mstar_Tout ** 18.5 + Tout_pi *
+                  Mstar_Tout ** 19.5))
 
         dmdt = (dmdt * np.sqrt(Mhbase / self._Mh) *
                 (self._Mstar / Mstarbase) ** 2.0 * (Rstarbase / Rstar) ** 1.5)
@@ -582,9 +569,6 @@ class Fallback(Engine):
         tpeak = time[np.argmax(dmdt)]
 
         timeinterpfunc = interp1d(time, dmdt)
-        # For calculating total mass that has fallen back onto black hole
-        dmdt_precut = np.copy(dmdt)
-        time_precut = np.copy(time)
 
         lengthpretimes = len(np.where(self._times < time[0])[0])
         lengthposttimes = len(np.where(self._times > time[-1])[0])
@@ -622,5 +606,4 @@ class Fallback(Engine):
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback_orig': float(tfallback),
-                'dmdt_precut': dmdt_precut, 'time_precut': time_precut}
+                'dmdt': dmdtnew, 'Ledd': Ledd}
