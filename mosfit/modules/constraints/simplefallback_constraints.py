@@ -1,4 +1,4 @@
-"""Definitions for the `SimplefallbackConstraints` class."""
+"""Definitions for the `FallbackConstraints` class."""
 import numpy as np
 from astrocats.catalog.source import SOURCE
 
@@ -9,8 +9,8 @@ from mosfit.modules.constraints.constraint import Constraint
 # Important: Only define one ``Module`` class per file.
 
 
-class SimplefallbackConstraints(Constraint):
-    """simplefallback constraints.
+class FallbackConstraints(Constraint):
+    """fallback constraints.
 
     1. Kinetic energy cannot excede fallback energy
     2. Ejecta remain optically thick to thermal photons for at least 100d
@@ -22,7 +22,7 @@ class SimplefallbackConstraints(Constraint):
 
     def __init__(self, **kwargs):
         """Initialize module."""
-        super(SimplefallbackConstraints, self).__init__(**kwargs)
+        super(FallbackConstraints, self).__init__(**kwargs)
         self._wants_dense = True
 
     def process(self, **kwargs):
