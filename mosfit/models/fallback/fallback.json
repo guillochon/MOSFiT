@@ -1,0 +1,169 @@
+{
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1.0e18,
+        "class":"parameter",
+        "latex":"n_{\\rm H}^{\\rm host}\\,({\\rm cm}^{-2})",	
+        "derived_keys":"avhost"
+    },
+    "texplosion":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
+        "requests":{
+            "min_times": "transient"
+        }	
+    },
+    "Lat1sec":{
+        "kind":"parameter",
+        "value":1.0e55,
+        "class":"parameter",
+        "latex":"L_{\\rm 1}\\,({\\rm erg}\\,{\\rm s}^{-1})"
+    },
+    "ton":{
+        "kind":"parameter",
+        "value":1e-5,
+        "class":"parameter",
+        "latex":"T_{\\rm tr}\\,{\\rm (days)}"
+    },
+    "kappa":{
+        "kind":"parameter",
+        "value":0.2,
+        "class":"parameter",
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "kappagamma":{
+        "kind":"parameter",
+        "value":1.0e10,
+        "class":"parameter",
+        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },    
+    "mejecta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
+    },
+    "vejecta":{
+        "kind":"parameter",
+        "value":1.5e4,
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "temperature":{
+        "kind":"parameter",
+        "value":6.0e3,
+        "class":"parameter",
+        "latex":"T_{\\min}\\,{\\rm (K)}"
+    },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cutoff}"
+    },
+    "neutrino_energy":{
+        "kind":"parameter",
+        "value":1.0e51,
+        "class":"parameter",
+        "latex":"E_{\\nu}"
+    },    
+    "tnebular_min":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm neb}"
+    },    
+    "simplefallback":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",	    
+            "Lat1sec",
+            "ton",
+            "texplosion"
+        ]
+    },
+    "diffusion":{
+        "kind":"transform",
+        "inputs":[
+            "simplefallback",
+            "kappa",
+            "kappagamma",	    
+            "mejecta",
+            "texplosion",
+            "vejecta"
+        ]
+    },
+    "temperature_floor":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion",
+            "temperature"
+        ]
+    },
+    "blackbody_cutoff":{
+        "kind":"sed",
+        "inputs":[
+            "texplosion",
+            "redshift",
+            "temperature_floor",
+            "cutoff_wavelength"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },    
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody_cutoff",
+            "nhhost",
+            "rvhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "photometry":{
+        "kind":"observable",
+        "inputs":[
+            "losextinction",
+            "lumdist"
+        ]
+    },
+    "fallback_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "mejecta",
+            "vejecta",
+            "kappa",
+            "tnebular_min",
+            "Lat1sec",
+            "ton",
+            "diffusion",
+            "texplosion",
+            "redshift",
+            "alltimes",
+            "neutrino_energy"	    
+        ]
+    },    
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "diagonal",
+            "fallback_constraints"
+        ]
+    }    
+}
