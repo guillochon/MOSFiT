@@ -82,7 +82,7 @@ class Converter(object):
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
             'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
-            "z'", 'C', 'Y', 'Open'
+            "z'", 'C', 'Y', 'I1', 'I2', 'I3', 'I4', 'Open'
         ]
         ebands = [a + b for a, b in chain(
             product(self._ecntstrs, self._band_names),
@@ -878,10 +878,12 @@ class Converter(object):
                                 merge_with_existing = prt.prompt(
                                     'merge_with_existing', default='y')
                             if merge_with_existing:
+                                print(event_names[ei])
                                 existing = Entry.init_from_file(
                                     catalog=None,
                                     name=event_names[ei],
                                     path=new_events[ei],
+                                    clean=True,
                                     merge=False,
                                     pop_schema=False,
                                     ignore_keys=[ENTRY.MODELS],
