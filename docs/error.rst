@@ -18,7 +18,7 @@ Maximum likelihood analysis (MLA) is a simple way to include the error directly 
 
 But MLA is rather inflexible, in order to match a model to observations, it must (by construction) increase the variance for *all* observations simultaneously. For most models, this is probably overkill: the models likely deviate in *some* colors, at *some* times. What's more, MLA only allows for the white noise component of the error to expand to accomodate a model, in reality there's likely to be systematic offsets between models and data that leads to *covariant* errors.
 
-As described below, Gaussian processes are the default error model used in ``MOSFiT``. To revert to MLA the user should fix the covariance parameters using ``-F covariance``.
+As of version 1.1.3, MLA is the default error model used in ``MOSFiT`` (it was previously Gaussian processes, which is described below).
 
 .. _gaussian:
 
@@ -26,7 +26,7 @@ As described below, Gaussian processes are the default error model used in ``MOS
 Gaussian processes
 ------------------
 
-Gaussian processes (GP) provides an error model that addresses these shortcomings of MLA. A white noise component, equivalent to MLA, is still included, but off-diagonal covariance is explicitly modeled by considering the "distance" between observations. ``MOSFiT`` by default uses GP as its error model, with a kernel structure that is described below.
+Gaussian processes (GP) provides an error model that addresses these shortcomings of MLA. A white noise component, equivalent to MLA, is still included, but off-diagonal covariance is explicitly modeled by considering the "distance" between observations. To enable GP, the user should "release" the covariance variables using the release flag, ``-r covariance``. The kernel structure used is described below.
 
 .. _kernel:
 
