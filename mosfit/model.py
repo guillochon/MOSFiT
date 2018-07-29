@@ -62,6 +62,7 @@ class Model(object):
         self._references = OrderedDict()
         self._free_parameters = []
         self._user_fixed_parameters = []
+        self._user_released_parameters = []
         self._kinds_needed = set()
         self._kinds_supported = set()
 
@@ -355,6 +356,7 @@ class Model(object):
                   band_sampling_points=17,
                   variance_for_each=[],
                   user_fixed_parameters=[],
+                  user_released_parameters=[],
                   pool=None):
         """Load the data for the specified event."""
         if pool is not None:
@@ -367,6 +369,7 @@ class Model(object):
 
         # Fix user-specified parameters.
         fixed_parameters = []
+        released_parameters = []
         for task in self._call_stack:
             for fi, param in enumerate(user_fixed_parameters):
                 if (task == param or
@@ -384,8 +387,13 @@ class Model(object):
                         del self._call_stack[task]['max_value']
                     self._modules[task].fix_value(
                         self._call_stack[task]['value'])
+            for fi, param in enumerate(user_released_parameters):
+                if (task == param or
+                        self._call_stack[task].get(
+                            'class', '') == param):
+                    released_parameters.append(task)
 
-        self.determine_free_parameters(fixed_parameters)
+        self.determine_free_parameters(fixed_parameters, released_parameters)
 
         for ti, task in enumerate(self._call_stack):
             cur_task = self._call_stack[task]
@@ -433,7 +441,7 @@ class Model(object):
 
         # Determine free parameters again as setting data may have fixed some
         # more.
-        self.determine_free_parameters(fixed_parameters)
+        self.determine_free_parameters(fixed_parameters, released_parameters)
 
         self.exchange_requests()
 
@@ -449,7 +457,7 @@ class Model(object):
         self.adjust_fixed_parameters(variance_for_each, outputs)
 
         # Determine free parameters again as above may have changed them.
-        self.determine_free_parameters(fixed_parameters)
+        self.determine_free_parameters(fixed_parameters, released_parameters)
 
         self.determine_number_of_measurements()
 
@@ -608,18 +616,20 @@ class Model(object):
                 self._num_measurements += len(
                     self._modules[task]._data['times'])
 
-    def determine_free_parameters(self, extra_fixed_parameters=[]):
+    def determine_free_parameters(
+            self, extra_fixed_parameters=[], extra_released_parameters=[]):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
         self._user_fixed_parameters = []
         self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if (task not in extra_fixed_parameters and
-                    cur_task['kind'] == 'parameter' and
-                    'min_value' in cur_task and 'max_value' in cur_task and
-                    cur_task['min_value'] != cur_task['max_value'] and
-                    not self._modules[task]._fixed):
+            if (task in extra_released_parameters or (
+                task not in extra_fixed_parameters and
+                cur_task['kind'] == 'parameter' and
+                'min_value' in cur_task and 'max_value' in cur_task and
+                cur_task['min_value'] != cur_task['max_value'] and
+                    not self._modules[task]._fixed)):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1

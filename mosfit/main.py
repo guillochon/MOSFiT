@@ -223,6 +223,14 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_user_fixed_parameters'))
 
     parser.add_argument(
+        '--release-parameters',
+        '-r',
+        dest='user_released_parameters',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_user_released_parameters'))
+
+    parser.add_argument(
         '--iterations',
         '-i',
         dest='iterations',
