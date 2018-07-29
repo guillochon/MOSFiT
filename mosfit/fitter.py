@@ -150,6 +150,7 @@ class Fitter(object):
                    check_upload_quality=False,
                    variance_for_each=[],
                    user_fixed_parameters=[],
+                   user_released_parameters=[],
                    convergence_type=None,
                    convergence_criteria=None,
                    save_full_chain=False,
@@ -391,6 +392,7 @@ class Fitter(object):
                             band_sampling_points=band_sampling_points,
                             variance_for_each=variance_for_each,
                             user_fixed_parameters=user_fixed_parameters,
+                            user_released_parameters=user_released_parameters,
                             pool=pool)
 
                         if not success:

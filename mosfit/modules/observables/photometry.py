@@ -35,7 +35,11 @@ class Photometry(Module):
         band_list = []
 
         if self._pool.is_master():
-            with open(os.path.join(self._dir_path, 'filterrules.json')) as f:
+            rules_path = os.path.join(
+                'modules', 'observables', 'filterrules.json')
+            if not os.path.isfile(rules_path):
+                rules_path = os.path.join(self._dir_path, 'filterrules.json')
+            with open(rules_path) as f:
                 filterrules = json.load(f, object_pairs_hook=OrderedDict)
             for rank in range(1, self._pool.size + 1):
                 self._pool.comm.send(filterrules, dest=rank, tag=5)

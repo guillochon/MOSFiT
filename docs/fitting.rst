@@ -150,7 +150,9 @@ The nested sampler can be selected via the ``-D`` flag: ``-D nester``.
 Baselining and batching
 -----------------------
 
-Description forthcoming.
+When performing a nested sampling run, the user might notice that there are two phases to the process: "baselining" and "batching". In the baselining phase, ``nester`` samples from the posterior repeatedly to obtain the log of the evidence :math:`\log_{10} Z` (the N-dimensional volume integral of the postioer), for which it estimates the error :math:`\Delta \log_{10} Z`. Once :math:`\Delta \log_{10} Z` is smaller than some prescribed value (set with the ``-R`` parameter), baselining ceases and batching begins.
+
+In batching, ``nester`` fleshes out the posterior such that even regions of lower probability that may not be dominating the evidence integral are resolved with high fidelity. In this part of the process, the posterior is sampled from again, but this time minimizing the error in the posterior distribution as opposed to its integral. This process continues until a stopping criterion is met, which indicates that the posterior is now of high quality. Typically, the batching phase takes a few times longer than the baselining phase.
 
 .. _switching:
 

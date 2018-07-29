@@ -5,14 +5,9 @@
 	{
 		"filters": {
 			"white": {
-				"min_wavelength": 2000,
-				"max_wavelength": 11000,
-				"delta_wavelength": 50
-			},
-			"white_extended": {
-				"min_wavelength": 20,
-				"max_wavelength": 11000,
-				"delta_wavelength": 100
+				"min_wavelength": 50,
+				"max_wavelength": 14990,
+				"delta_wavelength": 10
 			}
 		}
 	},
@@ -296,6 +291,66 @@
 	},
 	{
 		"telescopes": [
+			"CTIO",
+			"DECam"
+		],
+		"instruments": [
+			"",
+			"DECam"
+		],
+		"systems": [
+			"",
+			"AB"
+		],
+		"filters":{
+			"u": {
+				"SVO": "CTIO/DECam.u",
+				"offset": 0
+			},
+			"g": {
+				"SVO": "CTIO/DECam.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "CTIO/DECam.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "CTIO/DECam.i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "CTIO/DECam.z",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Spitzer"
+		],
+		"instruments": [
+			"",
+			"Spitzer"
+		],
+		"systems": [
+			"",
+			"AB"
+		],
+		"filters": {
+			"F36": {
+				"SVO": "Spitzer/IRAC.I1",
+				"offset": 0
+			},
+			"F45": {
+				"SVO": "Spitzer/IRAC.I2",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
 			"",
 			"LCO"
 		],
@@ -354,7 +409,7 @@
 				"SVO": "Gemini/Flamingos2.H",
 				"offset": 0
 			},
-			"Ks": {
+			"Kss": {
 				"SVO": "Gemini/Flamingos2.Ks",
 				"offset": 0
 			}
@@ -472,6 +527,9 @@
 		"instruments": [
 			"CFH12k",
 			"P48"
+		],
+		"systems":[
+			"AB"
 		],
 		"filters": {
 			"R": {
@@ -1661,6 +1719,26 @@
 		"filters": {
 			"g": {
 				"SVO": "Keck/LRIS.g",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Kepler"
+		],
+		"instruments": [
+			"",
+			"Kepler"
+		],
+		"systems": [
+			"",
+			"AB"
+		],
+		"filters": {
+			"K": {
+				"SVO": "Kepler/Kepler.K",
 				"offset": 0
 			}
 		}

@@ -62,6 +62,7 @@ class Model(object):
         self._references = OrderedDict()
         self._free_parameters = []
         self._user_fixed_parameters = []
+        self._user_released_parameters = []
         self._kinds_needed = set()
         self._kinds_supported = set()
 
@@ -125,10 +126,9 @@ class Model(object):
                             options=type_options,
                             message=False,
                             default='n',
-                            none_string=('None of the above, skip this '
-                                         'transient.'))
+                            none_string=prt.text('none_above_models'))
                         if sel is not None:
-                            self._model_name = type_options[sel - 1]
+                            self._model_name = type_options[int(sel) - 1]
                     if not self._model_name:
                         break
                     if self._model_name == another_model_txt:
@@ -213,7 +213,7 @@ class Model(object):
         elif os.path.isfile(model_pp):
             pp = model_pp
         else:
-            raise ValueError('Could not find parameter file!')
+            raise ValueError(prt.text('no_parameter_file'))
 
         if self._is_master:
             prt.message('files', [basic_model_path, model_path, pp],
@@ -294,27 +294,6 @@ class Model(object):
                 self._bands = self._modules[task].bands()
             self._modules[task].set_attributes(cur_task)
 
-            # This is currently not functional for MPI
-            # cur_task = self._call_stack[task]
-            # mod_name = cur_task.get('class', task)
-            # mod_path = os.path.join('modules', cur_task['kind'] + 's',
-            #                         mod_name + '.py')
-            # if not os.path.isfile(mod_path):
-            #     mod_path = os.path.join(self._dir_path, 'modules',
-            #                             cur_task['kind'] + 's',
-            #                             mod_name + '.py')
-            # mod_name = ('mosfit.modules.' + cur_task['kind'] + 's.' +
-            # mod_name)
-            # mod = importlib.machinery.SourceFileLoader(mod_name,
-            #                                            mod_path).load_module()
-            # mod_class = getattr(mod, class_name)
-            # if (cur_task['kind'] == 'parameter' and task in
-            #         self._parameter_json):
-            #     cur_task.update(self._parameter_json[task])
-            # self._modules[task] = mod_class(name=task, **cur_task)
-            # if mod_name == 'photometry':
-            #     self._bands = self._modules[task].bands()
-
         # Look forward to see which modules want dense arrays.
         for task in self._call_stack:
             for ftask in self._call_stack:
@@ -377,6 +356,7 @@ class Model(object):
                   band_sampling_points=17,
                   variance_for_each=[],
                   user_fixed_parameters=[],
+                  user_released_parameters=[],
                   pool=None):
         """Load the data for the specified event."""
         if pool is not None:
@@ -389,6 +369,7 @@ class Model(object):
 
         # Fix user-specified parameters.
         fixed_parameters = []
+        released_parameters = []
         for task in self._call_stack:
             for fi, param in enumerate(user_fixed_parameters):
                 if (task == param or
@@ -406,8 +387,13 @@ class Model(object):
                         del self._call_stack[task]['max_value']
                     self._modules[task].fix_value(
                         self._call_stack[task]['value'])
+            for fi, param in enumerate(user_released_parameters):
+                if (task == param or
+                        self._call_stack[task].get(
+                            'class', '') == param):
+                    released_parameters.append(task)
 
-        self.determine_free_parameters(fixed_parameters)
+        self.determine_free_parameters(fixed_parameters, released_parameters)
 
         for ti, task in enumerate(self._call_stack):
             cur_task = self._call_stack[task]
@@ -455,7 +441,7 @@ class Model(object):
 
         # Determine free parameters again as setting data may have fixed some
         # more.
-        self.determine_free_parameters(fixed_parameters)
+        self.determine_free_parameters(fixed_parameters, released_parameters)
 
         self.exchange_requests()
 
@@ -471,7 +457,7 @@ class Model(object):
         self.adjust_fixed_parameters(variance_for_each, outputs)
 
         # Determine free parameters again as above may have changed them.
-        self.determine_free_parameters(fixed_parameters)
+        self.determine_free_parameters(fixed_parameters, released_parameters)
 
         self.determine_number_of_measurements()
 
@@ -630,18 +616,20 @@ class Model(object):
                 self._num_measurements += len(
                     self._modules[task]._data['times'])
 
-    def determine_free_parameters(self, extra_fixed_parameters=[]):
+    def determine_free_parameters(
+            self, extra_fixed_parameters=[], extra_released_parameters=[]):
         """Generate `_free_parameters` and `_num_free_parameters`."""
         self._free_parameters = []
         self._user_fixed_parameters = []
         self._num_variances = 0
         for task in self._call_stack:
             cur_task = self._call_stack[task]
-            if (task not in extra_fixed_parameters and
-                    cur_task['kind'] == 'parameter' and
-                    'min_value' in cur_task and 'max_value' in cur_task and
-                    cur_task['min_value'] != cur_task['max_value'] and
-                    not self._modules[task]._fixed):
+            if (task in extra_released_parameters or (
+                task not in extra_fixed_parameters and
+                cur_task['kind'] == 'parameter' and
+                'min_value' in cur_task and 'max_value' in cur_task and
+                cur_task['min_value'] != cur_task['max_value'] and
+                    not self._modules[task]._fixed)):
                 self._free_parameters.append(task)
                 if cur_task.get('class', '') == 'variance':
                     self._num_variances += 1
@@ -914,17 +902,17 @@ class Model(object):
         for key in sorted(kwargs):
             x.append(kwargs[key])
 
-        l = self.ln_likelihood(x) + self.ln_prior(x)
-        if not np.isfinite(l):
+        li = self.ln_likelihood(x) + self.ln_prior(x)
+        if not np.isfinite(li):
             return LOCAL_LIKELIHOOD_FLOOR
-        return l
+        return li
 
     def fprob(self, x):
         """Return score for fracking."""
-        l = -(self.ln_likelihood(x) + self.ln_prior(x))
-        if not np.isfinite(l):
+        li = -(self.ln_likelihood(x) + self.ln_prior(x))
+        if not np.isfinite(li):
             return -LOCAL_LIKELIHOOD_FLOOR
-        return l
+        return li
 
     def plural(self, x):
         """Pluralize and cache model-related keys."""

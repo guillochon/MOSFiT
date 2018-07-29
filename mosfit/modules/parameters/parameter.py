@@ -14,7 +14,7 @@ class Parameter(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Parameter, self).__init__(**kwargs)
-        self._fixed = False
+        self._fixed = kwargs.get('fixed', False)
         self._fixed_by_user = False
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)

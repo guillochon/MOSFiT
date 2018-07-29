@@ -606,6 +606,7 @@ class Printer(object):
             lines = '\n'.join(doodle)
 
         self.prt(lines, colorify=True, inline=not make_space)
+        sys.stdout.flush()
         if make_space:
             self._was_inline = True
 
