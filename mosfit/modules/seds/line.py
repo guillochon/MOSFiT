@@ -78,5 +78,6 @@ class Line(SED):
 
             # seds[li][np.isnan(seds[li])] = 0.0
 
+        # Units of `seds` is ergs / s / Angstrom.
         return {'sample_wavelengths': self._sample_wavelengths,
                 self.key('seds'): seds}
