@@ -14,7 +14,7 @@ class SED(Module):
 
     Modules that inherit from the SED class should produce a `seds` key, which
     contains a spectral energy distribution for each time. The units of the SED
-    should be in ergs/steradian/cm^2/Hz/Angstrom.
+    should be in erg/s/Angstrom.
     """
 
     C_OVER_ANG = (c.c / u.Angstrom).cgs.value
