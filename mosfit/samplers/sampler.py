@@ -2,6 +2,7 @@
 """Definitions for `Sampler` class."""
 
 import numpy as np
+import time
 
 
 class Sampler(object):
@@ -56,3 +57,6 @@ class Sampler(object):
         w = np.mean(np.var(chain, axis=1, ddof=1))
         v = float(n - 1) / float(n) * w + (b / float(n))
         return np.sqrt(v / w)
+
+    def time_running(self):
+        return time.time() - self._fitter._start_time

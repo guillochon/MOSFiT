@@ -4,7 +4,6 @@
 import gc
 import pickle
 import sys
-import time
 
 import numpy as np
 from astrocats.catalog.model import MODEL
@@ -141,7 +140,7 @@ class Nester(Sampler):
                     break
 
                 if (self._fitter._maximum_walltime is not False and
-                        time.time() - self._fitter._start_time >
+                        self.time_running() >
                         self._fitter._maximum_walltime):
                     prt.message('exceeded_walltime', warning=True)
                     break
@@ -161,7 +160,9 @@ class Nester(Sampler):
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[self._logz, self._e_logz,
                           delta_logz, nested_dlogz_init],
-                    loglstar=[loglstar])
+                    loglstar=[loglstar],
+                    time_running=self.time_running(),
+                    maximum_walltime=self._fitter._maximum_walltime)
 
             if max_iter >= 0:
                 prt.status(
@@ -170,13 +171,15 @@ class Nester(Sampler):
                     nc=ncall - ncall0, ncall=ncall, eff=eff,
                     logz=[self._logz, self._e_logz,
                           delta_logz, nested_dlogz_init],
-                    loglstar=[loglstar])
+                    loglstar=[loglstar],
+                    time_running=self.time_running(),
+                    maximum_walltime=self._fitter._maximum_walltime)
 
             n = 0
             while max_iter >= 0:
                 n += 1
                 if (self._fitter._maximum_walltime is not False and
-                        time.time() - self._fitter._start_time >
+                        self.time_running() >
                         self._fitter._maximum_walltime):
                     prt.message('exceeded_walltime', warning=True)
                     break
@@ -216,7 +219,9 @@ class Nester(Sampler):
                             batch=n, nc=ncall - ncall0, ncall=ncall, eff=eff,
                             logz=[self._logz, self._e_logz], loglstar=[
                                 logl_bounds[0], loglstar,
-                                logl_bounds[1]], stop=stop_val)
+                                logl_bounds[1]], stop=stop_val,
+                            time_running=self.time_running(),
+                            maximum_walltime=self._fitter._maximum_walltime)
 
                         if max_iter < 0:
                             break
