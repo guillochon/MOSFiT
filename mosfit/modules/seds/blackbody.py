@@ -74,5 +74,5 @@ class Blackbody(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
-        # Units of `seds` is ergs / s.
+        # Units of `seds` is ergs / s / Angstrom.
         return {'sample_wavelengths': self._sample_wavelengths, 'seds': seds}
