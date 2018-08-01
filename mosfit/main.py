@@ -513,8 +513,8 @@ def get_parser(only=None, printer=None):
         '--extra-outputs',
         '-x',
         dest='extra_outputs',
-        default=[],
-        nargs='+',
+        default=None,
+        nargs='*',
         help=prt.text('parser_extra_outputs'))
 
     parser.add_argument(

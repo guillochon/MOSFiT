@@ -93,9 +93,11 @@ The user can dump any of these variables to a supplementary file ``extras.json``
 
     mosfit -m slsn -x seds dense_luminosities
 
-Below is an inexhaustive list of keys available (more can be found by inspecting the outputs of the various modules that compose a module).
+Below is an inexhaustive list of keys available; a full list of keys can be displayed by adding the ``-x`` option with no arguments.
 
 * ``seds``: Spectral energy distributions at each observation epoch over each photometric filter requested (units: ergs / s). To obtain a broadband SED, one should add the ``'white'`` filter to the ``MOSFiT`` command via ``--band-list white``.
+
+# ``bands``: Band names associated with each outputted epoch, the ordering in ``extras.json`` should match the ordering of other observables such as ``seds``.
 
 * ``dense_times``: Times at which luminosity was computed (units: days). These are sampled more densely than the input observations as dense sampling is required for an accurate integration of the luminosity.
 
