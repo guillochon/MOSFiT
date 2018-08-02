@@ -651,9 +651,12 @@ class Fitter(object):
         extras = OrderedDict()
         samples_to_plot = self._sampler._nwalkers
 
-        icdf = np.cumsum(np.concatenate(([0.0], weights)))
-        draws = np.random.rand(samples_to_plot)
-        indices = np.searchsorted(icdf, draws) - 1
+        if isinstance(self._sampler, Nester):
+            icdf = np.cumsum(np.concatenate(([0.0], weights)))
+            draws = np.random.rand(samples_to_plot)
+            indices = np.searchsorted(icdf, draws) - 1
+        else:
+            indices = list(range(samples_to_plot))
 
         ri = 0
         selected_extra = False
