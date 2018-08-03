@@ -8,6 +8,7 @@
     "arxiv": "Please enter the ArXiv ID associated with this data (e.g. `1701.12345`):",
     "assuming_jd": "Extra times numerical with values > 2,400,000, assuming JD.",
     "assuming_mjd": "Extra times numerical with values > 50,000, assuming MJD.",
+    "available_keys": "The following keys are available for output with the `-x` option:",
     "bad_filter_rule": "Filter rule has incorrect syntax, requires either 'SVO', 'path', or ['min_wavelength', 'max_wavelength', 'delta_wavelength'] in its list of keys.",
     "bad_header_pickle": "Header pickle invalid, rebuilding.",
     "band_load_complete": "Loading bands complete.",

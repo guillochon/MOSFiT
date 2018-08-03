@@ -410,7 +410,9 @@ class Printer(object):
                logz=None,
                loglstar=None,
                stop=None,
-               min_time=0.2):
+               min_time=0.2,
+               time_running=None,
+               maximum_walltime=False):
         """Print status message showing state of fitting process."""
         if self._quiet:
             return
@@ -459,6 +461,9 @@ class Printer(object):
                     self._strings['iterations'] + ': [ {} ]'.format(
                         iterations[0]))
             outarr.append(progressstring)
+        if time_running is not None:
+            outarr.append('Time running: [ {} ]'.format(str(datetime.timedelta(
+                seconds=time_running)).split('.')[0]))
         if hasattr(sampler, '_emcee_est_t'):
             if sampler._emcee_est_t < 0.0:
                 txt = self.message('run_until_converged', [
@@ -471,6 +476,10 @@ class Printer(object):
                     tott = 2.0 * sampler._emcee_est_t
                 timestring = self.get_timestring(tott)
                 outarr.append(timestring)
+        if maximum_walltime is not False and time_running is not None:
+            outarr.append('Remaining walltime: [ {} ]'.format(str(
+                datetime.timedelta(
+                    seconds=maximum_walltime - time_running)).split('.')[0]))
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:

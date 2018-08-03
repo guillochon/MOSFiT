@@ -54,5 +54,6 @@ class MultiBlackbody(SED):
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
+        # Units of `seds` is ergs / s / Angstrom.
         return {'sample_wavelengths': self._sample_wavelengths,
                 self.key('seds'): seds}

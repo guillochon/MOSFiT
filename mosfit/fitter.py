@@ -161,7 +161,7 @@ class Fitter(object):
                    maximum_memory=np.inf,
                    speak=False,
                    return_fits=True,
-                   extra_outputs=[],
+                   extra_outputs=None,
                    walker_paths=[],
                    catalogs=[],
                    exit_on_prompt=False,
@@ -523,7 +523,7 @@ class Fitter(object):
                  convergence_type=None,
                  convergence_criteria=None,
                  save_full_chain=False,
-                 extra_outputs=[]):
+                 extra_outputs=None):
         """Fit the data for a given event.
 
         Fitting performed using a combination of emcee and fracking.
@@ -651,18 +651,28 @@ class Fitter(object):
         extras = OrderedDict()
         samples_to_plot = self._sampler._nwalkers
 
-        icdf = np.cumsum(np.concatenate(([0.0], weights)))
-        draws = np.random.rand(samples_to_plot)
-        indices = np.searchsorted(icdf, draws) - 1
+        if isinstance(self._sampler, Nester):
+            icdf = np.cumsum(np.concatenate(([0.0], weights)))
+            draws = np.random.rand(samples_to_plot)
+            indices = np.searchsorted(icdf, draws) - 1
+        else:
+            indices = list(range(samples_to_plot))
 
         ri = 0
+        selected_extra = False
         for xi, x in enumerate(samples):
             ri = ri + 1
             prt.message('outputting_walker', [
                 ri, len(samples)], inline=True, min_time=0.2)
             if xi in indices:
                 output = model.run_stack(x, root='output')
-                if extra_outputs:
+                if extra_outputs is not None:
+                    if not extra_outputs and not selected_extra:
+                        extra_options = list(output.keys())
+                        prt.message('available_keys')
+                        for opt in extra_options:
+                            prt.prt('- {}'.format(opt))
+                        selected_extra = True
                     for key in extra_outputs:
                         new_val = output.get(key, [])
                         new_val = all_to_list(new_val)
@@ -871,7 +881,7 @@ class Fitter(object):
                     entabbed_json_dump(self._sampler._all_chain.tolist(),
                                        feven, separators=(',', ':'))
 
-            if extra_outputs:
+            if extra_outputs is not None:
                 prt.message('writing_extras')
                 with open_atomic(os.path.join(
                     model.get_products_path(), 'extras.json'),

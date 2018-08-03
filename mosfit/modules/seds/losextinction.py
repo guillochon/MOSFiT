@@ -108,6 +108,7 @@ class LOSExtinction(SED):
                 # Need extinction function for radio
                 pass
 
+        # Units of `seds` is ergs / s / Angstrom.
         return {
             'sample_wavelengths': self._sample_wavelengths,
             self.key('seds'): self._seds,
