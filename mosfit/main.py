@@ -12,11 +12,12 @@ from operator import attrgetter
 from unicodedata import normalize
 
 import numpy as np
-
+from astropy.time import Time as astrotime
 from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
+from six import string_types
 
 
 class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -95,6 +96,49 @@ def get_parser(only=None, printer=None):
         default=None,
         nargs='+',
         help=prt.text('parser_limiting_magnitude'))
+
+    parser.add_argument(
+        '--prefer-fluxes',
+        dest='prefer_fluxes',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_prefer_fluxes'))
+
+    parser.add_argument(
+        '--time-list',
+        '--extra-times',
+        dest='time_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-dates',
+        dest='date_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-mjds',
+        dest='mjd_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-jds',
+        dest='jd_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
+
+    parser.add_argument(
+        '--extra-phases',
+        dest='phase_list',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_time_list'))
 
     parser.add_argument(
         '--band-list',
@@ -179,6 +223,14 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_user_fixed_parameters'))
 
     parser.add_argument(
+        '--release-parameters',
+        '-r',
+        dest='user_released_parameters',
+        default=[],
+        nargs='+',
+        help=prt.text('parser_user_released_parameters'))
+
+    parser.add_argument(
         '--iterations',
         '-i',
         dest='iterations',
@@ -189,13 +241,21 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_iterations'))
 
     parser.add_argument(
+        '--generative',
+        '-G',
+        dest='generative',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_generative'))
+
+    parser.add_argument(
         '--smooth-times',
         '--plot-points',
         '-S',
         dest='smooth_times',
         type=int,
         const=0,
-        default=20,
+        default=21,
         nargs='?',
         action='store',
         help=prt.text('parser_smooth_times'))
@@ -217,6 +277,13 @@ def get_parser(only=None, printer=None):
         default=False,
         nargs=2,
         help=prt.text('parser_limit_fitting_mjds'))
+
+    parser.add_argument(
+        '--output-path',
+        '-o',
+        dest='output_path',
+        default='',
+        help=prt.text('parser_output_path'))
 
     parser.add_argument(
         '--suffix',
@@ -290,6 +357,13 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_offline'))
 
     parser.add_argument(
+        '--prefer-cache',
+        dest='prefer_cache',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_prefer_cache'))
+
+    parser.add_argument(
         '--frack-step',
         '-f',
         dest='frack_step',
@@ -351,8 +425,13 @@ def get_parser(only=None, printer=None):
         '-M',
         dest='maximum_memory',
         type=float,
-        default=np.inf,
         help=prt.text('parser_maximum_memory'))
+
+    parser.add_argument(
+        '--seed',
+        dest='seed',
+        type=int,
+        help=prt.text('parser_seed'))
 
     parser.add_argument(
         '--draw-above-likelihood',
@@ -434,8 +513,8 @@ def get_parser(only=None, printer=None):
         '--extra-outputs',
         '-x',
         dest='extra_outputs',
-        default=[],
-        nargs='+',
+        default=None,
+        nargs='*',
         help=prt.text('parser_extra_outputs'))
 
     parser.add_argument(
@@ -558,18 +637,103 @@ def main():
     args.method = 'nester' if args.method.lower() in [
         'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
 
+    if is_master():
+        if args.method == 'nester':
+            unused_args = [
+                [args.burn, '-b'],
+                [args.post_burn, '-p'],
+                [args.frack_step, '-f'],
+                [args.num_temps, '-T'],
+                [args.run_until_uncorrelated, '-U'],
+                [args.draw_above_likelihood, '-d'],
+                [args.gibbs, '-g'],
+                [args.save_full_chain, '-c'],
+                [args.maximum_memory, '-M']
+            ]
+            for ua in unused_args:
+                if ua[0] is not None:
+                    prt.message('argument_not_used',
+                                reps=[ua[1], '-D nester'], warning=True)
+
     if args.method == 'nester':
-        print(args.iterations)
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.text('R_i_mutually_exclusive'))
+        if args.walker_paths is not None:
+            raise ValueError(prt.text('w_nester_mutually_exclusive'))
 
-    changed_iterations = False
+    if args.generative:
+        if args.iterations > 0:
+            prt.message('generative_supercedes', warning=True)
+        args.iterations = 0
+
+    no_events = False
     if args.iterations == -1:
         if len(args.events) == 0:
-            changed_iterations = True
+            no_events = True
             args.iterations = 0
         else:
-            args.iterations = 10000
+            args.iterations = 5000
+
+    if len(args.date_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = [str(astrotime(x.replace('/', '-')).mjd)
+                              for x in args.date_list]
+            args.time_unit = 'mjd'
+
+    if len(args.mjd_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = args.mjd_list
+            args.time_unit = 'mjd'
+
+    if len(args.jd_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = [str(astrotime(
+                float(x), format='jd').mjd) for x in args.jd_list]
+            args.time_unit = 'mjd'
+
+    if len(args.phase_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list = args.phase_list
+            args.time_unit = 'phase'
+
+    if len(args.time_list):
+        if any([any([y in x]) for y in ['-', '/'] for x in args.time_list]):
+            try:
+                args.time_list = [astrotime(
+                    x.replace('/', '-')).mjd for x in args.time_list]
+            except ValueError:
+                if len(args.time_list) == 1 and isinstance(
+                        args.time_list[0], string_types):
+                    args.time_list = args.time_list[0].split()
+                args.time_list = [float(x) for x in args.time_list]
+                args.time_unit = 'phase'
+        else:
+            if any(['+' in x for x in args.time_list]):
+                args.time_unit = 'phase'
+            args.time_list = [float(x) for x in args.time_list]
+
+        if min(args.time_list) > 2400000:
+            prt.message('assuming_jd')
+            args.time_list = [x - 2400000.5 for x in args.time_list]
+            args.time_unit = 'mjd'
+        elif min(args.time_list) > 50000:
+            prt.message('assuming_mjd')
+            args.time_unit = 'mjd'
+        args.time_unit = None
+
+    if args.burn is None and args.post_burn is None:
+        args.burn = int(np.floor(args.iterations / 2))
+
+    if args.frack_step == 0:
+        args.fracking = False
 
     if (args.run_until_uncorrelated is not None and
             args.run_until_converged):
@@ -590,7 +754,7 @@ def main():
 
     if args.method == 'nester':
         args.convergence_criteria = (
-            0.01 if args.run_until_converged is True else
+            0.02 if args.run_until_converged is True else
             args.run_until_converged)
 
     if is_master():
@@ -621,23 +785,6 @@ def main():
             get_token_from_user = True
 
         upload_token_path = os.path.join(dir_path, 'cache', 'dropbox.token')
-
-        if args.method == 'nester':
-            unused_args = [
-                [args.burn, '-b'],
-                [args.post_burn, '-p'],
-                [args.frack_step, '-f'],
-                [args.walker_paths, '-w'],
-                [args.num_temps, '-T'],
-                [args.run_until_uncorrelated, '-U'],
-                [args.draw_above_likelihood, '-d'],
-                [args.gibbs, '-g'],
-                [args.save_full_chain, '-c']
-            ]
-            for ua in unused_args:
-                if ua[0] is not None:
-                    prt.message('argument_not_used',
-                                reps=[ua[1], '-D nester'], warning=True)
 
         # Perform a few checks on upload before running (to keep size
         # manageable)
@@ -702,7 +849,7 @@ def main():
 
         args.upload_token = upload_token
 
-        if changed_iterations:
+        if no_events:
             prt.message('iterations_0', wrapped=True)
 
         # Create the user directory structure, if it doesn't already exist.
@@ -786,6 +933,8 @@ def main():
         args.burn = int(np.floor(args.iterations / 2))
     if args.draw_above_likelihood is None:
         args.draw_above_likelihood = False
+    if args.maximum_memory is None:
+        args.maximum_memory = np.inf
     if args.gibbs is None:
         args.gibbs = False
     if args.save_full_chain is None:

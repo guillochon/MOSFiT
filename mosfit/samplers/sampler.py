@@ -2,12 +2,13 @@
 """Definitions for `Sampler` class."""
 
 import numpy as np
+import time
 
 
 class Sampler(object):
     """Sample the posterior distribution of a model against an observation."""
 
-    _MIN_WEIGHT = 1e-6
+    _MIN_WEIGHT = 1e-4
 
     def __init__(self, fitter, num_walkers=None, **kwargs):
         """Initialize `Sampler` class."""
@@ -21,6 +22,9 @@ class Sampler(object):
     def get_samples(self):
         """Return samples from ensembler."""
         samples = np.array([a for b in self._pout for a in b])
+        if self._lnprobout is None:
+            return samples, None, np.array([
+                1.0 / len(samples) for x in samples])
         probs = np.array([a for b in self._lnprobout for a in b])
         weights = np.array([a for b in self._weights for a in b])
 
@@ -53,3 +57,6 @@ class Sampler(object):
         w = np.mean(np.var(chain, axis=1, ddof=1))
         v = float(n - 1) / float(n) * w + (b / float(n))
         return np.sqrt(v / w)
+
+    def time_running(self):
+        return time.time() - self._fitter._start_time

@@ -82,7 +82,7 @@ class Converter(object):
         self._band_names = [
             'U', 'B', 'V', 'R', 'I', 'J', 'H', 'K', 'K_s', "Ks", "K'", 'u',
             'g', 'r', 'i', 'z', 'y', 'W1', 'W2', 'M2', "u'", "g'", "r'", "i'",
-            "z'", 'C', 'Y', 'Open'
+            "z'", 'C', 'Y', 'I1', 'I2', 'I3', 'I4', 'Open'
         ]
         ebands = [a + b for a, b in chain(
             product(self._ecntstrs, self._band_names),
@@ -139,6 +139,7 @@ class Converter(object):
                     'event', 'transient', 'name', 'supernova', 'sne', 'id',
                     'identifier', 'object']),
                 (ENTRY.REDSHIFT, ['redshift']),
+                (ENTRY.HOST, ['host']),
                 (ENTRY.LUM_DIST, [
                     'lumdist', 'luminosity distance', 'distance']),
                 (ENTRY.COMOVING_DIST, ['comoving distance']),
@@ -146,7 +147,7 @@ class Converter(object):
                 (ENTRY.DEC, ['dec', 'declination']),
                 (ENTRY.EBV, ['ebv', 'extinction']),
                 # At the moment transient-specific keys are not in astrocats.
-                ('claimedtype', [
+                (Key('claimedtype', KEY_TYPES.STRING), [
                     'claimedtype', 'type', 'claimed_type', 'claimed type'])
             ))
 
@@ -183,7 +184,8 @@ class Converter(object):
             PHOTOMETRY.BAND, PHOTOMETRY.INSTRUMENT, PHOTOMETRY.TELESCOPE]
         self._entry_keys = [
             ENTRY.COMOVING_DIST, ENTRY.REDSHIFT, ENTRY.LUM_DIST,
-            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, 'claimedtype']
+            ENTRY.RA, ENTRY.DEC, ENTRY.EBV, ENTRY.HOST, Key(
+                'claimedtype', KEY_TYPES.STRING)]
         self._use_mc = False
         self._month_rep = re.compile(
             r'\b(' + '|'.join(self._MONTH_IDS.keys()) + r')\b')
@@ -219,12 +221,6 @@ class Converter(object):
             toffset = Decimal('0')
             if ('.' in event and os.path.isfile(event) and
                     not event.endswith('.json')):
-                if not intro_shown:
-                    prt.message('converter_info')
-                    intro_shown = True
-
-                prt.message('converting_to_json', [event])
-
                 with open(event, 'r') as f:
                     ftxt = f.read()
 
@@ -264,22 +260,58 @@ class Converter(object):
                             ' ?', '', ftxt)).count(
                                 y) for y in delims]
                     maxdelimcount = max(delimcounts)
-                    delim = delims[delimcounts.index(maxdelimcount)]
+                    # Make sure at least one delimeter per line.
+                    maxdelimavg = delimcounts[delimcounts.index(
+                        maxdelimcount)] / len(ftxt.splitlines())
+                    if maxdelimavg >= 1.0:
+                        delim = delims[delimcounts.index(maxdelimcount)]
                     # If two delimiter options are close in count, ask user.
                     for i, x in enumerate(delimcounts):
                         if x > 0.5 * maxdelimcount and delims[i] != delim:
                             delim = None
-                    if delim is None:
+                    if delim is None and maxdelimavg >= 1.0:
                         odelims = list(np.array(delimnames)[
                             np.array(delimcounts) > 0])
-                        delim = delims[prt.prompt(
-                            'delim', kind='option', options=odelims) - 1]
-                    ad = list(delims)
-                    ad.remove(delim)
-                    ad = ''.join(ad)
+                        dchoice = prt.prompt(
+                            'delim', kind='option', options=odelims,
+                            none_string=prt.text('no_delimiter'))
+                        if is_number(dchoice):
+                            delim = delims[dchoice - 1]
+                    if delim is not None:
+                        ad = list(delims)
+                        ad.remove(delim)
+                        ad = ''.join(ad)
 
                     fsplit = ftxt.splitlines()
 
+                # If none of the rows contain numeric data, the file
+                # is likely a list of transient names.
+                flines = list(fsplit)
+
+                if (len(flines) and
+                    (not any(any([is_datum(x.strip()) or x == ''
+                                  for x in (
+                                      y.split(delim) if delim is not None else
+                                      listify(y))])
+                             for y in flines) or
+                     len(flines) == 1)):
+                    new_events = [
+                        it.strip() for s in flines for it in (
+                            s.split(delim) if delim is not None else
+                            listify(s))]
+                    new_event_list.extend(new_events)
+                    continue
+
+                if delim is None:
+                    raise ValueError(prt.text('delimiter_not_found'))
+
+                if not intro_shown:
+                    prt.message('converter_info')
+                    intro_shown = True
+
+                prt.message('converting_to_json', [event])
+
+                if table is None:
                     # See if we need to append blank errors to upper limits.
                     tsplit = [
                         replace_multiple(x, ['$', '\\pm', '±', '-or+'], delim)
@@ -368,18 +400,9 @@ class Converter(object):
                             if not any([is_datum(x) for x in fl]):
                                 flines[fi] = ['name'] + list(fl)
 
-                # If none of the rows contain numeric data, the file
-                # is likely a list of transient names.
-                if (len(flines) and
-                    (not any(any([is_datum(x) or x == '' for x in y])
-                             for y in flines) or
-                     len(flines) == 1)):
-                    new_events = [
-                        it for s in flines for it in s]
-
                 # If last row is numeric, then likely this is a file with
                 # transient data.
-                elif (len(flines) > 1 and
+                if (len(flines) > 1 and
                         any([is_datum(x) for x in flines[-1]])):
 
                     # Check that each row has the same number of columns.
@@ -855,10 +878,12 @@ class Converter(object):
                                 merge_with_existing = prt.prompt(
                                     'merge_with_existing', default='y')
                             if merge_with_existing:
+                                print(event_names[ei])
                                 existing = Entry.init_from_file(
                                     catalog=None,
                                     name=event_names[ei],
                                     path=new_events[ei],
+                                    clean=True,
                                     merge=False,
                                     pop_schema=False,
                                     ignore_keys=[ENTRY.MODELS],
@@ -1002,6 +1027,7 @@ class Converter(object):
             akeys.remove(PHOTOMETRY.BAND)
             akeys.remove(PHOTOMETRY.INSTRUMENT)
             akeys.remove(PHOTOMETRY.TELESCOPE)
+            akeys.append(ENTRY.NAME)
 
         # Make sure `E_` keys always appear after the actual measurements.
         if (PHOTOMETRY.MAGNITUDE in akeys and

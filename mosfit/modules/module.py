@@ -27,6 +27,7 @@ class Module(object):
         self._provide_dense = False
         self._replacements = OrderedDict()
         self._unset_recommended_keys = set()
+        self._kinds_needed = set()
         if not model.printer():
             self._printer = Printer()
         else:
@@ -34,7 +35,16 @@ class Module(object):
 
     def __repr__(self):
         """Return a string representation of self."""
-        return json.dumps(self.__dict__)
+        dict_copy = {}
+        for key in self.__dict__.keys():
+            # Ignore associated classes.
+            if key in ['_model', '_pool', '_printer']:
+                continue
+            if isinstance(self.__dict__[key], set):
+                dict_copy[key] = list(self.__dict__[key])
+            else:
+                dict_copy[key] = self.__dict__[key]
+        return json.dumps(dict_copy)
 
     def process(self, **kwargs):
         """Process module, should always return a dictionary."""

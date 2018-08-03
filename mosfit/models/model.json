@@ -8,6 +8,7 @@
                 "e_magnitude":["optional", "numeric"],
                 "e_upper_magnitude":["optional", "numeric"],
                 "e_lower_magnitude":["optional", "numeric"],
+                "zeropoint":["optional", "numeric"],
                 "band":"optional",
                 "frequency":["optional", "numeric"],
                 "u_frequency":"optional",
@@ -42,6 +43,9 @@
             },
             "redshift":{
                 "value":"recommended"
+            },
+            "maxdate":{
+                "value":"optional"
             },
             "sources":{
                 "bibcode":"optional",
@@ -109,12 +113,14 @@
         "kind":"parameter",
         "value":-1.0,
         "class":"covariance",
+        "fixed":true,
         "latex":"l_t"
     },
     "codeltalambda":{
         "kind":"parameter",
         "value":-1.0,
         "class":"covariance",
+        "fixed":true,
         "latex":"l_\\lambda"
     },
     "rvhost":{

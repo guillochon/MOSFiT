@@ -331,6 +331,11 @@
     },
     "photometry":{
         "kind":"observable",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
         "inputs":[
             "blackbody3",
             "lumdist"

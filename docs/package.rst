@@ -29,7 +29,7 @@ In the code snippet below, we fetch a supernova's data from the Open Catalogs us
     my_model = mosfit.model.Model(model='slsn')
 
     # Load the fetched data into the model.
-    my_model.load_data(fetched['data'], event_name=fetched['name'])
+    my_model.load_data(my_fetcher.load_data(fetched), event_name=fetched['name'])
 
     # Generate a random input vector of free parameters.
     x = np.random.rand(my_model.get_num_free_parameters())

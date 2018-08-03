@@ -14,7 +14,7 @@ class Parameter(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(Parameter, self).__init__(**kwargs)
-        self._fixed = False
+        self._fixed = kwargs.get('fixed', False)
         self._fixed_by_user = False
         self._max_value = kwargs.get('max_value', None)
         self._min_value = kwargs.get('min_value', None)
@@ -69,6 +69,9 @@ class Parameter(Module):
 
     def value(self, f):
         """Return the value of the parameter in parameter's units."""
+        if np.isnan(f):
+            raise ValueError('NaN fraction passed to parameter.')
+
         value = np.clip(f *
                         (self._max_value - self._min_value) + self._min_value,
                         self._min_value, self._max_value)

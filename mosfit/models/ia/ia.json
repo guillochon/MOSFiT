@@ -60,30 +60,41 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cutoff}"
+    },
     "line_wavelength":{
         "kind":"parameter",
         "value":7.5e3,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{\\lambda}"
     },
     "line_width":{
         "kind":"parameter",
         "value":500.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{\\Delta \\lambda}"
     },
     "line_time":{
         "kind":"parameter",
         "value":50.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{t}"
     },
     "line_duration":{
         "kind":"parameter",
         "value":25.0,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{\\tau}"
     },
     "line_amplitude":{
         "kind":"parameter",
         "value":0.3,
-        "class":"parameter"
+        "class":"parameter",
+        "latex":"g_{A}"
     },
     "nickelcobalt":{
         "kind":"engine",
@@ -113,12 +124,13 @@
             "temperature"
         ]
     },
-    "blackbody":{
+    "blackbody_cutoff":{
         "kind":"sed",
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor"
+            "temperature_floor",
+            "cutoff_wavelength"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
@@ -127,7 +139,7 @@
     "line":{
         "kind":"sed",
         "inputs":[
-            "blackbody",
+            "blackbody_cutoff",
             "redshift",
             "line_wavelength",
             "line_width",
@@ -138,6 +150,14 @@
         "requests":{
             "band_wave_ranges": "photometry"
         }
+    },
+    "ia_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "mejecta",
+            "vejecta",
+            "fnickel"
+        ]
     },
     "losextinction":{
         "kind":"sed",
@@ -153,6 +173,11 @@
     },
     "photometry":{
         "kind":"observable",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
         "inputs":[
             "losextinction",
             "lumdist"

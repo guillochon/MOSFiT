@@ -2,8 +2,9 @@
 from collections import OrderedDict
 
 import numpy as np
-from astrocats.catalog.utils import is_number
 from astrocats.catalog.source import SOURCE
+from astrocats.catalog.utils import is_number
+from astropy.time import Time as astrotime
 from mosfit.modules.module import Module
 from mosfit.utils import listify
 
@@ -21,6 +22,11 @@ class Transient(Module):
         'rad': 'radio',
         'xray': 'x-ray'
     }
+    _OBS_KEYS = [
+        'times', 'telescopes', 'systems', 'modes', 'instruments',
+        'bandsets', 'bands', 'frequencies', 'u_frequencies', 'zeropoints',
+        'measures'
+    ]
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -44,6 +50,8 @@ class Transient(Module):
                  exclude_systems=[],
                  exclude_sources=[],
                  exclude_kinds=[],
+                 time_unit=None,
+                 time_list=[],
                  band_list=[],
                  band_telescopes=[],
                  band_systems=[],
@@ -129,19 +137,28 @@ class Transient(Module):
                             break
 
                 if key == 'photometry':
-                    if ex_kinds is not False:
-                        if 'radio' in ex_kinds:
-                            if ('fluxdensity' in entry and
-                                'magnitude' not in entry and
-                                    'countrate' not in entry):
-                                continue
-                        if 'x-ray' in ex_kinds:
-                            if (('countrate' in entry or
-                                 'unabsorbedflux' in entry or
-                                 'flux' in entry) and
-                                'magnitude' not in entry and
-                                    'fluxdensity' not in entry):
-                                continue
+                    if ('fluxdensity' in entry and
+                        'magnitude' not in entry and
+                            'countrate' not in entry):
+                        self._kinds_needed.add('radio')
+                        if ('radio' in ex_kinds or
+                            (not len(ex_kinds) or 'none' not in ex_kinds) and
+                                'radio' not in self._model._kinds_supported):
+                            continue
+                    if (('countrate' in entry or
+                         'unabsorbedflux' in entry or
+                         'flux' in entry) and
+                        'magnitude' not in entry and
+                            'fluxdensity' not in entry):
+                        self._kinds_needed.add('x-ray')
+                        if ('x-ray' in ex_kinds or
+                            (not len(ex_kinds) or 'none' not in ex_kinds) and
+                                'x-ray' not in self._model._kinds_supported):
+                            continue
+                    if 'magnitude' in entry:
+                        # For now, magnitudes are not excludable.
+                        self._kinds_needed |= set(
+                            ['infrared', 'optical', 'ultraviolet'])
 
                     skip_entry = False
 
@@ -196,7 +213,9 @@ class Transient(Module):
                         continue
 
                     if ((('magnitude' in entry) != ('band' in entry)) or
-                        (('fluxdensity' in entry) != ('frequency' in entry)) or
+                        ((('fluxdensity' in entry) != (
+                            'frequency' in entry)) and (
+                                'magnitude' not in entry)) or
                         (('countrate' in entry) and
                          ('magnitude' not in entry) and
                          ('instrument' not in entry))):
@@ -244,12 +263,24 @@ class Transient(Module):
                     self._data[key] = float(self._data[key])
                     self._data_determined_parameters.append(key)
 
-        if 'times' in self._data and smooth_times >= 0:
-            obs = list(
-                zip(*(self._data['telescopes'], self._data['systems'],
-                      self._data['modes'], self._data['instruments'],
-                      self._data['bandsets'], self._data['bands'], self._data[
-                          'frequencies'], self._data['u_frequencies'])))
+        if any(x in self._data for x in [
+                'magnitudes', 'countrates', 'fluxdensities']):
+            # Add a list of tags for each observation to indicate what unit
+            # observation is provided in.
+            self._data['measures'] = [(
+                (['magnitude'] if x else []) +
+                (['countrate'] if y else []) +
+                (['fluxdensity'] if x else []))
+                for x, y, z in zip(*(
+                    self._data['magnitudes'],
+                    self._data['countrates'],
+                    self._data['fluxdensities']))]
+
+        if 'times' in self._data and (smooth_times >= 0 or time_list):
+            # Build an observation array out of the real data first.
+            obs = list(zip(*(self._data[x] for x in self._OBS_KEYS if
+                             x != 'times')))
+            # Append extra observations if requested.
             if len(band_list):
                 b_teles = band_telescopes if len(band_telescopes) == len(
                     band_list) else ([band_telescopes[0] for x in band_list]
@@ -273,35 +304,53 @@ class Transient(Module):
                                      ['' for x in band_list])
                 b_freqs = [None for x in band_list]
                 b_u_freqs = ['' for x in band_list]
+                b_zerops = [None for x in band_list]
+                b_measures = [[] for x in band_list]
                 obs.extend(
                     list(
                         zip(*(b_teles, b_systs, b_modes, b_insts, b_bsets,
-                              band_list, b_freqs, b_u_freqs))))
+                              band_list, b_freqs, b_u_freqs, b_zerops,
+                              b_measures))))
 
+            # Prune extra observations if they are duplicitous to existing.
             uniqueobs = []
             for o in obs:
                 to = tuple(o)
                 if to not in uniqueobs:
                     uniqueobs.append(to)
 
+            # Preprend times to real observations list.
             minet, maxet = (extrapolate_time, extrapolate_time) if isinstance(
                 extrapolate_time, (float, int)) else (
                     (tuple(extrapolate_time) if len(extrapolate_time) == 2 else
                      (extrapolate_time[0], extrapolate_time[0])))
             mint, maxt = (min(self._data['times']) - minet,
                           max(self._data['times']) + maxet)
-            alltimes = list(
-                sorted(
-                    set([x for x in self._data['times']] + list(
-                        np.linspace(mint, maxt, max(smooth_times, 2))))))
-            currobslist = list(
-                zip(*(
-                    self._data['times'], self._data['telescopes'],
-                    self._data['systems'], self._data['modes'],
-                    self._data['instruments'], self._data['bandsets'],
-                    self._data['bands'], self._data['frequencies'],
-                    self._data['u_frequencies'])))
 
+            if time_unit is None:
+                alltimes = time_list + [x for x in self._data['times']]
+            elif time_unit == 'mjd':
+                alltimes = [x - min(self._data[
+                    'times']) for x in time_list] + [
+                        x for x in self._data['times']]
+            elif time_unit == 'phase':
+                if 'maxdate' not in self._data or not len(self._data[
+                        'maxdate']) or 'value' not in self._data['maxdate'][0]:
+                    raise(prt.message('no_maxdate', name))
+                max_mjd = astrotime(self._data['maxdate'][0]['value'].replace(
+                    '/', '-')).mjd
+                alltimes = [x + max_mjd - min(self._data[
+                    'times']) for x in time_list] + [
+                        x for x in self._data['times']]
+            else:
+                raise('Unknown `time_unit`.')
+            if smooth_times >= 0:
+                alltimes += list(
+                    np.linspace(mint, maxt, max(smooth_times, 2)))
+            alltimes = list(sorted(set(alltimes)))
+
+            # Create additional fake observations.
+            currobslist = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
             obslist = []
             for ti, t in enumerate(alltimes):
                 new_per = np.round(100.0 * float(ti) / len(alltimes), 1)
@@ -310,15 +359,12 @@ class Transient(Module):
                     newobs = tuple([t] + list(o))
                     if newobs not in currobslist:
                         obslist.append(newobs)
-
             obslist.sort()
 
+            # Save these fake observations under keys with `extra_` prefix.
             if len(obslist):
-                (self._data['extra_times'], self._data['extra_telescopes'],
-                 self._data['extra_systems'], self._data['extra_modes'],
-                 self._data['extra_instruments'], self._data['extra_bandsets'],
-                 self._data['extra_bands'], self._data['extra_frequencies'],
-                 self._data['extra_u_frequencies']) = zip(*obslist)
+                for x, y in zip(self._OBS_KEYS, zip(*obslist)):
+                    self._data['extra_' + x] = y
 
         for qkey in subtract_minimum_keys:
             if 'upperlimits' in self._data:

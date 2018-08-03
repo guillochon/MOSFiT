@@ -10,12 +10,17 @@
         "log":true
     },
     "texplosion":{
-        "min_value":-500.0,
+        "min_value":-200.0,
         "max_value":0.0
     },
     "temperature":{
         "min_value":1.0e3,
         "max_value":1.0e5,
+        "log":true
+    },
+    "kappa":{
+        "min_value":0.01,
+        "max_value":1.0,
         "log":true
     },
     "kappagamma":{
@@ -25,13 +30,17 @@
     },
     "mejecta":{
         "min_value":1.0e-3,
-        "max_value":100.0,
+        "max_value":3.0,
         "log":true
     },
     "vejecta":{
         "min_value":1.0e3,
-        "max_value":1.0e5,
+        "max_value":5.0e4,
         "log":true
+    },
+    "cutoff_wavelength":{
+        "min_value":2000.0,
+        "max_value":4000.0
     },
     "line_wavelength":{
         "min_value":5000.0,

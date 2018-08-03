@@ -13,12 +13,6 @@
         ],
         "latex":"E({\\rm B} - {\\rm V})"
     },
-    "kroupainput":{
-        "kind":"parameter",
-        "value":0.0,
-        "class":"parameter",
-        "latex":"\\rm kroupa \\rm input"
-    },
     "rvhost":{
         "kind":"parameter",
         "value":3.1,
@@ -142,6 +136,11 @@
     },
     "likelihood":{
         "kind":"objective",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
         "inputs":[
             "diagonal",
             "tde_constraints"

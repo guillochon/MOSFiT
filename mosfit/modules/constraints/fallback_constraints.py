@@ -1,0 +1,84 @@
+"""Definitions for the `FallbackConstraints` class."""
+import numpy as np
+from astrocats.catalog.source import SOURCE
+
+from mosfit.constants import DAY_CGS, KM_CGS, M_SUN_CGS
+from mosfit.modules.constraints.constraint import Constraint
+
+
+# Important: Only define one ``Module`` class per file.
+
+
+class FallbackConstraints(Constraint):
+    """fallback constraints.
+
+    1. Kinetic energy cannot excede fallback energy
+    2. Ejecta remain optically thick to thermal photons for at least 100d
+    """
+
+    _REFERENCES = [
+        {SOURCE.BIBCODE: '2017arXiv170600825N'}
+    ]
+
+    def __init__(self, **kwargs):
+        """Initialize module."""
+        super(FallbackConstraints, self).__init__(**kwargs)
+        self._wants_dense = True
+
+    def process(self, **kwargs):
+        """Process module. Add constraints below."""
+        self._score_modifier = 0.0
+        self._L0 = kwargs[self.key('Lat1sec')]
+        self._ton1 = kwargs[self.key('ton')]
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS
+        self._vejecta = kwargs[self.key('vejecta')] * KM_CGS
+        self._kappa = kwargs[self.key('kappa')]
+        self._times = kwargs[self.key('dense_times')]
+        self._rest_t_explosion = kwargs[self.key('resttexplosion')]
+        self._lums = kwargs[self.key('dense_luminosities')]
+        self._neutrino_energy = kwargs[self.key('neutrino_energy')]
+        self._t_neb_min = kwargs[self.key('tnebular_min')]
+
+        # fallback energy input
+        self._Ep = self._L0 * 5./2./(self._ton1 * DAY_CGS)**(2./3.) 
+
+        # Ejecta kinetic energy
+        self._Ek = 0.5 * self._mejecta * self._vejecta ** 2
+
+        # Construct array of rest-frame times since explosion
+        norm_times = self._times - self._rest_t_explosion
+
+        # Shift array to get delta_t between observations
+        shift_times = norm_times[:-1]
+        shift_times = np.insert(shift_times, 0, 0.0)
+
+        norm_times[norm_times < 0] = 0.0
+        shift_times[shift_times < 0] = 0.0
+
+        L_arr = np.array(self._lums)
+
+        # integrate bolometric light curve to find radiative losses
+        E_rad = sum(L_arr * (norm_times - shift_times) * DAY_CGS)
+
+        # Kinetic energy < fallback energy - radiative loss + neutrinos (10^51)
+        if (self._Ek > self._Ep - E_rad + self._neutrino_energy):
+            self._score_modifier += -(
+                self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
+                    2 * self._neutrino_energy ** 2)
+
+        if (self._Ek < E_rad or self._Ek < self._neutrino_energy):
+            self._score_modifier += -(
+                self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
+                    2 * self._neutrino_energy ** 2)
+
+        # Time from explosion at which optical depth in ejecta reaches tau=1
+        t_nebular = np.sqrt(3 * self._kappa * self._mejecta / (
+            4 * np.pi * self._vejecta ** 2)) / DAY_CGS
+
+        # Penalty if t_nebular<observed t_nebular (scaled so that penalty ~100
+        # at t_obs-t_neb=50)
+        if t_nebular < self._t_neb_min:
+            self._score_modifier += -((self._t_neb_min -
+                                       t_nebular) ** 2 / (2. * 3.5 ** 2))
+
+        return {self.key('score_modifier'): self._score_modifier}

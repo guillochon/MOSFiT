@@ -1,5 +1,6 @@
 # -*- coding: UTF-8 -*-
 """Definitions for `Fitter` class."""
+import codecs
 import gc
 import json
 import os
@@ -31,10 +32,11 @@ from .model import Model
 warnings.filterwarnings("ignore")
 
 
-def draw_walker(test=True, walkers_pool=[], replace=False):
+def draw_walker(test=True, walkers_pool=[], replace=False, weights=None):
     """Draw a walker from the global model variable."""
     global model
-    return model.draw_walker(test, walkers_pool, replace)  # noqa: F821
+    return model.draw_walker(
+        test, walkers_pool, replace, weights)  # noqa: F821
 
 
 def draw_from_icdf(x):
@@ -77,7 +79,9 @@ class Fitter(object):
                  exit_on_prompt=False,
                  language='en',
                  limiting_magnitude=None,
+                 prefer_fluxes=False,
                  offline=False,
+                 prefer_cache=False,
                  open_in_browser=False,
                  pool=None,
                  quiet=False,
@@ -94,7 +98,9 @@ class Fitter(object):
 
         self._cuda = cuda
         self._limiting_magnitude = limiting_magnitude
+        self._prefer_fluxes = prefer_fluxes
         self._offline = offline
+        self._prefer_cache = prefer_cache
         self._open_in_browser = open_in_browser
         self._quiet = quiet
         self._test = test
@@ -112,6 +118,8 @@ class Fitter(object):
                    events=[],
                    models=[],
                    max_time='',
+                   time_list=[],
+                   time_unit=None,
                    band_list=[],
                    band_systems=[],
                    band_instruments=[],
@@ -134,6 +142,7 @@ class Fitter(object):
                    exclude_systems=[],
                    exclude_sources=[],
                    exclude_kinds=[],
+                   output_path='',
                    suffix='',
                    upload=False,
                    write=False,
@@ -141,6 +150,7 @@ class Fitter(object):
                    check_upload_quality=False,
                    variance_for_each=[],
                    user_fixed_parameters=[],
+                   user_released_parameters=[],
                    convergence_type=None,
                    convergence_criteria=None,
                    save_full_chain=False,
@@ -151,18 +161,24 @@ class Fitter(object):
                    maximum_memory=np.inf,
                    speak=False,
                    return_fits=True,
-                   extra_outputs=[],
+                   extra_outputs=None,
                    walker_paths=[],
                    catalogs=[],
                    exit_on_prompt=False,
                    download_recommended_data=False,
                    local_data_only=False,
                    method=None,
+                   seed=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
         if start_time is False:
             start_time = time.time()
+
+        self._seed = seed
+        if seed is not None:
+            np.random.seed(seed)
+
         self._start_time = start_time
         self._maximum_walltime = maximum_walltime
         self._maximum_memory = maximum_memory
@@ -213,7 +229,8 @@ class Fitter(object):
                 for walker_path in walker_paths:
                     if os.path.exists(walker_path):
                         prt.prt('  {}'.format(walker_path))
-                        with open(walker_path, 'r') as f:
+                        with codecs.open(walker_path, 'r',
+                                         encoding='utf-8') as f:
                             all_walker_data = json.load(
                                 f, object_pairs_hook=OrderedDict)
 
@@ -241,9 +258,14 @@ class Fitter(object):
 
                         if choice is not None:
                             walker_data.extend([
-                                [wfi, x[REALIZATION.PARAMETERS]]
+                                [wfi, x[REALIZATION.PARAMETERS], x.get(
+                                    REALIZATION.WEIGHT)]
                                 for x in models[choice][
                                     MODEL.REALIZATIONS]])
+
+                        for i in range(len(walker_data)):
+                            if walker_data[i][2] is not None:
+                                walker_data[i][2] = float(walker_data[i][2])
 
                         if not len(walker_data):
                             prt.message('no_walker_data')
@@ -273,7 +295,8 @@ class Fitter(object):
             pool = SerialPool()
         if pool.is_master():
             fetched_events = self._fetcher.fetch(
-                event_list, offline=self._offline)
+                event_list, offline=self._offline,
+                prefer_cache=self._prefer_cache)
 
             for rank in range(1, pool.size + 1):
                 pool.comm.send(fetched_events, dest=rank, tag=0)
@@ -284,11 +307,13 @@ class Fitter(object):
 
         for ei, event in enumerate(fetched_events):
             if event is not None:
-                if 'data' not in event:
-                    continue
                 self._event_name = event.get('name', 'Batch')
                 self._event_path = event.get('path', '')
-                self._event_data = event.get('data', {})
+                if not self._event_path:
+                    continue
+                self._event_data = self._fetcher.load_data(event)
+                if not self._event_data:
+                    continue
 
             if model_list:
                 lmodel_list = model_list
@@ -316,6 +341,7 @@ class Fitter(object):
                         model=mod_name,
                         data=self._event_data,
                         parameter_path=parameter_path,
+                        output_path=output_path,
                         wrap_length=self._wrap_length,
                         test=self._test,
                         printer=prt,
@@ -334,6 +360,7 @@ class Fitter(object):
                         gen_args = {
                             'name': mod_name,
                             'max_time': max_time,
+                            'time_list': time_list,
                             'band_list': band_list,
                             'band_systems': band_systems,
                             'band_instruments': band_instruments,
@@ -356,6 +383,8 @@ class Fitter(object):
                             exclude_systems=exclude_systems,
                             exclude_sources=exclude_sources,
                             exclude_kinds=exclude_kinds,
+                            time_list=time_list,
+                            time_unit=time_unit,
                             band_list=band_list,
                             band_systems=band_systems,
                             band_instruments=band_instruments,
@@ -363,6 +392,7 @@ class Fitter(object):
                             band_sampling_points=band_sampling_points,
                             variance_for_each=variance_for_each,
                             user_fixed_parameters=user_fixed_parameters,
+                            user_released_parameters=user_released_parameters,
                             pool=pool)
 
                         if not success:
@@ -389,23 +419,26 @@ class Fitter(object):
                                 en = (alt_name if alt_name
                                       else self._event_name)
                                 extra_event = self._fetcher.fetch(
-                                    en, offline=self._offline)[0].get('data')
+                                    en, offline=self._offline,
+                                    prefer_cache=self._prefer_cache)[0]
+                                extra_data = self._fetcher.load_data(
+                                    extra_event)
 
                                 for rank in range(1, pool.size + 1):
-                                    pool.comm.send(extra_event, dest=rank,
+                                    pool.comm.send(extra_data, dest=rank,
                                                    tag=4)
                                 pool.close()
                             else:
-                                extra_event = pool.comm.recv(
+                                extra_data = pool.comm.recv(
                                     source=0, tag=4)
                                 pool.wait()
 
-                            if extra_event is not None:
-                                extra_event = extra_event[
-                                    list(extra_event.keys())[0]]
+                            if extra_data is not None:
+                                extra_data = extra_data[
+                                    list(extra_data.keys())[0]]
 
                                 for key in urk:
-                                    new_val = extra_event.get(key)
+                                    new_val = extra_data.get(key)
                                     self._event_data[list(
                                         self._event_data.keys())[0]][
                                             key] = new_val
@@ -439,6 +472,7 @@ class Fitter(object):
                             frack_step=frack_step,
                             gibbs=gibbs,
                             pool=pool,
+                            output_path=output_path,
                             suffix=suffix,
                             write=write,
                             upload=upload,
@@ -480,6 +514,7 @@ class Fitter(object):
                  fracking=True,
                  gibbs=False,
                  pool=None,
+                 output_path='',
                  suffix='',
                  write=False,
                  upload=False,
@@ -488,7 +523,7 @@ class Fitter(object):
                  convergence_type=None,
                  convergence_criteria=None,
                  save_full_chain=False,
-                 extra_outputs=[]):
+                 extra_outputs=None):
         """Fit the data for a given event.
 
         Fitting performed using a combination of emcee and fracking.
@@ -616,17 +651,28 @@ class Fitter(object):
         extras = OrderedDict()
         samples_to_plot = self._sampler._nwalkers
 
-        icdf = np.cumsum(np.concatenate(([0.0], weights)))
-        draws = np.random.rand(samples_to_plot)
-        indices = np.searchsorted(icdf, draws) - 1
+        if isinstance(self._sampler, Nester):
+            icdf = np.cumsum(np.concatenate(([0.0], weights)))
+            draws = np.random.rand(samples_to_plot)
+            indices = np.searchsorted(icdf, draws) - 1
+        else:
+            indices = list(range(samples_to_plot))
 
-        ri = 1
+        ri = 0
+        selected_extra = False
         for xi, x in enumerate(samples):
+            ri = ri + 1
             prt.message('outputting_walker', [
                 ri, len(samples)], inline=True, min_time=0.2)
             if xi in indices:
                 output = model.run_stack(x, root='output')
-                if extra_outputs:
+                if extra_outputs is not None:
+                    if not extra_outputs and not selected_extra:
+                        extra_options = list(output.keys())
+                        prt.message('available_keys')
+                        for opt in extra_options:
+                            prt.prt('- {}'.format(opt))
+                        selected_extra = True
                     for key in extra_outputs:
                         new_val = output.get(key, [])
                         new_val = all_to_list(new_val)
@@ -647,7 +693,30 @@ class Fitter(object):
                             'model_observations'][i]
                         photodict[PHOTOMETRY.E_MAGNITUDE] = output[
                             'model_variances'][i]
-                    if output['observation_types'][i] == 'fluxdensity':
+                    elif output['observation_types'][i] == 'magcount':
+                        if output['model_observations'][i] == 0.0:
+                            continue
+                        photodict[PHOTOMETRY.BAND] = output['bands'][i]
+                        photodict[PHOTOMETRY.COUNT_RATE] = output[
+                            'model_observations'][i]
+                        photodict[PHOTOMETRY.E_COUNT_RATE] = output[
+                            'model_variances'][i]
+                        photodict[PHOTOMETRY.MAGNITUDE] = -2.5 * np.log10(
+                            output['model_observations'][i]) + output[
+                                'all_zeropoints'][i]
+                        photodict[PHOTOMETRY.E_UPPER_MAGNITUDE] = 2.5 * (
+                            np.log10(output['model_observations'][i] +
+                                     output['model_variances'][i]) -
+                            np.log10(output['model_observations'][i]))
+                        if (output['model_variances'][i] > output[
+                                'model_observations'][i]):
+                            photodict[PHOTOMETRY.UPPER_LIMIT] = True
+                        else:
+                            photodict[PHOTOMETRY.E_LOWER_MAGNITUDE] = 2.5 * (
+                                np.log10(output['model_observations'][i]) -
+                                np.log10(output['model_observations'][i] -
+                                         output['model_variances'][i]))
+                    elif output['observation_types'][i] == 'fluxdensity':
                         photodict[PHOTOMETRY.FREQUENCY] = output[
                             'frequencies'][i] * frequency_unit('GHz')
                         photodict[PHOTOMETRY.FLUX_DENSITY] = output[
@@ -673,7 +742,7 @@ class Fitter(object):
                                 photodict[PHOTOMETRY.FLUX_DENSITY])
                         photodict[PHOTOMETRY.U_FREQUENCY] = 'GHz'
                         photodict[PHOTOMETRY.U_FLUX_DENSITY] = 'µJy'
-                    if output['observation_types'][i] == 'countrate':
+                    elif output['observation_types'][i] == 'countrate':
                         photodict[PHOTOMETRY.COUNT_RATE] = output[
                             'model_observations'][i]
                         photodict[
@@ -770,7 +839,6 @@ class Fitter(object):
             urealdict = deepcopy(realdict)
             uentry[ENTRY.MODELS][0].add_realization(
                 check_for_dupes=False, **urealdict)
-            ri = ri + 1
         prt.message('all_walkers_written', inline=True)
 
         entry.sanitize()
@@ -781,15 +849,18 @@ class Fitter(object):
         uname = '_'.join(
             [self._event_name, entryhash, modelhash])
 
-        if not os.path.exists(model.MODEL_OUTPUT_DIR):
-            os.makedirs(model.MODEL_OUTPUT_DIR)
+        if output_path and not os.path.exists(output_path):
+            os.makedirs(output_path)
+
+        if not os.path.exists(model.get_products_path()):
+            os.makedirs(model.get_products_path())
 
         if write:
             prt.message('writing_complete')
             with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR, 'walkers.json'),
+                    os.path.join(model.get_products_path(), 'walkers.json'),
                     'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
+                        model.get_products_path(),
                         self._event_name + (
                             ('_' + suffix) if suffix else '') +
                         '.json'), 'w') as feven:
@@ -799,9 +870,9 @@ class Fitter(object):
             if save_full_chain:
                 prt.message('writing_full_chain')
                 with open_atomic(
-                    os.path.join(model.MODEL_OUTPUT_DIR,
+                    os.path.join(model.get_products_path(),
                                  'chain.json'), 'w') as flast, open_atomic(
-                        os.path.join(model.MODEL_OUTPUT_DIR,
+                        os.path.join(model.get_products_path(),
                                      self._event_name + '_chain' + (
                                          ('_' + suffix) if suffix else '') +
                                      '.json'), 'w') as feven:
@@ -810,12 +881,12 @@ class Fitter(object):
                     entabbed_json_dump(self._sampler._all_chain.tolist(),
                                        feven, separators=(',', ':'))
 
-            if extra_outputs:
+            if extra_outputs is not None:
                 prt.message('writing_extras')
                 with open_atomic(os.path.join(
-                    model.MODEL_OUTPUT_DIR, 'extras.json'),
+                    model.get_products_path(), 'extras.json'),
                         'w') as flast, open_atomic(os.path.join(
-                            model.MODEL_OUTPUT_DIR, self._event_name +
+                            model.get_products_path(), self._event_name +
                             '_extras' + (('_' + suffix) if suffix else '') +
                             '.json'), 'w') as feven:
                     entabbed_json_dump(extras, flast, separators=(',', ':'))
@@ -823,9 +894,9 @@ class Fitter(object):
 
             prt.message('writing_model')
             with open_atomic(os.path.join(
-                model.MODEL_OUTPUT_DIR, 'upload.json'),
+                model.get_products_path(), 'upload.json'),
                     'w') as flast, open_atomic(os.path.join(
-                        model.MODEL_OUTPUT_DIR,
+                        model.get_products_path(),
                         uname + (('_' + suffix) if suffix else '') +
                         '.json'), 'w') as feven:
                 entabbed_json_dump(ouentry, flast, separators=(',', ':'))
@@ -890,6 +961,7 @@ class Fitter(object):
     def generate_dummy_data(self,
                             name,
                             max_time=1000.,
+                            time_list=[],
                             band_list=[],
                             band_systems=[],
                             band_instruments=[],
@@ -898,9 +970,10 @@ class Fitter(object):
         # Just need 2 plot points for beginning and end.
         plot_points = 2
 
-        time_list = np.linspace(0.0, max_time, plot_points)
+        times = list(sorted(set(
+            list(np.linspace(0.0, max_time, plot_points)) + time_list)))
         band_list_all = ['V'] if len(band_list) == 0 else band_list
-        times = np.repeat(time_list, len(band_list_all))
+        times = np.repeat(times, len(band_list_all))
 
         # Create lists of systems/instruments if not provided.
         if isinstance(band_systems, string_types):
@@ -930,10 +1003,10 @@ class Fitter(object):
                 for x in range(len(band_list_all) - len(band_bandsets))
             ]
 
-        bands = [i for s in [band_list_all for x in time_list] for i in s]
-        systs = [i for s in [band_systems for x in time_list] for i in s]
-        insts = [i for s in [band_instruments for x in time_list] for i in s]
-        bsets = [i for s in [band_bandsets for x in time_list] for i in s]
+        bands = [i for s in [band_list_all for x in times] for i in s]
+        systs = [i for s in [band_systems for x in times] for i in s]
+        insts = [i for s in [band_instruments for x in times] for i in s]
+        bsets = [i for s in [band_bandsets for x in times] for i in s]
 
         data = {name: {'photometry': []}}
         for ti, tim in enumerate(times):

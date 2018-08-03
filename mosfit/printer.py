@@ -50,6 +50,7 @@ class Printer(object):
         UNDERLINE = '\033[4m'
         YELLOW = '\033[38;5;220m'
         CHARTREUSE = '\033[38;5;70m'
+        BLINK = '\033[5m'
 
         codes = {
             '!b': BLUE,
@@ -62,7 +63,8 @@ class Printer(object):
             '!r': RED,
             '!u': UNDERLINE,
             '!y': YELLOW,
-            '!h': CHARTREUSE
+            '!h': CHARTREUSE,
+            '!B': BLINK
         }
 
     def __init__(self, pool=None, wrap_length=100, quiet=False, fitter=None,
@@ -77,6 +79,8 @@ class Printer(object):
 
         self._was_inline = False
         self._last_prt_time = None
+
+        self._color = self.supports_color()
 
         self.set_strings()
 
@@ -100,7 +104,7 @@ class Printer(object):
         if error:
             if prefix:
                 text = '!r' + self._strings['error'] + ': ' + text + '!e'
-        if color:
+        if self._color and color:
             text = color + text + '!e'
         tspl = text.split('\n')
         if wrapped:
@@ -181,7 +185,7 @@ class Printer(object):
         colorify = kwargs.get('colorify', True)
 
         tspl = self._lines(text, **kwargs)
-        if warning or error or color:
+        if warning or error or (self._color and color):
             colorify = True
         if inline and self._fitter is not None:
             inline = not self._fitter._test
@@ -232,7 +236,8 @@ class Printer(object):
 
     def message(self, name, reps=[], wrapped=True, inline=False,
                 warning=False, error=False, prefix=True, center=False,
-                colorify=True, width=None, prt=True, color='', min_time=None):
+                colorify=True, width=None, prt=True, color='', min_time=None,
+                master_only=True):
         """Print a message from a dictionary of strings."""
         if name in self._strings:
             text = self._strings[name]
@@ -244,7 +249,8 @@ class Printer(object):
             self.prt(
                 text, center=center, colorify=colorify, width=width,
                 prefix=prefix, inline=inline, wrapped=wrapped,
-                warning=warning, error=error, color=color, min_time=min_time)
+                warning=warning, error=error, color=color, min_time=min_time,
+                master_only=master_only)
         return text
 
     def prompt(self, text, reps=[],
@@ -404,7 +410,9 @@ class Printer(object):
                logz=None,
                loglstar=None,
                stop=None,
-               min_time=0.2):
+               min_time=0.2,
+               time_running=None,
+               maximum_walltime=False):
         """Print status message showing state of fitting process."""
         if self._quiet:
             return
@@ -453,6 +461,9 @@ class Printer(object):
                     self._strings['iterations'] + ': [ {} ]'.format(
                         iterations[0]))
             outarr.append(progressstring)
+        if time_running is not None:
+            outarr.append('Time running: [ {} ]'.format(str(datetime.timedelta(
+                seconds=time_running)).split('.')[0]))
         if hasattr(sampler, '_emcee_est_t'):
             if sampler._emcee_est_t < 0.0:
                 txt = self.message('run_until_converged', [
@@ -465,6 +476,10 @@ class Printer(object):
                     tott = 2.0 * sampler._emcee_est_t
                 timestring = self.get_timestring(tott)
                 outarr.append(timestring)
+        if maximum_walltime is not False and time_running is not None:
+            outarr.append('Remaining walltime: [ {} ]'.format(str(
+                datetime.timedelta(
+                    seconds=maximum_walltime - time_running)).split('.')[0]))
         if acor is not None:
             acorcstr = pretty_num(acor[1], sig=3)
             if acor[0] <= 0.0:
@@ -509,7 +524,7 @@ class Printer(object):
                 outarr.append('Log(z): [ {} ± {} ]'.format(
                     pretty_num(logz[0], sig=4), pretty_num(logz[1], sig=4)))
             if len(logz) == 4:
-                if is_number(logz[1]):
+                if is_number(logz[1]) and not np.isnan(logz[1]):
                     if logz[2] > 1000.0 * logz[1]:
                         color = '!r'
                     elif logz[2] > 100.0 * logz[1]:
@@ -521,7 +536,7 @@ class Printer(object):
                     else:
                         color = '!g'
                 else:
-                    color = '!w'
+                    color = ''
                 est_logz = pretty_num(logz[0] + logz[2], sig=3)
                 outarr.append(
                     'Log(z): [ {} (Prediction: {}{}!e) ± {} ]'.format(
@@ -600,6 +615,7 @@ class Printer(object):
             lines = '\n'.join(doodle)
 
         self.prt(lines, colorify=True, inline=not make_space)
+        sys.stdout.flush()
         if make_space:
             self._was_inline = True
 
@@ -677,3 +693,14 @@ class Printer(object):
             return '*'
         else:
             return '#'
+
+    def supports_color(self):
+        """Return if current terminal supports color or not."""
+        plat = sys.platform
+        supported_platform = plat != 'Pocket PC' and (plat != 'win32' or
+                                                      'ANSICON' in os.environ)
+        # isatty is not always implemented, #6223.
+        is_a_tty = hasattr(sys.stdout, 'isatty') and sys.stdout.isatty()
+        if not supported_platform or not is_a_tty:
+            return False
+        return True
