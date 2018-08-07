@@ -334,13 +334,11 @@ class Transient(Module):
                     'times']) for x in time_list] + [
                         x for x in self._data['times']]
             elif time_unit == 'phase':
-                if 'maxdate' not in self._data or not len(self._data[
-                        'maxdate']) or 'value' not in self._data['maxdate'][0]:
+                if 'maxdate' not in self._data:
                     raise(prt.message('no_maxdate', name))
-                max_mjd = astrotime(self._data['maxdate'][0]['value'].replace(
+                max_mjd = astrotime(self._data['maxdate'].replace(
                     '/', '-')).mjd
-                alltimes = [x + max_mjd - min(self._data[
-                    'times']) for x in time_list] + [
+                alltimes = [x + max_mjd for x in time_list] + [
                         x for x in self._data['times']]
             else:
                 raise('Unknown `time_unit`.')
