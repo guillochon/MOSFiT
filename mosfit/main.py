@@ -674,36 +674,6 @@ def main():
         else:
             args.iterations = 5000
 
-    if len(args.date_list):
-        if no_events:
-            prt.message('no_dates_gen', warning=True)
-        else:
-            args.time_list = [str(astrotime(x.replace('/', '-')).mjd)
-                              for x in args.date_list]
-            args.time_unit = 'mjd'
-
-    if len(args.mjd_list):
-        if no_events:
-            prt.message('no_dates_gen', warning=True)
-        else:
-            args.time_list = args.mjd_list
-            args.time_unit = 'mjd'
-
-    if len(args.jd_list):
-        if no_events:
-            prt.message('no_dates_gen', warning=True)
-        else:
-            args.time_list = [str(astrotime(
-                float(x), format='jd').mjd) for x in args.jd_list]
-            args.time_unit = 'mjd'
-
-    if len(args.phase_list):
-        if no_events:
-            prt.message('no_dates_gen', warning=True)
-        else:
-            args.time_list = args.phase_list
-            args.time_unit = 'phase'
-
     if len(args.time_list):
         if any([any([y in x]) for y in ['-', '/'] for x in args.time_list]):
             try:
@@ -720,6 +690,37 @@ def main():
                 args.time_unit = 'phase'
             args.time_list = [float(x) for x in args.time_list]
 
+    if len(args.date_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list += [str(astrotime(x.replace('/', '-')).mjd)
+                               for x in args.date_list]
+            args.time_unit = 'mjd'
+
+    if len(args.mjd_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list += [float(x) for x in args.mjd_list]
+            args.time_unit = 'mjd'
+
+    if len(args.jd_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list += [str(astrotime(
+                float(x), format='jd').mjd) for x in args.jd_list]
+            args.time_unit = 'mjd'
+
+    if len(args.phase_list):
+        if no_events:
+            prt.message('no_dates_gen', warning=True)
+        else:
+            args.time_list += [float(x) for x in args.phase_list]
+            args.time_unit = 'phase'
+
+    if len(args.time_list):
         if min(args.time_list) > 2400000:
             prt.message('assuming_jd')
             args.time_list = [x - 2400000.5 for x in args.time_list]
@@ -727,7 +728,6 @@ def main():
         elif min(args.time_list) > 50000:
             prt.message('assuming_mjd')
             args.time_unit = 'mjd'
-        args.time_unit = None
 
     if args.burn is None and args.post_burn is None:
         args.burn = int(np.floor(args.iterations / 2))
