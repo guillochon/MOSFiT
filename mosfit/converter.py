@@ -284,26 +284,25 @@ class Converter(object):
 
                     fsplit = ftxt.splitlines()
 
-                # If none of the rows contain numeric data, the file
-                # is likely a list of transient names.
-                flines = list(fsplit)
+                    # If none of the rows contain numeric data, the file
+                    # is likely a list of transient names.
+                    flines = list(fsplit)
 
-                if (len(flines) and
-                    (not any(any([is_datum(x.strip()) or x == ''
-                                  for x in (
-                                      y.split(delim) if delim is not None else
-                                      listify(y))])
-                             for y in flines) or
-                     len(flines) == 1)):
-                    new_events = [
-                        it.strip() for s in flines for it in (
-                            s.split(delim) if delim is not None else
-                            listify(s))]
-                    new_event_list.extend(new_events)
-                    continue
+                    if (len(flines) and
+                        (not any(any([
+                            is_datum(x.strip()) or x == '' for x in (
+                                y.split(delim) if delim is not None else
+                                listify(y))]) for y in flines) or
+                         len(flines) == 1)):
+                        new_events = [
+                            it.strip() for s in flines for it in (
+                                s.split(delim) if delim is not None else
+                                listify(s))]
+                        new_event_list.extend(new_events)
+                        continue
 
-                if delim is None:
-                    raise ValueError(prt.text('delimiter_not_found'))
+                    if delim is None:
+                        raise ValueError(prt.text('delimiter_not_found'))
 
                 if not intro_shown:
                     prt.message('converter_info')
@@ -944,7 +943,8 @@ class Converter(object):
                     if ck in cidict:
                         ci = cidict[ck]
                         del(cidict[ck])
-                        del(used_cis[ci])
+                        del(used_cis[ci if isinstance(
+                            ci, string_types) else ci[-1]])
             else:
                 self._first_data = fi
                 break
