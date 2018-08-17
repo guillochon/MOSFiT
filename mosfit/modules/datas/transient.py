@@ -346,7 +346,6 @@ class Transient(Module):
                 alltimes += list(
                     np.linspace(mint, maxt, max(smooth_times, 2)))
             alltimes = list(sorted(set(alltimes)))
-            print(alltimes)
 
             # Create additional fake observations.
             currobslist = list(zip(*(self._data[x] for x in self._OBS_KEYS)))
