@@ -39,3 +39,19 @@ Installing ``MOSFiT`` with pip is straightforward:
 .. code-block:: bash
 
     pip install mosfit
+
+.. _source:
+
+----------------------
+Installing from source
+----------------------
+
+**Platforms:** MacOS X, Linux, and Windows
+
+If you are interested in performing more serious development work, it is probably best to install ``MOSFiT`` from source. This can be done by cloning the repository and then running the ``setup.py`` script:
+
+.. code-block:: bash
+
+    git clone https://github.com/guillochon/MOSFiT.git
+    cd MOSFiT
+    python setup.py install
