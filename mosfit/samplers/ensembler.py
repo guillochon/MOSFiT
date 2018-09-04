@@ -173,7 +173,8 @@ class Ensembler(Sampler):
                     if walk_param is None or 'value' not in walk_param:
                         continue
                     if param:
-                        val = param.fraction(walk_param['value'])
+                        val = param.fraction(
+                            walk_param['value'], self._iterations != 0)
                         if not np.isnan(val):
                             new_walk[k] = val
                 walkers_pool.append(new_walk)
