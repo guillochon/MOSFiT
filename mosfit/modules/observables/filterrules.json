@@ -2068,5 +2068,29 @@
 				"yunit": "cm2"
 			}
 		}
+	},
+	{
+		"telescopes": [
+			"ATLAS1",
+			"ATLAS"
+		],
+		"instruments": [
+			"",
+			"ACAM1"
+		],
+		"filters": {
+			"orange":{
+				"SVO": "Misc/Atlas.orange",
+				"offset": 0
+			},
+			"o":{
+				"SVO": "Misc/Atlas.orange",
+				"offset": 0
+			},
+			"cyan":{
+				"SVO": "Misc/Atlas.cyan",
+				"offset": 0
+			}
+		}
 	}
 ]
