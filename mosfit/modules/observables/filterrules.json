@@ -892,6 +892,53 @@
 			"Swift"
 		],
 		"systems": [
+			"",
+			"Vega"
+		],
+		"instruments": [
+			"UVOT"
+		],
+		"bandsets": [
+			"",
+			"Swift",
+			"UVOT"
+		],
+		"filters": {
+			"U": {
+				"SVO": "Swift/UVOT.U"
+			},
+			"B": {
+				"SVO": "Swift/UVOT.B"
+			},
+			"V": {
+				"SVO": "Swift/UVOT.V"
+			},
+			"UVW1": {
+				"SVO": "Swift/UVOT.UVW1"
+			},
+			"UVW2": {
+				"SVO": "Swift/UVOT.UVW2"
+			},
+			"UVM2": {
+				"SVO": "Swift/UVOT.UVM2"
+			},
+			"W1": {
+				"SVO": "Swift/UVOT.UVW1"
+			},
+			"W2": {
+				"SVO": "Swift/UVOT.UVW2"
+			},
+			"M2": {
+				"SVO": "Swift/UVOT.UVM2"
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Swift"
+		],
+		"systems": [
 			"AB"
 		],
 		"instruments": [
