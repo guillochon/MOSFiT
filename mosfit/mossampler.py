@@ -191,7 +191,7 @@ class MOSSampler(PTSampler):
 
         for i in range(iterations):
             thawed = np.array(sorted(np.random.choice(
-                self.dim, np.random.randint(1, self.dim), replace=False)))
+                self.dim, np.random.randint(1, self.dim+1), replace=False)))
             for j in [0, 1]:
                 jupdate = j
                 jsample = (j + 1) % 2
