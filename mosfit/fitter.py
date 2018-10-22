@@ -833,7 +833,7 @@ class Fitter(object):
                 realdict[REALIZATION.SCORE] = str(
                     probs[xi])
             else:
-                realdict[REALIZATION.SCORE] = str(ln_likelihood(x))
+                realdict[REALIZATION.SCORE] = str(ln_likelihood(x)+ln_prior(x))
             realdict[REALIZATION.ALIAS] = str(ri)
             realdict[REALIZATION.WEIGHT] = str(weights[xi])
             entry[ENTRY.MODELS][0].add_realization(
