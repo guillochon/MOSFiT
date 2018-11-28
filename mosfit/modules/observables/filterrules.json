@@ -544,6 +544,19 @@
 		}
 	},
 	{
+		"instruments": [
+			"P200"
+		],
+		"filters": {
+			"Ks": {
+				"SVO": "P200/WIRC.Ks"
+			},
+			"J_ori": {
+				"SVO": "P200/WIRC.J_ori"
+			}
+		}
+	},
+	{
 		"bandsets": [
 			"Bessell"
 		],
@@ -639,6 +652,236 @@
 			},
 			"z'": {
 				"SVO": "SLOAN/SDSS.z",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Liverpool"
+		],
+		"systems": [
+			"Vega"
+		],
+		"instruments": [
+			"",
+			"IOI",
+			"IOO"
+		],
+		"filters": {
+			"H": {
+				"SVO": "Liverpool/IOI.H"
+			},
+			"u": {
+				"SVO": "Liverpool/IOO.SDSS-u"
+			},
+			"r": {
+				"SVO": "Liverpool/IOO.SDSS-r"
+			},
+			"Halpha": {
+				"SVO": "Liverpool/IOO.Halpha"
+			},
+			"Halpha-6634": {
+				"SVO": "Liverpool/IOO.Halpha-6634"
+			},
+			"Halpha-6755": {
+				"SVO": "Liverpool/IOO.Halpha-6755"
+			},
+			"Halpha-6822": {
+				"SVO": "Liverpool/IOO.Halpha-6822"
+			},
+			"i": {
+				"SVO": "Liverpool/IOO.SDSS-i"
+			},
+			"z": {
+				"SVO": "Liverpool/IOO.SDSS-z"
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Liverpool"
+		],
+		"systems": [
+			"AB"
+		],
+		"instruments": [
+			"",
+			"IOI",
+			"IOO"
+		],
+		"filters": {
+			"H": {
+				"SVO": "Liverpool/IOI.H",
+				"offset": 0
+			},
+			"u": {
+				"SVO": "Liverpool/IOO.SDSS-u",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "Liverpool/IOO.SDSS-r",
+				"offset": 0
+			},
+			"Halpha": {
+				"SVO": "Liverpool/IOO.Halpha",
+				"offset": 0
+			},
+			"Halpha-6634": {
+				"SVO": "Liverpool/IOO.Halpha-6634",
+				"offset": 0
+			},
+			"Halpha-6755": {
+				"SVO": "Liverpool/IOO.Halpha-6755",
+				"offset": 0
+			},
+			"Halpha-6822": {
+				"SVO": "Liverpool/IOO.Halpha-6822",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "Liverpool/IOO.SDSS-i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "Liverpool/IOO.SDSS-z",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Astrosat"
+		],
+		"systems": [
+			"Vega"
+		],
+		"instruments": [
+			"",
+			"UVIT"
+		],
+		"filters": {
+			"F148W": {
+				"SVO": "Astrosat/UVIT.F148W"
+			},
+			"F148Wa": {
+				"SVO": "Astrosat/UVIT.F148Wa"
+			},
+			"F154W": {
+				"SVO": "Astrosat/UVIT.F154W"
+			},
+			"F169M": {
+				"SVO": "Astrosat/UVIT.F169M"
+			},
+			"F172M": {
+				"SVO": "Astrosat/UVIT.F172M"
+			},
+			"N219M": {
+				"SVO": "Astrosat/UVIT.N219M"
+			},
+			"N242W": {
+				"SVO": "Astrosat/UVIT.N242W"
+			},
+			"N245M": {
+				"SVO": "Astrosat/UVIT.N245M"
+			},
+			"N263M": {
+				"SVO": "Astrosat/UVIT.N263M"
+			},
+			"N279N": {
+				"SVO": "Astrosat/UVIT.N279N"
+			},
+			"VIS1": {
+				"SVO": "Astrosat/UVIT.VIS1"
+			},
+			"VIS2": {
+				"SVO": "Astrosat/UVIT.VIS2"
+			},
+			"BK7": {
+				"SVO": "Astrosat/UVIT.BK7"
+			},
+			"ND1": {
+				"SVO": "Astrosat/UVIT.ND1"
+			},
+			"VIS3": {
+				"SVO": "Astrosat/UVIT.VIS3"
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Astrosat"
+		],
+		"systems": [
+			"AB"
+		],
+		"instruments": [
+			"",
+			"UVIT"
+		],
+		"filters": {
+			"F148W": {
+				"SVO": "Astrosat/UVIT.F148W",
+				"offset": 0
+			},
+			"F148Wa": {
+				"SVO": "Astrosat/UVIT.F148Wa",
+				"offset": 0
+			},
+			"F154W": {
+				"SVO": "Astrosat/UVIT.F154W",
+				"offset": 0
+			},
+			"F169M": {
+				"SVO": "Astrosat/UVIT.F169M",
+				"offset": 0
+			},
+			"F172M": {
+				"SVO": "Astrosat/UVIT.F172M",
+				"offset": 0
+			},
+			"N219M": {
+				"SVO": "Astrosat/UVIT.N219M",
+				"offset": 0
+			},
+			"N242W": {
+				"SVO": "Astrosat/UVIT.N242W",
+				"offset": 0
+			},
+			"N245M": {
+				"SVO": "Astrosat/UVIT.N245M",
+				"offset": 0
+			},
+			"N263M": {
+				"SVO": "Astrosat/UVIT.N263M",
+				"offset": 0
+			},
+			"N279N": {
+				"SVO": "Astrosat/UVIT.N279N",
+				"offset": 0
+			},
+			"VIS1": {
+				"SVO": "Astrosat/UVIT.VIS1",
+				"offset": 0
+			},
+			"VIS2": {
+				"SVO": "Astrosat/UVIT.VIS2",
+				"offset": 0
+			},
+			"BK7": {
+				"SVO": "Astrosat/UVIT.BK7",
+				"offset": 0
+			},
+			"ND1": {
+				"SVO": "Astrosat/UVIT.ND1",
+				"offset": 0
+			},
+			"VIS3": {
+				"SVO": "Astrosat/UVIT.VIS3",
 				"offset": 0
 			}
 		}
@@ -781,8 +1024,40 @@
 			"ANDICAM"
 		],
 		"filters": {
+			"J": {
+				"SVO": "CTIO/ANDICAM.J",
+				"offset": 0
+			},
+			"H": {
+				"SVO": "CTIO/ANDICAM.H",
+				"offset": 0
+			},
 			"K": {
 				"SVO": "CTIO/ANDICAM.K",
+				"offset": 0
+			},
+			"I_KPNO": {
+				"SVO": "CTIO/ANDICAM.I_KPNO",
+				"offset": 0
+			},
+			"B_KPNO": {
+				"SVO": "CTIO/ANDICAM.B_KPNO",
+				"offset": 0
+			},
+			"R_KPNO": {
+				"SVO": "CTIO/ANDICAM.R_KPNO",
+				"offset": 0
+			},
+			"V_KPNO": {
+				"SVO": "CTIO/ANDICAM.V_KPNO",
+				"offset": 0
+			},
+			"B_YALO": {
+				"SVO": "CTIO/ANDICAM.B_YALO",
+				"offset": 0
+			},
+			"R_YALO": {
+				"SVO": "CTIO/ANDICAM.B_YALO",
 				"offset": 0
 			}
 		}
@@ -989,6 +1264,34 @@
 			"z": {
 				"SVO": "KPNO/KP4in.Gunn_z",
 				"offset": 0
+			},
+			"g": {
+				"SVO": "LaSilla/GROND.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "LaSilla/GROND.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "LaSilla/GROND.i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "LaSilla/GROND.z",
+				"offset": 0
+			},
+			"J": {
+				"SVO": "LaSilla/GROND.J",
+				"offset": 0
+			},
+			"H": {
+				"SVO": "LaSilla/GROND.H",
+				"offset": 0
+			},
+			"K": {
+				"SVO": "LaSilla/GROND.K",
+				"offset": 0
 			}
 		}
 	},
@@ -1042,56 +1345,6 @@
 			},
 			"F850W": {
 				"SVO": "HST/ACS_WFC.F850LP_77",
-				"offset": 0
-			}
-		}
-	},
-	{
-		"systems": [
-			"",
-			"AB"
-		],
-		"telescopes": [
-			"",
-			"LaSilla"
-		],
-		"instruments": [
-			"",
-			"EFOSC",
-			"GROND"
-		],
-		"bandsets": [
-			"",
-			"EFOSC",
-			"GROND"
-		],
-		"filters": {
-			"g": {
-				"SVO": "LaSilla/GROND.g",
-				"offset": 0
-			},
-			"r": {
-				"SVO": "LaSilla/GROND.r",
-				"offset": 0
-			},
-			"i": {
-				"SVO": "LaSilla/GROND.i",
-				"offset": 0
-			},
-			"z": {
-				"SVO": "LaSilla/GROND.z",
-				"offset": 0
-			},
-			"J": {
-				"SVO": "LaSilla/GROND.J",
-				"offset": 0
-			},
-			"H": {
-				"SVO": "LaSilla/GROND.H",
-				"offset": 0
-			},
-			"K": {
-				"SVO": "LaSilla/GROND.K",
 				"offset": 0
 			}
 		}
@@ -1838,6 +2091,34 @@
 				"path": "rosat_pspc_r4tor7.area",
 				"xunit": "keV",
 				"yunit": "cm2"
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"ATLAS1",
+			"ATLAS"
+		],
+		"systems": [
+			"AB",
+			""
+		],
+		"instruments": [
+			"",
+			"ACAM1"
+		],
+		"filters": {
+			"orange":{
+				"SVO": "Misc/Atlas.orange",
+				"offset": 0
+			},
+			"o":{
+				"SVO": "Misc/Atlas.orange",
+				"offset": 0
+			},
+			"cyan":{
+				"SVO": "Misc/Atlas.cyan",
+				"offset": 0
 			}
 		}
 	}
