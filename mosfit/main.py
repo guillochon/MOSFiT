@@ -526,6 +526,13 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_catalogs'))
 
     parser.add_argument(
+        '--no-guessing',
+        dest='no_guessing',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_no_guessing'))
+
+    parser.add_argument(
         '--open-in-browser',
         '-O',
         dest='open_in_browser',
@@ -943,6 +950,8 @@ def main():
         args.num_temps = 1
     if args.walker_paths is None:
         args.walker_paths = []
+    if args.no_guessing:
+        args.guess = False
 
     # Then, fit the listed events with the listed models.
     fitargs = vars(args)

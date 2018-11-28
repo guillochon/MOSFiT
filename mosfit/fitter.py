@@ -167,6 +167,7 @@ class Fitter(object):
                    exit_on_prompt=False,
                    download_recommended_data=False,
                    local_data_only=False,
+                   guess=True,
                    method=None,
                    seed=None,
                    **kwargs):
@@ -206,7 +207,7 @@ class Fitter(object):
         # If the input is not a JSON file, assume it is either a list of
         # transients or that it is the data from a single transient in tabular
         # form. Try to guess the format first, and if that fails ask the user.
-        self._converter = Converter(prt, require_source=upload)
+        self._converter = Converter(prt, require_source=upload, guess=guess)
         event_list = self._converter.generate_event_list(event_list)
 
         event_list = [x.replace('‑', '-') for x in event_list]
