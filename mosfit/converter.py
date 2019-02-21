@@ -61,13 +61,14 @@ class Converter(object):
     _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
     _EMPTY_VALS = ['nodata']
 
-    def __init__(self, printer, require_source=False, **kwargs):
+    def __init__(self, printer, require_source=False, guess=True, **kwargs):
         """Initialize."""
         import pickle
 
         self._path = os.path.dirname(os.path.realpath(__file__))
         self._inflect = inflect.engine()
         self._printer = printer
+        self._guess = guess
         self._require_source = require_source
 
         self._estrs = [
@@ -672,12 +673,21 @@ class Converter(object):
                                     isinstance(cidict[
                                         PHOTOMETRY.E_COUNT_RATE], list) else
                                     row[cidict[PHOTOMETRY.E_COUNT_RATE]])
-                                if '<' in cc:
-                                    set_pd_mag_from_counts(
-                                        photodict, ec=cc.strip('<'), zp=zpp)
-                                else:
-                                    set_pd_mag_from_counts(
-                                        photodict, c=cc, ec=ecc, zp=zpp)
+                                try:
+                                    if '<' in cc:
+                                        set_pd_mag_from_counts(
+                                            photodict, ec=cc.strip('<'),
+                                            zp=zpp)
+                                    else:
+                                        if PHOTOMETRY.UPPER_LIMIT in photodict:
+                                            del(photodict[
+                                                PHOTOMETRY.UPPER_LIMIT])
+                                            del(photodict[
+                                                PHOTOMETRY.UPPER_LIMIT_SIGMA])
+                                        set_pd_mag_from_counts(
+                                            photodict, c=cc, ec=ecc, zp=zpp)
+                                except Exception:
+                                    continue
                             elif self._data_type == 3:
                                 photodict[
                                     PHOTOMETRY.U_FLUX_DENSITY] = self._ufd
@@ -713,14 +723,22 @@ class Converter(object):
                                 elif ufd.lower() in ['jy', 'jansky']:
                                     mult = Decimal('1e6')
 
-                                if '<' in fd:
-                                    set_pd_mag_from_flux_density(
-                                        photodict, efd=str(
-                                            Decimal(fd.strip('<')) * mult))
-                                else:
-                                    set_pd_mag_from_flux_density(
-                                        photodict, fd=Decimal(fd) * mult,
-                                        efd=Decimal(efd) * mult)
+                                try:
+                                    if '<' in fd:
+                                        set_pd_mag_from_flux_density(
+                                            photodict, efd=str(
+                                                Decimal(fd.strip('<')) * mult))
+                                    else:
+                                        if PHOTOMETRY.UPPER_LIMIT in photodict:
+                                            del(photodict[
+                                                PHOTOMETRY.UPPER_LIMIT])
+                                            del(photodict[
+                                                PHOTOMETRY.UPPER_LIMIT_SIGMA])
+                                        set_pd_mag_from_flux_density(
+                                            photodict, fd=Decimal(fd) * mult,
+                                            efd=Decimal(efd) * mult)
+                                except Exception:
+                                    continue
                             if not len(sources) and not len(shared_sources):
                                 if use_self_source is None:
                                     sopts = [
@@ -859,8 +877,7 @@ class Converter(object):
                                     del(photodict[key])
 
                             # Add the photometry.
-                            entries[rname].add_photometry(
-                                **photodict)
+                            entries[rname].add_photometry(**photodict)
 
                             # Add other entry keys.
                             for key in self._entry_keys:
@@ -882,7 +899,6 @@ class Converter(object):
                                 merge_with_existing = prt.prompt(
                                     'merge_with_existing', default='y')
                             if merge_with_existing:
-                                print(event_names[ei])
                                 existing = Entry.init_from_file(
                                     catalog=None,
                                     name=event_names[ei],
@@ -948,52 +964,10 @@ class Converter(object):
                     if ck in cidict:
                         ci = cidict[ck]
                         del(cidict[ck])
-                        del(used_cis[ci if isinstance(
-                            ci, string_types) else ci[-1]])
+                        del(used_cis[ci if isinstance(ci, int) else ci[-1]])
             else:
                 self._first_data = fi
                 break
-
-        # Look for columns that are band names if no mag/counts/flux dens
-        # column was found.
-        if (not any([x in cidict for x in [
-            PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
-                PHOTOMETRY.FLUX_DENSITY]])):
-            # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
-            # for each column).
-            key = PHOTOMETRY.MAGNITUDE
-            ekey = PHOTOMETRY.E_MAGNITUDE
-            ukey = PHOTOMETRY.UPPER_LIMIT
-            bkey = PHOTOMETRY.BAND
-            if ekey in cidict:
-                ci = cidict[ekey]
-                del(cidict[used_cis[ci]])
-                del(used_cis[ci])
-            if ukey in cidict:
-                ci = cidict[ukey]
-                del(cidict[used_cis[ci]])
-                del(used_cis[ci])
-            if bkey in cidict:
-                ci = cidict[bkey]
-                del(cidict[used_cis[ci]])
-                del(used_cis[ci])
-            for fi, fl in enumerate(flines):
-                if not any([is_datum(x) for x in fl]):
-                    # Try to associate column names with common header keys.
-                    for ci, col in enumerate(fl):
-                        if ci in used_cis:
-                            continue
-                        ccol = mpatt.sub('', col)
-                        if ccol in self._band_names:
-                            cidict.setdefault(key, []).append(ci)
-                            used_cis[ci] = key
-                            cidict.setdefault(bkey, []).append(ccol)
-                        elif ccol in self._emagstrs:
-                            cidict.setdefault(ekey, []).append(ci)
-                            used_cis[ci] = ekey
-                        elif ccol in self._lmagstrs:
-                            cidict.setdefault(ukey, []).append(ci)
-                            used_cis[ci] = ukey
 
         # See which keys we collected. If we are missing any critical keys, ask
         # the user which column they are.
@@ -1018,6 +992,55 @@ class Converter(object):
                 options=['Magnitudes', 'Counts (per second)',
                          'Flux Densities (Jansky)'],
                 none_string='No Photometry', default='1')
+
+        # Look for columns that are band names if no mag/counts/flux dens
+        # column was found.
+        if (not any([x in cidict for x in [
+            PHOTOMETRY.MAGNITUDE, PHOTOMETRY.COUNT_RATE,
+                PHOTOMETRY.FLUX_DENSITY]])):
+            # Delete `E_MAGNITUDE` and `BAND` if they exist (we'll need to find
+            # for each column).
+            if self._data_type == 1:
+                key = PHOTOMETRY.MAGNITUDE
+                ekey = PHOTOMETRY.E_MAGNITUDE
+            elif self._data_type == 2:
+                key = PHOTOMETRY.COUNT_RATE
+                ekey = PHOTOMETRY.E_COUNT_RATE
+            elif self._data_type == 3:
+                key = PHOTOMETRY.FLUX_DENSITY
+                ekey = PHOTOMETRY.E_FLUX_DENSITY
+            ukey = PHOTOMETRY.UPPER_LIMIT
+            bkey = PHOTOMETRY.BAND
+            if ekey in cidict:
+                ci = cidict[ekey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            if ukey in cidict:
+                ci = cidict[ukey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            if bkey in cidict:
+                ci = cidict[bkey]
+                del(cidict[used_cis[ci]])
+                del(used_cis[ci])
+            for fi, fl in enumerate(flines):
+                if not any([is_datum(x) for x in fl]) and self._guess:
+                    # Try to associate column names with common header keys.
+                    for ci, col in enumerate(fl):
+                        if ci in used_cis:
+                            continue
+                        ccol = mpatt.sub('', col)
+                        if ccol in self._band_names:
+                            cidict.setdefault(key, []).append(ci)
+                            used_cis[ci] = key
+                            cidict.setdefault(bkey, []).append(ccol)
+                        elif ccol in self._emagstrs:
+                            cidict.setdefault(ekey, []).append(ci)
+                            used_cis[ci] = ekey
+                        elif ccol in self._lmagstrs:
+                            cidict.setdefault(ukey, []).append(ci)
+                            used_cis[ci] = ukey
+
         if self._data_type in [1, 3, 'n']:
             akeys.remove(PHOTOMETRY.COUNT_RATE)
             akeys.remove(PHOTOMETRY.E_COUNT_RATE)

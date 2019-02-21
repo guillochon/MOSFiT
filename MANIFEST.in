@@ -18,3 +18,4 @@ global-exclude *.pyc
 prune mosfit/cache/
 include mosfit/cache/.gitkeep
 include mosfit/cache/names.min.json
+include logo.png
