@@ -10,9 +10,9 @@ else
 fi
 
 if [ "$TRAVIS_PYTHON_VERSION" == "3.5" ]; then
-    mpirun -np 2 --oversubscribe python -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
+    mpirun -np 2 --oversubscribe $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
 else
-    mpirun -np 2 python -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
+    mpirun -np 2 $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
 fi
 $RUNNER -m mosfit -e SN2009do.json --test -i 1 --no-fracking -m magnetar -T 2 -F covariance
 $RUNNER -m mosfit -e SN2007bg --test -i 3 -m rprocess -D nester -F covariance
