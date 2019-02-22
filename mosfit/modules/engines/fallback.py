@@ -54,8 +54,11 @@ class Fallback(Engine):
 
             # --------- GET SIMULATION BETAS -----------------
             sim_beta_files = os.listdir(dmdedir)
-
-            self._sim_beta[g].extend([float(b[:-4]) for b in sim_beta_files])
+            simbeta = [float(b[:-4]) for b in sim_beta_files]
+            sortedindices = np.argsort(simbeta)
+            simbeta = [simbeta[i] for i in sortedindices]
+            sim_beta_files = [sim_beta_files[i] for i in sortedindices]
+            self._sim_beta[g].extend(simbeta)
 
             # ----- CREATE INTERPOLATION FUNCTIONS; FIND SLOPES & YINTERs -----
             time = {}
