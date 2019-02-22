@@ -8,6 +8,8 @@ notifications:
 git:
     depth: 3
 
+env:
+    - MPI_IMPL=openmpi
 # Setup anaconda
 before_install:
 # Install packages
