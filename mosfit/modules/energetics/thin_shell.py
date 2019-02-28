@@ -16,7 +16,7 @@ class ThinShell(Energetic):
         self._energy = kwargs[self.key('kinetic_energy')]
         self._m_ejecta = kwargs[self.key('mejecta')]
 
-        v_ejecta = np.sqrt(2 * self._energy * FOE /
+        v_ejecta = np.sqrt(2.0 * self._energy * FOE /
                            (self._m_ejecta * M_SUN_CGS)) / KM_CGS
 
         return {self.key('vejecta'): v_ejecta}

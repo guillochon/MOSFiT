@@ -177,7 +177,7 @@ class Model(object):
                 if tag == '@references':
                     self._references.setdefault('base', []).extend(
                         self._model[tag])
-                del(self._model[tag])
+                del self._model[tag]
 
         # with open(os.path.join(
         #         self.get_products_path(),
@@ -263,7 +263,7 @@ class Model(object):
             new_entry = deepcopy(model_tag)
             new_entry['roots'] = roots
             if 'children' in new_entry:
-                del (new_entry['children'])
+                del new_entry['children']
             new_entry['depth'] = max_depth
             unsorted_call_stack[tag] = new_entry
         # print(unsorted_call_stack)
@@ -433,7 +433,7 @@ class Model(object):
 
         # Find unsupported wavebands and report to user.
         unsupported_kinds = self._kinds_needed - self._kinds_supported
-        if len(unsupported_kinds):
+        if unsupported_kinds:
             prt.message(
                 'using_unsupported_kinds' if 'none' in exclude_kinds else
                 'ignoring_unsupported_kinds', [', '.join(
@@ -553,6 +553,7 @@ class Model(object):
                 mwfd = float(vfe[vfi]) if (vfi < len(vfe) and is_number(
                     vfe[vfi])) else self.MIN_WAVE_FRAC_DIFF
                 # Find photometry in call stack.
+                ptask = None
                 for ptask in self._call_stack:
                     if ptask == 'photometry':
                         awaves = self._modules[ptask].average_wavelengths(
@@ -563,7 +564,7 @@ class Model(object):
                         break
                 owav = 0.0
                 variance_bands = []
-                for bi, (awav, band) in enumerate(band_pairs):
+                for (awav, band) in band_pairs:
                     wave_frac_diff = abs(awav - owav) / (awav + owav)
                     if wave_frac_diff < mwfd:
                         continue
@@ -797,7 +798,7 @@ class Model(object):
             draw = np.random.uniform(
                 low=0.0, high=1.0, size=self._num_free_parameters)
             draw = self.draw_from_icdf(draw)
-            if len(walkers_pool):
+            if walkers_pool:
                 if not replace:
                     chosen_one = 0
                 else:
@@ -821,10 +822,10 @@ class Model(object):
                 p = draw
 
         if not replace and chosen_one is not None:
-            del(walkers_pool[chosen_one])
+            del walkers_pool[chosen_one]
             if weights is not None:
-                del(weights[chosen_one])
-                if len(weights) and None not in weights:
+                del weights[chosen_one]
+                if weights and None not in weights:
                     totw = np.sum(weights)
                     weights = [x / totw for x in weights]
         return (p, score)
@@ -983,8 +984,8 @@ class Model(object):
 
             if '_delete_keys' in outputs:
                 for key in list(outputs['_delete_keys'].keys()):
-                    del(outputs[key])
-                del(outputs['_delete_keys'])
+                    del outputs[key]
+                del outputs['_delete_keys']
 
         if build_refs:
             # Make sure references are unique.

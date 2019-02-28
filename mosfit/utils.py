@@ -45,7 +45,7 @@ def is_integer(s):
     """Check if input is an integer."""
     if isinstance(s, list) and not isinstance(s, string_types):
         try:
-            [int(x) for x in s]
+            _ = [int(x) for x in s]
             return True
         except ValueError:
             return False
@@ -64,7 +64,7 @@ def is_number(s):
             for x in s:
                 if isinstance(x, string_types) and ' ' in x:
                     raise ValueError
-            [float(x) for x in s]
+            _ = [float(x) for x in s]
             return True
         except ValueError:
             return False
@@ -81,7 +81,7 @@ def is_number(s):
 def is_coordinate(s):
     """Check if input is a coordinate."""
     matches = re.search(
-        '([+-]?([0-9]{1,2}):([0-9]{2})(:[0-9]{2})?\.?([0-9]+)?)', s)
+        r'([+-]?([0-9]{1,2}):([0-9]{2})(:[0-9]{2})?\.?([0-9]+)?)', s)
 
     return False if matches is None else True
 
@@ -98,7 +98,7 @@ def is_datum(s):
 def is_bibcode(s):
     """Check if input is a valid bibcode."""
     return not (re.search(
-        '[0-9]{4}..........[\.0-9]{4}[A-Za-z]', s) is None)
+        r'[0-9]{4}..........[\.0-9]{4}[A-Za-z]', s) is None)
 
 
 def pretty_num(x, sig=4):
@@ -134,8 +134,7 @@ def entabbed_json_dumps(string, **kwargs):
             indent='\t',
             separators=kwargs['separators'],
             ensure_ascii=False)
-        return
-    newstr = unicode(json.dumps(  # noqa: F821
+    newstr = unicode(json.dumps(  # pylint: disable=undefined-variable
         string,
         indent=4,
         separators=kwargs['separators'],
@@ -206,12 +205,11 @@ def get_model_hash(modeldict, ignore_keys=[]):
 def get_mosfit_hash(salt=u''):
     """Return a unique hash for the MOSFiT code."""
     import fnmatch
-    import os
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     matches = []
-    for root, dirnames, filenames in sorted(os.walk(dir_path)):
+    for root, _, filenames in sorted(os.walk(dir_path)):
         for filename in fnmatch.filter(filenames, '*.py'):
             matches.append(os.path.join(root, filename))
 
@@ -234,24 +232,21 @@ def is_master():
 
 
 def speak(text, lang='es'):
-    """Text to speech. For funp."""
-    try:
-        from googletrans import Translator
-        from gtts import gTTS
-        from pygame import mixer
-        from tempfile import TemporaryFile
+    """Text to speech. For fun."""
+    from googletrans import Translator
+    from gtts import gTTS
+    from pygame import mixer
+    from tempfile import TemporaryFile
 
-        translator = Translator()
-        tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
-        mixer.init()
+    translator = Translator()
+    tts = gTTS(text=translator.translate(text, dest=lang).text, lang=lang)
+    mixer.init()
 
-        sf = TemporaryFile()
-        tts.write_to_fp(sf)
-        sf.seek(0)
-        mixer.music.load(sf)
-        mixer.music.play()
-    except Exception:
-        raise
+    sf = TemporaryFile()
+    tts.write_to_fp(sf)
+    sf.seek(0)
+    mixer.music.load(sf)
+    mixer.music.play()
 
 
 def rebin(a, newshape):

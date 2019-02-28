@@ -5,7 +5,6 @@ import numpy as np
 from mosfit.modules.arrays.array import Array
 from mosfit.utils import frequency_unit
 
-
 # Important: Only define one ``Module`` class per file.
 
 
@@ -22,7 +21,8 @@ class AllTimes(Array):
         self._obs_keys = [
             'times', 'bands', 'telescopes', 'systems', 'instruments', 'modes',
             'bandsets', 'frequencies', 'u_frequencies', 'zeropoints',
-            'measures', 'observed']
+            'measures', 'observed'
+        ]
         self._okeys = [i for i in self._obs_keys if i not in ['observed']]
         for key in self._obs_keys:
             setattr(self, '_' + key, [])
@@ -31,25 +31,26 @@ class AllTimes(Array):
         """Process module."""
         old_observations = tuple(
             getattr(self, '_' + x) for x in self._obs_keys)
-        if (kwargs.get('root', 'output') == 'output' and
-                'extra_times' in kwargs):
-            obslist = (list(
-                zip(*([kwargs.get(k) for k in self._okeys] +
-                      [[True for x in range(len(kwargs['times']))]]))
-            ) + list(
-                zip(*([kwargs.get('extra_' + k) for k in self._okeys] +
-                      [[False for x in range(len(kwargs['extra_times']))]]))))
+        if (kwargs.get('root', 'output') == 'output'
+                and 'extra_times' in kwargs):
+            obslist = (
+                list(
+                    zip(*([kwargs.get(k) for k in self._okeys] +
+                          [[True for x in range(len(kwargs['times']))]]))) +
+                list(
+                    zip(*([kwargs.get('extra_' + k) for k in self._okeys] +
+                          [[False
+                            for x in range(len(kwargs['extra_times']))]]))))
             obslist.sort()
 
-            self._all_observations = np.concatenate([
-                np.atleast_2d(np.array(x, dtype=object))
-                for x in obslist], axis=0).T
+            self._all_observations = np.concatenate(
+                [np.atleast_2d(np.array(x, dtype=object)) for x in obslist],
+                axis=0).T
             for ki, key in enumerate(self._obs_keys):
                 setattr(self, '_' + key, self._all_observations[ki])
         else:
             for key in list(
-                    set(self._obs_keys) - set([
-                        'frequencies', 'observed'])):
+                    set(self._obs_keys) - set(['frequencies', 'observed'])):
                 setattr(self, '_' + key, kwargs[key])
             self._frequencies = np.array([
                 x / frequency_unit(y) if x is not None else None
@@ -62,23 +63,26 @@ class AllTimes(Array):
         outputs = OrderedDict(
             [('all_' + x, getattr(self, '_' + x))
              for x in list(set(self._obs_keys) - set(['observed']))])
-        if any(not np.array_equal(x, y) for x, y in zip(
-                old_observations, self._all_observations)):
-            self._all_band_indices = np.array([
-                (self._photometry.find_band_index(
+        if any(not np.array_equal(x, y)
+               for x, y in zip(old_observations, self._all_observations)):
+            self._all_band_indices = np.array(
+                [(self._photometry.find_band_index(
                     b, telescope=t, instrument=i, mode=m, bandset=bs, system=s)
-                 if f is None else -1)
-                for ti, b, t, s, i, m, bs, f, uf, zps, msr, o
-                in zip(*self._all_observations)
-            ])
+                  if f is None else -1) for ti, b, t, s, i, m, bs, f, uf, zps,
+                 msr, o in zip(*self._all_observations)])
+            self._zps = np.array(
+                [x[9] for x in zip(*self._all_observations)])
+            self._measures = np.array(
+                [x[10] for x in zip(*self._all_observations)])
             self._observation_types = np.array([
-                'magcount' if ('countrate' in msr and 'magnitude' in msr and
-                               zp is not None and
-                               self._fitter._prefer_fluxes) else
-                self._photometry._band_kinds[bi] if bi >= 0 else
-                'fluxdensity' for bi, zp, msr in zip(
-                    self._all_band_indices, self._zeropoints, self._measures)
-            ], dtype=object)
+                'magcount' if
+                ('countrate' in msr and 'magnitude' in msr and zp is not None
+                 and self._model._fitter._prefer_fluxes) else
+                self._photometry._band_kinds[bi] if bi >= 0 else 'fluxdensity'
+                for bi, zp, msr in zip(self._all_band_indices,
+                                       self._zps, self._measures)
+            ],
+                                               dtype=object)
         outputs['all_band_indices'] = self._all_band_indices
         outputs['observation_types'] = self._observation_types
         outputs['observed'] = np.array(self._observed, dtype=bool)
