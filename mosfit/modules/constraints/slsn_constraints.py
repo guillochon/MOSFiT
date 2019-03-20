@@ -62,12 +62,12 @@ class SLSNConstraints(Constraint):
         E_rad = sum(L_arr * (norm_times - shift_times) * DAY_CGS)
 
         # Kinetic energy < magnetar energy - radiative loss + neutrinos (10^51)
-        if (self._Ek > self._Ep - E_rad + self._neutrino_energy):
+        if self._Ek > self._Ep - E_rad + self._neutrino_energy:
             self._score_modifier += -(
                 self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
                     2 * self._neutrino_energy ** 2)
 
-        if (self._Ek < E_rad or self._Ek < self._neutrino_energy):
+        if self._Ek < E_rad or self._Ek < self._neutrino_energy:
             self._score_modifier += -(
                 self._Ek - (self._Ep - E_rad + self._neutrino_energy)) ** 2 / (
                     2 * self._neutrino_energy ** 2)

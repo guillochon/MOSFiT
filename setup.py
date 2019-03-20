@@ -60,6 +60,7 @@ setup(
         'https://github.com/guillochon/mosfit/tarball/' + __version__),  # noqa
     keywords=['astronomy', 'fitting', 'monte carlo', 'modeling'],
     long_description=long_description,
+    long_description_content_type='text/markdown',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
         'License :: OSI Approved :: MIT License',

@@ -1264,6 +1264,34 @@
 			"z": {
 				"SVO": "KPNO/KP4in.Gunn_z",
 				"offset": 0
+			},
+			"g": {
+				"SVO": "LaSilla/GROND.g",
+				"offset": 0
+			},
+			"r": {
+				"SVO": "LaSilla/GROND.r",
+				"offset": 0
+			},
+			"i": {
+				"SVO": "LaSilla/GROND.i",
+				"offset": 0
+			},
+			"z": {
+				"SVO": "LaSilla/GROND.z",
+				"offset": 0
+			},
+			"J": {
+				"SVO": "LaSilla/GROND.J",
+				"offset": 0
+			},
+			"H": {
+				"SVO": "LaSilla/GROND.H",
+				"offset": 0
+			},
+			"K": {
+				"SVO": "LaSilla/GROND.K",
+				"offset": 0
 			}
 		}
 	},
@@ -1317,56 +1345,6 @@
 			},
 			"F850W": {
 				"SVO": "HST/ACS_WFC.F850LP_77",
-				"offset": 0
-			}
-		}
-	},
-	{
-		"systems": [
-			"",
-			"AB"
-		],
-		"telescopes": [
-			"",
-			"LaSilla"
-		],
-		"instruments": [
-			"",
-			"EFOSC",
-			"GROND"
-		],
-		"bandsets": [
-			"",
-			"EFOSC",
-			"GROND"
-		],
-		"filters": {
-			"g": {
-				"SVO": "LaSilla/GROND.g",
-				"offset": 0
-			},
-			"r": {
-				"SVO": "LaSilla/GROND.r",
-				"offset": 0
-			},
-			"i": {
-				"SVO": "LaSilla/GROND.i",
-				"offset": 0
-			},
-			"z": {
-				"SVO": "LaSilla/GROND.z",
-				"offset": 0
-			},
-			"J": {
-				"SVO": "LaSilla/GROND.J",
-				"offset": 0
-			},
-			"H": {
-				"SVO": "LaSilla/GROND.H",
-				"offset": 0
-			},
-			"K": {
-				"SVO": "LaSilla/GROND.K",
 				"offset": 0
 			}
 		}

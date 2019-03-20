@@ -4,7 +4,6 @@ from collections import OrderedDict
 import numpy as np
 from mosfit.modules.arrays.array import Array
 
-
 # Important: Only define one ``Module`` class per file.
 
 
@@ -34,14 +33,13 @@ class DenseTimes(Array):
         if max_times > self._rest_t_explosion:
             outputs['dense_times'] = np.unique(
                 np.concatenate(([0.0], [
-                    x + self._rest_t_explosion
-                    for x in np.logspace(
+                    x + self._rest_t_explosion for x in np.logspace(
                         self.L_T_MIN,
                         np.log10(max_times - self._rest_t_explosion),
                         num=self._n_times)
                 ], self._rest_times)))
         else:
             outputs['dense_times'] = np.array(self._rest_times)
-        outputs['dense_indices'] = np.searchsorted(
-            outputs['dense_times'], self._rest_times)
+        outputs['dense_indices'] = np.searchsorted(outputs['dense_times'],
+                                                   self._rest_times)
         return outputs

@@ -46,7 +46,7 @@ class Module(object):
                 dict_copy[key] = self.__dict__[key]
         return json.dumps(dict_copy)
 
-    def process(self, **kwargs):
+    def process(self):
         """Process module, should always return a dictionary."""
         return OrderedDict()
 
@@ -65,7 +65,6 @@ class Module(object):
 
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
-        pass
 
     def set_event_name(self, event_name):
         """Set the name of the event being modeled."""

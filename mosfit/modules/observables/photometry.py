@@ -104,6 +104,7 @@ class Photometry(Module):
         self._band_kinds = np.full(self._n_bands, 'magnitude', dtype=object)
         self._band_index_cache = {}
         self._warned_mismatch = False
+        self._zps = np.full(self._n_bands, 0.0)
 
         for i, band in enumerate(self._unique_bands):
             self._band_xunits[i] = band.get('xunit', 'Angstrom')

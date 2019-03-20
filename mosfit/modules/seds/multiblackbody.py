@@ -20,16 +20,16 @@ class MultiBlackbody(SED):
 
     def process(self, **kwargs):
         """Process module."""
-        raise RuntimeError('`MultiBlackbody` is not yet functional.')
+        raise NotImplementedError('`MultiBlackbody` is not yet functional.')
         kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
         self._luminosities = kwargs[self.key('luminosities')]
         self._bands = kwargs['all_bands']
         self._band_indices = kwargs['all_band_indices']
         self._areas = kwargs[self.key('areas')]
+        self._radius_phots = kwargs[self.key('radiusphots')]
         self._temperature_phots = kwargs[self.key('temperaturephots')]
         xc = self.X_CONST  # noqa: F841
         fc = self.FLUX_CONST  # noqa: F841
-        temperature_phot = self._temperature_phot
         zp1 = 1.0 + kwargs[self.key('redshift')]
         seds = []
         for li, lum in enumerate(self._luminosities):
@@ -38,8 +38,8 @@ class MultiBlackbody(SED):
             rest_freqs = [x * zp1  # noqa: F841
                           for x in self._sample_frequencies[bi]]
             wav_arr = np.array(self._sample_wavelengths[bi])  # noqa: F841
-            radius_phot = self._radius_phot[li]  # noqa: F841
-            temperature_phot = self._temperature_phot[li]  # noqa: F841
+            radius_phot = self._radius_phots[li]  # noqa: F841
+            temperature_phot = self._temperature_phots[li]  # noqa: F841
 
             if li == 0:
                 sed = ne.evaluate(

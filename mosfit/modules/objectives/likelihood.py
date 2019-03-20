@@ -30,7 +30,7 @@ class Likelihood(Module):
         ret = {'value': LIKELIHOOD_FLOOR}
 
         self._fractions = kwargs.get('fractions', [])
-        if not len(self._fractions):
+        if not self._fractions:
             return ret
 
         self._model_observations = kwargs['model_observations']

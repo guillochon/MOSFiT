@@ -7,7 +7,6 @@ from six import string_types
 from mosfit.constants import ANG_CGS, C_CGS
 from mosfit.modules.arrays.array import Array
 
-
 # Important: Only define one ``Module`` class per file.
 
 
@@ -46,10 +45,10 @@ class Kernel(Array):
 
         # Get array of real observations.
         self._observations = np.array([
-            ct if (t == 'countrate' or t == 'magcount') else y if (
-                t == 'magnitude') else fd if t == 'fluxdensity' else None
-            for y, ct, fd, t in zip(
-                self._mags, self._cts, self._fds, self._o_otypes)
+            ct if (t == 'countrate' or t == 'magcount') else y if
+            (t == 'magnitude') else fd if t == 'fluxdensity' else None
+            for y, ct, fd, t in zip(self._mags, self._cts, self._fds,
+                                    self._o_otypes)
         ])
 
         # Get array of model observations.
@@ -63,23 +62,24 @@ class Kernel(Array):
 
         if self._variance_bands:
             self._o_variance_bands = [
-                self._variance_bands[i] for i in self._all_band_indices]
+                self._variance_bands[i] for i in self._all_band_indices
+            ]
 
             self._band_vs = np.array([
-                self._band_v_vars.get(i, self._variance) if
-                isinstance(i, string_types)
-                else (i[0] * self._band_v_vars.get(i[1][0], self._variance) +
-                      (1.0 - i[0]) * self._band_v_vars.get(
-                          i[1][0], self._variance))
-                for i in self._o_variance_bands])
+                self._band_v_vars.get(i, self._variance) if isinstance(
+                    i, string_types) else
+                (i[0] * self._band_v_vars.get(i[1][0], self._variance) +
+                 (1.0 - i[0]) * self._band_v_vars.get(i[1][0], self._variance))
+                for i in self._o_variance_bands
+            ])
         else:
             self._band_vs = np.full(
                 len(self._all_band_indices), self._variance)
 
         # Compute relative errors for count-based observations.
         self._band_vs[self._count_inds] = (
-            10.0 ** (self._band_vs[self._count_inds] / 2.5) - 1.0
-            ) * self._model_observations[self._count_inds]
+            10.0**(self._band_vs[self._count_inds] / 2.5) -
+            1.0) * self._model_observations[self._count_inds]
 
         self._o_band_vs = self._band_vs[self._observed]
 
@@ -100,10 +100,10 @@ class Kernel(Array):
             kmat = np.outer(self._band_vs_1, self._band_vs_2)
 
             if self._codeltatime >= 0:
-                kmat *= np.exp(self._dt2mat / self._codeltatime ** 2)
+                kmat *= np.exp(self._dt2mat / self._codeltatime**2)
 
             if self._codeltalambda >= 0:
-                kmat *= np.exp(self._dl2mat / self._codeltalambda ** 2)
+                kmat *= np.exp(self._dl2mat / self._codeltalambda**2)
 
             ret[kskey] = kmat
         else:
@@ -133,9 +133,10 @@ class Kernel(Array):
         self._cts = np.array(kwargs.get('countrates', []))
         self._u_freqs = kwargs.get('all_u_frequencies', [])
         self._waves = np.array([
-            self._average_wavelengths[bi] if bi >= 0 else
-            C_CGS / self._freqs[i] / ANG_CGS for i, bi in
-            enumerate(self._all_band_indices)])
+            self._average_wavelengths[bi]
+            if bi >= 0 else C_CGS / self._freqs[i] / ANG_CGS
+            for i, bi in enumerate(self._all_band_indices)
+        ])
         self._observed = np.array(kwargs.get('observed', []), dtype=bool)
         self._observation_types = kwargs.get('observation_types')
         self._n_obs = len(self._observed)
