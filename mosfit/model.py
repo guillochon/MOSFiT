@@ -353,7 +353,7 @@ class Model(object):
                   band_systems=[],
                   band_instruments=[],
                   band_bandsets=[],
-                  band_sampling_points=17,
+                  band_sampling_points=25,
                   variance_for_each=[],
                   user_fixed_parameters=[],
                   user_released_parameters=[],
