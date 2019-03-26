@@ -55,7 +55,8 @@ class CSM(Engine):
                     (3.0 - self._delta) * (self._n - 3.0) * self._mejecta)**(
                         (self._n - 5.0) / 2.0))
 
-        self._ti = 1.0  # set ti to small number
+        #self._ti = 1.0  # set ti to small number
+        self._ti = self._R0 / self._vph # set ti to small number
 
         if self._s == 0:
             ns = [6, 7, 8, 9, 10, 12, 14]
