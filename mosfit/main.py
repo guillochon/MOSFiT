@@ -177,7 +177,7 @@ def get_parser(only=None, printer=None):
         '--band-sampling-points',
         dest='band_sampling_points',
         type=int,
-        default=17,
+        default=25,
         help=prt.text('parser_band_sampling_points'))
 
     parser.add_argument(
