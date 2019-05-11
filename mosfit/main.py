@@ -565,6 +565,12 @@ def get_parser(only=None, printer=None):
         nargs='?',
         help=prt.text('parser_method'))
 
+    parser.add_argument(
+        '--cache-path',
+        dest='cache_path',
+        default='',
+        help=prt.text('parser_cache_path'))
+
     return parser
 
 
