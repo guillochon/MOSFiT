@@ -32,6 +32,10 @@ class Photometry(Module):
         bands = listify(bands)
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
+        self._filter_dir_path = os.path.join('modules','observables')
+        if not os.path.exists(self._filter_dir_path):
+            os.makedirs(self._filter_dir_path)
+
         band_list = []
 
         if self._pool.is_master():
@@ -145,11 +149,11 @@ class Photometry(Module):
                     zpfluxes = []
                     for sys in systems:
                         svopath = band['SVO'] + '/' + sys
-                        path = os.path.join(self._dir_path, 'filters',
+                        path = os.path.join(self._filter_dir_path, 'filters',
                                             svopath.replace('/', '_') + '.dat')
 
                         xml_path = os.path.join(
-                            self._dir_path, 'filters',
+                            self._filter_dir_path, 'filters',
                             svopath.replace('/', '_') + '.xml')
                         if not os.path.exists(xml_path):
                             prt.message('dl_svo', [svopath], inline=True)
@@ -234,8 +238,7 @@ class Photometry(Module):
                     raise RuntimeError(prt.text('bad_filter_rule'))
 
                 if path:
-                    with open(os.path.join(
-                            self._dir_path, 'filters', path), 'r') as f:
+                    with open(path, 'r') as f:
                         rows = []
                         for row in csv.reader(
                                 f, delimiter=' ', skipinitialspace=True):
