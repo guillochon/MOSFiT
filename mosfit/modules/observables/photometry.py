@@ -156,6 +156,10 @@ class Photometry(Module):
                             self._filter_dir_path, 'filters',
                             svopath.replace('/', '_') + '.xml')
                         if not os.path.exists(xml_path):
+                            xml_path = os.path.join(
+                                self._dir_path, 'filters',
+                                svopath.replace('/', '_') + '.xml')
+                        if not os.path.exists(xml_path):
                             prt.message('dl_svo', [svopath], inline=True)
                             try:
                                 response = get_url_file_handle(
