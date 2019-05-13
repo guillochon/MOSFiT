@@ -10,7 +10,7 @@
     },
     "mejecta_blue":{
         "min_value":1.0e-3,
-        "max_value":5.0e-2,
+        "max_value":6.0e-2,
         "log":false
     },
     "kappa_blue":{
