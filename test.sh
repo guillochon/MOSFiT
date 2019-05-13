@@ -9,15 +9,12 @@ else
     TRUNNER=python
 fi
 
-<<<<<<< HEAD
 if [ "$TRAVIS_PYTHON_VERSION" == "3.6" ]; then
     mpirun -np 2 --oversubscribe $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
 else
     mpirun -np 2 $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
 fi
-=======
-mpirun -np 2 $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
->>>>>>> 9fdd2137e690341c5d39662c0ef327709e76bb9d
+
 $RUNNER -m mosfit -e SN2009do.json --test -i 1 --no-fracking -m magnetar -T 2 -F covariance
 $RUNNER -m mosfit -e SN2007bg --test -i 3 -m rprocess -D nester -F covariance
 $RUNNER -m mosfit -e mosfit/tests/LSQ12dlf.json --test -i 3 --no-fracking -m csm -F n 6.0 -W 120 -M 0.2 --offline
