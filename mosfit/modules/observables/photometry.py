@@ -32,6 +32,10 @@ class Photometry(Module):
         bands = listify(bands)
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
+        self._filter_run_path = os.path.join('modules','observables')
+        if not os.path.exists(self._filter_run_path):
+            os.makedirs(self._filter_run_path)
+
         band_list = []
 
         if self._pool.is_master():
@@ -145,27 +149,79 @@ class Photometry(Module):
                     zpfluxes = []
                     for sys in systems:
                         svopath = band['SVO'] + '/' + sys
-                        path = os.path.join(self._dir_path, 'filters',
+                        path = os.path.join(self._filter_run_path, 'filters',
                                             svopath.replace('/', '_') + '.dat')
 
                         xml_path = os.path.join(
+                            self._filter_run_path, 'filters',
+                            svopath.replace('/', '_') + '.xml')
+
+                        xml_install_path = os.path.join(
                             self._dir_path, 'filters',
                             svopath.replace('/', '_') + '.xml')
-                        if not os.path.exists(xml_path):
-                            prt.message('dl_svo', [svopath], inline=True)
-                            try:
-                                response = get_url_file_handle(
-                                    'http://svo2.cab.inta-csic.es'
-                                    '/svo/theory/fps3/'
-                                    'fps.php?PhotCalID=' + svopath,
-                                    timeout=10)
-                            except Exception:
-                                prt.message('cant_dl_svo', warning=True)
-                            else:
-                                with open_atomic(xml_path, 'wb') as f:
-                                    shutil.copyfileobj(response, f)
 
-                        if os.path.exists(xml_path):
+                        if not os.path.exists(xml_path):
+                            if not os.path.exists(xml_install_path):
+                                prt.message('dl_svo', [svopath], inline=True)
+                                try:
+                                    response = get_url_file_handle(
+                                        'http://svo2.cab.inta-csic.es'
+                                        '/svo/theory/fps3/'
+                                        'fps.php?PhotCalID=' + svopath,
+                                        timeout=10)
+                                except Exception:
+                                    prt.message('cant_dl_svo', warning=True)
+                                else:
+                                    with open_atomic(xml_path, 'wb') as f:
+                                        shutil.copyfileobj(response, f)
+
+                        if os.path.exists(xml_install_path):
+                            already_written = svopath in vo_tabs
+                            if not already_written:
+                                vo_tabs[svopath] = voparse(xml_install_path)
+                            vo_tab = vo_tabs[svopath]
+                            # need to account for zeropoint type
+
+                            for resource in vo_tab.resources:
+                                if len(resource.params) == 0:
+                                    params = vo_tab.get_first_table().params
+                                else:
+                                    params = resource.params
+
+                            oldzplen = len(zps)
+                            for param in params:
+                                if param.name == 'ZeroPoint':
+                                    zpfluxes.append(param.value)
+                                    if sys != 'AB':
+                                        # 0th element is AB flux
+                                        zps.append(2.5 * np.log10(
+                                            zpfluxes[0] / zpfluxes[-1]))
+                                else:
+                                    continue
+                            if sys != 'AB' and len(zps) == oldzplen:
+                                raise RuntimeError(
+                                    'ZeroPoint not found in XML.')
+
+                            vo_dat = vo_tab.get_first_table().array
+                            bi = max(
+                                next((i for i, x in enumerate(vo_dat)
+                                      if x[1]), 0) - 1, 0)
+                            ei = -max(
+                                next((i
+                                      for i, x in enumerate(
+                                          reversed(vo_dat))
+                                      if x[1]), 0) - 1, 0)
+                            vo_dat = vo_dat[bi:ei if ei else len(vo_dat)]
+                            vo_string = '\n'.join([
+                                ' '.join([str(y) for y in x])
+                                for x in vo_dat
+                            ])
+                            if (not self._model._fitter._prefer_cache or
+                                    not os.path.exists(path)):
+                                with open_atomic(path, 'w') as f:
+                                    f.write(vo_string)
+
+                        elif os.path.exists(xml_path):
                             already_written = svopath in vo_tabs
                             if not already_written:
                                 vo_tabs[svopath] = voparse(xml_path)
@@ -211,6 +267,7 @@ class Photometry(Module):
                                         not os.path.exists(path)):
                                     with open_atomic(path, 'w') as f:
                                         f.write(vo_string)
+
                         else:
                             raise RuntimeError(
                                 prt.string('cant_read_svo'))
@@ -234,8 +291,7 @@ class Photometry(Module):
                     raise RuntimeError(prt.text('bad_filter_rule'))
 
                 if path:
-                    with open(os.path.join(
-                            self._dir_path, 'filters', path), 'r') as f:
+                    with open(path, 'r') as f:
                         rows = []
                         for row in csv.reader(
                                 f, delimiter=' ', skipinitialspace=True):
