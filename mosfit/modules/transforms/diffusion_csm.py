@@ -14,7 +14,7 @@ class DiffusionCSM(Transform):
     """Photon diffusion transform for CSM model."""
 
     N_INT_TIMES = 1000
-    MIN_EXP_ARG = 50.0
+    MIN_EXP_ARG = 100.0
 
     def process(self, **kwargs):
         """Process module."""
