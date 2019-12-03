@@ -14,7 +14,7 @@ from mosfit.modules.transforms.transform import Transform
 class DiffusionCSM(Transform):
     """Photon diffusion transform for CSM model."""
 
-    N_INT_TIMES = 1000
+    N_INT_TIMES = 3000
     MIN_LOG_SPACING = -3
 
 
@@ -26,6 +26,8 @@ class DiffusionCSM(Transform):
         self._R0 = kwargs[self.key('r0')] * AU_CGS  # AU to cm
         self._s = kwargs[self.key('s')]
         self._rho = kwargs[self.key('rho')]
+        self._mejecta = kwargs[self.key('mejecta')] * M_SUN_CGS  # Msol to grms
+
         # scaling constant for CSM density profile
         self._q = self._rho * self._R0 ** self._s
         # outer radius of CSM shell
@@ -39,9 +41,15 @@ class DiffusionCSM(Transform):
         self._tau_diff = (
             self._kappa * self._mass) / (13.8 * C_CGS * self._Rph) / DAY_CGS
 
+        # mass of the optically thick CSM (tau > 2/3).
+        self._Mcsm_th = np.abs(4.0 * np.pi * self._q / (3.0 - self._s) * (
+            self._Rph**(3.0 - self._s) - self._R0 **
+            (3.0 - self._s)))
+        beta =  4. * np.pi ** 3. / 9.
         td2 = self._tau_diff**2
         td = self._tau_diff
-
+        t0 = self._kappa * (self._Mcsm_th) \
+                / (beta * C_CGS * self._Rph) / DAY_CGS
         new_lums = np.zeros_like(self._times_to_process)
         if len(self._dense_times_since_exp) < 2:
             return {self.dense_key('luminosities'): new_lums}
@@ -58,7 +66,7 @@ class DiffusionCSM(Transform):
 
         num = int(round(self.N_INT_TIMES / 2.0))
         lsp = np.logspace(
-            np.log10(self._tau_diff /
+            np.log10(t0 /
                      self._dense_times_since_exp[-1]) +
             self.MIN_LOG_SPACING, 0, num)
         xm = np.unique(np.concatenate((lsp, 1 - lsp)))
@@ -66,16 +74,15 @@ class DiffusionCSM(Transform):
         int_times = np.clip(
             tb + (uniq_times.reshape(lu, 1) - tb) * xm, tb,
             self._dense_times_since_exp[-1])
-
+        int_times = tb + (uniq_times.reshape(lu, 1) - tb) * xm
         int_tes = int_times[:, -1]
 
         int_lums = linterp(int_times)  # noqa: F841
-        int_args = int_lums * np.exp(
-            (int_times - int_tes.reshape(lu, 1)) / td)
+        int_args = int_lums * np.exp((int_times) / t0)
         int_args[np.isnan(int_args)] = 0.0
 
         uniq_lums = np.trapz(int_args, int_times)
-        uniq_lums*= np.exp(-int_tes/td)/td
+        uniq_lums*= np.exp(-int_tes/t0)/t0
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]
 
