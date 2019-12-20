@@ -1,7 +1,7 @@
 """Overridden PTSampler with random Gibbs selection, more-reliable acor."""
 import numpy as np
-from emcee.autocorr import AutocorrError, function
-from emcee.ptsampler import PTLikePrior, PTSampler
+from emcee.autocorr import AutocorrError, function_1d
+from mosfit.samplers.ptsampler import PTLikePrior, PTSampler
 
 
 class MOSSampler(PTSampler):
@@ -73,7 +73,7 @@ class MOSSampler(PTSampler):
             raise AutocorrError("The chain is too short")
 
         # Compute the autocorrelation function.
-        f = function(x, axis=axis, fast=fast)
+        f = function_1d(x)
 
         # Check the dimensions of the array.
         oned = len(f.shape) == 1
