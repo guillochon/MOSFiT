@@ -2119,6 +2119,10 @@
 			"cyan":{
 				"SVO": "Misc/Atlas.cyan",
 				"offset": 0
+			},
+			"c":{
+				"SVO": "Misc/Atlas.cyan",
+				"offset": 0
 			}
 		}
 	}
