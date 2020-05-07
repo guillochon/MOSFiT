@@ -129,24 +129,23 @@ class CSM(Engine):
         ]
 
         luminosities = [
-            self._efficiency * (2.0 * np.pi / (
-                self._n - self._s) ** 3 * self._g_n ** (
-                (5.0 - self._s) / (self._n - self._s)) * self._q**(
-                    (self._n - 5.0) /
-                    (self._n - self._s)) * (self._n - 3.0)**2 *
-                (self._n - 5.0) * self._Bf**(5.0 - self._s) * self._A**(
-                (5.0 - self._s) /
-                (self._n - self._s)) * (t * DAY_CGS + self._ti)**(
-                    (2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.) /
-                    (self._n - self._s)) * (
-                        (self._t_FS - t * DAY_CGS) > 0) + 2.0 * np.pi *
-                (self._A * self._g_n / self._q)**(
-                (5.0 - self._n) /
-                (self._n - self._s)) * self._Br**(5.0 - self._n) * self._g_n *
-                ((3.0 - self._s) /
-                 (self._n - self._s))**3 * (t * DAY_CGS + self._ti)**(
-                (2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.0) /
-                (self._n - self._s)) * ((self._t_RS - t * DAY_CGS) > 0))
+            self._efficiency *
+            (2.0 * np.pi / (self._n - self._s)**3 * self._g_n**
+             ((5.0 - self._s) / (self._n - self._s)) * self._q**
+             ((self._n - 5.0) / (self._n - self._s)) * (self._n - 3.0)**2 *
+             (self._n - 5.0) * self._Bf**(5.0 - self._s) * self._A**
+             ((5.0 - self._s) /
+              (self._n - self._s)) * (t * DAY_CGS + self._ti)**
+             ((2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.) /
+              (self._n - self._s)) * (
+                  (self._t_FS - t * DAY_CGS) > 0) + 2.0 * np.pi *
+             (self._A * self._g_n / self._q)**
+             ((5.0 - self._n) / (self._n - self._s)) * self._Br**
+             (5.0 - self._n) * self._g_n * (
+                 (3.0 - self._s) /
+                 (self._n - self._s))**3 * (t * DAY_CGS + self._ti)**
+             ((2.0 * self._n + 6.0 * self._s - self._n * self._s - 15.0) /
+              (self._n - self._s)) * ((self._t_RS - t * DAY_CGS) > 0))
             for t in ts
         ]
 

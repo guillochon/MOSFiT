@@ -264,17 +264,6 @@ class Fallback(Engine):
             self._beta = self._betas['5-3'] + (
                 self._betas['4-3'] - self._betas['5-3']) * (1. - gfrac)
 
-        # try decoupling gamma from starmass
-        '''
-        self._scaled_gamma = kwargs['scaledgamma']
-        # print (self._scaled_gamma)
-        if self._scaled_gamma == 0.0: gammas = [self._gammas[0]]
-        elif self._scaled_gamma == 1.0: gammas = [self._gammas[1]]
-        else:
-            gamma_interp = True
-            gammas = self._gammas
-            gfrac = self._scaled_gamma
-        '''
         timedict = {}  # will hold time arrays for each g in gammas
         dmdtdict = {}  # will hold dmdt arrays for each g in gammas
 
@@ -609,4 +598,4 @@ class Fallback(Engine):
 
         return {'dense_luminosities': luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-                'dmdt': dmdtnew, 'Ledd': Ledd}
+                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback': float(tfallback)}

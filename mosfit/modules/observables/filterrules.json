@@ -76,24 +76,24 @@
 				"SVO": "SLOAN/SDSS.z",
 				"offset": 0
 			},
-			"u'": {
-				"SVO": "SLOAN/SDSS.u",
+			"uprime_filter": {
+				"SVO": "SLOAN/SDSS.uprime_filter",
 				"offset": 0
 			},
-			"g'": {
-				"SVO": "SLOAN/SDSS.g",
+			"gprime_filter": {
+				"SVO": "SLOAN/SDSS.gprime_filter",
 				"offset": 0
 			},
-			"r'": {
-				"SVO": "SLOAN/SDSS.r",
+			"rprime_filter": {
+				"SVO": "SLOAN/SDSS.rprime_filter",
 				"offset": 0
 			},
-			"i'": {
-				"SVO": "SLOAN/SDSS.i",
+			"iprime_filter": {
+				"SVO": "SLOAN/SDSS.iprime_filter",
 				"offset": 0
 			},
-			"z'": {
-				"SVO": "SLOAN/SDSS.z",
+			"zprime_filter": {
+				"SVO": "SLOAN/SDSS.zprime_filter",
 				"offset": 0
 			},
 			"ROTSE": {
@@ -156,20 +156,20 @@
 			"z": {
 				"SVO": "SLOAN/SDSS.z"
 			},
-			"u'": {
-				"SVO": "SLOAN/SDSS.u"
+			"uprime_filter": {
+				"SVO": "SLOAN/SDSS.uprime_filter"
 			},
-			"g'": {
-				"SVO": "SLOAN/SDSS.g"
+			"gprime_filter": {
+				"SVO": "SLOAN/SDSS.gprime_filter"
 			},
-			"r'": {
-				"SVO": "SLOAN/SDSS.r"
+			"rprime_filter": {
+				"SVO": "SLOAN/SDSS.rprime_filter"
 			},
-			"i'": {
-				"SVO": "SLOAN/SDSS.i"
+			"iprime_filter": {
+				"SVO": "SLOAN/SDSS.iprime_filter"
 			},
-			"z'": {
-				"SVO": "SLOAN/SDSS.z"
+			"zprime_filter": {
+				"SVO": "SLOAN/SDSS.zprime_filter"
 			},
 			"ROTSE": {
 				"SVO": "Generic/Bessell.R"
@@ -634,24 +634,24 @@
 				"SVO": "SLOAN/SDSS.z",
 				"offset": 0
 			},
-			"u'": {
-				"SVO": "SLOAN/SDSS.u",
+			"uprime_filter": {
+				"SVO": "SLOAN/SDSS.uprime_filter",
 				"offset": 0
 			},
-			"g'": {
-				"SVO": "SLOAN/SDSS.g",
+			"gprime_filter": {
+				"SVO": "SLOAN/SDSS.gprime_filter",
 				"offset": 0
 			},
-			"r'": {
-				"SVO": "SLOAN/SDSS.r",
+			"rprime_filter": {
+				"SVO": "SLOAN/SDSS.rprime_filter",
 				"offset": 0
 			},
-			"i'": {
-				"SVO": "SLOAN/SDSS.i",
+			"iprime_filter": {
+				"SVO": "SLOAN/SDSS.iprime_filter",
 				"offset": 0
 			},
-			"z'": {
-				"SVO": "SLOAN/SDSS.z",
+			"zprime_filter": {
+				"SVO": "SLOAN/SDSS.zprime_filter",
 				"offset": 0
 			}
 		}
@@ -1308,7 +1308,8 @@
 			"",
 			"WFC3",
 			"WFC3_IR",
-			"ACS_WFC"
+			"ACS_WFC",
+			"ACS_SBC"
 		],
 		"filters": {
 			"F105W": {
@@ -1345,6 +1346,14 @@
 			},
 			"F850W": {
 				"SVO": "HST/ACS_WFC.F850LP_77",
+				"offset": 0
+			},
+			"F125LP": {
+				"SVO": "HST/ACS_SBC.F125LP",
+				"offset": 0
+			},
+			"F150LP": {
+				"SVO": "HST/ACS_SBC.F150LP",
 				"offset": 0
 			}
 		}
@@ -2119,7 +2128,36 @@
 			"cyan":{
 				"SVO": "Misc/Atlas.cyan",
 				"offset": 0
+			},
+			"c":{
+				"SVO": "Misc/Atlas.cyan",
+				"offset": 0
 			}
 		}
+
+	},
+	{
+		"telescopes": [
+			"TESS"
+		],
+		"systems": [
+			"AB",
+			""
+		],
+		"instruments": [
+			"",
+			"TESS"
+		],
+		"filters": {
+			"Red":{
+				"SVO": "TESS/TESS.Red",
+				"offset": 0
+			},
+			"TESS":{
+				"SVO": "TESS/TESS.Red",
+				"offset": 0
+			}
+		}
+		
 	}
 ]

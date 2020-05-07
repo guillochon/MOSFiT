@@ -13,11 +13,12 @@ from unicodedata import normalize
 
 import numpy as np
 from astropy.time import Time as astrotime
+from six import string_types
+
 from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
 from mosfit.printer import Printer
 from mosfit.utils import get_mosfit_hash, is_master, open_atomic, speak
-from six import string_types
 
 
 class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -176,7 +177,7 @@ def get_parser(only=None, printer=None):
         '--band-sampling-points',
         dest='band_sampling_points',
         type=int,
-        default=17,
+        default=25,
         help=prt.text('parser_band_sampling_points'))
 
     parser.add_argument(
@@ -371,11 +372,7 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_frack_step'))
 
     parser.add_argument(
-        '--burn',
-        '-b',
-        dest='burn',
-        type=int,
-        help=prt.text('parser_burn'))
+        '--burn', '-b', dest='burn', type=int, help=prt.text('parser_burn'))
 
     parser.add_argument(
         '--post-burn',
@@ -428,10 +425,7 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_maximum_memory'))
 
     parser.add_argument(
-        '--seed',
-        dest='seed',
-        type=int,
-        help=prt.text('parser_seed'))
+        '--seed', dest='seed', type=int, help=prt.text('parser_seed'))
 
     parser.add_argument(
         '--draw-above-likelihood',
@@ -580,7 +574,7 @@ def main():
         wrap_length=100, quiet=False, language='en', exit_on_prompt=False)
 
     parser = get_parser(only='language')
-    args, remaining = parser.parse_known_args()
+    args, _ = parser.parse_known_args()
 
     if args.language == 'en':
         loc = locale.getlocale()
@@ -591,16 +585,19 @@ def main():
         try:
             from googletrans.constants import LANGUAGES
         except Exception:
-            raise RuntimeError(
-                '`--language` requires `googletrans` package, '
-                'install with `pip install googletrans`.')
+            raise RuntimeError('`--language` requires `googletrans` package, '
+                               'install with `pip install googletrans`.')
 
         if args.language == 'select' or args.language not in LANGUAGES:
             languages = list(
-                sorted([LANGUAGES[x].title().replace('_', ' ') +
-                        ' (' + x + ')' for x in LANGUAGES]))
+                sorted([
+                    LANGUAGES[x].title().replace('_', ' ') + ' (' + x + ')'
+                    for x in LANGUAGES
+                ]))
             sel = prt.prompt(
-                'Select a language:', kind='select', options=languages,
+                'Select a language:',
+                kind='select',
+                options=languages,
                 message=False)
             args.language = sel.split('(')[-1].strip(')')
 
@@ -614,7 +611,9 @@ def main():
     args.language = language
 
     prt = Printer(
-        wrap_length=100, quiet=args.quiet, language=args.language,
+        wrap_length=100,
+        quiet=args.quiet,
+        language=args.language,
         exit_on_prompt=args.exit_on_prompt)
 
     if args.version:
@@ -633,34 +632,32 @@ def main():
 
     args.return_fits = False
 
-    if (isinstance(args.extrapolate_time, list) and
-            len(args.extrapolate_time) == 0):
+    if (isinstance(args.extrapolate_time, list)
+            and not args.extrapolate_time):
         args.extrapolate_time = 100.0
 
-    if len(args.band_list) and args.smooth_times == -1:
+    if args.band_list and args.smooth_times == -1:
         prt.message('enabling_s')
         args.smooth_times = 0
 
     args.method = 'nester' if args.method.lower() in [
-        'nest', 'nested', 'nested_sampler', 'nester'] else 'ensembler'
+        'nest', 'nested', 'nested_sampler', 'nester'
+    ] else 'ensembler'
 
     if is_master():
         if args.method == 'nester':
-            unused_args = [
-                [args.burn, '-b'],
-                [args.post_burn, '-p'],
-                [args.frack_step, '-f'],
-                [args.num_temps, '-T'],
-                [args.run_until_uncorrelated, '-U'],
-                [args.draw_above_likelihood, '-d'],
-                [args.gibbs, '-g'],
-                [args.save_full_chain, '-c'],
-                [args.maximum_memory, '-M']
-            ]
+            unused_args = [[args.burn, '-b'], [args.post_burn, '-p'],
+                           [args.frack_step, '-f'], [args.num_temps, '-T'],
+                           [args.run_until_uncorrelated, '-U'],
+                           [args.draw_above_likelihood, '-d'],
+                           [args.gibbs, '-g'], [args.save_full_chain, '-c'],
+                           [args.maximum_memory, '-M']]
             for ua in unused_args:
                 if ua[0] is not None:
-                    prt.message('argument_not_used',
-                                reps=[ua[1], '-D nester'], warning=True)
+                    prt.message(
+                        'argument_not_used',
+                        reps=[ua[1], '-D nester'],
+                        warning=True)
 
     if args.method == 'nester':
         if args.run_until_converged and args.iterations >= 0:
@@ -675,17 +672,18 @@ def main():
 
     no_events = False
     if args.iterations == -1:
-        if len(args.events) == 0:
+        if not args.events:
             no_events = True
             args.iterations = 0
         else:
             args.iterations = 5000
 
-    if len(args.time_list):
+    if args.time_list:
         if any([any([y in x]) for y in ['-', '/'] for x in args.time_list]):
             try:
-                args.time_list = [astrotime(
-                    x.replace('/', '-')).mjd for x in args.time_list]
+                args.time_list = [
+                    astrotime(x.replace('/', '-')).mjd for x in args.time_list
+                ]
             except ValueError:
                 if len(args.time_list) == 1 and isinstance(
                         args.time_list[0], string_types):
@@ -697,37 +695,39 @@ def main():
                 args.time_unit = 'phase'
             args.time_list = [float(x) for x in args.time_list]
 
-    if len(args.date_list):
+    if args.date_list:
         if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
-            args.time_list += [str(astrotime(x.replace('/', '-')).mjd)
-                               for x in args.date_list]
+            args.time_list += [
+                str(astrotime(x.replace('/', '-')).mjd) for x in args.date_list
+            ]
             args.time_unit = 'mjd'
 
-    if len(args.mjd_list):
+    if args.mjd_list:
         if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
             args.time_list += [float(x) for x in args.mjd_list]
             args.time_unit = 'mjd'
 
-    if len(args.jd_list):
+    if args.jd_list:
         if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
-            args.time_list += [str(astrotime(
-                float(x), format='jd').mjd) for x in args.jd_list]
+            args.time_list += [
+                str(astrotime(float(x), format='jd').mjd) for x in args.jd_list
+            ]
             args.time_unit = 'mjd'
 
-    if len(args.phase_list):
+    if args.phase_list:
         if no_events:
             prt.message('no_dates_gen', warning=True)
         else:
             args.time_list += [float(x) for x in args.phase_list]
             args.time_unit = 'phase'
 
-    if len(args.time_list):
+    if args.time_list:
         if min(args.time_list) > 2400000:
             prt.message('assuming_jd')
             args.time_list = [x - 2400000.5 for x in args.time_list]
@@ -742,8 +742,7 @@ def main():
     if args.frack_step == 0:
         args.fracking = False
 
-    if (args.run_until_uncorrelated is not None and
-            args.run_until_converged):
+    if (args.run_until_uncorrelated is not None and args.run_until_converged):
         raise ValueError(
             '`-R` and `-U` options are incompatible, please use one or the '
             'other.')
@@ -753,16 +752,15 @@ def main():
     elif args.run_until_converged:
         if args.method == 'ensembler':
             args.convergence_type = 'psrf'
-            args.convergence_criteria = (
-                1.1 if args.run_until_converged is True else
-                args.run_until_converged)
+            args.convergence_criteria = (1.1
+                                         if args.run_until_converged is True
+                                         else args.run_until_converged)
         else:
             args.convergence_type = 'dlogz'
 
     if args.method == 'nester':
-        args.convergence_criteria = (
-            0.02 if args.run_until_converged is True else
-            args.run_until_converged)
+        args.convergence_criteria = (0.02 if args.run_until_converged is True
+                                     else args.run_until_converged)
 
     if is_master():
         # Get hash of ourselves
@@ -770,8 +768,8 @@ def main():
 
         # Print our amazing ASCII logo.
         if not args.quiet:
-            with codecs.open(os.path.join(dir_path, 'logo.txt'),
-                             'r', 'utf-8') as f:
+            with codecs.open(os.path.join(dir_path, 'logo.txt'), 'r',
+                             'utf-8') as f:
                 logo = f.read()
                 firstline = logo.split('\n')[0]
                 # if isinstance(firstline, bytes):
@@ -779,9 +777,12 @@ def main():
                 width = len(normalize('NFC', firstline))
             prt.prt(logo, colorify=True)
             prt.message(
-                'byline', reps=[
-                    __version__, mosfit_hash, __author__, __contributors__],
-                center=True, colorify=True, width=width, wrapped=False)
+                'byline',
+                reps=[__version__, mosfit_hash, __author__, __contributors__],
+                center=True,
+                colorify=True,
+                width=width,
+                wrapped=False)
 
         # Get/set upload token
         upload_token = ''
@@ -802,16 +803,16 @@ def main():
             else:
                 sys.exit()
 
-        if (args.upload and not args.test and
-                args.num_walkers is not None and args.num_walkers < 100):
+        if (args.upload and not args.test and args.num_walkers is not None
+                and args.num_walkers < 100):
             response = prt.prompt('ul_warning_few_walkers')
             if response:
                 args.upload = False
             else:
                 sys.exit()
 
-        if (args.upload and not args.test and args.num_walkers and
-                args.num_walkers * args.num_temps > 500):
+        if (args.upload and not args.test and args.num_walkers
+                and args.num_walkers * args.num_temps > 500):
             response = prt.prompt('ul_warning_too_many_walkers')
             if response:
                 args.upload = False
@@ -836,13 +837,14 @@ def main():
                 upload_token = ('1234567890abcdefghijklmnopqrstuvwxyz'
                                 '1234567890abcdefghijklmnopqr')
             while len(upload_token) != 64:
-                prt.message('no_ul_token', ['https://sne.space/mosfit/'],
-                            wrapped=True)
+                prt.message(
+                    'no_ul_token', ['https://sne.space/mosfit/'], wrapped=True)
                 upload_token = prt.prompt('paste_token', kind='string')
                 if len(upload_token) != 64:
                     prt.prt(
                         'Error: Token must be exactly 64 characters in '
-                        'length.', wrapped=True)
+                        'length.',
+                        wrapped=True)
                     continue
                 break
             with open_atomic(upload_token_path, 'w') as f:
@@ -883,8 +885,9 @@ def main():
                 copy_path = os.path.join(full_mdir, '.copy')
                 to_copy = []
                 if os.path.isfile(copy_path):
-                    to_copy = list(filter(None, open(
-                        copy_path, 'r').read().split()))
+                    to_copy = list(
+                        filter(None,
+                               open(copy_path, 'r').read().split()))
 
                 mdir_path = os.path.join('modules', mdir)
                 if not os.path.exists(mdir_path):
@@ -898,9 +901,12 @@ def main():
                         os.mkdir(os.path.join(mdir_path, tc))
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
-                    txt = prt.message('readme-modules', [
-                        os.path.join(dir_path, 'modules', 'mdir'),
-                        os.path.join(dir_path, 'modules')], prt=False)
+                    txt = prt.message(
+                        'readme-modules', [
+                            os.path.join(dir_path, 'modules', 'mdir'),
+                            os.path.join(dir_path, 'modules')
+                        ],
+                        prt=False)
                     open(readme_path, 'w').write(txt)
 
             if not os.path.exists('models'):
@@ -916,9 +922,12 @@ def main():
                     os.walk(os.path.join(dir_path, 'models', mdir)))[2]
                 readme_path = os.path.join(mdir_path, 'README')
                 if not os.path.exists(readme_path):
-                    txt = prt.message('readme-models', [
-                        os.path.join(dir_path, 'models', mdir),
-                        os.path.join(dir_path, 'models')], prt=False)
+                    txt = prt.message(
+                        'readme-models', [
+                            os.path.join(dir_path, 'models', mdir),
+                            os.path.join(dir_path, 'models')
+                        ],
+                        prt=False)
                     with open(readme_path, 'w') as f:
                         f.write(txt)
                 for mfil in model_files:

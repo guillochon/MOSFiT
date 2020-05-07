@@ -90,8 +90,7 @@ class Printer(object):
             time.time() - self._last_prt_time > min_time))
 
     def _lines(
-        self, text, colorify=False, center=False, width=None,
-        warning=False, error=False, prefix=True, color='', inline=False,
+        self, text, warning=False, error=False, prefix=True, color='',
             wrap_length=None, wrapped=False, master_only=True, **kwargs):
         """Generate lines for output."""
         if self._quiet:
@@ -190,7 +189,7 @@ class Printer(object):
         if inline and self._fitter is not None:
             inline = not self._fitter._test
         rlines = []
-        for ri, line in enumerate(tspl):
+        for line in tspl:
             rline = line
             if colorify:
                 rline = self.colorify(rline)

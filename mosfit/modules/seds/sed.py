@@ -22,7 +22,7 @@ class SED(Module):
     def __init__(self, **kwargs):
         """Initialize module."""
         super(SED, self).__init__(**kwargs)
-        self._N_PTS = 16 + 1
+        self._N_PTS = 24 + 1
         self._sample_wavelengths = []
 
     def receive_requests(self, **requests):

@@ -27,7 +27,7 @@ class RProcess(Engine):
 
     def __init__(self, **kwargs):
         """Initialize module."""
-        super(Engine, self).__init__(**kwargs)
+        super(RProcess, self).__init__(**kwargs)
         self._wants_dense = True
         barnes_v = np.asarray([0.1, 0.2, 0.3])
         barnes_M = np.asarray([1.e-3, 5.e-3, 1.e-2, 5.e-2])

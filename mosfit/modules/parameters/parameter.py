@@ -122,5 +122,5 @@ class Parameter(Module):
         """Receive requests from other ``Module`` objects."""
         # Get the first value in the requests dictionary.
         req_keys = list(requests.keys())
-        if len(req_keys):
+        if req_keys:
             self._reference_value = requests.get(req_keys[0], None)

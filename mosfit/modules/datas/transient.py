@@ -360,7 +360,7 @@ class Transient(Module):
             obslist.sort()
 
             # Save these fake observations under keys with `extra_` prefix.
-            if len(obslist):
+            if obslist:
                 for x, y in zip(self._OBS_KEYS, zip(*obslist)):
                     self._data['extra_' + x] = y
 
@@ -368,7 +368,7 @@ class Transient(Module):
             if 'upperlimits' in self._data:
                 new_vals = np.array(self._data[qkey])[
                     np.array(self._data['upperlimits']) != True]  # noqa E712
-                if len(new_vals):
+                if new_vals.size:
                     self._data['min_' + qkey] = min(new_vals)
                     self._data['max_' + qkey] = max(new_vals)
             minv = self._data['min_' + qkey]
