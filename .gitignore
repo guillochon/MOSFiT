@@ -4,6 +4,7 @@ products/
 output/
 dist/
 src/
+mosfit/modules/observables/filters
 mosfit/modules/observables/filters/*.dat
 mosfit/modules/observables/filters/*.xml
 /models/

@@ -56,10 +56,13 @@ class Fetcher(object):
             catalogs = listify(catalogs)
         self._excluded_catalogs.extend([x.upper() for x in catalogs])
 
-    def fetch(self, event_list, offline=False, prefer_cache=False):
+    def fetch(self, event_list, offline=False, prefer_cache=False,
+                cache_path=''):
         """Fetch a list of events from the open catalogs."""
         dir_path = os.path.dirname(os.path.realpath(__file__))
         prt = self._printer
+
+        self._cache_path = cache_path
 
         levent_list = listify(event_list)
         events = [None for x in levent_list]
@@ -79,9 +82,14 @@ class Fetcher(object):
 
             # If not (or the file doesn't exist), download from an open
             # catalog.
+
+            name_dir_path = dir_path
+            if self._cache_path:
+                name_dir_path = self._cache_path
+
             if not path or not os.path.exists(path):
                 names_paths = [
-                    os.path.join(dir_path, 'cache', x + '.names.min.json')
+                    os.path.join(name_dir_path, 'cache', x + '.names.min.json')
                     for x in catalogs
                 ]
                 input_name = event.replace('.json', '')
@@ -183,7 +191,7 @@ class Fetcher(object):
                     events[ei]['name'] = input_name
                     continue
                 urlname = events[ei]['name'] + '.json'
-                name_path = os.path.join(dir_path, 'cache', urlname)
+                name_path = os.path.join(name_dir_path, 'cache', urlname)
 
                 if offline or (prefer_cache and os.path.exists(name_path)):
                     prt.message('cached_event',
@@ -217,6 +225,7 @@ class Fetcher(object):
                 if offline:
                     prt.message('omit_offline')
                 raise RuntimeError
+
         return events
 
     def load_data(self, event):

@@ -122,6 +122,7 @@
     "parser_band_sampling_points": "Number of wavelengths to sample in each band when modeling photometry.",
     "parser_band_systems": "List of photometric systems corresponding to the bands listed in `--band-list`.",
     "parser_burn": "Burn in the chains for this many iterations. During burn-in, global optimization (\"fracking\"), replacement, and a Gibbs variant of emcee are used to speed convergence. However, as none of these methods preserve detailed balance, the posteriors obtained during the burn-in phase are very approximate. No convergence information will be displayed during burn-in.",
+    "parser_cache_path": "Alternative path to store cached data, rather than default of installation directory.",
     "parser_catalogs": "Restrict data acquisition to the listed catalogs.",
     "parser_check_upload_quality": "Ignore all quality checks when uploading fits.",
     "parser_copy": "Setting this flag will prevent MOSFiT from copying the user file hierarchy (models/modules/jupyter) to the current working directory before fitting.",
