@@ -1,2 +1,0 @@
-/Users/brennamockler/MOSFiT/mosfit/modules/mdir
-The contents of this directory will supersede any module code included with MOSFiT. Copy files in the directory structure located at `/Users/brennamockler/MOSFiT/mosfit/modules` to customize the modules included with MOSFiT. If MOSFiT has been updated recently, the modules included with the installation may have changed, so it is recommended to either purge the files located here or to modify them to be consistent with the latest version.
