@@ -100,11 +100,11 @@ class Kroupa(Parameter):
         else:
             if self._min_value < 0.08:
                 value = ((u - (self._norm / 0.7 * 0.08**0.3 *
-                         (0.08**0.7 - self._min_value**0.7)) -  # CDF 0
+                         (0.08**0.7 - self._min_value**0.7)) -  # - CDF 0
                         ((self._norm / -0.3) * 0.08**1.3 *
-                         (0.5**(-0.3) - 0.08**(-0.3)))) *  # CDF 1
+                         (0.5**(-0.3) - 0.08**(-0.3)))) *  # - CDF 1
                          -1.3/self._norm * 0.08**(-1.3) * 2 +
-                         0.5**(-1.3))**(1/-1.3)  # x relevant part of CDF 2
+                         0.5**(-1.3))**(1/-1.3)  # /relevant part of CDF 2
 
             elif self._min_value < 0.5:  # 0.08 <= self._min_value < 0.5
                 value = ((u - ((self._norm / -0.3) * 0.08**1.3 *
@@ -115,6 +115,6 @@ class Kroupa(Parameter):
                 value = (u * (-1.3/self._norm) * 0.08**(-1.3) *
                          2 + self._min_value**(-1.3))**(1/-1.3)
 
-        value = (value - self._min_value) / (0.5 - self._min_value)
+        value = (value - self._min_value) / (self._max_value - self._min_value)
         # np.clip in case of python errors in line above
         return np.clip(value, 0.0, 1.0)
