@@ -1,6 +1,5 @@
 language: python
 python:
-    - 2.7
     - 3.6
     - 3.7
 notifications:
@@ -11,13 +10,7 @@ git:
 # Setup anaconda
 before_install:
 # Install packages
-    - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
-          wget https://repo.continuum.io/miniconda/Miniconda2-latest-Linux-x86_64.sh -O miniconda.sh;
-      elif [[ "$TRAVIS_PYTHON_VERSION" == "3.5" ]]; then
-          wget https://repo.continuum.io/miniconda/Miniconda3-4.1.11-Linux-x86_64.sh -O miniconda.sh;
-      else
-          wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
-      fi
+    - wget https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh -O miniconda.sh;
     - bash miniconda.sh -b -p $HOME/miniconda
     - export PATH="$HOME/miniconda/bin:$PATH"
     - hash -r
@@ -26,7 +19,7 @@ before_install:
 install:
     - conda update setuptools
     - conda config --add channels conda-forge
-    - conda install --yes python=$TRAVIS_PYTHON_VERSION astrocats "astropy<3.0" corner coveralls cython dropbox emcee extinction inflect jupyter matplotlib mpi4py nbstripout numexpr palettable schwimmbad scipy!=0.19.0 seaborn six
+    - conda install --yes python=$TRAVIS_PYTHON_VERSION astrocats astropy corner coveralls cython dropbox emcee extinction inflect jupyter matplotlib mpi4py nbstripout numexpr palettable schwimmbad scipy!=0.19.0 seaborn six
     - pip install googletrans
     - coverage run -p setup.py install
 
@@ -36,4 +29,4 @@ script:
 
 # Run coveralls
 after_success:
-    - if [[ $TRAVIS_PYTHON_VERSION == 3.6 ]]; then coveralls; fi
+    - if [[ $TRAVIS_PYTHON_VERSION == 3.7 ]]; then coveralls; fi
