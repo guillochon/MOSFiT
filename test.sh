@@ -9,7 +9,7 @@ else
     TRUNNER=python
 fi
 
-mpirun -np 2 --oversubscribe $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
+mpirun -np 2 -H localhost,localhost $RUNNER -m mosfit -e SN2009do --test -i 1 -f 1 -p 0 -F covariance
 
 $RUNNER -m mosfit -e SN2009do.json --test -i 1 --no-fracking -m magnetar -T 2 -F covariance --cache-path mosfit/tests/cache
 $RUNNER -m mosfit -e SN2007bg --test -i 3 -m rprocess -D nester -F covariance
