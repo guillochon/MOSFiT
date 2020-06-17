@@ -57,7 +57,7 @@ class DiffusionCSM(Transform):
         tb = max(0.0, min_te)
         linterp = interp1d(
             self._dense_times_since_exp, self._dense_luminosities, copy=False,
-            assume_sorted=True)
+            assume_sorted=True, bounds_error=False, fill_value=0.0)
 
         uniq_times = np.unique(self._times_to_process[
             (self._times_to_process >= tb) & (
