@@ -13,6 +13,10 @@
         "max_value":10000,
         "log":true
     },
+    "s":{
+        "min_value":0.0,
+        "max_value":1.0
+    },
     "n":{
         "value":12.0
     },
