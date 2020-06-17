@@ -77,7 +77,7 @@ class DiffusionCSM(Transform):
         int_times = tb + (uniq_times.reshape(lu, 1) - tb) * xm
         int_tes = int_times[:, -1]
 
-        int_lums = linterp(int_times)  # noqa: F841
+        int_lums = linterp(int_times, bounds_error=False, fill_value=0.0)  # noqa: F841
         int_args = int_lums * np.exp((int_times) / t0)
         int_args[np.isnan(int_args)] = 0.0
 
