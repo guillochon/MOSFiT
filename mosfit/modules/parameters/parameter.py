@@ -69,7 +69,7 @@ class Parameter(Module):
 
     def value(self, f):
         """Return the value of the parameter in parameter's units."""
-        if np.isnan(f):
+        if np.any(np.isnan(f)):
             raise ValueError('NaN fraction passed to parameter.')
 
         value = np.clip(f *

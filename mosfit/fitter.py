@@ -868,6 +868,21 @@ class Fitter(object):
 
             if save_full_chain:
                 prt.message('writing_full_chain')
+                my_chain = np.asarray(self._sampler._all_chain.tolist())
+                pi = 0
+                param_names = []
+                for ti, task in enumerate(model._call_stack):
+                    if model._call_stack[task]['kind'] != 'parameter':
+                        continue
+                    if task in model._free_parameters:
+                        poutput = model._modules[task].process(
+                            **{'fraction': my_chain[:, :, :, pi]})
+                        value = list(poutput.values())[0]
+                        my_chain[:, :, :, pi] = value
+                        param_names.append(task)
+                        pi = pi + 1
+                my_chain = my_chain.tolist()
+                my_chain.append(param_names)
                 with open_atomic(
                         os.path.join(model.get_products_path(), 'chain.json'),
                         'w') as flast, open_atomic(
@@ -877,11 +892,11 @@ class Fitter(object):
                                 (('_' + suffix) if suffix else '') + '.json'),
                             'w') as feven:
                     entabbed_json_dump(
-                        self._sampler._all_chain.tolist(),
+                        my_chain,
                         flast,
                         separators=(',', ':'))
                     entabbed_json_dump(
-                        self._sampler._all_chain.tolist(),
+                        my_chain,
                         feven,
                         separators=(',', ':'))
 
