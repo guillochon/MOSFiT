@@ -1333,19 +1333,19 @@
 				"offset": 0
 			},
 			"F475W": {
-				"SVO": "HST/ACS_WFC.F475W_77",
+				"SVO": "HST/ACS_WFC.F475W",
 				"offset": 0
 			},
 			"F625W": {
-				"SVO": "HST/ACS_WFC.F625W_77",
+				"SVO": "HST/ACS_WFC.F625W",
 				"offset": 0
 			},
 			"F775W": {
-				"SVO": "HST/ACS_WFC.F775W_77",
+				"SVO": "HST/ACS_WFC.F775W",
 				"offset": 0
 			},
 			"F850W": {
-				"SVO": "HST/ACS_WFC.F850LP_77",
+				"SVO": "HST/ACS_WFC.F850LP",
 				"offset": 0
 			},
 			"F125LP": {
@@ -1857,7 +1857,7 @@
 				"offset": 0
 			},
 			"F606W": {
-				"SVO": "HST/WFC3_UVIS1.F606LP",
+				"SVO": "HST/WFC3_UVIS1.F606W",
 				"offset": 0
 			}
 		}

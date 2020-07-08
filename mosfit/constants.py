@@ -28,3 +28,5 @@ MPC_CGS = u.Mpc.cgs.scale
 KS_DAYS = float(Decimal('1000') / Decimal(DAY_CGS))
 H_C_CGS = H_CGS * C_CGS
 H_C_ANG_CGS = H_C_CGS / ANG_CGS
+
+G_CGS = c.G.cgs.value
