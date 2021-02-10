@@ -154,6 +154,18 @@
         "class":"parameter",
         "latex":"T_{\\rm shock,cool}"
     },
+    "errMdyn":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"errMdyn"
+    },
+    "errMdisk":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"errMdisk"
+    },
     "bns_ejecta_generative":{
         "kind":"energetic",
         "inputs":[
@@ -162,7 +174,9 @@
             "alpha",
             "disk_frac",
             "Mtov",
-            "radius_ns"
+            "radius_ns",
+            "errMdyn",
+            "errMdisk"
         ]
     },
     "aspherical_kilonova":{

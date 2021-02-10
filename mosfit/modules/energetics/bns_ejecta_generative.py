@@ -61,6 +61,9 @@ class BNSEjecta(Energetic):
 
         theta_open = np.arccos(self._cos_theta_open)
 
+        # Additional systematic scatter (if desired)
+        self._errMdyn = kwargs[self.key('errMdyn')]
+        self._errMdisk = kwargs[self.key('errMdisk')]
 
 
         C1 = G_CGS * self._m1 * M_SUN_CGS /(self._radius_ns*1e5 * C_CGS**2)
@@ -83,6 +86,8 @@ class BNSEjecta(Energetic):
                         (self._m1/self._m2)**(1/3)*(1-2*C2)/C2*Mb2) +
                         b_1*((self._m2/self._m1)**n*Mb1 + (self._m1/self._m2)**n*Mb2) +
                         c_1*(Mb1-self._m1 + Mb2-self._m2) + d_1)
+
+        Mejdyn *= self._errMdyn
 
         if Mejdyn < 0:
             Mejdyn = 0
@@ -150,8 +155,11 @@ class BNSEjecta(Energetic):
 
         logMdisk = np.max([-3, a_5*(1+b_5*np.tanh((c_5-self._m_total/Mthr)/d_5))])
 
-        Mejdisk = 10**logMdisk * self._disk_frac
+        Mdisk = 10**logMdisk
 
+        Mdisk *= self._errMdisk
+        
+        Mejdisk = Mdisk * self._disk_frac
         mejecta_purple = Mejdisk
 
 
