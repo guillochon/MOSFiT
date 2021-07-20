@@ -242,7 +242,7 @@ Other prior
 =======================
 
 
-If you have other prior following other function, you can create you own prior by using arbitrary prior on the parameters. To start with, you need to create a file which storing the information of your function. The file should looks like:
+If you have another prior following a function not specified above, you can create your own prior by using the ``arbitrary" class prior. To start with, you need to create a file (e.g., ``filename.csv" which storing the information of your function:
 
 .. code-block:: txt
 
@@ -256,9 +256,9 @@ If you have other prior following other function, you can create you own prior b
     
 
 
-with X as horizontal axis and Y be vertical axis.
+with X as the parameter value axis and Y as the PDF.
 
-Then save the file in `mosfit, the same directory as the `main.py. Therefore you can set the replace the default ``parameters.json`` snippet, which looks like this:
+Save the file where you will run ``MOSFiT``, and edit the ``parameters.json`` as follows:
 
 .. code-block:: json
 
