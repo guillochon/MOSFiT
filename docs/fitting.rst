@@ -234,6 +234,41 @@ with the following:
 
 Flat, log flat, gaussian, and power-law priors are available in ``MOSFiT``; see the `parameters_test.json <https://github.com/guillochon/MOSFiT/blob/master/mosfit/models/default/parameters_test.json>`_ file in the ``default`` model for examples on how to set each prior type.
 
+
+
+.. _other-prior:
+
+Other prior
+=======================
+
+
+If you have another prior following a function not specified above, you can create your own prior by using the ``arbitrary" class prior. To start with, you need to create a file (e.g., ``filename.csv" which storing the information of your function:
+
+.. code-block:: txt
+
+    X   Y
+    0   1.1
+    1   1.2
+    2   1.3
+    .   .
+    .   .
+    .   .
+    
+
+
+with X as the parameter value axis and Y as the PDF.
+
+Save the file where you will run ``MOSFiT``, and edit the ``parameters.json`` as follows:
+
+.. code-block:: json
+
+    "vejecta":{
+        "class":"Arbitrary",
+        "filename":"filename.csv",
+        "min_value":1.0e3,
+        "max_value":1.0e5
+    },
+
 .. _previous:
 
 -------------------------------
