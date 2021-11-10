@@ -130,15 +130,9 @@
         "class":"parameter",
         "latex":"M_{\\rm TOV}\\,(M_\\odot)"
     },
-    "LambdaSym":{
-        "kind":"parameter",
-        "value":200,
-        "class":"parameter",
-        "latex":"\\Lambda_{s}"
-    },
     "cos_theta_cocoon":{
         "kind":"parameter",
-        "value":0,
+        "value":1.0,
         "class":"parameter",
         "latex":"\\cos\\theta_{\\rm cocoon}"
     },
@@ -172,7 +166,7 @@
         "class":"parameter",
         "latex":"errMdisk"
     },
-    "bns_ejecta":{
+    "bns_ejecta_generative":{
         "kind":"energetic",
         "inputs":[
             "Mchirp",
@@ -180,9 +174,7 @@
             "alpha",
             "disk_frac",
             "Mtov",
-            "LambdaSym",
-            "kappa_red",
-            "kappa_blue",
+            "radius_ns",
             "errMdyn",
             "errMdisk"
         ]
@@ -201,7 +193,7 @@
             "s",
             "tshock",
             "texplosion",
-            "bns_ejecta",
+            "bns_ejecta_generative",
             "cos_theta_cocoon",
             "kappa_blue"
         ],
@@ -223,7 +215,7 @@
         "replacements":{
             "luminosities":"luminosities_shock",
             "vejecta":"vejecta_blue",
-            "mejecta":"mejecta_blue",
+            "mejecta":"mejecta_dyn",
             "kappa":"kappa_blue",
             "temperature":"temperature_shock"
         }
@@ -248,7 +240,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "bns_ejecta",
+            "bns_ejecta_generative",
             "kappa_blue"
         ],
         "replacements":{
@@ -261,7 +253,7 @@
     "diffusion_aspherical":{
         "kind":"transform",
         "inputs":[
-            "bns_ejecta",
+            "bns_ejecta_generative",
             "aspherical_kilonova",
             "rprocess",
             "kappa_blue",
@@ -316,7 +308,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "bns_ejecta",
+            "bns_ejecta_generative",
             "kappa_red"
         ],
         "replacements":{
@@ -384,7 +376,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "bns_ejecta"
+            "bns_ejecta_generative"
         ],
         "replacements":{
             "mejecta":"mejecta_purple",
@@ -473,13 +465,6 @@
             "luminosities":"luminosities_purple"
         }
     },
-    "bns_constraints":{
-        "kind":"constraint",
-        "inputs":[
-            "Mtov",
-            "bns_ejecta"
-        ]
-    },
     "likelihood":{
         "kind":"objective",
         "supports":[
@@ -488,8 +473,7 @@
             "infrared"
         ],
         "inputs":[
-            "diagonal",
-            "bns_constraints"
+            "diagonal"
         ]
     }
 }

@@ -36,7 +36,8 @@
         "kind":"parameter",
         "value": 0.98,
         "class":"parameter",
-        "latex":"b\\ (\\rm scaled\\ \\beta)"
+        "latex":"b\\ (\\rm scaled\\ \\beta)",
+        "derived_keys":"beta"
     },
     "Tviscous":{
         "kind":"parameter",

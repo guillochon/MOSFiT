@@ -17,6 +17,7 @@ $RUNNER -m mosfit -e mosfit/tests/LSQ12dlf.json --test -i 3 --no-fracking -m csm
 $RUNNER -m mosfit -e SN2008ar --test -i 1 --no-fracking -m ia -F covariance --extra-times 2009-01-01 --extra-phases -3 +2
 $RUNNER -m mosfit -e mosfit/tests/event_list.txt --test -i 1 --no-fracking -m tde -F covariance --offline
 $RUNNER -m mosfit -e mosfit/tests/LSQ12dlf.json --test -i 2 --no-fracking -m kilonova --variance-for-each band --offline --extra-times 56000 --prefer-fluxes
+$RUNNER -m mosfit -m bns_generative -N 5
 if [ "$1" = -c ]; then
     $RUNNER -m mosfit -e SN2007bg --test -i 1 --no-fracking -m ic --language ru -F covariance --prefer-cache
 else
