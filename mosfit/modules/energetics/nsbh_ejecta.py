@@ -93,11 +93,11 @@ class NSBHEjecta(Energetic):
         n1 = 0.8636
         n2 = 1.6840
 
-        # Remnant mass outside of the event horizon
-        Mrem = (max(a * (1 - 2 * Cns) / eta ** (1.0 / 3.0) - b * Risco * Cns / eta + c, 0)) ** d
-
         # Baryon mass of the neutron star (Eqn 7 from Kruger & Foucart 2021)
         Mb = self._Mns * (1.0 + (0.6 * Cns) / (1.0 - 0.5 * Cns))
+
+        # Remnant mass outside of the event horizon
+        Mrem = (max(a * (1 - 2 * Cns) / eta ** (1.0 / 3.0) - b * Risco * Cns / eta + c, 0)) ** d * Mb
 
         # Dynamical ejecta mass
         Mdyn = max((a1 / self._q ** n1 * (1.0 - 2. * Cns) / Cns - a2 / self._q ** n2 * Risco + a4) * Mb, 0)
