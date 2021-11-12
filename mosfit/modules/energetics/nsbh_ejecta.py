@@ -46,7 +46,7 @@ class NSBHEjecta(Energetic):
         self._Mbh = 1.4 / self._q
         # Mass of NS
         self._Mns = self._Mbh * self._q
-        self._M_total = self._Mbh + self._Mns   
+        self._M_total = self._Mbh + self._Mns
 
         # Radius of neutron star
         self._radius_ns = kwargs[self.key('radius_ns')]
@@ -69,8 +69,7 @@ class NSBHEjecta(Energetic):
         self._errMdyn = kwargs[self.key('errMdyn')]
         self._errMdisk = kwargs[self.key('errMdisk')]
 
-        #Cns = G_CGS * self._Mns * M_SUN_CGS / (Rns * C_CGS ** 2.0) # Neutron star compressibility
-        Cns = 0.178
+        Cns = G_CGS * self._Mns * M_SUN_CGS / (Rns * C_CGS ** 2.0) # Neutron star compressibility
         #self._Q = self._q ** (-1.0) # Invert the mass ratio for the following equations
         eta = self._q ** (-1.0) / (1. + self._q ** (-1.0)) ** 2.0 # Parameterisation of q.
 
@@ -100,7 +99,7 @@ class NSBHEjecta(Energetic):
         Mrem = (max(a * (1 - 2 * Cns) / eta ** (1.0 / 3.0) - b * Risco * Cns / eta + c, 0)) ** d * Mb
 
         # Dynamical ejecta mass
-        Mdyn = max((a1 / self._q ** n1 * (1.0 - 2. * Cns) / Cns - a2 / self._q ** n2 * Risco + a4) * Mb, 0)
+        Mdyn = max((a1 / self._q ** n1 * (1.0 - 2. * Cns) / Cns - a2 / self._q ** n2 * Risco + a4) * Mb, 0) *1.68
         
         # Average dynamical ejecta velocity from Kawaguchi et al. (2016)
         Vdyn = (0.01533 / self._q + 0.1907) * ckm

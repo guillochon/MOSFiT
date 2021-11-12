@@ -99,17 +99,17 @@ class AsphericalWind(Energetic):
         Adyn = np.pi - Awind
         Adyn_ref = np.pi - Awind_ref
 
-        Ablue = kwargs[self.key('area_blue')]
-        Ablue_ref = kwargs[self.key('area_blue_ref')]
+        Amagnetic = kwargs[self.key('area_blue')]
+        Amagnetic_ref = kwargs[self.key('area_blue_ref')]
 
-        Ared = kwargs[self.key('area_red')] - Adyn
-        Ared_ref = kwargs[self.key('area_red_ref')] - Adyn_ref
+        Athermal = kwargs[self.key('area_red')] - Adyn
+        Athermal_ref = kwargs[self.key('area_red_ref')] - Adyn_ref
 
 
         return {self.key('area_dyn'): Adyn,
                 self.key('area_dyn_ref'): Adyn_ref,
-                self.key('area_red'): Ared,
-                self.key('area_red_ref'): Ared_ref,
-                self.key('area_blue'): Ablue,
-                self.key('area_blue_ref'): Ablue_ref
+                self.key('area_thermal'): Athermal,
+                self.key('area_thermal_ref'): Athermal_ref,
+                self.key('area_magnetic'): Amagnetic,
+                self.key('area_magnetic_ref'): Amagnetic_ref
                 }

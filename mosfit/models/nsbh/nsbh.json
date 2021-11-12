@@ -47,21 +47,21 @@
         "class":"parameter",
         "latex":"T_{\\rm rec}\\,{\\rm (K)}"
     },
-    "kappa_red":{
+    "kappa_magnetic":{
         "kind":"parameter",
-        "value":5.0,
+        "value":10.0,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-    "kappa_purple":{
+    "kappa_thermal":{
         "kind":"parameter",
-        "value":1.0,
+        "value":3.0,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-    "kappa_black":{
+    "kappa_dyn":{
         "kind":"parameter",
-        "value":15.0,
+        "value":20.0,
         "class":"parameter",
         "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
@@ -114,10 +114,10 @@
         "class":"parameter",
         "latex":"\\cos\\theta_{\\rm open}",
         "derived_keys":[
-            "area_blue",
-            "area_blue_ref",
-            "area_red",
-            "area_red_ref",
+            "area_magnetic",
+            "area_magnetic_ref",
+            "area_thermal",
+            "area_thermal_ref",
             "area_dyn",
             "area_dyn_ref"
         ]
@@ -130,7 +130,7 @@
     },
     "radius_ns":{
         "kind":"parameter",
-        "value":12.0,
+        "value":11.6,
         "class":"parameter",
         "latex":"R_{\\rm NS}\\,({\\rm km})"
     },
@@ -199,13 +199,13 @@
             "frad",
             "texplosion",
             "nsbh_ejecta",
-            "kappa_purple"
+            "kappa_thermal"
         ],
         "replacements":{
             "mejecta":"mejecta_thermal",
             "luminosities":"luminosities_thermal",
             "vejecta":"vejecta_thermal",
-            "kappa":"kappa_purple"
+            "kappa":"kappa_thermal"
         }
     },
     "diffusion_aspherical":{
@@ -214,7 +214,7 @@
             "nsbh_ejecta",
             "aspherical_wind",
             "rprocess",
-            "kappa_purple",
+            "kappa_thermal",
             "kappagamma",
             "texplosion"
         ],
@@ -222,9 +222,9 @@
             "luminosities":"luminosities_thermal",
             "mejecta":"mejecta_thermal",
             "vejecta":"vejecta_thermal",
-            "kappa":"kappa_purple",
-            "area_proj":"area_red",
-            "area_ref":"area_red_ref"
+            "kappa":"kappa_thermal",
+            "area_proj":"area_thermal",
+            "area_ref":"area_thermal_ref"
         }
     },
     "temperature_floor":{
@@ -239,7 +239,7 @@
             "luminosities": "luminosities_thermal",
             "vejecta":"vejecta_thermal",
             "mejecta":"mejecta_thermal",
-            "kappa":"kappa_purple"
+            "kappa":"kappa_thermal"
         }
     },
     "blackbody":{
@@ -265,13 +265,13 @@
             "frad",
             "texplosion",
             "nsbh_ejecta",
-            "kappa_red"
+            "kappa_magnetic"
         ],
         "replacements":{
             "mejecta":"mejecta_magnetic",
             "luminosities":"luminosities_magnetic",
             "vejecta":"vejecta_magnetic",
-            "kappa":"kappa_red"
+            "kappa":"kappa_magnetic"
         }
     },
     "diffusion2":{
@@ -280,7 +280,7 @@
         "inputs":[
             "rprocess2",
             "aspherical_wind",
-            "kappa_red",
+            "kappa_magnetic",
             "kappagamma",
             "texplosion"
         ],
@@ -288,9 +288,9 @@
             "luminosities":"luminosities_magnetic",
             "mejecta":"mejecta_magnetic",
             "vejecta":"vejecta_magnetic",
-            "kappa":"kappa_red",
-            "area_proj":"area_blue",
-            "area_ref":"area_blue_ref"
+            "kappa":"kappa_magnetic",
+            "area_proj":"area_magnetic",
+            "area_ref":"area_magnetic_ref"
         }
     },
     "temperature_floor2":{
@@ -305,7 +305,7 @@
             "luminosities": "luminosities_magnetic",
             "vejecta":"vejecta_magnetic",
             "mejecta":"mejecta_magnetic",
-            "kappa":"kappa_red"
+            "kappa":"kappa_magnetic"
         }
     },
     "blackbody2":{
@@ -333,13 +333,13 @@
             "frad",
             "texplosion",
             "nsbh_ejecta",
-            "kappa_black"
+            "kappa_dyn"
         ],
         "replacements":{
             "mejecta":"mejecta_dyn",
             "luminosities":"luminosities_dyn",
             "vejecta":"vejecta_dyn",
-            "kappa":"kappa_black"
+            "kappa":"kappa_dyn"
         }
     },
     "diffusion3":{
@@ -348,7 +348,7 @@
         "inputs":[
             "rprocess3",
             "aspherical_wind",
-            "kappa_black",
+            "kappa_dyn",
             "kappagamma",
             "texplosion"
         ],
@@ -356,7 +356,7 @@
             "luminosities":"luminosities_dyn",
             "mejecta":"mejecta_dyn",
             "vejecta":"vejecta_dyn",
-            "kappa":"kappa_black",
+            "kappa":"kappa_dyn",
             "area_proj":"area_dyn",
             "area_ref":"area_dyn_ref"
         }
@@ -373,7 +373,7 @@
             "luminosities":"luminosities_dyn",
             "vejecta":"vejecta_dyn",
             "mejecta":"mejecta_dyn",
-            "kappa":"kappa_black"
+            "kappa":"kappa_dyn"
         }
     },
     "blackbody3":{

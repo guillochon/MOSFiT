@@ -37,13 +37,13 @@
         "min_value":2.0,
         "max_value":2.5
     },
-   "kappa_black":{
+   "kappa_dyn":{
         "value":20.0
     },
-    "kappa_red":{
+    "kappa_magnetic":{
         "value":10.0
     },
-    "kappa_purple":{
+    "kappa_thermal":{
         "value":3.0
     },
     "temperature":{
