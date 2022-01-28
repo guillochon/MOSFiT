@@ -29,18 +29,6 @@
         "latex":"n_{\\rm H,host}",
         "derived_keys":"avhost"
     },
-    "redshift":{
-        "kind":"parameter",
-        "value":0.009727,
-        "class":"parameter",
-        "latex":"z"
-    },
-    "lumdist":{
-        "kind":"parameter",
-        "value":43.36,
-        "class":"parameter",
-        "latex":"d"
-    },
     "texplosion":{
         "kind":"parameter",
         "value":0.0,
