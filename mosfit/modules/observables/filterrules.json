@@ -2233,7 +2233,8 @@
 			"NIRCam"
 		],
 		"bandsets": [
-			"GOTO"
+			"",
+			"JWST"
 		],
 		"filters": {
 			"F070W": {
@@ -2280,7 +2281,7 @@
 				"SVO": "JWST/MIRI.F560W",
 				"offset": 0
 			},
-			"770W": {
+			"F770W": {
 				"SVO": "JWST/MIRI.F770W",
 				"offset": 0
 			},
