@@ -19,6 +19,9 @@
     "disk_frac":{
        "value":0.15
     },
+    "shock_frac":{
+       "value":0.0
+    },
     "cos_theta":{
         "value":0.5
     },

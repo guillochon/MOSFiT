@@ -1,7 +1,7 @@
 {
     "@references":[
         {
-            "name":"Nicholl et al., in preparation"
+            "name":"Nicholl et al., 2021"
         }
     ],
     "ebv":{
@@ -84,6 +84,7 @@
             "vejecta_blue",
             "vejecta_red",
             "vejecta_purple",
+            "vejecta_mean",
             "kappa_purple",
             "kappa_mean"
         ]
@@ -111,6 +112,12 @@
         "value":0.2,
         "class":"parameter",
         "latex":"\\epsilon_{\\rm disk}"
+    },
+    "shock_frac":{
+        "kind":"parameter",
+        "value":0.2,
+        "class":"parameter",
+        "latex":"\\zeta_{\\rm shock}"
     },
     "radius_ns":{
         "kind":"parameter",
@@ -154,12 +161,6 @@
         "class":"parameter",
         "latex":"t_{\\rm shock}"
     },
-    "temperature_shock":{
-        "kind":"parameter",
-        "value":100,
-        "class":"parameter",
-        "latex":"T_{\\rm shock,cool}"
-    },
     "errMdyn":{
         "kind":"parameter",
         "value":1.0,
@@ -202,30 +203,31 @@
             "tshock",
             "texplosion",
             "bns_ejecta",
+            "shock_frac",
             "cos_theta_cocoon",
             "kappa_blue"
         ],
         "replacements":{
-            "mejecta":"mejecta_dyn",
+            "mejecta":"mejecta_blue",
             "luminosities":"luminosities_shock",
             "vejecta":"vejecta_blue",
             "kappa":"kappa_blue"
         }
     },
-    "temperature_floor":{
+    "cocoon_photosphere":{
         "kind":"photosphere",
         "class":"temperature_floor",
         "inputs":[
             "texplosion",
-            "temperature_shock",
+            "s",
+            "shock_frac",
             "shock_cocoon"
         ],
         "replacements":{
             "luminosities":"luminosities_shock",
             "vejecta":"vejecta_blue",
             "mejecta":"mejecta_blue",
-            "kappa":"kappa_blue",
-            "temperature":"temperature_shock"
+            "kappa":"kappa_blue"
         }
     },
     "blackbody":{
@@ -233,7 +235,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "temperature_floor"
+            "cocoon_photosphere"
         ],
         "requests":{
             "band_wave_ranges": "photometry"

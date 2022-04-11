@@ -24,6 +24,10 @@
        "min_value":0.05,
        "max_value":0.5
     },
+    "shock_frac":{
+        "min_value":0.0,
+        "max_value":1.0
+    },
     "cos_theta":{
         "min_value":0.0,
         "max_value":1.0
@@ -32,8 +36,7 @@
         "value":0.707107
     },
     "cos_theta_cocoon":{
-        "min_value":0.707107,
-        "max_value":1.0
+        "value":0.866025
     },
     "s":{
         "value":1.0
