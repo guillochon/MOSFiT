@@ -58,6 +58,8 @@ class BNSEjecta(Energetic):
         self._alpha = kwargs[self.key('alpha')]
         # Opening angle
         self._cos_theta_open = kwargs[self.key('cos_theta_open')]
+        self._kappa_red = kwargs[self.key('kappa_red')]
+        self._kappa_blue = kwargs[self.key('kappa_blue')]
 
         theta_open = np.arccos(self._cos_theta_open)
 
@@ -201,16 +203,24 @@ class BNSEjecta(Energetic):
 
         vejecta_purple = vdisk * ckm
 
+        vejecta_mean = (mejecta_purple*vejecta_purple + vejecta_red*mejecta_red +
+                vejecta_blue*mejecta_blue) / (mejecta_purple + mejecta_red + mejecta_blue)
+
+        kappa_mean = (mejecta_purple*kappa_purple + self._kappa_red*mejecta_red +
+                self._kappa_blue*mejecta_blue) / (mejecta_purple + mejecta_red + mejecta_blue)
+
 
         return {self.key('mejecta_blue'): mejecta_blue,
                 self.key('mejecta_red'): mejecta_red,
                 self.key('mejecta_purple'): mejecta_purple,
                 self.key('mejecta_dyn'): Mejdyn,
+                self.key('mejecta_tot'): Mejdyn+mejecta_purple,
                 self.key('vejecta_blue'): vejecta_blue,
                 self.key('vejecta_red'): vejecta_red,
                 self.key('vejecta_purple'): vejecta_purple,
+                self.key('vejecta_mean'): vejecta_mean,
                 self.key('kappa_purple'): kappa_purple,
+                self.key('kappa_mean'): kappa_mean,
                 self.key('M1'): self._m1,
-                self.key('M2'): self._m2,
-                self.key('radius_ns'): self._radius_ns
+                self.key('M2'): self._m2
                 }
