@@ -18,9 +18,12 @@ class Shock(Engine):
 
     Shock heating can be turned off in bns model by setting shock_frac=0
     or cos_theta_cocoon=1
+    
+    Uses softmax (tanh) function to turn off cocoon for t > t_thin (no material left to cool)
     """
 
     DIFF_CONST = M_SUN_CGS / (FOUR_PI * C_CGS * KM_CGS)
+    C_KMS = C_CGS / KM_CGS
 
     _REFERENCES = [
         {SOURCE.BIBCODE: '2018ApJ...855..103P'}
@@ -51,6 +54,7 @@ class Shock(Engine):
         self._tau_diff = np.sqrt(self.DIFF_CONST * self._kappa *
                                  m_shocked / self._v_ejecta) / DAY_CGS
 
+        t_thin = (self.C_KMS / self._v_ejecta)**0.5 * self._tau_diff
 
         L0 = (theta**2/2)**(1/3) * (m_shocked * M_SUN_CGS *
                 self._v_ejecta * KM_CGS * R / (self._tau_diff * DAY_CGS)**2 )
@@ -61,7 +65,12 @@ class Shock(Engine):
             for x in self._times
         ]
 
-        luminosities = [L0 * (t/self._tau_diff)**-(4/(self._s+2)) for t in ts]
+
+        # tanh function added by MN to turn off cocoon emission smoothly
+        # once all layers are optically thin (have radiated their energy)
+        luminosities = [L0 * (t/self._tau_diff)**-(4/(self._s+2)) * (1 +
+                            np.tanh(t_thin-t))/2 for t in ts]
+                            
         luminosities = [0.0 if isnan(x) else x for x in luminosities]
 
         return {self.dense_key('luminosities'): luminosities}
