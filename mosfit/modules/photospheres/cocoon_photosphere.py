@@ -1,4 +1,4 @@
-"""Definitions for the `TemperatureFloor` class."""
+"""Definitions for the `CocoonPhotosphere` class."""
 import numpy as np
 from astrocats.catalog.source import SOURCE
 from astropy import constants as c
@@ -10,15 +10,12 @@ from mosfit.modules.photospheres.photosphere import Photosphere
 # Important: Only define one ``Module`` class per file.
 
 
-class TemperatureFloor(Photosphere):
-    """Photosphere with a minimum allowed temperature.
-
-    Photosphere that expands and cools with ejecta then recedes at constant
-    final temperature.
+class CocoonPhotosphere(Photosphere):
+    """
+    Piro and Kollmeier 2018
     """
 
     _REFERENCES = [
-        {SOURCE.BIBCODE: '2017arXiv170600825N'},
         {SOURCE.BIBCODE: '2018ApJ...855..103P'}
     ]
 
@@ -50,10 +47,12 @@ class TemperatureFloor(Photosphere):
         Tphot = []
         for li, lum in enumerate(self._luminosities):
 
-            vphot = self._v_ejecta * (self._times[li]/t_thin)**(-2./(s+3))
-            
-            radius = RAD_CONST * vphot * max(self._times[li] - self._rest_t_explosion, 0.0)
+            ts = self._times[li] - self._rest_t_explosion
 
+            vphot = self._v_ejecta * (ts/t_thin)**(-2./(s+3))
+            
+            radius = RAD_CONST * vphot * max(ts, 0.0)
+            
             if lum == 0.0:
                 temperature = 0.0
             else:
@@ -64,4 +63,5 @@ class TemperatureFloor(Photosphere):
             Tphot.append(temperature)
 
         return {self.key('radiusphot'): rphot,
-                self.key('temperaturephot'): Tphot}
+                self.key('temperaturephot'): Tphot
+        }
