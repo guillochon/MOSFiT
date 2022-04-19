@@ -1,9 +1,10 @@
 """Definitions for the `CSM` class."""
 from math import isnan
+import os
 
 import numpy as np
 from astrocats.catalog.source import SOURCE
-from scipy import interpolate
+from scipy.interpolate import RegularGridInterpolator, interp2d
 
 from mosfit.constants import AU_CGS, DAY_CGS, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
@@ -32,6 +33,21 @@ class CSM(Engine):
         {SOURCE.BIBCODE: '2013ApJ...773...76C'}
     ]
 
+    def __init__(self, **kwargs):
+        """Initialize module."""
+        super(CSM, self).__init__(**kwargs)
+        self._wants_dense = True
+        csm_file = (os.path.dirname(__file__)[:-15] + 'models/csm/data/csm_table.dat')
+        ns,ss,Bfs,Brs,As = np.loadtxt(csm_file, delimiter=',',unpack=True)
+        Bfs = np.reshape(Bfs,(10,30)).T
+        Brs = np.reshape(Brs,(10,30)).T
+        As = np.reshape(As,(10,30)).T
+        ns = np.unique(ns)
+        ss = np.unique(ss)
+        self.Bf_func = RegularGridInterpolator((ss, ns), Bfs)
+        self.Br_func = RegularGridInterpolator((ss, ns), Brs)
+        self.A_func = RegularGridInterpolator((ss, ns), As)
+ 
     def process(self, **kwargs):
         """Process module."""
         self._s = kwargs[self.key('s')]
@@ -58,25 +74,10 @@ class CSM(Engine):
         #self._ti = 1.0  # set ti to small number
         self._ti = self._R0 / self._vph # set ti to small number
 
-        if self._s == 0:
-            ns = [6, 7, 8, 9, 10, 12, 14]
-            Bfs = [1.256, 1.181, 1.154, 1.140, 1.131, 1.121, 1.116]
-            Brs = [0.906, 0.935, 0.950, 0.960, 0.966, 0.974, 0.979]
-            As = [2.4, 1.2, 0.71, 0.47, 0.33, 0.19, 0.12]
 
-        else:  # s == 2
-            ns = [6, 7, 8, 9, 10, 12, 14]
-            Bfs = [1.377, 1.299, 1.267, 1.250, 1.239, 1.226, 1.218]
-            Brs = [0.958, 0.970, 0.976, 0.981, 0.984, 0.987, 0.990]
-            As = [0.62, 0.27, 0.15, 0.096, 0.067, 0.038, 0.025]
-
-        Bf_func = interpolate.interp1d(ns, Bfs)
-        Br_func = interpolate.interp1d(ns, Brs)
-        A_func = interpolate.interp1d(ns, As)
-
-        self._Bf = Bf_func(self._n)
-        self._Br = Br_func(self._n)
-        self._A = A_func(self._n)
+        self._Bf = self.Bf_func([self._n,self._s])[0]
+        self._Br = self.Br_func([self._n,self._s])[0]
+        self._A = self.A_func([self._n,self._s])[0]
 
         # scaling constant for CSM density profile.
         self._q = self._rho * self._R0**self._s

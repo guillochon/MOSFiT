@@ -175,6 +175,7 @@ class Fitter(object):
                    guess=True,
                    method=None,
                    seed=None,
+                   cache_path='',
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -192,6 +193,7 @@ class Fitter(object):
         self._speak = speak
         self._download_recommended_data = download_recommended_data
         self._local_data_only = local_data_only
+        self._cache_path = cache_path
 
         self._draw_above_likelihood = draw_above_likelihood
 
@@ -212,7 +214,8 @@ class Fitter(object):
         # If the input is not a JSON file, assume it is either a list of
         # transients or that it is the data from a single transient in tabular
         # form. Try to guess the format first, and if that fails ask the user.
-        self._converter = Converter(prt, require_source=upload, guess=guess)
+        self._converter = Converter(prt, require_source=upload, guess=guess,
+                                    cache_path=cache_path)
         event_list = self._converter.generate_event_list(event_list)
 
         event_list = [x.replace('‑', '-') for x in event_list]
@@ -304,7 +307,8 @@ class Fitter(object):
             fetched_events = self._fetcher.fetch(
                 event_list,
                 offline=self._offline,
-                prefer_cache=self._prefer_cache)
+                prefer_cache=self._prefer_cache,
+                cache_path=self._cache_path)
 
             for rank in range(1, pool.size + 1):
                 pool.comm.send(fetched_events, dest=rank, tag=0)
@@ -430,7 +434,8 @@ class Fitter(object):
                                 extra_event = self._fetcher.fetch(
                                     en,
                                     offline=self._offline,
-                                    prefer_cache=self._prefer_cache)[0]
+                                    prefer_cache=self._prefer_cache,
+                                    cache_path=self._cache_path)[0]
                                 extra_data = self._fetcher.load_data(
                                     extra_event)
 
@@ -863,6 +868,21 @@ class Fitter(object):
 
             if save_full_chain:
                 prt.message('writing_full_chain')
+                my_chain = np.asarray(self._sampler._all_chain.tolist())
+                pi = 0
+                param_names = []
+                for ti, task in enumerate(model._call_stack):
+                    if model._call_stack[task]['kind'] != 'parameter':
+                        continue
+                    if task in model._free_parameters:
+                        poutput = model._modules[task].process(
+                            **{'fraction': my_chain[:, :, :, pi]})
+                        value = list(poutput.values())[0]
+                        my_chain[:, :, :, pi] = value
+                        param_names.append(task)
+                        pi = pi + 1
+                my_chain = my_chain.tolist()
+                my_chain.append(param_names)
                 with open_atomic(
                         os.path.join(model.get_products_path(), 'chain.json'),
                         'w') as flast, open_atomic(
@@ -872,11 +892,11 @@ class Fitter(object):
                                 (('_' + suffix) if suffix else '') + '.json'),
                             'w') as feven:
                     entabbed_json_dump(
-                        self._sampler._all_chain.tolist(),
+                        my_chain,
                         flast,
                         separators=(',', ':'))
                     entabbed_json_dump(
-                        self._sampler._all_chain.tolist(),
+                        my_chain,
                         feven,
                         separators=(',', ':'))
 

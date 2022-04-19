@@ -100,7 +100,7 @@
         "kind":"parameter",
         "value":1.0,
         "class":"parameter",
-        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+        "latex":“E_{\\rm k}\\,(10^{51}\\,{\\rm erg})”
     },
     "homologous_expansion":{
         "kind":"energetic",

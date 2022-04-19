@@ -72,6 +72,12 @@
         "class":"parameter",
         "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
     },
+    "temperature":{
+        "kind":"parameter",
+        "value":5.0e3,
+        "class":"parameter",
+        "latex":"T_{\\min}\\,{\\rm (K)}"
+    },
     "magnetar":{
         "kind":"engine",
         "inputs":[
@@ -95,11 +101,12 @@
             "vejecta"
         ]
     },
-    "densecore":{
+    "temperature_floor":{
         "kind":"photosphere",
         "inputs":[
             "texplosion",
-            "diffusion"
+            "diffusion",
+            "temperature"
         ]
     },
     "blackbody":{
@@ -107,7 +114,7 @@
         "inputs":[
             "texplosion",
             "redshift",
-            "densecore"
+            "temperature_floor"
         ],
         "requests":{
             "band_wave_ranges": "photometry"

@@ -45,11 +45,18 @@ class Converter(object):
     _FALSE_VALS = ['f', 'false', 'F', 'False', '0', 'n', 'N']
     _EMPTY_VALS = ['nodata']
 
-    def __init__(self, printer, require_source=False, guess=True, **kwargs):
+    def __init__(self, printer, require_source=False, guess=True, cache_path='',
+                **kwargs):
         """Initialize."""
         import pickle
 
-        self._path = os.path.dirname(os.path.realpath(__file__))
+        self._cache_path = cache_path
+        if self._cache_path:
+            self._path = cache_path
+            if not os.path.isdir(os.path.join(self._path,'cache')):
+                os.makedirs(os.path.join(self._path,'cache'))
+        else:
+            self._path = os.path.dirname(os.path.realpath(__file__))
         self._inflect = inflect.engine()
         self._printer = printer
         self._guess = guess
