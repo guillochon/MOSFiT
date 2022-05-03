@@ -1,0 +1,232 @@
+{
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "fnickel":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"f_{\\rm Ni}"
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1.0e18,
+        "class":"parameter",
+        "latex":"n_{\\rm H,host}",
+        "derived_keys":"avhost"
+    },
+    "texplosion":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}",
+        "requests":{
+            "min_times": "transient"
+        }
+    },
+    "Pspin":{
+        "kind":"parameter",
+        "value":2.0,
+        "class":"parameter",
+        "latex":"P_{\\rm spin}\\,{\\rm (ms)}"
+    },
+    "Bfield":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"B\\,(10^{14}\\,{\\rm G})"
+    },
+    "Mns":{
+        "kind":"parameter",
+        "value":2.0,
+        "class":"parameter",
+        "latex":"M_{\\rm NS}\\,(M_\\odot)"
+    },
+    "thetaPB":{
+        "kind":"parameter",
+        "value":0.785398163,
+        "class":"parameter",
+        "latex":"\\theta_{\\rm PB}"
+    },
+    "kappa":{
+        "kind":"parameter",
+        "value":0.2,
+        "class":"parameter",
+        "latex":"\\kappa\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "kappagamma":{
+        "kind":"parameter",
+        "value":10.0,
+        "class":"parameter",
+        "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
+    },
+    "mejecta":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "latex":"M_{\\rm ej}\\,(M_\\odot)"
+    },
+    "vejecta":{
+        "kind":"parameter",
+        "value":1.0e4,
+        "class":"parameter",
+        "latex":"v_{\\rm ej}\\,({\\rm km\\,s}^{-1})"
+    },
+    "temperature":{
+        "kind":"parameter",
+        "value":5.0e3,
+        "class":"parameter",
+        "latex":"T_{\\min}\\,{\\rm (K)}"
+    },
+    "alpha":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "latex":"\\alpha"
+    },
+    "cutoff_wavelength":{
+        "kind":"parameter",
+        "value":3000.0,
+        "class":"parameter",
+        "latex":"\\lambda_{\\rm cutoff}"
+    },
+    "neutrino_energy":{
+        "kind":"parameter",
+        "value":1.0e51,
+        "class":"parameter",
+        "latex":"E_{\\nu}"
+    },
+    "tnebular_min":{
+        "kind":"parameter",
+        "value":100.0,
+        "class":"parameter",
+        "latex":"t_{\\rm neb}"
+    },
+    "nickelcobalt":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",
+            "mejecta",
+            "fnickel",
+            "texplosion"
+        ],
+        "replacements":{
+            "luminosities": "nico_luminosities"
+        }
+    },
+    "magnetar":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",
+            "mejecta",
+            "Pspin",
+            "Bfield",
+            "Mns",
+            "thetaPB",
+            "texplosion"
+        ],
+        "replacements":{
+            "luminosities": "mag_luminosities"
+        }
+    },
+    "total_luminosity":{
+        "kind":"utility",
+        "operator":"+",
+        "operands":[
+            "mag_luminosities",
+            "nico_luminosities"
+        ],
+        "inputs":[
+            "nickelcobalt",
+            "magnetar"
+        ],
+        "result":"luminosities",
+        "wants_dense":true,
+        "class":"operator"
+    },
+    "diffusion":{
+        "kind":"transform",
+        "inputs":[
+            "total_luminosity",
+            "kappa",
+            "kappagamma",
+            "mejecta",
+            "texplosion",
+            "vejecta"
+        ]
+    },
+    "temperature_floor":{
+        "kind":"photosphere",
+        "inputs":[
+            "texplosion",
+            "diffusion",
+            "temperature"
+        ]
+    },
+    "blackbody_supressed":{
+        "kind":"sed",
+        "inputs":[
+            "texplosion",
+            "redshift",
+            "temperature_floor",
+            "cutoff_wavelength",
+            "alpha"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody_supressed",
+            "nhhost",
+            "rvhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
+    "photometry":{
+        "kind":"observable",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
+        "inputs":[
+            "losextinction",
+            "lumdist"
+        ]
+    },
+    "slsnni_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "mejecta",
+            "vejecta",
+            "kappa",
+            "tnebular_min",
+            "Pspin",
+            "Mns",
+            "diffusion",
+            "texplosion",
+            "redshift",
+            "alltimes",
+            "neutrino_energy"
+        ]
+    },
+    "likelihood":{
+        "kind":"objective",
+        "inputs":[
+            "diagonal",
+            "slsnni_constraints"
+        ]
+    }
+}
