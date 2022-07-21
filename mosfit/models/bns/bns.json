@@ -145,7 +145,7 @@
     },
     "cos_theta_cocoon":{
         "kind":"parameter",
-        "value":1.0,
+        "value":0.866025,
         "class":"parameter",
         "latex":"\\cos\\theta_{\\rm cocoon}"
     },
