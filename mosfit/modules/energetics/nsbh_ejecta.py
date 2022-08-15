@@ -2,19 +2,15 @@
 
 import numpy as np
 from astrocats.catalog.source import SOURCE
-# import astropy.constants as c
 
 from mosfit.constants import FOE, KM_CGS, M_SUN_CGS, C_CGS, G_CGS
 from mosfit.modules.energetics.energetic import Energetic
 
 
-# G_CGS = c.G.cgs.value
-
-
 class NSBHEjecta(Energetic):
     """
-    Generate `mejecta`, `vejecta` and `kappa` from black hole - neutron
-    star binary parameters.
+    Generate `mejecta` and `vejecta` from black hole - neutron star
+    binary parameters.
 
     Includes tidal dynamical and both thermal and magnetic disk wind ejecta
     following XXXX, with opacities from XXXX
@@ -39,45 +35,37 @@ class NSBHEjecta(Energetic):
         ckm = C_CGS / KM_CGS
         self._mchirp = kwargs[self.key('Mchirp')]
         self._q = kwargs[self.key('q')]
-        self._chi = kwargs[self.key('chi')]
 
-        # Mass of BH
-        #self._Mbh = self._mchirp * self._q**-0.6 * (self._q+1)**0.2
-        self._Mbh = 1.4 / self._q
-        # Mass of NS
-        self._Mns = self._Mbh * self._q
-        self._M_total = self._Mbh + self._Mns
+        # BH properties
+        self._Mbh = self._mchirp * self._q**-0.6 * (self._q+1)**0.2 # Mass.
+        self._chi = kwargs[self.key('chi')] # Orbit-aligned spin.
 
-        # Radius of neutron star
-        self._radius_ns = kwargs[self.key('radius_ns')]
-        Rns = self._radius_ns * 1E5
-        
-        # Magnetic field geometry ignorance parameter
-        self._fMag = kwargs[self.key('fMag')]
+        # NS properties
+        self._Mns = self._Mbh * self._q # Mass (via mass ratio q).
+        self._radius_ns = kwargs[self.key('radius_ns')]   # Radius (km).
+        Cns = G_CGS * self._Mns * M_SUN_CGS / (self._radius_ns * 1E5 * C_CGS ** 2.0) # Compressibility.
+
+        # Binary properties
+        self._M_total = self._Mbh + self._Mns   # Total mass.
+        eta = self._q ** (-1.0) / (1. + self._q ** (-1.0)) ** 2.0 # Parameterisation of q.
 
         # Opening angle
         #self._cos_theta_open = kwargs[self.key('cos_theta_open')]
+        #theta_open = np.arccos(self._cos_theta_open)
 
         # Opacities
         #self._kappa_red = kwargs[self.key('kappa_red')]
         #self._kappa_purple = kwargs[self.key('kappa_purple')]
         #self._kappa_black = kwargs[self.key('kappa_black')]
 
-        #theta_open = np.arccos(self._cos_theta_open)
-
         # Additional systematic error (useful when fitting)
         self._errMdyn = kwargs[self.key('errMdyn')]
         self._errMdisk = kwargs[self.key('errMdisk')]
-
-        Cns = G_CGS * self._Mns * M_SUN_CGS / (Rns * C_CGS ** 2.0) # Neutron star compressibility
-        #self._Q = self._q ** (-1.0) # Invert the mass ratio for the following equations
-        eta = self._q ** (-1.0) / (1. + self._q ** (-1.0)) ** 2.0 # Parameterisation of q.
 
         # Calculate the ISCO
         Z1 = 1.0 + (1.0 - self._chi ** 2.0) ** (1.0 / 3.0) * ((1.0 + self._chi) ** (1.0 / 3.0) + (1.0 - self._chi) ** (1.0 / 3.0))
         Z2 = np.sqrt(3.0 * self._chi ** 2.0 + Z1 ** 2.0)
         Risco = 3.0 + Z2 - np.sign(self._chi) * np.sqrt((3.0 - Z1) * (3. + Z1 + 2.0 * Z2)) # Normalised Risco, equal to Risco/Mbh
-
 
         # Remnant mass fitting parameters (Foucart et al. 2018).
         a = 0.406
@@ -134,19 +122,20 @@ class NSBHEjecta(Energetic):
         f_ej = xi1 + (xi2 - xi1) / (1.0 + np.exp(1.5 * (1.0 / self._q - 3.0)))
 
         Mwind_thermal = Mdisc * f_ej
+        # Thermal disc wind outflow velocity (e.g. Kasen et al. 2015; Fernandez et al. 2020).
+        Vthermal = 0.034 * ckm # Mean value of Table 2 in Fernandez et al. (2020).
 
-        #################### CURRENTLY UNUSED - SPLITS THERMAL WIND INTO BLUE AND PURPLE
+        #################### SPLIT THERMAL WIND INTO BLUE AND PURPLE
         # Calculate the blue mass fraction of the thermally driven wind using the
-        # observed relation between blue mass fraction and (disc mass / q) in
+        # observed relation between blue mass fraction and disc mass in
         # Fernandez et al. (2020), Table 2.
 
-        # Parameters here are the result of a first-order polynomial fit. Order TBC.
-        #f_blue = 0.157543 * Mdisc * self._q + 1.176662
+        # Parameters here are the result of a first-order polynomial fit.
+        f_blue = 0.20199 * np.log10(Mdisc) + 1.12629
+        Mblue_wind = Mwind_thermal * f_blue
+        Mpurple_wind = Mwind_thermal * (1. - f_blue)
 
-        # Mblue_wind = Mwind_thermal * f_blue
-        # Mpurple_wind = Mwind_thermal * (1. - f_blue)
-
-        # Now calculate the enhancement of the blue mass due to the spin of the post-merger BH.
+        # Now calculate the enhancement of the blue mass due to the spin of the post-merger BH. CURRENTLY UNUSED.
         # This effect is due to increased neutrino irradiation as the greater spin allows material
         # to sink deeper into the potential well of the BH.
         # The trend comes from Table 1 from Fernandez et al. (2015). Some fraction of material becomes
@@ -162,41 +151,37 @@ class NSBHEjecta(Energetic):
         # Mpurple_wind += Mpurple_wind * (1.0 - (0.99 + irradiated))
         ####################
 
-        # Thermal disc wind outflow velocity (e.g. Kasen et al. 2015; Fernandez et al. 2020)
-        Vthermal = 0.034 * ckm # Mean value of Table 2 in Fernandez et al. (2020).
-
         # The magnetically driven wind will contribute some ejecta fraction as well.
         # Fernandez et al. (2019) show that it has comparable mass to the thermal wind.
         # The magnitude depends on the magnetic field geometry (e.g. Christie et al. (2019)).
+        self._fMag = kwargs[self.key('fMag')]   # Magnetic field geometry ignorance parameter.
         Mwind_magnetic = Mwind_thermal * self._fMag
         Vmagnetic = 0.22 * ckm # Peak of faster bimodal, Fernandez et al. (2019).
 
-        # THERMAL AND MAGNETIC WINDS OPERATE AT DIFFERENT LATITUDES SO THE DESCRIPTION BELOW IS INCORRECT
-        # The winds expand with different velocities, with the magnetically driven 'red' wind leading
-        # the way (launched first and is faster). If we are to see any emission from the embedded thermal
-        # wind, the photons must diffuse through all of the layers above them. We therefore need to
-        # calculate mean opacities for all layers traversed, and total masses, for each emission component.
 
+        ##########
+        # Mixed wind properties (not used by default).
         # r-process module needs individual component kappas and masses.
         # Diffusion module needs the layer and layers above (averaged).
-        # RETAINED IN CASE OF FUTURE WIND GEOMETRY REVISIONS - CURRENTLY THE WIND COMPONENTS ARE **SEPARATE**
+        # NB kappas are not loaded into this module by default so the code below will fail unless they're added.
 
         #Mwind = Mwind_thermal + Mwind_magnetic
 
         #Vejecta_mean = (Mwind_magnetic * Vmagnetic + Mwind_thermal * Vthermal + Mdyn * Vdyn) / (Mwind + Mdyn)
 
         #kappa_thermal_diffusion = (Mwind_thermal * self._kappa_purple + Mwind_magnetic * self._kappa_red) / Mwind
+        ##########
 
 
         return {self.key('mejecta_magnetic'): Mwind_magnetic,
                 self.key('mejecta_thermal'): Mwind_thermal,
+                self.key('mejecta_thermal_blue'): Mblue_wind,
+                self.key('mejecta_thermal_purple'): Mpurple_wind,
                 #self.key('mejecta_wind'): Mwind,
                 self.key('mejecta_dyn'): Mdyn,
                 #self.key('mejecta_tot'): Mdyn + Mwind,
-                ### These can probably be specified in the json because they're constants.
                 self.key('vejecta_magnetic'): Vmagnetic,
                 self.key('vejecta_thermal'): Vthermal,
-                ###
                 self.key('vejecta_dyn'): Vdyn,
                 #self.key('vejecta_mean'): Vejecta_mean,
                 #self.key('kappa_thermal_diffusion'): kappa_thermal_diffusion,
@@ -204,5 +189,6 @@ class NSBHEjecta(Energetic):
                 self.key('M2'): self._Mns,
                 self.key('Mrem'): Mrem,
                 self.key('Mdisc'): Mdisc,
-                self.key('f_ej'): f_ej
+                self.key('f_ej'): f_ej,
+                self.key('radius_ns'): self._radius_ns
                 }
