@@ -28,6 +28,7 @@ class UltraNester(Sampler):
 
         self._upload_model = None
         self._ntemps = 1
+        self._nwalkers = self._num_walkers
 
     def _get_best_kmat(self):
         """Get the kernel matrix associated with best current scoring model."""
@@ -82,9 +83,7 @@ class UltraNester(Sampler):
         self._logz = self._results['logz']
         self._e_logz = self._results['logzerr']
         self._niter = self._results['niter']
-        self._all_chain = self._results['samples'][None]
-        # use ESS for how many samples should be used for plotting
-        self._nwalkers = int(self._results['ess'])
+        self._all_chain = self._results['samples'][None][None]
         
         if 'log_dir' in self._sampler_kwargs:
             self._sampler.plot()
