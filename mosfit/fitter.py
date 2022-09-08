@@ -24,6 +24,7 @@ from mosfit.fetcher import Fetcher
 from mosfit.printer import Printer
 from mosfit.samplers.ensembler import Ensembler
 from mosfit.samplers.nester import Nester
+from mosfit.samplers.ultranester import UltraNester
 from mosfit.utils import (all_to_list, entabbed_json_dump, entabbed_json_dumps,
                           flux_density_unit, frequency_unit, get_model_hash,
                           listify, open_atomic, slugify, speak)
@@ -32,6 +33,13 @@ from .model import Model
 
 warnings.filterwarnings("ignore")
 
+def get_pool(method=None):
+    try:
+        if method == 'ultranest':
+            raise ValueError('ultranest parallises with MPI already')
+        return MPIPool()
+    except (ImportError, ValueError):
+        return SerialPool()
 
 def draw_walker(test=True, walkers_pool=[], replace=False, weights=None):
     """Draw a walker from the global model variable."""
@@ -228,10 +236,7 @@ class Fitter(object):
         walker_data = []
 
         if len(walker_paths):
-            try:
-                pool = MPIPool()
-            except (ImportError, ValueError):
-                pool = SerialPool()
+            pool = get_pool(method=method)
             if pool.is_master():
                 prt.message('walker_file')
                 wfi = 0
@@ -299,10 +304,7 @@ class Fitter(object):
         self._event_path = ''
         self._event_data = {}
 
-        try:
-            pool = MPIPool()
-        except (ImportError, ValueError):
-            pool = SerialPool()
+        pool = get_pool(method=method)
         if pool.is_master():
             fetched_events = self._fetcher.fetch(
                 event_list,
@@ -345,10 +347,7 @@ class Fitter(object):
 
             for mi, mod_name in enumerate(lmodel_list):
                 for parameter_path in parameter_paths:
-                    try:
-                        pool = MPIPool()
-                    except (ImportError, ValueError):
-                        pool = SerialPool()
+                    pool = get_pool(method=method)
                     self._model = Model(
                         model=mod_name,
                         data=self._event_data,
@@ -424,10 +423,7 @@ class Fitter(object):
                                 alt_name or self._download_recommended_data
                                 or prt.prompt(
                                     ptxt, [', '.join(urk)], kind='bool')):
-                            try:
-                                pool = MPIPool()
-                            except (ImportError, ValueError):
-                                pool = SerialPool()
+                            pool = get_pool(method=method)
                             if pool.is_master():
                                 en = (alt_name
                                       if alt_name else self._event_name)
@@ -578,6 +574,11 @@ class Fitter(object):
                                    num_walkers, convergence_criteria,
                                    convergence_type, gibbs, fracking,
                                    frack_step)
+        elif self._method == 'ultranest':
+            self._sampler = UltraNester(self, model, num_walkers=num_walkers)
+            if output_path != '':
+                self._sampler._sampler_kwargs['log_dir'] = output_path
+                self._sampler._sampler_kwargs['resume'] = True
         else:
             self._sampler = Ensembler(self, model, iterations, burn, post_burn,
                                       num_temps, num_walkers,

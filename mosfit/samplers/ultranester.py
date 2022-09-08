@@ -16,14 +16,15 @@ class UltraNester(Sampler):
 
     def __init__(
         self, fitter, model=None, sampler_kwargs={}, run_kwargs={'frac_remain':0.5},
-            frack_step=20, num_walkers=400, **kwargs):
+            num_walkers=None, **kwargs):
         """Initialize `UltraNester` class."""
         super(UltraNester, self).__init__(fitter, num_walkers=num_walkers, **kwargs)
 
         self._model = model
         self._sampler_kwargs = sampler_kwargs
         self._run_kwargs = run_kwargs
-        self._run_kwargs['min_num_livepoints'] = num_walkers
+        if num_walkers is not None:
+            self._run_kwargs['min_num_live_points'] = num_walkers
 
         self._upload_model = None
         self._ntemps = 1
@@ -80,3 +81,10 @@ class UltraNester(Sampler):
         self._results = self._sampler.run(**self._run_kwargs)
         self._logz = self._results['logz']
         self._e_logz = self._results['logzerr']
+        self._niter = self._results['niter']
+        self._all_chain = self._results['samples'][None]
+        # use ESS for how many samples should be used for plotting
+        self._nwalkers = int(self._results['ess'])
+        
+        if 'log_dir' in self._sampler_kwargs:
+            self._sampler.plot()

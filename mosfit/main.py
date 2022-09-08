@@ -646,18 +646,21 @@ def main():
         prt.message('enabling_s')
         args.smooth_times = 0
 
-    args.method = 'nester' if args.method.lower() in [
-        'nest', 'nested', 'nested_sampler', 'nester'
-    ] else 'ensembler'
+    args.method = {
+        'nest':'nester', 'nested':'nester', 'nested_sampler':'nester', 
+        'nester':'nester', 'ultranest':'ultranest',
+    }.get(args.method.lower(), 'ensembler')
 
     if is_master():
-        if args.method == 'nester':
+        if args.method in ('nester', 'ultranest'):
             unused_args = [[args.burn, '-b'], [args.post_burn, '-p'],
                            [args.frack_step, '-f'], [args.num_temps, '-T'],
                            [args.run_until_uncorrelated, '-U'],
                            [args.draw_above_likelihood, '-d'],
-                           [args.gibbs, '-g'], [args.save_full_chain, '-c'],
+                           [args.gibbs, '-g'],
                            [args.maximum_memory, '-M']]
+            if args.method == 'nester':
+                unused_args.append([args.save_full_chain, '-c'])
             for ua in unused_args:
                 if ua[0] is not None:
                     prt.message(
@@ -665,7 +668,7 @@ def main():
                         reps=[ua[1], '-D nester'],
                         warning=True)
 
-    if args.method == 'nester':
+    if args.method in ('nester', 'ultranest'):
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.text('R_i_mutually_exclusive'))
         if args.walker_paths is not None:
@@ -764,7 +767,7 @@ def main():
         else:
             args.convergence_type = 'dlogz'
 
-    if args.method == 'nester':
+    if args.method in ('nester', 'ultranest'):
         args.convergence_criteria = (0.02 if args.run_until_converged is True
                                      else args.run_until_converged)
 
