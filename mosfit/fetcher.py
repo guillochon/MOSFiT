@@ -31,23 +31,22 @@ class Fetcher(object):
         self._names_downloaded = False
         self._names = OrderedDict()
         self._excluded_catalogs = []
-
-        self._catalogs = OrderedDict((('OSC', {
-            'json': ('https://sne.space/astrocats/astrocats/'
-                     'supernovae/output'),
-            'web':
-            'https://sne.space/sne/'
-        }), ('OTC', {
-            'json': ('https://tde.space/astrocats/astrocats/'
-                     'tidaldisruptions/output'),
-            'web':
-            'https://tde.space/tde/'
-        }), ('OKC', {
-            'json': ('https://kilonova.space/astrocats/astrocats/'
-                     'kilonovae/output'),
-            'web':
-            'https://kilonova.space/kne/'
-        })))
+        
+        astrocatalogs_github_reponames = [
+             'sne-1990-1999',
+             'sne-2000-2004',
+             'sne-2005-2009',
+             'sne-2010-2014',
+             'sne-2015-2019',
+             'sne-2020-2024',
+             'tde-1980-2025',
+             'tne-2000-2029',
+             'tde-external',
+        ]
+        self._catalogs = OrderedDict([
+            (name, {'json': 'https://raw.githubusercontent.com/astrocatalogs/%s/master/' % name, 'web': None})
+            for name in astrocatalogs_github_reponames
+        ])
 
     def add_excluded_catalogs(self, catalogs):
         """Add catalog name(s) to list of catalogs that will be excluded."""
@@ -93,129 +92,33 @@ class Fetcher(object):
                     for x in catalogs
                 ]
                 input_name = event.replace('.json', '')
-                if offline:
-                    prt.message('event_interp', [input_name])
-                else:
-                    for ci, catalog in enumerate(catalogs):
-                        if self._names_downloaded or (prefer_cache
-                                                      and os.path.exists(
-                                                          names_paths[ci])):
-                            continue
-                        if ci == 0:
-                            prt.message('dling_aliases', [input_name])
-                        try:
-                            response = get_url_file_handle(
-                                catalogs[catalog]['json'] + '/names.min.json',
-                                timeout=10)
-                        except Exception:
-                            prt.message(
-                                'cant_dl_names', [catalog], warning=True)
-                        else:
-                            with open_atomic(names_paths[ci], 'wb') as f:
-                                shutil.copyfileobj(response, f)
-                    self._names_downloaded = True
-
                 for ci, catalog in enumerate(catalogs):
-                    if os.path.exists(names_paths[ci]):
-                        if catalog not in self._names:
-                            with open(names_paths[ci], 'r') as f:
-                                self._names[catalog] = json.load(
-                                    f, object_pairs_hook=OrderedDict)
-                    else:
-                        prt.message('cant_read_names', [catalog], warning=True)
-                        if offline:
-                            prt.message('omit_offline')
-                        continue
-
-                    if input_name in self._names[catalog]:
-                        events[ei]['name'] = input_name
-                        events[ei]['catalog'] = catalog
-                    else:
-                        for name in self._names[catalog]:
-                            if (input_name in self._names[catalog][name]
-                                    or 'SN' +
-                                    input_name in self._names[catalog][name]):
-                                events[ei]['name'] = name
-                                events[ei]['catalog'] = catalog
-                                break
-
-                if not events[ei].get('name', None):
-                    for ci, catalog in enumerate(catalogs):
-                        namekeys = []
-                        for name in self._names[catalog]:
-                            namekeys.extend(self._names[catalog][name])
-                        namekeys = list(sorted(set(namekeys)))
-                        matches = get_close_matches(
-                            event, namekeys, n=5, cutoff=0.8)
-                        # matches = []
-                        if len(matches) < 5 and is_number(event[0]):
-                            prt.message('pef_ext_search')
-                            snprefixes = set(('SN19', 'SN20'))
-                            for name in self._names[catalog]:
-                                ind = re.search(r"\d", name)
-                                if ind and ind.start() > 0:
-                                    snprefixes.add(name[:ind.start()])
-                            snprefixes = list(sorted(snprefixes))
-                            for prefix in snprefixes:
-                                testname = prefix + event
-                                new_matches = get_close_matches(
-                                    testname, namekeys, cutoff=0.95, n=1)
-                                if (len(new_matches)
-                                        and new_matches[0] not in matches):
-                                    matches.append(new_matches[0])
-                                if len(matches) == 5:
-                                    break
-                        if len(matches):
-                            if self._test:
-                                response = matches[0]
-                            else:
-                                response = prt.prompt(
-                                    'no_exact_match',
-                                    kind='select',
-                                    options=matches,
-                                    none_string=('None of the above, ' +
-                                                 ('skip this event.' if
-                                                  ci == len(catalogs) - 1 else
-                                                  'try the next catalog.')))
-                            if response:
-                                for name in self._names[catalog]:
-                                    if response in self._names[catalog][name]:
-                                        events[ei]['name'] = name
-                                        events[ei]['catalog'] = catalog
-                                        break
-                                if events[ei]['name']:
-                                    break
-
-                if not events[ei].get('name', None):
-                    prt.message('no_event_by_name')
                     events[ei]['name'] = input_name
-                    continue
-                urlname = events[ei]['name'] + '.json'
-                name_path = os.path.join(name_dir_path, 'cache', urlname)
+                    events[ei]['catalog'] = catalog
 
-                if offline or (prefer_cache and os.path.exists(name_path)):
-                    prt.message('cached_event',
-                                [events[ei]['name'], events[ei]['catalog']])
-                else:
-                    prt.message('dling_event',
-                                [events[ei]['name'], events[ei]['catalog']])
-                    try:
-                        response = get_url_file_handle(
-                            catalogs[events[ei]['catalog']]['json'] + '/json/'
-                            + urlname,
-                            timeout=10)
-                    except Exception:
-                        prt.message(
-                            'cant_dl_event', [events[ei]['name']],
-                            warning=True)
+                    urlname = events[ei]['name'] + '.json'
+                    name_path = os.path.join(name_dir_path, 'cache', urlname)
+                    url = catalogs[events[ei]['catalog']]['json'] + urlname
+
+                    if offline or (prefer_cache and os.path.exists(name_path)):
+                        prt.message('cached_event',
+                                    [events[ei]['name'], events[ei]['catalog']])
                     else:
-                        with open_atomic(name_path, 'wb') as f:
-                            shutil.copyfileobj(response, f)
-                path = name_path
+                        prt.message('dling_event',
+                                    [events[ei]['name'], events[ei]['catalog']])
+                        try:
+                            response = get_url_file_handle(url, timeout=10)
+                        except Exception:
+                            prt.message('cant_dl_event', [url], warning=True)
+                            continue
+                        else:
+                            with open_atomic(name_path, 'wb') as f:
+                                shutil.copyfileobj(response, f)
+                    path = name_path
 
             if os.path.exists(path):
                 events[ei]['path'] = path
-                if self._open_in_browser:
+                if self._open_in_browser and catalogs[events[ei]['catalog']]['web'] is not None:
                     webbrowser.open(catalogs[events[ei]['catalog']]['web'] +
                                     events[ei]['name'])
                 prt.message('event_file', [path], wrapped=True)
