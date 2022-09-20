@@ -382,6 +382,14 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_post_burn'))
 
     parser.add_argument(
+        '--slice-sampler-steps',
+        '-SSS',
+        dest='slice_sampler_steps',
+        type=int,
+        default=-1,
+        help=prt.text('slice_sampler_steps'))
+
+    parser.add_argument(
         '--upload',
         '-u',
         dest='upload',
@@ -559,10 +567,8 @@ def get_parser(only=None, printer=None):
         '--method',
         '-D',
         dest='method',
-        type=str,
-        const='select',
+        choices=['ensembler', 'ultranest', 'dynesty'],
         default='ensembler',
-        nargs='?',
         help=prt.text('parser_method'))
 
     parser.add_argument(
@@ -645,11 +651,6 @@ def main():
     if args.band_list and args.smooth_times == -1:
         prt.message('enabling_s')
         args.smooth_times = 0
-
-    args.method = {
-        'nest':'nester', 'nested':'nester', 'nested_sampler':'nester', 
-        'nester':'nester', 'ultranest':'ultranest',
-    }.get(args.method.lower(), 'ensembler')
 
     if is_master():
         if args.method in ('nester', 'ultranest'):

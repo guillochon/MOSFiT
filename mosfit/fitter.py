@@ -147,6 +147,7 @@ class Fitter(object):
                    burn=None,
                    post_burn=None,
                    gibbs=False,
+                   slice_sampler_steps=-1,
                    smooth_times=-1,
                    extrapolate_time=0.0,
                    limit_fitting_mjds=False,
@@ -481,6 +482,7 @@ class Fitter(object):
                             fracking=fracking,
                             frack_step=frack_step,
                             gibbs=gibbs,
+                            slice_sampler_steps=slice_sampler_steps,
                             pool=pool,
                             output_path=output_path,
                             suffix=suffix,
@@ -523,6 +525,7 @@ class Fitter(object):
                  post_burn=None,
                  fracking=True,
                  gibbs=False,
+                 slice_sampler_steps=-1,
                  pool=None,
                  output_path='',
                  suffix='',
@@ -569,13 +572,14 @@ class Fitter(object):
 
         self._method = method
 
-        if self._method == 'nester':
+        if self._method == 'dynesty':
             self._sampler = Nester(self, model, iterations, burn, post_burn,
                                    num_walkers, convergence_criteria,
                                    convergence_type, gibbs, fracking,
                                    frack_step)
         elif self._method == 'ultranest':
-            self._sampler = UltraNester(self, model, num_walkers=num_walkers)
+            self._sampler = UltraNester(self, model, num_walkers=num_walkers,
+                slice_sampler_steps=slice_sampler_steps, hotstart=False)
             if output_path != '':
                 self._sampler._sampler_kwargs['log_dir'] = output_path
                 self._sampler._sampler_kwargs['resume'] = True
@@ -586,6 +590,9 @@ class Fitter(object):
                                       gibbs, fracking, frack_step)
 
         self._sampler.run(self._walker_data)
+        if self._method == 'ultranest' and self._sampler._sampler.mpi_rank != 0:
+            # only run the code below with one process
+            return self._sampler._sampler.comm.bcast(None, root=0)
 
         prt.message('constructing')
 
@@ -975,6 +982,9 @@ class Fitter(object):
                         else:
                             raise
 
+        if self._method == 'ultranest': #and self._sampler._sampler.mpi_size > 1:
+            # send results to other MPI processes (above)
+            self._sampler._sampler.comm.bcast((entry, samples, probs), root=0)
         return (entry, samples, probs)
 
     def nester(self):
