@@ -577,9 +577,9 @@ class Fitter(object):
                                    num_walkers, convergence_criteria,
                                    convergence_type, gibbs, fracking,
                                    frack_step)
-        elif self._method == 'ultranest':
+        elif self._method == 'ultranest' or self._method == 'ultranest-progressive':
             self._sampler = UltraNester(self, model, num_walkers=num_walkers,
-                slice_sampler_steps=slice_sampler_steps, hotstart=False)
+                slice_sampler_steps=slice_sampler_steps, progressive=self._method == 'ultranest-progressive')
             if output_path != '':
                 self._sampler._sampler_kwargs['log_dir'] = output_path
                 self._sampler._sampler_kwargs['resume'] = True
