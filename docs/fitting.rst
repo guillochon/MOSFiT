@@ -52,9 +52,10 @@ Note that this step is completely optional, users do not have to share their dat
 Sampling Options
 ----------------
 
-``MOSFiT`` at present offers two ways to sample the parameter space: An ensemble-based MCMC (implemented with the ``emcee`` package), and a nested sampling approach (implemented with the ``dynesty`` package). The ensemble-based approach is presently the default sampler used in ``MOSFiT``, although the nested sampler (which in preliminary testing performs better) is likely to replace it as the default in a future version.
+``MOSFiT`` at present offers three ways to sample the parameter space: An ensemble-based MCMC (implemented with the ``emcee`` package), and two nested sampling approach (implemented with the ``ultranest`` and ``dynesty`` packages). 
+The ensemble-based approach is presently the default sampler used in ``MOSFiT``, although nested sampling (which in preliminary testing performs better) is likely to replace it as the default in a future version.
 
-Samplers are selected via the ``-D`` option: ``-D ensembler`` for the ensemble-based approach, and ``-D nester`` for the nested sampling approach. The two approaches are described below.
+Samplers are selected via the ``-D`` option: ``-D ensembler`` for the ensemble-based approach, and ``-D nester`` for nested sampling with ``dynesty`` and ``-D ultranest`` for ultranest. The approaches are described below.
 
 .. _ensembler:
 
@@ -134,10 +135,26 @@ All :ref:`convergence <convergence>` metrics are computed *after* the burn-in ph
 
 .. _nester:
 
-Nested sampling
-===============
+Nested sampling with ultranest
+==============================
 
-For complicated posteriors with multiple modes or for problems of high dimension (ten dimensions or greater), nested sampling is often a superior choice versus ensemble-based methods. In ``MOSFiT``, nested sampling is implement via the ``dynesty`` package, which uses a modern variant of nested sampling known as *dynamic* nested sampling (`see the full documentation for this package <http://dynesty.rtfd.io>`_).
+For complicated posteriors with multiple modes or for problems of high dimension (ten dimensions or greater), nested sampling is often a superior choice versus ensemble-based methods.
+ In ``MOSFiT``, nested sampling with the ``ultranest`` package. More information about ``ultranest`` can be found at https://johannesbuchner.github.io/UltraNest/.
+
+The nested sampler can be selected via the ``-D`` flag: ``-D ultranest``.
+
+Ultranest supports resuming from a previous run, if you set the output path (`-o myoutputdirectory`).
+
+If you have `mpi4py` installed, Ultranest supports running with MPI (`mpiexec -np 8 mosfit`).
+
+Ultranest implements a modern variant of nested sampling known as *reactive* nested sampling,
+a derivative of *dynamic* nested sampling. This can enhance the posterior samples at low cost.
+
+Nested sampling with dynesty
+=============================
+
+
+In ``MOSFiT``, nested sampling via the ``dynesty`` package is also available, which uses a modern variant of nested sampling known as *dynamic* nested sampling (`see the full documentation for this package <http://dynesty.rtfd.io>`_).
 
 Whereas ensemble-based approaches can only estimate the information content of their posteriors via heuristic information metrics such as the WAIC (see :ref:`scoring`), nested sampling directly evaluates the evidence for a given model, and provides a (statistical) estimate of its error. Nested sampling also yields many more useful samples of the posterior for the purposes of visualizing its structure; it is not uncommon for a run to provide tens of thousands of informative samples, as compared to ensemble-based approach that may only yield a few hundred.
 
