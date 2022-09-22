@@ -653,23 +653,23 @@ def main():
         args.smooth_times = 0
 
     if is_master():
-        if args.method in ('nester', 'ultranest'):
+        if args.method in ('dynesty', 'ultranest'):
             unused_args = [[args.burn, '-b'], [args.post_burn, '-p'],
                            [args.frack_step, '-f'], [args.num_temps, '-T'],
                            [args.run_until_uncorrelated, '-U'],
                            [args.draw_above_likelihood, '-d'],
                            [args.gibbs, '-g'],
                            [args.maximum_memory, '-M']]
-            if args.method == 'nester':
+            if args.method == 'dynesty':
                 unused_args.append([args.save_full_chain, '-c'])
             for ua in unused_args:
                 if ua[0] is not None:
                     prt.message(
                         'argument_not_used',
-                        reps=[ua[1], '-D nester'],
+                        reps=[ua[1], '-D dynesty'],
                         warning=True)
 
-    if args.method in ('nester', 'ultranest'):
+    if args.method in ('dynesty', 'ultranest'):
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.text('R_i_mutually_exclusive'))
         if args.walker_paths is not None:
@@ -768,7 +768,7 @@ def main():
         else:
             args.convergence_type = 'dlogz'
 
-    if args.method in ('nester', 'ultranest'):
+    if args.method in ('dynesty', 'ultranest'):
         args.convergence_criteria = (0.02 if args.run_until_converged is True
                                      else args.run_until_converged)
 
