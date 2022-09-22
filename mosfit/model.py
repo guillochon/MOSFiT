@@ -881,7 +881,7 @@ class Model(object):
         outputs = self.run_stack(x, root='objective')
         return max(LOCAL_LIKELIHOOD_FLOOR, outputs['value'])
 
-    def free_parameter_names(self, x):
+    def free_parameter_names(self):
         """Return list of free parameter names."""
         return self._free_parameters
 
