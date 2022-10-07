@@ -1242,7 +1242,7 @@ class Converter(object):
                                         'specify_mc_value', [dk, key],
                                         prt=False)
                                     val = ''
-                                    while val.strip() is '':
+                                    while val.strip() == '':
                                         val = prt.prompt(
                                             spectext,
                                             message=False,
