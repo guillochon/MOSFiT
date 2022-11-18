@@ -39,7 +39,7 @@ class Redshift(Parameter):
                     value = 0.0
                 else:
                     value = z_at_value(cosmo.luminosity_distance,
-                                       self._lum_dist * un.Mpc)
+                                       self._lum_dist * un.Mpc).value
             else:
                 value = self.value(kwargs['fraction'])
         else:
