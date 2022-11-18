@@ -38,8 +38,13 @@ class Redshift(Parameter):
                     self._warned_small = True
                     value = 0.0
                 else:
-                    value = z_at_value(cosmo.luminosity_distance,
+                    try:
+                        value = z_at_value(cosmo.luminosity_distance,
                                        self._lum_dist * un.Mpc).value
+                    except:
+                        value = z_at_value(cosmo.luminosity_distance,
+                                       self._lum_dist * un.Mpc)
+
             else:
                 value = self.value(kwargs['fraction'])
         else:

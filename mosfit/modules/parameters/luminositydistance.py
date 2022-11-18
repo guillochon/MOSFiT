@@ -36,8 +36,12 @@ class LuminosityDistance(Parameter):
                     self._warned_small = True
                     value = 1.0e-5
                 else:
-                    value = (cosmo.luminosity_distance(
-                        self._redshift) / un.Mpc).value
+                    try:
+                        value = (cosmo.luminosity_distance(
+                            self._redshift) / un.Mpc).value
+                    except:
+                        value = (cosmo.luminosity_distance(
+                            self._redshift) / un.Mpc)
             else:
                 value = self.value(kwargs['fraction'])
         else:
