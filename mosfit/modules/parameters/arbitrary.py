@@ -26,8 +26,8 @@ class Arbitrary(Parameter):
         df.Y = 4 * np.pi * 10 ** df.Y * cosmo.differential_comoving_volume(df.X) 
         
         """Generating distribution shape and normalizing factor"""
-        self._min_value = self._min_value if self._min_value else x.min()
-        self._max_value = self._max_value if self._max_value else x.max()
+        self._min_value = self._min_value if self._min_value else df.X.min()
+        self._max_value = self._max_value if self._max_value else df.X.max()
         self._f = interpolate.interp1d(df.X, df.Y, kind = 'linear', fill_value="extrapolate")
         norm_factor = quad(self._f, self._min_value, self._max_value)[0]
         
