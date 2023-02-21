@@ -292,5 +292,6 @@ class BNSEjecta(Energetic):
                 self.key('R1'): self._R1,
                 self.key('R2'): self._R2,
                 self.key('radius_ns'): self._radius_ns,
-                self.key('Lambda'): self._Lambda
+                self.key('Lambda'): self._Lambda,
+                self.key('M_rem'): self._m1+self._m2 - Mejdyn - Mdisk
                 }
