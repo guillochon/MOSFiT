@@ -319,7 +319,7 @@ def congrid(a, newdims, method='linear', center=False, minusone=False,
             dimlist.append((old[i] - m1) / (newdims[i] - m1) *
                            (base + ofs) - ofs)
         # specify old dims
-        olddims = [np.arange(i, dtype=np.float) for i in list(a.shape)]
+        olddims = [np.arange(i, dtype=float) for i in list(a.shape)]
 
         # first interpolation - for ndims = any
         mint = scipy.interpolate.interp1d(olddims[-1], a, kind=method,

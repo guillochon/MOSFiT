@@ -73,6 +73,7 @@
         "derived_keys":[
             "M1",
             "M2",
+            "M_rem",
             "R1",
             "R2",
             "Lambda",

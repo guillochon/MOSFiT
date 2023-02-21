@@ -222,5 +222,8 @@ class BNSEjecta(Energetic):
                 self.key('kappa_purple'): kappa_purple,
                 self.key('kappa_mean'): kappa_mean,
                 self.key('M1'): self._m1,
-                self.key('M2'): self._m2
+                self.key('M2'): self._m2,
+                self.key('R1'): self._radius_ns,
+                self.key('R2'): self._radius_ns,
+                self.key('M_rem'): self._m1+self._m2 - Mejdyn - Mdisk
                 }
