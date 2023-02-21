@@ -130,8 +130,8 @@ class Nester(Sampler):
                 ncall0 = ncall
                 (worst, ustar, vstar, loglstar, logvol,
                  logwt, self._logz, logzvar, h, nc, worst_it,
-                 propidx, propiter, eff, delta_logz) = res
-
+                 propidx, propiter, eff, delta_logz) = res[:15]
+                
                 ncall += nc
                 self._niter += 1
                 max_iter -= 1
