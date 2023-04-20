@@ -68,7 +68,10 @@ class Blackbody(SED):
                     'expm1(xc / rest_wavs / temperature_phot)'))
                 evaled = True
             else:
-                seds.append(ne.re_evaluate())
+                try:
+                    seds.append(ne.re_evaluate())
+                except:
+                    seds.append(fc * radius_phot**2. / rest_wavs**5. / np.expm1(xc / rest_wavs / temperature_phot))
 
             seds[-1][np.isnan(seds[-1])] = 0.0
 
