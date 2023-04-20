@@ -179,12 +179,12 @@ class PTSampler(object):
         self._lnprob = None
         self._lnlikelihood = None
 
-        self.nswap = np.zeros(self.ntemps, dtype=np.float)
-        self.nswap_accepted = np.zeros(self.ntemps, dtype=np.float)
+        self.nswap = np.zeros(self.ntemps, dtype=float)
+        self.nswap_accepted = np.zeros(self.ntemps, dtype=float)
 
-        self.nprop = np.zeros((self.ntemps, self.nwalkers), dtype=np.float)
+        self.nprop = np.zeros((self.ntemps, self.nwalkers), dtype=float)
         self.nprop_accepted = np.zeros((self.ntemps, self.nwalkers),
-                                       dtype=np.float)
+                                       dtype=float)
 
         self.pool = pool
         if threads > 1 and pool is None:
@@ -197,12 +197,12 @@ class PTSampler(object):
         properties.
 
         """
-        self.nswap = np.zeros(self.ntemps, dtype=np.float)
-        self.nswap_accepted = np.zeros(self.ntemps, dtype=np.float)
+        self.nswap = np.zeros(self.ntemps, dtype=float)
+        self.nswap_accepted = np.zeros(self.ntemps, dtype=float)
 
-        self.nprop = np.zeros((self.ntemps, self.nwalkers), dtype=np.float)
+        self.nprop = np.zeros((self.ntemps, self.nwalkers), dtype=float)
         self.nprop_accepted = np.zeros((self.ntemps, self.nwalkers),
-                                       dtype=np.float)
+                                       dtype=float)
 
         self._chain = None
         self._lnprob = None

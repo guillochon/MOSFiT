@@ -298,10 +298,10 @@ class Ensembler(Sampler):
                         np.mean(sampler.nprop_accepted / sampler.nprop,
                                 axis=1))
                     sampler.nprop = np.zeros(
-                        (sampler.ntemps, sampler.nwalkers), dtype=np.float)
+                        (sampler.ntemps, sampler.nwalkers), dtype=float)
                     sampler.nprop_accepted = np.zeros(
                         (sampler.ntemps, sampler.nwalkers),
-                        dtype=np.float)
+                        dtype=float)
 
                     # During self._burn-in only, redraw any walkers with scores
                     # significantly worse than their peers, or those that are

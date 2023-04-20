@@ -241,7 +241,7 @@ class Printer(object):
         if name in self._strings:
             text = self._strings[name]
         else:
-            text = '< Message not found [' + ''.join(
+            text = '< Message "%s" not found [' % name + ''.join(
                 ['{} ' for x in range(len(reps))]).strip() + '] >'
         text = text.format(*reps)
         if prt:

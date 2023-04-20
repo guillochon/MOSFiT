@@ -7,3 +7,4 @@ numpydoc
 schwimmbad
 sphinx_automodapi
 sphinxcontrib-autoprogram
+numexpr

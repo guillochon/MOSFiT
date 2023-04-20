@@ -382,6 +382,14 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_post_burn'))
 
     parser.add_argument(
+        '--slice-sampler-steps',
+        '-SSS',
+        dest='slice_sampler_steps',
+        type=int,
+        default=-1,
+        help=prt.text('slice_sampler_steps'))
+
+    parser.add_argument(
         '--upload',
         '-u',
         dest='upload',
@@ -559,10 +567,8 @@ def get_parser(only=None, printer=None):
         '--method',
         '-D',
         dest='method',
-        type=str,
-        const='select',
+        choices=['ensembler', 'ultranest', 'dynesty'],
         default='ensembler',
-        nargs='?',
         help=prt.text('parser_method'))
 
     parser.add_argument(
@@ -646,26 +652,24 @@ def main():
         prt.message('enabling_s')
         args.smooth_times = 0
 
-    args.method = 'nester' if args.method.lower() in [
-        'nest', 'nested', 'nested_sampler', 'nester'
-    ] else 'ensembler'
-
     if is_master():
-        if args.method == 'nester':
+        if args.method in ('dynesty', 'ultranest'):
             unused_args = [[args.burn, '-b'], [args.post_burn, '-p'],
                            [args.frack_step, '-f'], [args.num_temps, '-T'],
                            [args.run_until_uncorrelated, '-U'],
                            [args.draw_above_likelihood, '-d'],
-                           [args.gibbs, '-g'], [args.save_full_chain, '-c'],
+                           [args.gibbs, '-g'],
                            [args.maximum_memory, '-M']]
+            if args.method == 'dynesty':
+                unused_args.append([args.save_full_chain, '-c'])
             for ua in unused_args:
                 if ua[0] is not None:
                     prt.message(
                         'argument_not_used',
-                        reps=[ua[1], '-D nester'],
+                        reps=[ua[1], '-D dynesty'],
                         warning=True)
 
-    if args.method == 'nester':
+    if args.method in ('dynesty', 'ultranest'):
         if args.run_until_converged and args.iterations >= 0:
             raise ValueError(prt.text('R_i_mutually_exclusive'))
         if args.walker_paths is not None:
@@ -764,7 +768,7 @@ def main():
         else:
             args.convergence_type = 'dlogz'
 
-    if args.method == 'nester':
+    if args.method in ('dynesty', 'ultranest'):
         args.convergence_criteria = (0.02 if args.run_until_converged is True
                                      else args.run_until_converged)
 
