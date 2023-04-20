@@ -8,41 +8,41 @@
         "min_value":-1.0,
         "max_value":0.0
      },
-    "Mchirp":{
-        "min_value":1.0,
-        "max_value":6.0
+    "M1":{
+        "min_value":3.0,
+        "max_value":20.0
     },
-    "q":{
-        "min_value":0.1,
-        "max_value":1.0
+    "M2":{
+        "min_value":0.9,
+        "max_value":2.2
     },
     "chi":{
-        "min_value":-1.0,
-        "max_value":1.0
+        "min_value":-0.01,
+        "max_value":0.17
+    },
+    "radius_ns":{
+        "min_value":10,
+        "max_value":15
     },
     "fMag":{
         "min_value":0.1,
         "max_value":1.0
     },
     "cos_theta":{
-        "min_value":0.0,
-        "max_value":1.0
+        "min_value":0.883,
+        "max_value":1.00
     },
     "cos_theta_open":{
-        "value":0.707
+        "value":0.7071
     },
     "cos_theta_open_dyn":{
-        "value":0.174
+        "value":0.1736
     },
     "s":{
         "value":1.0
     },
     "Mtov":{
         "value":2.17
-    },
-    "LambdaEff":{
-        "min_value":0,
-        "max_value":100
     },
    "kappa_dyn":{
         "value":10.0

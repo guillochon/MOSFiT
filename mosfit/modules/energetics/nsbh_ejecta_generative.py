@@ -38,19 +38,17 @@ class NSBHEjecta(Energetic):
     def process(self, **kwargs):
         """Process module."""
         ckm = C_CGS / KM_CGS
-        self._mchirp = kwargs[self.key('Mchirp')]
-        self._q = kwargs[self.key('q')]
-        self._LambdaEff = kwargs[self.key('LambdaEff')] # Effective tidal deformability
+        self._Mbh = kwargs[self.key('M1')]
+        self._Mns = kwargs[self.key('M2')]
+        self._chi = kwargs[self.key('chi')] # Orbit-aligned BH spin.
+        self._radius_ns = kwargs[self.key('radius_ns')]
 
-        # BH properties
-        self._Mbh = self._mchirp * self._q**-0.6 * (self._q+1)**0.2 # Mass.
-        self._chi = kwargs[self.key('chi')] # Orbit-aligned spin.
+        # Equivalent GW properties
+        self._q = self._Mns / self._Mbh
+        self._mchirp = self._Mbh / (self._q**-0.6 * (self._q+1)**0.2)
 
-        # NS properties
-        self._Mns = self._Mbh * self._q # Mass (via mass ratio q).
-        self._Lambda_ns = 13. / 16. * self._LambdaEff * (self._Mbh + self._Mns) ** 5. / ((self._Mns + 12. * self._Mbh) * self._Mns ** 4.) # Tidal deformability
-        Cns = 0.360 - 0.0355 * np.log(self._Lambda_ns) + 0.000705 * np.log(self._Lambda_ns) ** 2. # NS compactness, cf. Yagi & Yunes (2017).
-        self._radius_ns = (G_CGS * self._Mns * M_SUN_CGS / (Cns * C_CGS ** 2.)) / 1E5 # NS radius (recorded but not used again)
+        # NS compressibility
+        Cns = G_CGS * self._Mns * M_SUN_CGS / (self._radius_ns * 1E5 * C_CGS ** 2.0)
 
         # Binary properties
         self._M_total = self._Mbh + self._Mns   # Total mass.
@@ -116,7 +114,7 @@ class NSBHEjecta(Energetic):
         # xi2 range is 0.14 - 0.44.
         xi1 = 0.18
         xi2 = 0.29
-        # Here I have split the difference of the lower and upper bounds.
+        # Here we have split the difference of the lower and upper bounds.
 
         f_ej = xi1 + (xi2 - xi1) / (1.0 + np.exp(1.5 * (1.0 / self._q - 3.0)))
 
@@ -184,7 +182,6 @@ class NSBHEjecta(Energetic):
                 self.key('Mdisc'): Mdisc,
                 self.key('f_ej'): f_ej,
                 self.key('radius_ns'): self._radius_ns,
-                self.key('Lambda_ns'): self._Lambda_ns,
                 self.key('Mchirp'): self._mchirp,
                 self.key('q'): self._q
                 }

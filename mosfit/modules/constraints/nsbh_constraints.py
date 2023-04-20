@@ -30,36 +30,37 @@ class NSBHConstraints(Constraint):
     def process(self, **kwargs):
         """Process module. Add constraints below."""
         self._score_modifier = 0.0
-        # Mass of heavier NS
-        self._m1 = kwargs[self.key('M1')]
-        # Mass of lighter NS
-        self._m2 = kwargs[self.key('M2')]
+
+        # Mass of BH
+        self._Mbh = kwargs[self.key('M1')]
+        # Mass of NS
+        self._Mns = kwargs[self.key('M2')]
         self._m_tov = kwargs[self.key('Mtov')]
-        self._r2 = kwargs[self.key('radius_ns')]
+        self._Rns = kwargs[self.key('radius_ns')]
 
         # Soft max/min, proportional to diff^2 and scaled to -100 for 0.1 Msun
         # 1
-        if self._m1 < self._m_tov:
-            self._score_modifier -= (100. * (self._m_tov-self._m1))**2
+        if self._Mbh < self._m_tov:
+            self._score_modifier -= (100. * (self._m_tov-self._Mbh))**2
         
         # 2
-        if self._m2 > self._m_tov:
-            self._score_modifier -= (100. * (self._m2-self._m_tov))**2
+        if self._Mns > self._m_tov:
+            self._score_modifier -= (100. * (self._Mns-self._m_tov))**2
 
         # 3
-        if self._m2 < 0.8:
-            self._score_modifier -= (100. * (0.8-self._m2))**2
+        if self._Mns < 0.8:
+            self._score_modifier -= (100. * (0.8-self._Mns))**2
 
         # 4
-        if self._r2 > 16:
-            self._score_modifier -= (20. * (self._r2-16))**2
+        if self._Rns > 16:
+            self._score_modifier -= (20. * (self._Rns-16))**2
 
-        if self._r2 < 9:
-            self._score_modifier -= (20. * (9-self._r2))**2
+        if self._Rns < 9:
+            self._score_modifier -= (20. * (9-self._Rns))**2
 
 
         # 5
-        Mcaus = 1/2.82 * C_CGS**2 * self._r2 * KM_CGS / G_CGS / M_SUN_CGS
+        Mcaus = 1/2.82 * C_CGS**2 * self._Rns * KM_CGS / G_CGS / M_SUN_CGS
 
         if self._m_tov > Mcaus:
             self._score_modifier -= (100. * (self._m_tov-Mcaus))**2

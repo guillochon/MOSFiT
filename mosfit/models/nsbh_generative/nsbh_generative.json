@@ -77,14 +77,12 @@
         "class":"parameter",
         "latex":"\\kappa_\\gamma\\,({\\rm cm}^{2}\\,{\\rm g}^{-1})"
     },
-    "Mchirp":{
+    "M1":{
         "kind":"parameter",
-        "value":2.22,
+        "value":5.0,
         "class":"parameter",
-        "latex":"M_{\\rm chirp}\\,(M_\\odot)",
+        "latex":"M_{\\rm BH}\\,(M_\\odot)",
         "derived_keys":[
-            "M1",
-            "M2",
             "mejecta_magnetic",
             "mejecta_thermal",
             "mejecta_dyn",
@@ -94,15 +92,21 @@
             "Mrem",
             "Mdisc",
             "f_ej",
-            "radius_ns",
-            "Lambda_ns"
+            "Mchirp",
+            "q"
         ]
     },
-    "q":{
+    "M2":{
         "kind":"parameter",
-        "value":0.28,
+        "value":1.4,
         "class":"parameter",
-        "latex":"q"
+        "latex":"M_{\\rm NS}\\,(M_\\odot)"
+    },
+    "radius_ns":{
+        "kind":"parameter",
+        "value":12,
+        "class":"parameter",
+        "latex":"R_{\\rm NS}\\,({\\rm km})"
     },
     "chi":{
         "kind":"parameter",
@@ -136,12 +140,6 @@
         "class":"parameter",
         "latex":"\\cos\\theta_{\\rm open\\, dyn}"
     },
-    "radius_ns":{
-        "kind":"parameter",
-        "value":12,
-        "class":"parameter",
-        "latex":"R_{\\rm NS}\\,({\\rm km})"
-    },
     "Mtov":{
         "kind":"parameter",
         "value":2.17,
@@ -172,21 +170,14 @@
         "class":"parameter",
         "latex":"f_{\\rm mag}"
     },
-    "LambdaEff":{
-        "kind":"parameter",
-        "value":100,
-        "class":"parameter",
-        "latex":"\\Lambda_{\\rm eff}"
-    },
-    "nsbh_ejecta":{
+    "nsbh_ejecta_generative":{
         "kind":"energetic",
         "inputs":[
-            "Mchirp",
-            "q",
+            "M1",
+            "M2",
+            "radius_ns",
             "chi",
             "Mtov",
-            "radius_ns",
-            "LambdaEff",
             "errMdyn",
             "errMdisk",
             "fMag",
@@ -214,7 +205,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "kappa_thermal_blue"
         ],
         "replacements":{
@@ -227,7 +218,7 @@
     "diffusion_aspherical":{
         "kind":"transform",
         "inputs":[
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "aspherical_wind",
             "rprocess",
             "kappa_thermal_blue",
@@ -280,7 +271,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "kappa_thermal_purple"
         ],
         "replacements":{
@@ -294,7 +285,7 @@
         "kind":"transform",
         "class":"diffusion_aspherical",
         "inputs":[
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "aspherical_wind",
             "rprocess1",
             "kappa_thermal_purple",
@@ -314,7 +305,7 @@
         "kind":"transform",
         "class":"diffusion_aspherical",
         "inputs":[
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "aspherical_wind",
             "rprocess1",
             "kappa_thermal_blue",
@@ -369,7 +360,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "kappa_magnetic"
         ],
         "replacements":{
@@ -437,7 +428,7 @@
             "densetimes",
             "frad",
             "texplosion",
-            "nsbh_ejecta",
+            "nsbh_ejecta_generative",
             "kappa_dyn"
         ],
         "replacements":{
@@ -533,7 +524,7 @@
         "inputs":[
             "Mtov",
             "radius_ns",
-            "nsbh_ejecta"
+            "nsbh_ejecta_generative"
         ]
     },
     "likelihood":{
