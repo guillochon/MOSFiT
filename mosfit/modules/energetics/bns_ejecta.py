@@ -225,7 +225,7 @@ class BNSEjecta(Energetic):
 
         Mdisk = 10**logMdisk
 
-        Mdisk *= self._errMdisk 
+        Mdisk *= self._errMdisk
         
         Mejdisk = Mdisk * self._disk_frac
 
