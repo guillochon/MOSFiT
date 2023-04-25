@@ -32,8 +32,6 @@ class TemperatureFloor(Photosphere):
         self._luminosities = kwargs[self.key('luminosities')]
         self._temperature = kwargs[self.key('temperature')]
         self._v_ejecta = kwargs[self.key('vejecta')]
-        self._m_ejecta = kwargs[self.key('mejecta')]
-        self._kappa = kwargs[self.key('kappa')]
         self._radius2 = [(self.RAD_CONST *
                           self._v_ejecta * max(
                               x - self._rest_t_explosion, 0.0)) ** 2
