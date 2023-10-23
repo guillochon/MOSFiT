@@ -25,6 +25,7 @@ class BNSEjecta(Energetic):
     """
 
     _REFERENCES = [
+        {SOURCE.BIBCODE: '2021MNRAS.505.3016N'},
         {SOURCE.BIBCODE: '2017CQGra..34j5014D'},
         {SOURCE.BIBCODE: '2019MNRAS.489L..91C'},
         {SOURCE.BIBCODE: '2013PhRvD..88b3007M'},
