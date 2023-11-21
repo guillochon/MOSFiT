@@ -38,7 +38,15 @@ class Gaussian(Parameter):
 
     def prior_icdf(self, u):
         """Evaluate inverse cumulative density function."""
+
+        #value = erfinv(u*2/(np.sqrt(2*np.pi)) + 
+        #        erf((self._min_value - self._sigma)/(np.sqrt(2)*self._sigma))) * (
+        #        np.sqrt(2)*self._sigma) + self._mu
         value = (erfinv(2.0 * u - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
         value = (value - self._min_value) / (self._max_value - self._min_value)
 
         return np.clip(value, 0.0, 1.0)
+
+
+
+
