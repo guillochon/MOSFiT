@@ -123,7 +123,6 @@ class CSM(Engine):
               (3.0 - self._n) * self._g_n))**(1.0 / (3.0 - self._n))) ** (
                   (self._n - self._s) / (self._s - 3.0))
 
-
         # the csm interaction starts when the ejecta reach R0
         ts = [
             np.inf
