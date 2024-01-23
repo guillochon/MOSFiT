@@ -12,12 +12,11 @@ from mosfit.modules.engines.engine import Engine
 
 
 class Shock(Engine):
-    """Cooling emission from shock-heated cocoon.
+    """Cooling emission from shock-heated ejecta.
 
     Follows Piro and Kollmeier 2018.
 
-    Shock heating can be turned off in bns model by setting shock_frac=0
-    or cos_theta_cocoon=1
+    Shock heating can be turned off in the model by setting shock_frac=0
 
     Uses softmax (tanh) function to turn off cocoon for t > t_thin (no material left to cool)
     """
