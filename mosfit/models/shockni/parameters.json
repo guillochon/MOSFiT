@@ -11,7 +11,7 @@
     "mejecta": {
         "min_value": 1.0e-3,
         "max_value": 100,
-        "log": false
+        "log": true
     },
     "radius_star": {
         "min_value": 1e8,
