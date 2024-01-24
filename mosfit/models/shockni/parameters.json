@@ -10,12 +10,12 @@
     },
     "mejecta": {
         "min_value": 1.0e-3,
-        "max_value": 5.0e-2,
+        "max_value": 100,
         "log": false
     },
     "radius_star": {
-        "min_value": 3e8,
-        "max_value": 3e12,
+        "min_value": 1e8,
+        "max_value": 1e15,
         "log": true
     },
     "fnickel": {
@@ -28,10 +28,10 @@
         "max_value": 0.2,
         "log": false
     },
-    "kappagamma": {
-        "min_value": 0.01,
-        "max_value": 0.03,
-        "log": true
+    "kappagamma":{
+        "min_value":0.1,
+        "max_value":1.0e4,
+        "log":true
     },
     "vejecta": {
         "min_value": 1.0e3,
