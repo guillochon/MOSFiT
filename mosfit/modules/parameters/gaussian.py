@@ -1,6 +1,6 @@
 """Definitions for the `Gaussian` class."""
 import numpy as np
-from scipy.special import erfinv
+from scipy.special import erf, erfinv
 
 from mosfit.modules.parameters.parameter import Parameter
 
@@ -38,7 +38,15 @@ class Gaussian(Parameter):
 
     def prior_icdf(self, u):
         """Evaluate inverse cumulative density function."""
-        value = (erfinv(2.0 * u - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
+        tmin = (self._min_value - self._mu)/np.sqrt(2.0)/self._sigma
+        tmax = (self._max_value - self._mu)/np.sqrt(2.0)/self._sigma
+        norm = np.sqrt(2.0*np.pi)/2 * self._sigma * (erf(tmax) - erf(tmin)) 
+
+        value = (np.sqrt(2.0) * self._sigma *
+                erfinv(2.0 * u * norm/np.sqrt(2.0 * np.pi)/self._sigma + erf(tmin))
+                + self._mu)      
+
+        #value = (erfinv(2.0 * u - 1.0) * np.sqrt(2.)) * self._sigma + self._mu
         value = (value - self._min_value) / (self._max_value - self._min_value)
 
         return np.clip(value, 0.0, 1.0)
