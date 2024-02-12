@@ -123,9 +123,10 @@ class CSM(Engine):
               (3.0 - self._n) * self._g_n))**(1.0 / (3.0 - self._n))) ** (
                   (self._n - self._s) / (self._s - 3.0))
 
+        # the csm interaction starts when the ejecta reach R0
         ts = [
             np.inf
-            if self._rest_t_explosion > x else (x - self._rest_t_explosion)
+            if self._rest_t_explosion + self._ti / DAY_CGS > x else (x - (self._ti / DAY_CGS + self._rest_t_explosion))
             for x in self._times
         ]
 
