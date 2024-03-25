@@ -90,10 +90,10 @@ class Fallback(Engine):
             # split time['lo'] & dmdt['lo'] into pre-peak and post-peak array
             time['lo'] = np.array([
                 time['lo'][:ipeak['lo']],
-                time['lo'][ipeak['lo']:]])  # peak in array 2
+                time['lo'][ipeak['lo']:]], dtype = object)  # peak in array 2
             dmdt['lo'] = np.array([
                 dmdt['lo'][:ipeak['lo']],
-                dmdt['lo'][ipeak['lo']:]])  # peak in array 2
+                dmdt['lo'][ipeak['lo']:]], dtype = object)  # peak in array 2
 
             # will contain time/dmdt arrays
             # (split into pre & post peak times/dmdts)
@@ -127,9 +127,9 @@ class Fallback(Engine):
                 # split time_hi and dmdt_hi into pre-peak and post-peak array
                 # peak in 2nd array
                 time['hi'] = np.array([time['hi'][:ipeak['hi']],
-                                       time['hi'][ipeak['hi']:]])
+                                       time['hi'][ipeak['hi']:]], dtype = object)
                 dmdt['hi'] = np.array([dmdt['hi'][:ipeak['hi']],
-                                       dmdt['hi'][ipeak['hi']:]])
+                                       dmdt['hi'][ipeak['hi']:]], dtype = object)
                 # will contain time/dmdt arrays
                 # (split into pre & post peak times/dmdts)
                 # for each beta value
@@ -292,7 +292,7 @@ class Fallback(Engine):
                     self._beta_yinter[g][interp_index_low][0] +
                     self._beta_slope[g][interp_index_low][0] * self._betas[g],
                     self._beta_yinter[g][interp_index_low][1] +
-                    self._beta_slope[g][interp_index_low][1] * self._betas[g]])
+                    self._beta_slope[g][interp_index_low][1] * self._betas[g]], dtype = object)
 
                 # map mapped_times back to actual times, requires interpolation
                 # in time
