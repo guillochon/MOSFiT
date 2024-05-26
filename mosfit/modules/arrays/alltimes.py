@@ -73,7 +73,7 @@ class AllTimes(Array):
             self._zps = np.array(
                 [x[9] for x in zip(*self._all_observations)])
             self._measures = np.array(
-                [x[10] for x in zip(*self._all_observations)])
+                [x[10] for x in zip(*self._all_observations)], dtype = object)
             self._observation_types = np.array([
                 'magcount' if
                 ('countrate' in msr and 'magnitude' in msr and zp is not None

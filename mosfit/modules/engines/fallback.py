@@ -320,7 +320,7 @@ class Fallback(Engine):
                         (self._sim_beta[g][interp_index_high] -
                          self._sim_beta[g][interp_index_low]))
 
-                time = np.array(time)
+                time = np.array(time, dtype = object)
 
                 timedict[g] = time
                 dmdtdict[g] = dmdt
