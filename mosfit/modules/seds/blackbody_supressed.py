@@ -53,7 +53,8 @@ def bbody_sup(lam, T, R2, sup_lambda, power_lambda):
     Radiance = B_lam * A / 1E8
 
     # Apply Supression below sup_lambda wavelength
-    Radiance[lam < sup_lambda] *= (lam[lam < sup_lambda]/sup_lambda)**power_lambda
+    blue = lam < sup_lambda
+    Radiance[blue] *= (lam[blue]/sup_lambda)**power_lambda
 
     return Radiance
 
