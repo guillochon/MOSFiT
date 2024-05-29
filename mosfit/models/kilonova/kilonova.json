@@ -317,6 +317,18 @@
             "luminosities":"luminosities_purple"
         }
     },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody",
+            "nhhost",
+            "rvhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges": "photometry"
+        }
+    },
     "photometry":{
         "kind":"observable",
         "supports":[
@@ -326,7 +338,8 @@
         ],
         "inputs":[
             "blackbody3",
-            "lumdist"
+            "lumdist",
+            "losextinction"
         ],
         "replacements":{
             "luminosities":"luminosities_purple"
