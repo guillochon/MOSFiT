@@ -323,6 +323,7 @@ class Photometry(Module):
             else:
                 self._band_wavelengths[
                     i], self._transmissions[i] = xvals, yvals
+                # scale by zero-point flux (Flbda = Fnu*c/lbda^2)
                 self._filter_integrals[i] = self.FLUX_STD * np.trapz(
                     np.array(self._transmissions[i]) /
                     np.array(self._band_wavelengths[i]) ** 2,
