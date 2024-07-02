@@ -37,12 +37,12 @@ class TdePhotosphere(Photosphere):
         Rsolar = c.R_sun.cgs.value
         self._Rstar = kwargs['Rstar'] * Rsolar
 
-        # Assume solar metallicity for now
-        kappa_t = 0.2 * (1 + 0.74)  # 0.2*(1 + X) = mean Thomson opacity
+
         tpeak = kwargs['tpeak']
 
-        Ledd = (4 * np.pi * c.G.cgs.value * self._Mh * M_SUN_CGS *
-                C_CGS / kappa_t)
+        Ledd = kwargs['Ledd']
+        self._Leddlim = kwargs['Leddlim']
+        Llim = self._Leddlim*Ledd  # user defined multiple of Ledd
 
         rt = (self._Mh / self._Mstar)**(1. / 3.) * self._Rstar
         self._rp = rt / self._beta
@@ -53,22 +53,12 @@ class TdePhotosphere(Photosphere):
         a_p = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((
             tpeak - self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(1. / 3.)
 
-        # semi-major axis of material that accretes at self._times,
-        # only calculate for times after first mass accretion
-        a_t = (c.G.cgs.value * self._Mh * M_SUN_CGS * ((
-            self._times - self._rest_t_explosion) * DAY_CGS / np.pi)**2)**(
-                1. / 3.)
-        a_t[self._times < self._rest_t_explosion] = 0.0
-
-        rphotmax = self._rp + 2 * a_t
+        rphot = self._Rph_0 * a_p * (self._luminosities / Llim)**self._l
 
         # adding rphotmin on to rphot for soft min
-        # also creating soft max -- inverse( 1/rphot + 1/rphotmax)
-        rphot = self._Rph_0 * a_p * (self._luminosities / Ledd)**self._l
-
-        rphot = (rphot * rphotmax) / (rphot + rphotmax) + rphotmin
+        rphot = rphot + rphotmin
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
         return {'radiusphot': rphot, 'temperaturephot': Tphot,
-                'rp': self._rp}
+                'rp': self._rp, 'rphotmin': rphotmin}
