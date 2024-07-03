@@ -60,5 +60,5 @@ class TdePhotosphere(Photosphere):
 
         Tphot = (self._luminosities / (rphot**2 * self.STEF_CONST))**0.25
 
-        return {'radiusphot': rphot, 'temperaturephot': Tphot,
+        return {self.key('radiusphot'): rphot, self.key('temperaturephot'): Tphot,
                 'rp': self._rp, 'rphotmin': rphotmin}
