@@ -57,7 +57,7 @@ class TDEConstraints(Constraint):
             # adding allows for smooth transition from minimum radius = circularization radius to minimum radius = apocenter of debris to minimum radius = wind radius
             self._rphotmax = 2*self._rp + self._vphotmaxwind * C_CGS * (
             self._times - self._rest_t_explosion) * DAY_CGS + 2 * a_t #self._rp + 2 * a_t 
-            self._rphotmax[self._times < self._rest_t_explosion] = 0.0
+            self._rphotmax[self._rphotmax < 2*self._rp] = 2*self._rp
         else:
             self._rphotmax = self._rp + 2 * a_t  # rphotmax set to apocenter of debris stream
 
