@@ -154,7 +154,9 @@
         "kind":"constraint",
         "inputs":[
             "bhmass",
-            "tde_photosphere"
+            "tde_photosphere",
+            "rphotmaxwind",
+            "vphotmaxwind"
         ]
     },
     "likelihood":{
