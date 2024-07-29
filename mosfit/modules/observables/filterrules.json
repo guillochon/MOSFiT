@@ -2093,6 +2093,60 @@
 	{
 		"telescopes": [
 			"",
+			"Keck"
+		],
+		"instruments": [
+			"",
+			"LRIS"
+		],
+		"systems": [
+			"AB",
+			""
+		],
+		"filters": {
+			"I": {
+				"SVO": "Keck/LRIS.I"
+			}
+		},
+		"filters": {
+			"Rs": {
+				"SVO": "Keck/LRIS.Rs"
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
+			"Palomar",
+			"ZTF"
+		],
+		"instruments": [
+			"",
+			"ZTF",
+			"P48"
+		],
+		"systems": [
+			"AB",
+			""
+		],
+		"filters": {
+			"g":{
+				"SVO": "Palomar/ZTF.g",
+				"offset": 0
+			},
+			"r":{
+				"SVO": "Palomar/ZTF.r",
+				"offset": 0
+			},
+			"i":{
+				"SVO": "Palomar/ZTF.i",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"telescopes": [
+			"",
 			"Swift"
 		],
 		"instruments": [
@@ -2177,7 +2231,59 @@
 				"offset": 0
 			},
 			"TESS":{
-				"SVO": "TESS/TESS.Red",
+				"SVO": "TESS/TESS.TESS",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"systems": [
+			"",
+			"Vega"
+		],
+		"telescopes": [
+			"",
+			"CRTS"
+		],
+		"instruments": [
+			"",
+			"CRTS"
+		],
+		"filters": {
+			"C": {
+				"SVO": "Misc/CRTS.C",
+				"offset": 0
+			}
+		}
+	},
+	{
+		"systems": [
+			"",
+			"AB"
+		],
+		"telescopes": [
+			"",
+			"WISE"
+		],
+		"instruments": [
+			"",
+			"WISE"
+		],
+		"filters": {
+			"W1": {
+				"SVO": "WISE/WISE.W1",
+				"offset": 0
+			},
+			"W2": {
+				"SVO": "WISE/WISE.W2",
+				"offset": 0
+			},
+			"W3": {
+				"SVO": "WISE/WISE.W3",
+				"offset": 0
+			},
+			"W4": {
+				"SVO": "WISE/WISE.W4",
 				"offset": 0
 			}
 		}
@@ -2327,7 +2433,7 @@
 		],
 		"instruments": [
 			"",
-                        "WFI",
+			"WFI",
 			"WFIRST"
 		],
 		"bandsets": [
@@ -2336,6 +2442,38 @@
 			"WFIRST"
 		],
 		"filters": {
+			"F062": {
+				"SVO": "Roman/WFI.F062",
+				"offset": 0
+			},
+			"F087": {
+				"SVO": "Roman/WFI.F087",
+				"offset": 0
+			},
+			"F106": {
+				"SVO": "Roman/WFI.F106",
+				"offset": 0
+			},
+			"F129": {
+				"SVO": "Roman/WFI.F129",
+				"offset": 0
+			},
+			"F146": {
+				"SVO": "Roman/WFI.F146",
+				"offset": 0
+			},
+			"F158": {
+				"SVO": "Roman/WFI.F158",
+				"offset": 0
+			},
+			"F184": {
+				"SVO": "Roman/WFI.F184",
+				"offset": 0
+			},
+			"F213": {
+				"SVO": "Roman/WFI.F213",
+				"offset": 0
+			},
 			"R062": {
 				"SVO": "WFIRST/WFI.R062",
 				"offset": 0

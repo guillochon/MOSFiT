@@ -148,8 +148,8 @@ class BlackbodyCutoff(SED):
         tsort = np.argsort(self._times)
         uniq_is = np.searchsorted(self._times, uniq_times, sorter=tsort)
 
-        bb_wavelengths = np.linspace(100, 100000, N_TERMS)
-        norms = np.array([(R2 * STEF_CONST * T ** 4) / np.trapz(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
+        bb_wavelengths = np.linspace(100, 100000, self.N_TERMS)
+        norms = np.array([(R2 * self.STEF_CONST * T ** 4) / np.trapz(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
 
         # Apply renormalisation
         seds *= norms[np.searchsorted(uniq_times, self._times)]
