@@ -86,7 +86,7 @@
     },
     "alpha":{
         "kind":"parameter",
-        "value":0.0,
+        "value":1.0,
         "class":"parameter",
         "latex":"\\alpha"
     },
@@ -206,7 +206,7 @@
             "lumdist"
         ]
     },
-    "slsnni_constraints":{
+    "slsn_constraints":{
         "kind":"constraint",
         "inputs":[
             "mejecta",
@@ -226,7 +226,7 @@
         "kind":"objective",
         "inputs":[
             "diagonal",
-            "slsnni_constraints"
+            "slsn_constraints"
         ]
     }
 }

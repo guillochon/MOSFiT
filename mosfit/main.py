@@ -461,6 +461,14 @@ def get_parser(only=None, printer=None):
         help=prt.text('parser_save_full_chain'))
 
     parser.add_argument(
+        '--quick-save',
+        '-qs',
+        dest='quick_save',
+        action='store_const',
+        const=True,
+        help=prt.text('parser_quick_save'))
+
+    parser.add_argument(
         '--print-trees',
         dest='print_trees',
         default=False,

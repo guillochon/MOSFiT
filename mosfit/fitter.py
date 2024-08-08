@@ -176,6 +176,7 @@ class Fitter(object):
                    speak=False,
                    return_fits=True,
                    extra_outputs=None,
+                   quick_save=False,
                    walker_paths=[],
                    catalogs=[],
                    exit_on_prompt=False,
@@ -493,7 +494,8 @@ class Fitter(object):
                             convergence_type=convergence_type,
                             convergence_criteria=convergence_criteria,
                             save_full_chain=save_full_chain,
-                            extra_outputs=extra_outputs)
+                            extra_outputs=extra_outputs,
+                            quick_save=quick_save)
                         if return_fits:
                             entries[ei][mi] = deepcopy(entry)
                             ps[ei][mi] = deepcopy(p)
@@ -536,7 +538,8 @@ class Fitter(object):
                  convergence_type=None,
                  convergence_criteria=None,
                  save_full_chain=False,
-                 extra_outputs=None):
+                 extra_outputs=None,
+                 quick_save=False):
         """Fit the data for a given event.
 
         Fitting performed using a combination of emcee and fracking.
@@ -864,15 +867,22 @@ class Fitter(object):
 
         if write:
             prt.message('writing_complete')
-            with open_atomic(
-                    os.path.join(model.get_products_path(), 'walkers.json'),
-                    'w') as flast, open_atomic(
-                        os.path.join(
-                            model.get_products_path(), self._event_name + (
-                                ('_' + suffix) if suffix else '') + '.json'),
-                        'w') as feven:
-                entabbed_json_dump(oentry, flast, separators=(',', ':'))
-                entabbed_json_dump(oentry, feven, separators=(',', ':'))
+            if not quick_save:
+                with open_atomic(
+                        os.path.join(model.get_products_path(), 'walkers.json'),
+                        'w') as flast, open_atomic(
+                            os.path.join(
+                                model.get_products_path(), self._event_name + (
+                                    ('_' + suffix) if suffix else '') + '.json'),
+                            'w') as feven:
+                    entabbed_json_dump(oentry, flast, separators=(',', ':'))
+                    entabbed_json_dump(oentry, feven, separators=(',', ':'))
+            else:
+                with open_atomic(
+                    os.path.join(model.get_products_path(), self._event_name + '_walkers' +
+                                    (('_' + suffix) if suffix else '') + '.json'),
+                            'w') as feven:
+                    entabbed_json_dump(oentry, feven, separators=(',', ':'))
 
             if save_full_chain:
                 prt.message('writing_full_chain')
@@ -891,46 +901,66 @@ class Fitter(object):
                         pi = pi + 1
                 my_chain = my_chain.tolist()
                 my_chain.append(param_names)
-                with open_atomic(
-                        os.path.join(model.get_products_path(), 'chain.json'),
-                        'w') as flast, open_atomic(
-                            os.path.join(
-                                model.get_products_path(),
-                                self._event_name + '_chain' +
-                                (('_' + suffix) if suffix else '') + '.json'),
-                            'w') as feven:
-                    entabbed_json_dump(
-                        my_chain,
-                        flast,
-                        separators=(',', ':'))
-                    entabbed_json_dump(
-                        my_chain,
-                        feven,
-                        separators=(',', ':'))
+                if not quick_save:
+                    with open_atomic(
+                            os.path.join(model.get_products_path(), 'chain.json'),
+                            'w') as flast, open_atomic(
+                                os.path.join(
+                                    model.get_products_path(),
+                                    self._event_name + '_chain' +
+                                    (('_' + suffix) if suffix else '') + '.json'),
+                                'w') as feven:
+                        entabbed_json_dump(
+                            my_chain,
+                            flast,
+                            separators=(',', ':'))
+                        entabbed_json_dump(
+                            my_chain,
+                            feven,
+                            separators=(',', ':'))
+                else:
+                    with open_atomic(os.path.join(model.get_products_path(),
+                                    self._event_name + '_chain' +
+                                    (('_' + suffix) if suffix else '') + '.json'),
+                                'w') as feven:
+                        entabbed_json_dump(
+                            my_chain,
+                            feven,
+                            separators=(',', ':'))
 
             if extra_outputs is not None:
                 prt.message('writing_extras')
+                if not quick_save:
+                    with open_atomic(
+                            os.path.join(model.get_products_path(), 'extras.json'),
+                            'w') as flast, open_atomic(
+                                os.path.join(
+                                    model.get_products_path(),
+                                    self._event_name + '_extras' +
+                                    (('_' + suffix) if suffix else '') + '.json'),
+                                'w') as feven:
+                        if not quick_save:
+                            entabbed_json_dump(extras, flast, separators=(',', ':'))
+                        entabbed_json_dump(extras, feven, separators=(',', ':'))
+                else:
+                    with open_atomic(os.path.join(model.get_products_path(),
+                                    self._event_name + '_extras' +
+                                    (('_' + suffix) if suffix else '') + '.json'),
+                                'w') as feven:
+                        entabbed_json_dump(extras, feven, separators=(',', ':'))
+
+            if not quick_save:
+                prt.message('writing_model')
                 with open_atomic(
-                        os.path.join(model.get_products_path(), 'extras.json'),
+                        os.path.join(model.get_products_path(), 'upload.json'),
                         'w') as flast, open_atomic(
                             os.path.join(
-                                model.get_products_path(),
-                                self._event_name + '_extras' +
-                                (('_' + suffix) if suffix else '') + '.json'),
+                                model.get_products_path(), uname + (
+                                    ('_' + suffix) if suffix else '') + '.json'),
                             'w') as feven:
-                    entabbed_json_dump(extras, flast, separators=(',', ':'))
-                    entabbed_json_dump(extras, feven, separators=(',', ':'))
-
-            prt.message('writing_model')
-            with open_atomic(
-                    os.path.join(model.get_products_path(), 'upload.json'),
-                    'w') as flast, open_atomic(
-                        os.path.join(
-                            model.get_products_path(), uname + (
-                                ('_' + suffix) if suffix else '') + '.json'),
-                        'w') as feven:
-                entabbed_json_dump(ouentry, flast, separators=(',', ':'))
-                entabbed_json_dump(ouentry, feven, separators=(',', ':'))
+                    if not quick_save:
+                        entabbed_json_dump(ouentry, flast, separators=(',', ':'))
+                    entabbed_json_dump(ouentry, feven, separators=(',', ':'))
 
         if upload_model:
             prt.message('ul_fit', [entryhash, modelhash])
