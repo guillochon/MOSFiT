@@ -12,10 +12,11 @@ from mosfit.modules.seds.sed import SED
 
 # Important: Only define one ``Module`` class per file.
 
-def bbody(lam,T,R2,sup_lambda, power_lambda):
+def bbody_sup(lam, T, R2, sup_lambda, power_lambda):
     '''
     Calculate the corresponding blackbody radiance for a set
-    of wavelengths given a temperature and radiance.
+    of wavelengths given a temperature and radiance and a 
+    suppresion factor
 
     Parameters
     ---------------
@@ -52,7 +53,8 @@ def bbody(lam,T,R2,sup_lambda, power_lambda):
     Radiance = B_lam * A / 1E8
 
     # Apply Supression below sup_lambda wavelength
-    Radiance[lam < sup_lambda] *= (lam[lam < sup_lambda]/sup_lambda)**power_lambda
+    blue = lam < sup_lambda
+    Radiance[blue] *= (lam[blue]/sup_lambda)**power_lambda
 
     return Radiance
 
@@ -73,6 +75,7 @@ class BlackbodyCutoff(SED):
     X_CONST = (c.h * c.c / c.k_B).cgs.value
     STEF_CONST = (4.0 * pi * c.sigma_sb).cgs.value
     F_TERMS = 10
+    N_TERMS = 1000
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -114,18 +117,14 @@ class BlackbodyCutoff(SED):
             else:
                 rest_wavs = np.array([cc / (self._frequencies[li] * zp1)])
 
-            #if float(tp[li]) <= float(9e9):
-            cwave_ac = float(max(1, self._cutoff_wavelength)) * ac
-            #else:
-            #    cwave_ac = float(1) * ac
-
             # Apply absorption to SED only bluewards of cutoff wavelength
+            cwave_ac = self._cutoff_wavelength * ac
             ab   = rest_wavs < cwave_ac  # noqa: F841
             tpi  = tp[li]  # noqa: F841
             rp2i = rp2[li]  # noqa: F841
 
             # Exponent of suppresion and rest wavelength should sum to 5
-            sup_power  = float(max(0,self._alpha))
+            sup_power  = self._alpha
             wavs_power = (5 - sup_power)
 
             if not evaled:
@@ -149,14 +148,8 @@ class BlackbodyCutoff(SED):
         tsort = np.argsort(self._times)
         uniq_is = np.searchsorted(self._times, uniq_times, sorter=tsort)
 
-        sample_wavelengths = np.linspace(100, 100000, 1000)
-        STEF_CONST      = (4.0 * pi * c.sigma_sb).cgs.value
-        wavelength_list = np.ones(len(self._times)) * np.array(self._cutoff_wavelength).astype(float)# * ac
-        power_list      = np.ones(len(self._times)) * np.array(self._alpha).astype(float)
-        wavelength_list[wavelength_list < 0] = 0
-        power_list     [power_list      < 0] = 0
-
-        norms = np.array([(R2 * STEF_CONST * T ** 4) / np.trapz(bbody(sample_wavelengths,T,R2,wave,power), sample_wavelengths) for T, R2, wave, power in zip(tp[uniq_is],rp2[uniq_is],wavelength_list[uniq_is],power_list[uniq_is])])
+        bb_wavelengths = np.linspace(100, 100000, self.N_TERMS)
+        norms = np.array([(R2 * self.STEF_CONST * T ** 4) / np.trapz(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
 
         # Apply renormalisation
         seds *= norms[np.searchsorted(uniq_times, self._times)]
@@ -166,7 +159,5 @@ class BlackbodyCutoff(SED):
         return {'sample_wavelengths': self._sample_wavelengths,
                 self.key('seds'): seds,
                 'luminosities_out': self._luminosities,
-                'power_list': power_list,
-                'wavelength_list': wavelength_list,
                 'times_out': self._times
                 }

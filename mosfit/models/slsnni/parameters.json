@@ -10,12 +10,13 @@
         "log":true
     },
     "Pspin":{
-        "min_value":1.0,
-        "max_value":10.0
+        "min_value":0.7,
+        "max_value":20.0
     },
     "Bfield":{
-        "min_value":0.1,
-        "max_value":10.0
+        "min_value":0.01,
+        "max_value":10.0,
+        "log":true
     },
     "Mns":{
         "min_value":1.0,

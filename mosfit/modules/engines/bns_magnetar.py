@@ -2,7 +2,7 @@
 from math import isnan
 
 import numpy as np
-from scipy.integrate import cumtrapz
+from scipy.integrate import cumulative_trapezoid
 from astrocats.catalog.source import SOURCE
 
 from mosfit.constants import DAY_CGS, M_SUN_CGS, KM_CGS, G_CGS, C_CGS
@@ -105,7 +105,7 @@ class BNSMagnetar(Engine):
 
             # Magnetar input stops when extractable energy used up:
                 
-            E_rad = cumtrapz(luminosities, x = np.array(ts) * DAY_CGS, initial=0)
+            E_rad = cumulative_trapezoid(luminosities, x = np.array(ts) * DAY_CGS, initial=0)
 
             luminosities = [0.0 if E_rad[i]>E_available else luminosities[i] for
                                 i in range(len(luminosities))]
