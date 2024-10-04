@@ -320,13 +320,16 @@
     "losextinction":{
         "kind":"sed",
         "inputs":[
-            "blackbody",
+            "blackbody3",
             "nhhost",
             "rvhost",
             "ebv"
         ],
         "requests":{
             "band_wave_ranges": "photometry"
+        },
+        "replacements":{
+            "luminosities":"luminosities_purple"
         }
     },
     "photometry":{
@@ -337,7 +340,6 @@
             "infrared"
         ],
         "inputs":[
-            "blackbody3",
             "lumdist",
             "losextinction"
         ],
