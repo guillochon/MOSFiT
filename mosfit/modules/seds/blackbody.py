@@ -31,6 +31,7 @@ class Blackbody(SED):
         self._frequencies = kwargs['all_frequencies']
         self._radius_phot = kwargs[self.key('radiusphot')]
         self._temperature_phot = kwargs[self.key('temperaturephot')]
+        self._times = np.array(kwargs['rest_times'])
         xc = self.X_CONST  # noqa: F841
         fc = self.FLUX_CONST  # noqa: F841
         cc = self.C_CONST
@@ -78,4 +79,9 @@ class Blackbody(SED):
         seds = self.add_to_existing_seds(seds, **kwargs)
 
         # Units of `seds` is ergs / s / Angstrom.
-        return {'sample_wavelengths': self._sample_wavelengths, 'seds': seds}
+        return {
+            'sample_wavelengths': self._sample_wavelengths,
+            self.key('seds'): seds,
+            'luminosities_out': self._luminosities,
+            'times_out': self._times
+        }
