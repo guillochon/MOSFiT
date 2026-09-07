@@ -62,12 +62,26 @@
         "class":"parameter",
         "latex":"\\epsilon_{\\rm acc}"
     },
-    "viscfac":{
+    "tviscnorm":{
         "kind":"parameter",
-        "value":100,
+        "value":1.0,
         "class":"parameter",
         "fixed":true,
-        "latex":"\\alpha^{-1}(h/r)^{-2}"
+        "latex":"\\log_{10}(T_{\\rm visc}/t_{\\rm pk})\\ {\\rm at}\\ r_{\\rm p}/r_{\\rm g}=47"
+    },
+    "tviscslope":{
+        "kind":"parameter",
+        "value":2.1,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"{\\rm d}\\log T_{\\rm visc}/{\\rm d}\\log(r_{\\rm p}/r_{\\rm g})"
+    },
+    "tviscoffset":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"\\Delta\\log_{10} T_{\\rm visc}"
     },
     "bhmass":{
         "kind":"parameter",
@@ -130,7 +144,10 @@
         "class":"darkyear",
         "inputs":[
             "fallback",
-            "viscfac"
+            "texplosion",
+            "tviscnorm",
+            "tviscslope",
+            "tviscoffset"
         ],
         "latex":"T_{\\rm viscous}"
     },

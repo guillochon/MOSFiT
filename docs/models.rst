@@ -83,7 +83,7 @@ List of built-in models
      - Tidal disruption events
      - `2018arXiv180108221M <http://adsabs.harvard.edu/abs/2018arXiv180108221M>`_
    * - ``tde_shock``
-     - TDE shock + delayed accretion
+     - TDE shock + GR15 viscous delay
      - `2016ApJ...830..125J <https://ui.adsabs.harvard.edu/abs/2016ApJ...830..125J>`_
 
 .. [*] In development.

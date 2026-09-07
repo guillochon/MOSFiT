@@ -127,17 +127,24 @@ if __name__ == '__main__':
     print('two-component arrays and post-sum cap ok')
 
     dy = DarkYear(name='Tviscous', model=dummy)
-    tv_deep = dy.process(
-        rp_over_rg=10.0, tfallback=40.0, tpeak=50.0, bhmass=1.0e7,
-        viscfac=100.0)['Tviscous']
-    tv_shallow = dy.process(
-        rp_over_rg=47.0, tfallback=15.0, tpeak=28.0, bhmass=1.0e6,
-        viscfac=100.0)['Tviscous']
-    if not (tv_deep < tv_shallow):
-        raise SystemExit(
-            'dark-year Tviscous should be shorter at small rp/rg, got '
-            '{} vs {}'.format(tv_deep, tv_shallow))
-    print('dark-year Tviscous deep', tv_deep, 'shallow', tv_shallow)
+    dy_kw = dict(
+        tfallback=40.0, tpeak=52.0, resttexplosion=0.0,
+        tviscnorm=1.0, tviscslope=2.1, tviscoffset=0.0)
+    t_pk = 92.0
+    tv_ref = dy.process(rp_over_rg=47.0, **dy_kw)['Tviscous']
+    tv_10 = dy.process(rp_over_rg=10.0, **dy_kw)['Tviscous']
+    tv_hi = dy.process(rp_over_rg=1000.0, **dy_kw)['Tviscous']
+    tv_lo = dy.process(rp_over_rg=2.0, **dy_kw)['Tviscous']
+    tv_off = dy.process(
+        rp_over_rg=47.0, tfallback=40.0, tpeak=52.0, resttexplosion=0.0,
+        tviscnorm=1.0, tviscslope=2.1, tviscoffset=0.5)['Tviscous']
+    np.testing.assert_allclose(tv_ref, 10.0 * t_pk, rtol=1e-10)
+    np.testing.assert_allclose(
+        tv_10, 10.0 ** (1.0 + 2.1 * np.log10(10.0 / 47.0)) * t_pk, rtol=1e-10)
+    np.testing.assert_allclose(tv_hi, 100.0 * t_pk, rtol=1e-10)
+    np.testing.assert_allclose(tv_lo, 10.0 ** (-1.5) * t_pk, rtol=1e-10)
+    np.testing.assert_allclose(tv_off, 10.0 ** 1.5 * t_pk, rtol=1e-10)
+    print('dark-year map', tv_ref, tv_10, tv_hi, tv_lo, tv_off)
 
     fitter = Fitter(
         test=True, quiet=True, exit_on_prompt=True, prefer_cache=True)
@@ -163,6 +170,14 @@ if __name__ == '__main__':
         raise SystemExit('efficiency should be free (narrow ε_acc prior)')
     if 'Tviscous' in model._free_parameters:
         raise SystemExit('Tviscous should be derived, not free')
+    if 'viscfac' in model._call_stack:
+        raise SystemExit('viscfac should not be in tde_shock')
+    if 'tviscoffset' not in model._call_stack:
+        raise SystemExit('tviscoffset missing from tde_shock')
+    if 'tviscoffset' in model._free_parameters:
+        raise SystemExit('tviscoffset should be fixed')
+    if not model._modules['tviscoffset']._fixed:
+        raise SystemExit('tviscoffset module should be fixed')
 
     targets = {
         'frad': 0.03,
@@ -194,10 +209,22 @@ if __name__ == '__main__':
     np.testing.assert_allclose(outputs['shock_efficiency'], 6.4e-4, rtol=0.15)
     np.testing.assert_allclose(outputs['rp_over_rg'], 47.0, rtol=0.15)
     np.testing.assert_allclose(outputs['efficiency'], 0.1, rtol=0.05)
-    if not (outputs['Tviscous'] > 0.0):
-        raise SystemExit('Tviscous should be positive')
+    t_pk_run = float(outputs['tfallback']) + (
+        float(outputs['tpeak']) - float(outputs['resttexplosion']))
+    t_pk_run = max(t_pk_run, float(outputs['tfallback']))
+    ratio = float(outputs['Tviscous']) / t_pk_run
+    if not (5.0 <= ratio <= 15.0):
+        raise SystemExit(
+            'Tviscous/t_pk should be ~10 at 1e6 Msun beta=1, got {}'.format(
+                ratio))
+    model._modules['tviscoffset'].fix_value(0.5)
+    outputs_off = model.run(x)
+    np.testing.assert_allclose(
+        outputs_off['Tviscous'], outputs['Tviscous'] * 10.0 ** 0.5,
+        rtol=1e-8)
     print('tde_shock Model.run shock_efficiency', outputs['shock_efficiency'],
           'rp_over_rg', outputs['rp_over_rg'], 'Tviscous', outputs['Tviscous'],
+          't_pk', t_pk_run, 'ratio', ratio,
           'ndim', model._num_free_parameters)
     print('tde_shock checks passed')
     sys.exit(0)
