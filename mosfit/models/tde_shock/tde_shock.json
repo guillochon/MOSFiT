@@ -166,17 +166,25 @@
         ],
         "latex":"T_{\\rm viscous}"
     },
+    "Leddlimdisk":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"L_{\\rm edd,\\ limit}\\ ({\\rm disk})"
+    },
     "leddcap":{
         "kind":"utility",
         "class":"leddcap",
         "inputs":[
             "fallback",
-            "Leddlim",
+            "Leddlimdisk",
             "eddslope"
         ],
         "wants_dense":true,
         "replacements":{
-            "luminosities":"acc_luminosities"
+            "luminosities":"acc_luminosities",
+            "Leddlim":"Leddlimdisk"
         }
     },
     "viscous":{
