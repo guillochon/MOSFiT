@@ -62,6 +62,9 @@ default sampler, and a NumPy 2 / Astropy 7 runtime.
 
 ### Added
 
+- `tde_shock` model: fallback luminosity from prompt stream dissipation at
+  pericenter (Jiang, Guillochon & Loeb 2016), with free parameter `frad` and no
+  viscous delay. The `tde` model is unchanged.
 - `uv` / `pyproject.toml` packaging (hatchling). Python **3.11–3.14**.
 - Optional extras: `mpi` (mpi4py), `sedona` (PyTorch, SESN SEDONA only), `docs`.
 - `--max-cores N` local process pool for likelihoods (Windows spawn-safe).

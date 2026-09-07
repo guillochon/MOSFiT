@@ -1,0 +1,172 @@
+{
+    "@references":[
+        {
+            "name":"Jiang, Guillochon & Loeb 2016",
+            "bibcode":"2016ApJ...830..125J"
+        }
+    ],
+    "starmass":{
+        "kind":"parameter",
+        "value":1,
+        "class":"kroupa"
+    },
+    "ebv":{
+        "kind":"parameter",
+        "value":0.0,
+        "class":"parameter",
+        "inputs":[
+            "transient"
+        ],
+        "latex":"E({\\rm B} - {\\rm V})"
+    },
+    "rvhost":{
+        "kind":"parameter",
+        "value":3.1,
+        "class":"parameter",
+        "latex":"R_{\\rm V, host}"
+    },
+    "nhhost":{
+        "kind":"parameter",
+        "value":1e+21,
+        "class":"parameter",
+        "latex":"n_{\\rm H,host}",
+        "derived_keys":"avhost"
+    },
+    "texplosion":{
+        "kind":"parameter",
+        "value":-12.0,
+        "class":"parameter",
+        "latex":"t_{\\rm exp}\\,{\\rm (days)}"
+    },
+    "b":{
+        "kind":"parameter",
+        "value":0.98,
+        "class":"parameter",
+        "latex":"b\\ (\\rm scaled\\ \\beta)",
+        "derived_keys":"beta"
+    },
+    "frad":{
+        "kind":"parameter",
+        "value":0.03,
+        "class":"parameter",
+        "latex":"f_{\\rm rad}",
+        "derived_keys":["efficiency", "rp_over_rg"]
+    },
+    "bhmass":{
+        "kind":"parameter",
+        "value":17800000.0,
+        "class":"parameter",
+        "latex":"M_{h} (M_{\\odot})"
+    },
+    "Rph0":{
+        "kind":"parameter",
+        "value":6.31,
+        "class":"parameter",
+        "latex":"R_{\\rm ph0}"
+    },
+    "lphoto":{
+        "kind":"parameter",
+        "value":1.5,
+        "class":"parameter",
+        "latex":"\\rm photosphere\\ \\rm  exponent\\ 'l' "
+    },
+    "Leddlim":{
+        "kind":"parameter",
+        "value":1,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"L_{\\rm edd,\\ limit}"
+    },
+    "rphotmaxwind":{
+        "kind":"parameter",
+        "value":1,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"\\rm R_{phot} \\ max, \\relativistic \\ wind \\ (boolean)"
+    },
+    "vphotmaxwind":{
+        "kind":"parameter",
+        "value":0.5,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"v_{\\rm phot \\ max} (\\rm fraction \\ of \\ c)"
+    },
+    "fallback":{
+        "kind":"engine",
+        "inputs":[
+            "densetimes",
+            "bhmass",
+            "b",
+            "frad",
+            "texplosion",
+            "starmass",
+            "Leddlim"
+        ]
+    },
+    "tde_photosphere":{
+        "kind":"photosphere",
+        "inputs":[
+            "bhmass",
+            "fallback",
+            "lphoto",
+            "Rph0"
+        ]
+    },
+    "blackbody":{
+        "kind":"sed",
+        "inputs":[
+            "texplosion",
+            "redshift",
+            "tde_photosphere"
+        ],
+        "requests":{
+            "band_wave_ranges":"photometry"
+        }
+    },
+    "losextinction":{
+        "kind":"sed",
+        "inputs":[
+            "blackbody",
+            "nhhost",
+            "rvhost",
+            "ebv"
+        ],
+        "requests":{
+            "band_wave_ranges":"photometry"
+        }
+    },
+    "photometry":{
+        "kind":"observable",
+        "inputs":[
+            "losextinction",
+            "lumdist"
+        ],
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared",
+            "bolometric"
+        ]
+    },
+    "tde_constraints":{
+        "kind":"constraint",
+        "inputs":[
+            "bhmass",
+            "tde_photosphere",
+            "rphotmaxwind",
+            "vphotmaxwind"
+        ]
+    },
+    "likelihood":{
+        "kind":"objective",
+        "supports":[
+            "ultraviolet",
+            "optical",
+            "infrared"
+        ],
+        "inputs":[
+            "diagonal",
+            "tde_constraints"
+        ]
+    }
+}
