@@ -107,28 +107,45 @@ if __name__ == '__main__':
     np.testing.assert_allclose(np.max(lum), 7.638370418643626e+44, rtol=1e-10)
     print('efficiency-mode golden luminosities unchanged')
 
-    # Two-component: cap accretion only; shock stays uncapped, then they sum.
+    # Two-component: cap accretion and shock separately, then sum.
     two = fb.process(frad=0.03, efficiency=0.03, bhmass=1.0e6, **shared)
     shock = np.asarray(two['dense_shock_luminosities'])
     acc = np.asarray(two['dense_luminosities'])
     np.testing.assert_allclose(
         two['shock_efficiency'] / 0.03, shock.max() / acc.max(), rtol=1e-10)
-    cap = two['Ledd']
+    cap = two['Ledd'] * 1.0
     acc_capped = acc * cap / (acc + cap)
     acc_capped = np.where(np.isnan(acc_capped), 0.0, acc_capped)
+    # Super-Eddington shock so the collision cap is actually exercised.
+    shock_in = shock * (10.0 * cap / max(float(np.max(shock)), 1.0))
+    shock_capped = shock_in * cap / (shock_in + cap)
+    shock_capped = np.where(np.isnan(shock_capped), 0.0, shock_capped)
     lc = LeddCap(name='leddcap', model=dummy)
     lc.set_attributes({
         'replacements': {'luminosities': 'acc_luminosities'},
         'wants_dense': True})
     lc._provide_dense = True
     lc_out = lc.process(
-        dense_acc_luminosities=acc, Leddlim=1.0, Ledd=cap,
+        dense_acc_luminosities=acc, Leddlim=1.0, Ledd=two['Ledd'],
         dense_indices=np.array([0, 1]))
     np.testing.assert_allclose(
         lc_out['dense_acc_luminosities'], acc_capped, rtol=1e-12)
-    if np.max(shock) >= cap:
-        raise SystemExit('prompt shock should remain sub-Eddington')
-    print('accretion capped before viscous; shock uncapped')
+    lc_shock = LeddCap(name='leddcap_shock', model=dummy)
+    lc_shock.set_attributes({
+        'replacements': {'luminosities': 'shock_luminosities'},
+        'wants_dense': True})
+    lc_shock._provide_dense = True
+    shock_out = lc_shock.process(
+        dense_shock_luminosities=shock_in, Leddlim=1.0, Ledd=two['Ledd'],
+        dense_indices=np.array([0, 1]))
+    np.testing.assert_allclose(
+        shock_out['dense_shock_luminosities'], shock_capped, rtol=1e-12)
+    if np.max(shock_out['dense_shock_luminosities']) > cap:
+        raise SystemExit('capped shock exceeds Leddlim × Ledd')
+    summed = shock_capped + acc_capped
+    if np.max(summed) > 2.0 * cap:
+        raise SystemExit('sum of separately capped terms exceeds 2 L_Edd')
+    print('accretion and shock capped separately before sum')
 
     dy = DarkYear(name='Tviscous', model=dummy)
     dy_kw = dict(
@@ -166,16 +183,24 @@ if __name__ == '__main__':
         raise SystemExit('tde_shock load_data failed')
     if 'leddcap' not in model._call_stack:
         raise SystemExit('leddcap missing from tde_shock')
+    if 'leddcap_shock' not in model._call_stack:
+        raise SystemExit('leddcap_shock missing from tde_shock')
     visc_inputs = [
         x if not isinstance(x, list) else x[0]
         for x in model._call_stack['viscous'].get('inputs', [])]
     if 'leddcap' not in visc_inputs:
         raise SystemExit('viscous should take capped acc from leddcap')
+    tot_inputs = [
+        x if not isinstance(x, list) else x[0]
+        for x in model._call_stack['total_luminosity'].get('inputs', [])]
+    if 'leddcap_shock' not in tot_inputs or 'viscous' not in tot_inputs:
+        raise SystemExit(
+            'total_luminosity should sum capped shock with viscous acc')
     photo_inputs = [
         x if not isinstance(x, list) else x[0]
         for x in model._call_stack['tde_photosphere'].get('inputs', [])]
     if 'total_luminosity' not in photo_inputs:
-        raise SystemExit('tde_photosphere should read the uncapped shock sum')
+        raise SystemExit('tde_photosphere should read the separately capped sum')
     if 'frad' not in model._free_parameters:
         raise SystemExit('frad is not a free parameter of tde_shock')
     if 'efficiency' not in model._free_parameters:
@@ -221,6 +246,13 @@ if __name__ == '__main__':
     np.testing.assert_allclose(outputs['shock_efficiency'], 6.4e-4, rtol=0.15)
     np.testing.assert_allclose(outputs['rp_over_rg'], 47.0, rtol=0.15)
     np.testing.assert_allclose(outputs['efficiency'], 0.03, rtol=0.05)
+    run_cap = float(outputs['Leddlim']) * float(outputs['Ledd'])
+    run_shock = np.asarray(outputs['dense_shock_luminosities'], dtype=float)
+    run_total = np.asarray(outputs['dense_luminosities'], dtype=float)
+    if np.max(run_shock) > run_cap:
+        raise SystemExit('dense_shock_luminosities exceeds Leddlim × Ledd')
+    if np.max(run_total) > 2.0 * run_cap:
+        raise SystemExit('summed luminosity exceeds 2 Leddlim × Ledd')
     t_pk_run = float(outputs['tfallback']) + (
         float(outputs['tpeak']) - float(outputs['resttexplosion']))
     t_pk_run = max(t_pk_run, float(outputs['tfallback']))
