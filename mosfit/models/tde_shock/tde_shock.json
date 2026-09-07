@@ -3,6 +3,10 @@
         {
             "name":"Jiang, Guillochon & Loeb 2016",
             "bibcode":"2016ApJ...830..125J"
+        },
+        {
+            "name":"Guillochon & Ramirez-Ruiz 2015",
+            "bibcode":"2015ApJ...809..166G"
         }
     ],
     "starmass":{
@@ -50,7 +54,20 @@
         "value":0.03,
         "class":"parameter",
         "latex":"f_{\\rm rad}",
-        "derived_keys":["efficiency", "rp_over_rg"]
+        "derived_keys":["shock_efficiency", "rp_over_rg"]
+    },
+    "efficiency":{
+        "kind":"parameter",
+        "value":0.1,
+        "class":"parameter",
+        "latex":"\\epsilon_{\\rm acc}"
+    },
+    "viscfac":{
+        "kind":"parameter",
+        "value":100,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"\\alpha^{-1}(h/r)^{-2}"
     },
     "bhmass":{
         "kind":"parameter",
@@ -98,10 +115,60 @@
             "bhmass",
             "b",
             "frad",
+            "efficiency",
             "texplosion",
             "starmass",
             "Leddlim"
-        ]
+        ],
+        "replacements":{
+            "luminosities":"acc_luminosities"
+        }
+    },
+    "Tviscous":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"darkyear",
+        "inputs":[
+            "fallback",
+            "viscfac"
+        ],
+        "latex":"T_{\\rm viscous}"
+    },
+    "viscous":{
+        "kind":"transform",
+        "inputs":[
+            "fallback",
+            "texplosion",
+            "Tviscous"
+        ],
+        "replacements":{
+            "luminosities":"acc_luminosities"
+        }
+    },
+    "total_luminosity":{
+        "kind":"utility",
+        "operator":"+",
+        "operands":[
+            "shock_luminosities",
+            "acc_luminosities"
+        ],
+        "inputs":[
+            "fallback",
+            "viscous"
+        ],
+        "result":"luminosities",
+        "wants_dense":true,
+        "class":"operator"
+    },
+    "leddcap":{
+        "kind":"utility",
+        "class":"leddcap",
+        "inputs":[
+            "total_luminosity",
+            "fallback",
+            "Leddlim"
+        ],
+        "wants_dense":true
     },
     "tde_photosphere":{
         "kind":"photosphere",
@@ -109,7 +176,8 @@
             "bhmass",
             "fallback",
             "lphoto",
-            "Rph0"
+            "Rph0",
+            "leddcap"
         ]
     },
     "blackbody":{
