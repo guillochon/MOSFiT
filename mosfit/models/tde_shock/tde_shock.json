@@ -108,6 +108,21 @@
         "fixed":true,
         "latex":"L_{\\rm edd,\\ limit}"
     },
+    "eddslope":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"p_{\\rm Edd}\\ ({\\rm accretion})",
+        "derived_keys":"acc_edd_ratio_peak"
+    },
+    "eddslope_shock":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"p_{\\rm Edd}\\ ({\\rm collision})"
+    },
     "rphotmaxwind":{
         "kind":"parameter",
         "value":1,
@@ -156,7 +171,8 @@
         "class":"leddcap",
         "inputs":[
             "fallback",
-            "Leddlim"
+            "Leddlim",
+            "eddslope"
         ],
         "wants_dense":true,
         "replacements":{
@@ -179,11 +195,13 @@
         "class":"leddcap",
         "inputs":[
             "fallback",
-            "Leddlim"
+            "Leddlim",
+            "eddslope_shock"
         ],
         "wants_dense":true,
         "replacements":{
-            "luminosities":"shock_luminosities"
+            "luminosities":"shock_luminosities",
+            "eddslope":"eddslope_shock"
         }
     },
     "total_luminosity":{
