@@ -10,8 +10,8 @@ from mosfit.modules.utilities.utility import Utility
 class LeddCap(Utility):
     """Soft Eddington cap ``L L_cap / (L + L_cap)``.
 
-    Honors ``replacements`` so the cap can be applied to ``acc_luminosities``
-    before the viscous transform, leaving the prompt shock term uncapped.
+    Honors ``replacements`` so accretion and shock can be capped
+    independently before they are summed.
     """
 
     def __init__(self, **kwargs):
