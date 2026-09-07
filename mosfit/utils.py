@@ -773,6 +773,4 @@ def open_atomic(filepath, *args, **kwargs):
                 if fsync:
                     file.flush()
                     os.fsync(file.fileno())
-        if os.path.isfile(filepath):
-            os.remove(filepath)
-        os.rename(tmppath, filepath)
+        os.replace(tmppath, filepath)

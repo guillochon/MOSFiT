@@ -108,6 +108,9 @@ if __name__ == '__main__':
     with open_atomic(nested, 'w') as f:
         f.write('ok')
     assert Path(nested).read_text() == 'ok'
+    with open_atomic(nested, 'w') as f:
+        f.write('replaced')
+    assert Path(nested).read_text() == 'replaced'
     print('utils ok')
 
     assert bandrepf('uvm2') == 'UVM2'
