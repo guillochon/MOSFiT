@@ -6,11 +6,7 @@ version: 2
 build:
   os: ubuntu-24.04
   tools:
-    python: "3.11"
-  jobs:
-    # Avoid mpi4py (needs system MPI) during the docs build.
-    post_install:
-      - pip install --no-deps -e .
+    python: "3.14"
 
 sphinx:
   configuration: docs/conf.py
@@ -18,4 +14,7 @@ sphinx:
 
 python:
   install:
-    - requirements: docs/requirements.txt
+    - method: pip
+      path: .
+      extra_requirements:
+        - docs

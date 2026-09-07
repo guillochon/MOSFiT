@@ -1,0 +1,9 @@
+# Keep local fit products and the project venv out of the image context.
+.venv/
+products/
+.git/
+**/__pycache__/
+*.pyc
+mosfit/cache/
+.pytest_cache/
+*.egg-info/

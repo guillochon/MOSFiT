@@ -1,5 +1,6 @@
 """MOSFiT: Modular light curve fitting software."""
 import os
+import re
 
 import astrocats
 
@@ -22,27 +23,26 @@ with open(os.path.join(dir_name, 'contributors.txt')) as f:
         else:
             contributors.append(cont.split('(')[0].strip())
 
-__version__ = '1.3'
+__version__ = '2.0.0'
 __author__ = ' & '.join([', '.join(authors[:-1]), authors[-1]])
 __contributors__ = ' & '.join([', '.join(contributors[:-1]), contributors[-1]])
 __license__ = 'MIT'
 
 # Check astrocats version for schema compatibility.
-right_astrocats = True
-vparts = astrocats.__version__.split('.')
-req_path = os.path.join(dir_name, 'requirements.txt')
-with open(req_path, 'r') as f:
-    for req in f.read().splitlines():
-        if 'astrocats' in req:
-            vneed = req.split('=')[-1].split('.')
-            if int(vparts[0]) < int(vneed[0]):
-                right_astrocats = False
-            elif int(vparts[1]) < int(vneed[1]):
-                right_astrocats = False
-            elif int(vparts[2]) < int(vneed[2]):
-                right_astrocats = False
-if not right_astrocats:
+# Keep this floor in sync with the astrocats pin in pyproject.toml.
+_ASTROCATS_MIN_VERSION = (0, 5, 0)
+
+
+def _version_triple(version):
+    """Leading X.Y.Z integers from a PEP 440 version string."""
+    nums = [int(p) for p in re.findall(r'\d+', version.split('+')[0])[:3]]
+    nums.extend([0] * (3 - len(nums)))
+    return tuple(nums[:3])
+
+
+vneed = [str(part) for part in _ASTROCATS_MIN_VERSION]
+if _version_triple(astrocats.__version__) < _ASTROCATS_MIN_VERSION:
     raise ImportError(
         'Installed `astrocats` package is out of date for this version of '
         'MOSFiT, please upgrade your `astrocats` install to a version >= `' +
-        '.'.join(vneed) + '` with either `pip` or `conda`.')
+        '.'.join(vneed) + '` with `uv`, `pip`, or `conda`.')

@@ -1,0 +1,73 @@
+{% set name = "mosfit" %}
+{% set version = "2.0.0" %}
+
+package:
+  name: {{ name|lower }}
+  version: {{ version }}
+
+source:
+  url: https://pypi.org/packages/source/{{ name[0] }}/{{ name }}/mosfit-{{ version }}.tar.gz
+  sha256: replace-with-pypi-sdist-sha256
+
+build:
+  number: 0
+  noarch: python
+  script: {{ PYTHON }} -m pip install . -vv --no-deps --no-build-isolation
+
+requirements:
+  host:
+    - python >=3.11
+    - pip
+    - hatchling
+  run:
+    - python >=3.11
+    - astrocats >=0.5.0
+    - astropy-base >=7.1
+    - dynesty >=3.1
+    - emcee >=3.0.2
+    - extinction >=0.2.2
+    - h5py >=3.8.0
+    - inflect >=1.0.0
+    - matplotlib-base >=3.0.0
+    - nbstripout >=0.2.9
+    - numba >=0.67.0
+    - numexpr >=2.6.1
+    - numpy >=2.3
+    - pandas >=2.2
+    - palettable >=2.1.1
+    - schwimmbad >=0.4.2
+    - scipy >=1.2
+    - seaborn >=0.7.1
+    - six >=1.0.0
+
+test:
+  imports:
+    - mosfit
+  source_files:
+    - test.py
+  requires:
+    - pip
+  commands:
+    - mosfit --version
+    - python -c "import mosfit; assert mosfit.__version__.startswith('2.')"
+    - python test.py
+
+about:
+  home: https://github.com/guillochon/mosfit
+  license: MIT
+  license_family: MIT
+  license_file: LICENSE
+  summary: Modular fitter for astrophysical transients
+  description: |
+    MOSFiT 2 fits semi-analytical transient models to local catalog-format
+    photometry. The default sampler is dynesty. PyTorch (SESN SEDONA) and
+    mpi4py are optional extras, not required run dependencies.
+  doc_url: https://mosfit.readthedocs.io/
+  dev_url: https://github.com/guillochon/mosfit
+
+extra:
+  recipe-maintainers:
+    - gmzsebastian
+    - guillochon
+    - mnicholl
+    - pkgw

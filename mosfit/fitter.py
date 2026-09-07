@@ -14,7 +14,7 @@ from astrocats.catalog.photometry import PHOTOMETRY
 from astrocats.catalog.quantity import QUANTITY
 from astrocats.catalog.realization import REALIZATION
 from astrocats.catalog.source import SOURCE
-from schwimmbad import MPIPool, SerialPool
+from schwimmbad import MPIPool, MultiPool, SerialPool
 from six import string_types
 
 from mosfit.constants import BOL_MAG_BAND_LABEL
@@ -30,17 +30,85 @@ from mosfit.utils import (all_to_list, entabbed_json_dump, entabbed_json_dumps,
                           write_chain_hdf5, write_json_payload,
                           write_walkers_hdf5)
 
-from .model import Model
+from .model import Model, ensure_cwd_on_sys_path
 
 warnings.filterwarnings("ignore")
 
-def get_pool(method=None):
+def get_pool(method=None, max_cores=1):
+    """Return a construction-time pool.
+
+    MPI (``mpirun``) is used when a communicator with more than one rank is
+    available. Local process parallelism is attached later in ``fit_data``
+    via ``attach_likelihood_pool`` so model setup stays serial/spawn-safe.
+    ``max_cores`` is accepted for API symmetry and is unused here.
+    """
     try:
         if method == 'ultranest':
             raise ValueError('ultranest parallises with MPI already')
         return MPIPool()
     except (ImportError, ValueError):
         return SerialPool()
+
+
+def _init_likelihood_worker(model_obj):
+    """Install the reconstructed model in a spawned worker (Windows-safe)."""
+    global model
+    model = model_obj
+    serial = SerialPool()
+    try:
+        model._pool = serial
+        printer = getattr(model, '_printer', None)
+        if printer is not None:
+            printer._pool = serial
+        modules = getattr(model, '_modules', None)
+        if modules:
+            for mod in modules.values():
+                mod._pool = serial
+    except Exception:
+        pass
+
+
+class LocalProcessPool(MultiPool):
+    """``schwimmbad.MultiPool`` plus the ``is_master`` interface MOSFiT expects.
+
+    Workers are spawned (Windows-compatible). Likelihood callables must be
+    top-level (see ``ln_likelihood``) and the model is rebuilt via
+    ``_init_likelihood_worker``.
+    """
+
+    def is_master(self):
+        return True
+
+    def is_worker(self):
+        return False
+
+    def wait(self):
+        return
+
+
+def attach_likelihood_pool(pool, max_cores, model_obj, method=None):
+    """Attach a local process pool after the model has been built.
+
+    MPI pools are left unchanged so ``mpirun`` still works. ``max_cores`` <= 1
+    (the default) keeps the serial pool.
+    """
+    if method == 'ultranest':
+        return pool if pool is not None else SerialPool()
+    if pool is not None and getattr(pool, 'size', 0):
+        return pool
+    ncores = 1 if max_cores is None else int(max_cores)
+    if ncores <= 1:
+        return pool if pool is not None else SerialPool()
+    ensure_cwd_on_sys_path()
+    return LocalProcessPool(
+        processes=ncores,
+        initializer=_init_likelihood_worker,
+        initargs=(model_obj,))
+
+
+def pool_queue_size(pool):
+    """Dynesty ``queue_size``: SerialPool reports size 0."""
+    return max(int(getattr(pool, 'size', 0) or 0), 1)
 
 def draw_walker(test=True, walkers_pool=[], replace=False, weights=None):
     """Draw a walker from the global model variable."""
@@ -94,8 +162,10 @@ class Fitter(object):
                  quiet=False,
                  test=False,
                  wrap_length=100,
+                 max_cores=1,
                  **kwargs):
         """Initialize `Fitter` class."""
+        self._max_cores = 1 if max_cores is None else int(max_cores)
         self._pool = SerialPool() if pool is None else pool
         self._printer = Printer(
             pool=self._pool,
@@ -121,10 +191,15 @@ class Fitter(object):
             except ImportError:
                 pass
 
+    def _bind_max_cores(self, max_cores):
+        """Apply ``fit_events`` ``max_cores``; ``None`` keeps the constructor value."""
+        if max_cores is not None:
+            self._max_cores = int(max_cores)
+
     def fit_events(self,
                    events=[],
                    models=[],
-                   max_time='',
+                   max_time=1000.,
                    time_list=[],
                    time_unit=None,
                    band_list=[],
@@ -171,8 +246,9 @@ class Fitter(object):
                    walker_paths=[],
                    exit_on_prompt=False,
                    guess=True,
-                   method=None,
+                   method='dynesty',
                    seed=None,
+                   max_cores=None,
                    **kwargs):
         """Fit a list of events with a list of models."""
         global model
@@ -180,6 +256,7 @@ class Fitter(object):
             start_time = time.time()
 
         self._seed = seed
+        self._bind_max_cores(max_cores)
         if seed is not None:
             np.random.seed(seed)
 
@@ -423,7 +500,7 @@ class Fitter(object):
 
     def fit_data(self,
                  event_name='',
-                 method=None,
+                 method='dynesty',
                  iterations=None,
                  frack_step=20,
                  num_walkers=None,
@@ -455,6 +532,12 @@ class Fitter(object):
 
         if pool is not None:
             self._pool = pool
+
+        self._pool = attach_likelihood_pool(
+            self._pool, getattr(self, '_max_cores', 1), model, method=method)
+        self._model._pool = self._pool
+        if self._printer is not None:
+            self._printer._pool = self._pool
 
         if not self._pool.is_master():
             try:
@@ -796,6 +879,12 @@ class Fitter(object):
         if self._method == 'ultranest': #and self._sampler._sampler.mpi_size > 1:
             # send results to other MPI processes (above)
             self._sampler._sampler.comm.bcast((entry, samples, probs), root=0)
+        if isinstance(self._pool, LocalProcessPool):
+            try:
+                self._pool.close()
+                self._pool.join()
+            except Exception:
+                pass
         return (entry, samples, probs)
 
     def nester(self):
@@ -827,7 +916,9 @@ class Fitter(object):
             lo, hi = float(lf[0]), float(lf[1])
             base_times = list(np.linspace(lo, hi, plot_points))
         else:
-            base_times = list(np.linspace(0.0, max_time, plot_points))
+            if max_time in (None, ''):
+                max_time = 1000.
+            base_times = list(np.linspace(0.0, float(max_time), plot_points))
 
         times = list(sorted(set(base_times + tl)))
         band_list_all = ['V'] if len(band_list) == 0 else band_list

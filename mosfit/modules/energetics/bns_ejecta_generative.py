@@ -132,8 +132,8 @@ class BNSEjecta(Energetic):
         atheta1 = 2*np.pi*np.sin(theta1)
         atheta2 = 2*np.pi*np.sin(theta2)
 
-        vejecta_blue = np.trapz(vtheta1*atheta1,x=theta1)/np.trapz(atheta1,x=theta1)
-        vejecta_red = np.trapz(vtheta2*atheta2,x=theta2)/np.trapz(atheta2,x=theta2)
+        vejecta_blue = np.trapezoid(vtheta1*atheta1,x=theta1)/np.trapezoid(atheta1,x=theta1)
+        vejecta_red = np.trapezoid(vtheta2*atheta2,x=theta2)/np.trapezoid(atheta2,x=theta2)
 
         mejecta_red = Mejdyn * f_red
         vejecta_red *= ckm

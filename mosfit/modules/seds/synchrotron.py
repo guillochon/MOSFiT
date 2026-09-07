@@ -35,14 +35,10 @@ class Synchrotron(SED):
         cc = self.C_CONST
         ac = self.ANG_CGS
         zp1 = 1.0 + kwargs[self.key(self.key('redshift'))]
-        seds = []
+        seds = self.alloc_seds(len(self._luminosities))
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if lum == 0.0:
-                if bi >= 0:
-                    seds.append(np.zeros_like(self._sample_frequencies[bi]))
-                else:
-                    seds.append([0.0])
                 continue
             if bi >= 0:
                 rest_freqs = self._sample_frequencies[bi] * zp1
@@ -60,7 +56,10 @@ class Synchrotron(SED):
 
             sed = np.nan_to_num(sed)
 
-            seds.append(sed)
+            if bi >= 0:
+                seds[li, :len(sed)] = sed
+            else:
+                seds[li, 0] = sed[0]
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 

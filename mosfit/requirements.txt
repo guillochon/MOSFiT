@@ -1,29 +1,3 @@
-# Pip-only installs often fail on mpi4py because it links against MPI; use
-#   conda install -c conda-forge openmpi mpi4py
-# then install MOSFiT deps (conda's mpi4py 4.x is allowed below).
-#
-# Mixed NumPy installs (e.g. 1.x + 2.x metadata) break astropy; keep a single NumPy<=1.26.x.
-#
-# If ~/.local shadows the conda env (older astropy vs env NumPy), reactivate after:
-#   conda env config vars set PYTHONNOUSERSITE=1 -n <env>
-# or prefix runs with PYTHONNOUSERSITE=1.
-setuptools
-astrocats>=0.3.33
-astropy>=5.0.1
-Cython>=3.0.0
-dynesty>=2.0.0
-emcee>=3.0.2
-extinction>=0.2.2
-h5py>=3.8.0
-inflect>=1.0.0
-matplotlib>=3.0.0
-mpi4py>=3.1.6,<5
-nbstripout>=0.2.9
-numexpr>=2.6.1
-numpy>=1.23,<=1.26.4
-pandas>=2.1,<3
-palettable>=2.1.1
-schwimmbad==0.3.0
-scipy>=1.2
-seaborn>=0.7.1
-six>=1.0.0
+# Runtime dependencies live in the project-root pyproject.toml.
+#   uv sync
+#   pip install -e .

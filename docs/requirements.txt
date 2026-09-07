@@ -1,27 +1,3 @@
-# Docs / Read the Docs dependencies
-sphinx>=7.0,<8
-sphinx_rtd_theme>=2.0
-sphinx_automodapi
-sphinxcontrib-autoprogram
-numpydoc
-
-# Runtime deps needed to import mosfit during autodoc (package installed with --no-deps)
-numpy>=1.23,<=1.26.4
-scipy
-astropy>=5.0.1
-astrocats>=0.3.33
-emcee>=3.0.2
-extinction>=0.2.2
-schwimmbad==0.3.0
-numexpr
-matplotlib
-seaborn
-h5py
-tqdm
-inflect
-six
-pandas>=2.1,<3
-palettable
-Cython
-dynesty
-nbstripout
+# Docs dependencies live in pyproject.toml under [project.optional-dependencies] docs.
+#   uv sync --extra docs
+#   pip install -e ".[docs]"

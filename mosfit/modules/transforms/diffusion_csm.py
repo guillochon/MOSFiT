@@ -81,7 +81,7 @@ class DiffusionCSM(Transform):
         int_args = int_lums * np.exp((int_times) / t0)
         int_args[np.isnan(int_args)] = 0.0
 
-        uniq_lums = np.trapz(int_args, int_times)
+        uniq_lums = np.trapezoid(int_args, int_times)
         uniq_lums*= np.exp(-int_tes/t0)/t0
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]

@@ -1,0 +1,65 @@
+name: Tests
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+concurrency:
+  group: tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/master' }}
+
+jobs:
+  test:
+    name: ${{ matrix.os }} / Python ${{ matrix.python-version }}
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ["3.11", "3.14"]
+        include:
+          # Spawn process-pool path used by --max-cores
+          - os: windows-latest
+            python-version: "3.14"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: ${{ matrix.python-version }}
+          enable-cache: true
+
+      - name: Sync locked environment
+        run: uv sync --frozen
+
+      - name: Run package tests with coverage
+        run: uv run python mosfit/tests/run_all.py
+
+  sdist:
+    name: sdist / pip (conda-forge shape)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+      - name: Build sdist and wheel
+        run: uv build
+      - name: Pip-install the sdist without uv.lock
+        run: |
+          set -euo pipefail
+          # Pin 3.12 (do not use `uv python find`, which honors `.python-version`).
+          # `--seed` installs pip; a bare `uv venv` has no pip module.
+          uv venv --python 3.12 --seed .venv-sdist
+          .venv-sdist/bin/python -m pip install --upgrade pip
+          .venv-sdist/bin/python -m pip install dist/mosfit-*.tar.gz
+          .venv-sdist/bin/python -c "import mosfit; assert mosfit.__version__.startswith('2.')"
+          .venv-sdist/bin/mosfit --version
+          tar -tzf dist/mosfit-*.tar.gz | grep -E '/LICENSE$|/CHANGELOG.md$|/test.py$'

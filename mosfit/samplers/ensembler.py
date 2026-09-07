@@ -62,7 +62,7 @@ class Ensembler(Sampler):
                 )
             if self._acor and self._aacort > 0:
                 acortimes = '<' if self._aa < self._MAX_ACORC else ''
-                acortimes += str(np.int(float(self._emi -
+                acortimes += str(int(float(self._emi -
                                               self._ams) / self._actc))
                 modeldict[MODEL.CONVERGENCE].append(
                     {
@@ -90,7 +90,7 @@ class Ensembler(Sampler):
         # upon the value of acort (the autocorrelation timescale).
         if self._acor and self._aacort > 0 and self._aa == self._MAX_ACORC:
             actc0 = int(np.ceil(self._aacort))
-            for i in range(1, np.int(float(self._emi - self._ams) / actc0)):
+            for i in range(1, int(float(self._emi - self._ams) / actc0)):
                 self._pout = np.concatenate(
                     (self._all_chain[:, :, -i * self._actc, :], self._pout),
                     axis=1)
@@ -374,7 +374,7 @@ class Ensembler(Sampler):
                         self._acor = [self._aacort, self._aa, self._ams]
 
                         self._actc = int(np.ceil(self._aacort / sli))
-                        actn = np.int(
+                        actn = int(
                             float(self._emi - self._ams) / self._actc)
 
                         if (self._cc is not None and

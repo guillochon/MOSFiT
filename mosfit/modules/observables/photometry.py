@@ -28,6 +28,25 @@ from mosfit.utils import get_url_file_handle, listify, open_atomic, syst_syns
 # Important: Only define one ``Module`` class per file.
 
 
+def _sed_block(seds_in, idx):
+    """Rows ``idx`` of a rectangular or object-dtype SED array."""
+    arr = np.asarray(seds_in)
+    idx = np.asarray(idx)
+    if arr.dtype != object and arr.ndim == 2:
+        return arr[idx]
+    return np.stack([np.asarray(seds_in[int(i)], dtype=float) for i in idx])
+
+
+def _sed_col0(seds_in, idx):
+    """First wavelength sample of rows ``idx`` (radio / single-λ SEDs)."""
+    arr = np.asarray(seds_in)
+    idx = np.asarray(idx)
+    if arr.dtype != object and arr.ndim == 2:
+        return np.asarray(arr[idx, 0], dtype=float)
+    return np.array([float(np.asarray(seds_in[int(i)]).ravel()[0])
+                     for i in idx], dtype=float)
+
+
 def luminosity_cgs_to_mbol(lum_cgs):
     """Bolometric luminosity [erg/s] → absolute bolometric magnitude.
 
@@ -92,12 +111,15 @@ class Photometry(Module):
         bands = listify(bands)
 
         self._dir_path = os.path.dirname(os.path.realpath(__file__))
-        self._filter_run_path = os.path.join('modules','observables')
-        if not os.path.exists(self._filter_run_path):
-            os.makedirs(self._filter_run_path)
+        self._filter_run_path = os.path.join('modules', 'observables')
+        # SVO downloads are cached under the process CWD. Do not mkdir in the
+        # installed package tree; site-packages is often read-only.
+        os.makedirs(
+            os.path.join(self._filter_run_path, 'filters'), exist_ok=True)
 
         band_list = []
 
+        has_comm = getattr(self._pool, 'comm', None) is not None
         if self._pool.is_master():
             rules_path = os.path.join(
                 'modules', 'observables', 'filterrules.json')
@@ -105,8 +127,9 @@ class Photometry(Module):
                 rules_path = os.path.join(self._dir_path, 'filterrules.json')
             with open(rules_path) as f:
                 filterrules = json.load(f, object_pairs_hook=OrderedDict)
-            for rank in range(1, self._pool.size + 1):
-                self._pool.comm.send(filterrules, dest=rank, tag=5)
+            if has_comm:
+                for rank in range(1, self._pool.size + 1):
+                    self._pool.comm.send(filterrules, dest=rank, tag=5)
         else:
             filterrules = self._pool.comm.recv(source=0, tag=5)
 
@@ -169,6 +192,9 @@ class Photometry(Module):
         self._band_index_cache = {}
         self._warned_mismatch = False
         self._zps = np.full(self._n_bands, 0.0)
+        self._trans_on_sample = None
+        self._area_on_sample = None
+        self._filter_sample_id = None
 
         for i, band in enumerate(self._unique_bands):
             self._band_xunits[i] = band.get('xunit', 'Angstrom')
@@ -276,8 +302,7 @@ class Photometry(Module):
                                 ' '.join([str(y) for y in x])
                                 for x in vo_dat
                             ])
-                            if (not self._model._fitter._prefer_cache or
-                                    not os.path.exists(path)):
+                            if not os.path.exists(path):
                                 with open_atomic(path, 'w') as f:
                                     f.write(vo_string)
 
@@ -323,8 +348,7 @@ class Photometry(Module):
                                     ' '.join([str(y) for y in x])
                                     for x in vo_dat
                                 ])
-                                if (not self._model._fitter._prefer_cache or
-                                        not os.path.exists(path)):
+                                if not os.path.exists(path):
                                     with open_atomic(path, 'w') as f:
                                         f.write(vo_string)
 
@@ -356,9 +380,11 @@ class Photometry(Module):
                         for row in csv.reader(
                                 f, delimiter=' ', skipinitialspace=True):
                             rows.append([float(x) for x in row[:2]])
-                for rank in range(1, self._pool.size + 1):
-                    self._pool.comm.send(rows, dest=rank, tag=3)
-                    self._pool.comm.send(zps, dest=rank, tag=4)
+                has_comm = getattr(self._pool, 'comm', None) is not None
+                if has_comm:
+                    for rank in range(1, self._pool.size + 1):
+                        self._pool.comm.send(rows, dest=rank, tag=3)
+                        self._pool.comm.send(zps, dest=rank, tag=4)
             else:
                 rows = self._pool.comm.recv(source=0, tag=3)
                 zps = self._pool.comm.recv(source=0, tag=4)
@@ -374,30 +400,30 @@ class Photometry(Module):
                 self._band_energies[
                     i], self._band_areas[i] = xvals, yvals / xvals
                 self._band_wavelengths[i] = xscale / self._band_energies[i]
-                self._average_wavelengths[i] = np.trapz([
+                self._average_wavelengths[i] = np.trapezoid([
                     x * y
                     for x, y in zip(
                         self._band_areas[i], self._band_wavelengths[i])
-                ], self._band_wavelengths[i]) / np.trapz(
+                ], self._band_wavelengths[i]) / np.trapezoid(
                     self._band_areas[i], self._band_wavelengths[i])
             else:
                 self._band_wavelengths[
                     i], self._transmissions[i] = xvals, yvals
                 # scale by zero-point flux (Flbda = Fnu*c/lbda^2)
-                self._filter_integrals[i] = self.FLUX_STD * np.trapz(
+                self._filter_integrals[i] = self.FLUX_STD * np.trapezoid(
                     np.array(self._transmissions[i]) /
                     np.array(self._band_wavelengths[i]) ** 2,
                     self._band_wavelengths[i])
-                self._count_integrals[i] = self.FLUX_STD * np.trapz(
+                self._count_integrals[i] = self.FLUX_STD * np.trapezoid(
                     np.array(self._transmissions[i]) /
                     np.array(self._band_wavelengths[i]) ** 2 / (
                         H_C_ANG_CGS / self._band_wavelengths[i]),
                     self._band_wavelengths[i])
-                self._average_wavelengths[i] = np.trapz([
+                self._average_wavelengths[i] = np.trapezoid([
                     x * y
                     for x, y in zip(
                         self._transmissions[i], self._band_wavelengths[i])
-                ], self._band_wavelengths[i]) / np.trapz(
+                ], self._band_wavelengths[i]) / np.trapezoid(
                     self._transmissions[i], self._band_wavelengths[i])
 
                 if 'offset' in band:
@@ -429,6 +455,40 @@ class Photometry(Module):
 
         if self._pool.is_master():
             prt.message('band_load_complete', inline=True)
+        self._filter_sample_id = None
+        self._trans_on_sample = None
+        self._area_on_sample = None
+
+    def _ensure_filter_sample_cache(self, sample_wavelengths):
+        """Interpolate filter curves onto ``sample_wavelengths`` once.
+
+        Sample grids and native filter curves are fixed after setup; only the
+        SED values change between likelihood / generative draws.
+        """
+        sid = id(sample_wavelengths)
+        n = len(sample_wavelengths)
+        if (getattr(self, '_filter_sample_id', None) == sid and
+                getattr(self, '_trans_on_sample', None) is not None and
+                len(self._trans_on_sample) == n):
+            return
+        trans_on = [None] * n
+        area_on = [None] * n
+        for bi in range(n):
+            wavs = np.asarray(sample_wavelengths[bi], dtype=float)
+            bw = np.asarray(self._band_wavelengths[bi], dtype=float)
+            if bw.size == 0:
+                continue
+            trans = self._transmissions[bi]
+            if len(trans):
+                trans_on[bi] = np.interp(
+                    wavs, bw, np.asarray(trans, dtype=float))
+            areas = self._band_areas[bi]
+            if len(areas):
+                area_on[bi] = np.interp(
+                    wavs, bw, np.asarray(areas, dtype=float))
+        self._trans_on_sample = trans_on
+        self._area_on_sample = area_on
+        self._filter_sample_id = sid
 
     def find_band_index(
             self, band, telescope='', instrument='', mode='', bandset='',
@@ -518,32 +578,49 @@ class Photometry(Module):
         eff_fluxes = np.zeros_like(self._luminosities)
         offsets = np.zeros_like(self._luminosities)
         model_observations = np.zeros_like(self._luminosities)
-        for li, lum in enumerate(self._luminosities):
-            bi = self._band_indices[li]
-            if bi == BOL_BAND_INDEX:
-                continue
-            if bi >= 0:
-                if (self._observation_types[li] == 'magnitude' or
-                        self._observation_types[li] == 'magcount'):
-                    offsets[li] = self._band_offsets[bi]
-                    wavs = kwargs['sample_wavelengths'][bi]
-                    yvals = np.interp(
-                        wavs, self._band_wavelengths[bi],
-                        self._transmissions[bi]) * kwargs['seds'][li] / zp1
-                    eff_fluxes[li] = np.trapz(
-                        yvals, wavs) / self._filter_integrals[bi]
-                elif self._observation_types[li] == 'countrate':
-                    wavs = np.array(kwargs['sample_wavelengths'][bi])
-                    yvals = np.interp(
-                        wavs, self._band_wavelengths[bi],
-                        self._band_areas[bi]) * kwargs['seds'][li] / zp1 / (
-                            H_C_ANG_CGS / wavs) / ANG_CGS
-                    eff_fluxes[li] = np.trapz(yvals, wavs)
-                else:
-                    raise RuntimeError('Unknown observation kind.')
-            else:
-                eff_fluxes[li] = kwargs['seds'][li][0] / ANG_CGS * (
-                    C_CGS / (self._frequencies[li] ** 2))
+        band_indices = np.asarray(self._band_indices)
+        obs_types = self._observation_types
+        seds_in = kwargs['seds']
+        sample_wavelengths = kwargs['sample_wavelengths']
+        frequencies = np.asarray(self._frequencies)
+        self._ensure_filter_sample_cache(sample_wavelengths)
+
+        freq_rows = (band_indices < 0) & (band_indices != BOL_BAND_INDEX)
+        if np.any(freq_rows):
+            idx = np.flatnonzero(freq_rows)
+            sed0 = _sed_col0(seds_in, idx)
+            eff_fluxes[idx] = sed0 / ANG_CGS * (
+                C_CGS / (frequencies[idx] ** 2))
+
+        unique_bis = np.unique(band_indices[band_indices >= 0])
+        for bi in unique_bis:
+            bi = int(bi)
+            wavs = np.asarray(sample_wavelengths[bi])
+            rows = band_indices == bi
+            mag_rows = rows & (
+                (obs_types == 'magnitude') | (obs_types == 'magcount'))
+            cr_rows = rows & (obs_types == 'countrate')
+            other = rows & ~mag_rows & ~cr_rows & (
+                band_indices != BOL_BAND_INDEX)
+            if np.any(other):
+                raise RuntimeError('Unknown observation kind.')
+
+            if np.any(mag_rows):
+                idx = np.flatnonzero(mag_rows)
+                offsets[idx] = self._band_offsets[bi]
+                trans = self._trans_on_sample[bi]
+                sed_block = _sed_block(seds_in, idx)
+                yvals = trans * sed_block / zp1
+                eff_fluxes[idx] = np.trapezoid(
+                    yvals, wavs, axis=-1) / self._filter_integrals[bi]
+
+            if np.any(cr_rows):
+                idx = np.flatnonzero(cr_rows)
+                areas = self._area_on_sample[bi]
+                sed_block = _sed_block(seds_in, idx)
+                yvals = areas * sed_block / zp1 / (
+                    H_C_ANG_CGS / wavs) / ANG_CGS
+                eff_fluxes[idx] = np.trapezoid(yvals, wavs, axis=-1)
         bi_arr = np.asarray(self._band_indices)
         phot_band = bi_arr >= 0
         nbs = np.logical_and(

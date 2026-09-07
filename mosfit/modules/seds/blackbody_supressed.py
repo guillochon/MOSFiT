@@ -101,7 +101,7 @@ class BlackbodyCutoff(SED):
         zp1 = 1.0 + kwargs[self.key('redshift')]
 
         lt = len(self._times)
-        seds = np.empty(lt, dtype=object)
+        seds = self.alloc_seds(lt)
         rp2  = self._radius_phot ** 2
         tp   = self._temperature_phot
 
@@ -109,11 +109,8 @@ class BlackbodyCutoff(SED):
         for li, lum in enumerate(self._luminosities):
             bi = self._band_indices[li]
             if bi == BOL_BAND_INDEX:
-                seds[li] = np.zeros(1)
                 continue
             if lum == 0.0:
-                seds[li] = np.zeros(
-                    len(self._sample_wavelengths[bi]) if bi >= 0 else 1)
                 continue
             if bi >= 0:
                 rest_wavs = self._sample_wavelengths[bi] * ac / zp1
@@ -145,17 +142,20 @@ class BlackbodyCutoff(SED):
                 sed = ne.re_evaluate()
 
             sed[np.isnan(sed)] = 0.0
-            seds[li] = sed
+            if bi >= 0:
+                seds[li, :len(sed)] = sed
+            else:
+                seds[li, 0] = sed[0]
 
         uniq_times = np.unique(self._times)
         tsort = np.argsort(self._times)
         uniq_is = np.searchsorted(self._times, uniq_times, sorter=tsort)
 
         bb_wavelengths = np.linspace(100, 100000, self.N_TERMS)
-        norms = np.array([(R2 * self.STEF_CONST * T ** 4) / np.trapz(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
+        norms = np.array([(R2 * self.STEF_CONST * T ** 4) / np.trapezoid(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
 
         # Apply renormalisation
-        seds *= norms[np.searchsorted(uniq_times, self._times)]
+        seds *= norms[np.searchsorted(uniq_times, self._times)][:, None]
         seds = self.add_to_existing_seds(seds, **kwargs)
 
         # Units of `seds` is ergs / s / Angstrom.

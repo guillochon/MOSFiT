@@ -25,3 +25,19 @@ mosfit/strings-*.json
 # Documentation
 docs/_build
 docs/api
+
+# uv
+.venv/
+htmlcov/
+.coverage
+.coverage.*
+# /*.* ignores every new root file with an extension unless negated
+!pyproject.toml
+!uv.lock
+!CHANGELOG.md
+!test.py
+!.python-version
+!.dockerignore
+!.github/
+!.github/workflows/
+!.github/workflows/*.yml

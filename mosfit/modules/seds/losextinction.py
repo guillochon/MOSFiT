@@ -70,7 +70,7 @@ class LOSExtinction(SED):
         #kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
         self.preprocess(**kwargs)
         zp1 = 1.0 + kwargs[self.key('redshift')]
-        self._seds = kwargs[self.key('seds')]
+        self._seds = self.as_rectangular_seds(kwargs[self.key('seds')])
         #print("in losextinction, seds: "+str(self._seds))
         self._nh_host = kwargs[self.key('nhhost')]
         self._rv_host = kwargs[self.key('rvhost')]
@@ -82,38 +82,27 @@ class LOSExtinction(SED):
         av_host = self._nh_host / 1.8e21
 
         extinct_cache = OrderedDict()
-        #print("in losextinction, self._bands has shape: "+str(self._bands.shape))
-        #print("in losextinction, self._seds has shape: "+str(self._seds.shape)+"\n\n")
-        for si, cur_band in enumerate(self._bands):
-            
-            bi = self._band_indices[si]
-            # Extinct out host gal (using rest wavelengths)
-            if bi >= 0:
-                if bi not in extinct_cache:
-                    extinct_cache[bi] = np.zeros_like(
-                        self._band_rest_wavelengths[bi])
-                    ind = self._ext_indices[bi]
-                    if len(ind) > 0:
-                        extinct_cache[bi][ind] = odonnell94(
-                            self._band_rest_wavelengths[bi][ind],
-                            av_host, self._rv_host)
-                    ind = self._x_indices[bi]
-                    if len(ind) > 0:
-                        extinct_cache[bi][ind] = self.mm83(
-                            self._nh_host,
-                            self._band_rest_wavelengths[bi][ind])
-                # Add host and MW contributions
-                #print("trying to get seds at si = "+str(si))
-                eapp(
-                    self._mw_extinct[bi] + extinct_cache[bi],
-                    self._seds[si], inplace=True)
-                
-
-            else:
-                # wavelengths = np.array(
-                #   [c.c.cgs.value / self._frequencies[si]])
-                # Need extinction function for radio
-                pass
+        band_indices = np.asarray(self._band_indices)
+        unique_bis = np.unique(band_indices[band_indices >= 0])
+        for bi in unique_bis:
+            bi = int(bi)
+            extinct_cache[bi] = np.zeros_like(
+                self._band_rest_wavelengths[bi])
+            ind = self._ext_indices[bi]
+            if len(ind) > 0:
+                extinct_cache[bi][ind] = odonnell94(
+                    self._band_rest_wavelengths[bi][ind],
+                    av_host, self._rv_host)
+            ind = self._x_indices[bi]
+            if len(ind) > 0:
+                extinct_cache[bi][ind] = self.mm83(
+                    self._nh_host,
+                    self._band_rest_wavelengths[bi][ind])
+            ext = np.asarray(self._mw_extinct[bi] + extinct_cache[bi],
+                             dtype=float)
+            idx = np.flatnonzero(band_indices == bi)
+            factor = eapp(ext, np.ones_like(ext), inplace=False)
+            self._seds[idx] *= factor
 
         # Units of `seds` is ergs / s / Angstrom.
         ret = {
@@ -161,19 +150,17 @@ class LOSExtinction(SED):
 
     def mm83(self, nh, waves):
         """X-ray extinction in the ISM from Morisson & McCammon 1983."""
-        y = np.array([self.H_C_CGS / (x * self.ANG_CGS * self.KEV_CGS)
-                      for x in waves])
-        i = np.array([np.searchsorted(self._mm83[:, 0], x) - 1 for x in y])
-        al = [1.0e-24 * (self._mm83[x, 1] + self._mm83[x, 2] * y[j] +
-                         self._mm83[x, 3] * y[j] ** 2) / y[j] ** 3
-              for j, x in enumerate(i)]
-        # For less than 0.03 keV assume cross-section scales as E^-3.
-        # http://ned.ipac.caltech.edu/level5/Madau6/Madau1_2.html
-        # See also Rumph, Boyer, & Vennes 1994.
-        al = [al[j] if x < self._min_xray
-              else self._almin * (self._min_xray / x) ** 3
-              for j, x in enumerate(y)]
-        al = [al[j] if x > self._max_xray
-              else self._almax * (self._max_xray / x) ** 3
-              for j, x in enumerate(y)]
-        return nh * np.array(al)
+        waves = np.asarray(waves, dtype=float)
+        y = self.H_C_CGS / (waves * self.ANG_CGS * self.KEV_CGS)
+        i = np.searchsorted(self._mm83[:, 0], y) - 1
+        al = 1.0e-24 * (
+            self._mm83[i, 1] + self._mm83[i, 2] * y +
+            self._mm83[i, 3] * y ** 2) / y ** 3
+        # Same two-pass replacement as the original list comprehensions.
+        al = np.where(
+            y < self._min_xray, al,
+            self._almin * (self._min_xray / y) ** 3)
+        al = np.where(
+            y > self._max_xray, al,
+            self._almax * (self._max_xray / y) ** 3)
+        return nh * al

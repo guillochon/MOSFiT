@@ -22,9 +22,9 @@ If ``-e`` does not resolve to an existing file, ``MOSFiT`` exits with an error e
 
 .. _private:
 
-------------
+----------------------
 ASCII / catalog JSON
-------------
+----------------------
 
 If you already have catalog-format JSON, pass it directly. The format follows the Open Catalog schema (historical examples: `Supernova SCHEMA <https://github.com/astrocatalogs/supernovae/blob/master/SCHEMA.md>`_).
 
@@ -43,10 +43,52 @@ If the ASCII file matches required columns closely, conversion may proceed quiet
 Sampling Options
 ----------------
 
-``MOSFiT`` at present offers three ways to sample the parameter space: an ensemble-based MCMC (implemented with the ``emcee`` package), and two nested sampling approaches (implemented with the ``ultranest`` and ``dynesty`` packages).
-The ensemble-based approach is presently the default sampler used in ``MOSFiT``, although nested sampling (which in preliminary testing performs better) is likely to replace it as the default in a future version.
+``MOSFiT`` offers three ways to sample the parameter space. Nested sampling
+with ``dynesty`` (>= 3.1) is the **default**. Ensemble MCMC (``emcee``) and
+UltraNest remain available.
 
-Samplers are selected via the ``-D`` option: ``-D ensembler`` for the ensemble-based approach, ``-D dynesty`` for nested sampling with ``dynesty``, and ``-D ultranest`` for ultranest. The approaches are described below.
+Samplers are selected via ``-D`` / ``--method``:
+
+- ``-D dynesty`` — dynamic nested sampling (default)
+- ``-D ensembler`` — affine-invariant ensemble MCMC
+- ``-D ultranest`` — reactive nested sampling (``ultranest`` is imported at
+  runtime and is not a required dependency)
+
+Likelihoods can be evaluated in parallel with ``--max-cores N`` (process pool;
+works on Windows). ``mpirun`` still takes precedence when MPI is used.
+
+.. _dynesty:
+.. _nester:
+
+Nested sampling with dynesty
+=============================
+
+In ``MOSFiT``, nested sampling via the ``dynesty`` package uses *dynamic*
+nested sampling (`full documentation <http://dynesty.rtfd.io>`_).
+
+Whereas ensemble-based approaches can only estimate the information content of their posteriors via heuristic information metrics such as the WAIC (see :ref:`scoring`), nested sampling directly evaluates the evidence for a given model, and provides a (statistical) estimate of its error. Nested sampling also yields many more useful samples of the posterior for the purposes of visualizing its structure; it is not uncommon for a run to provide tens of thousands of informative samples, as compared to ensemble-based approach that may only yield a few hundred.
+
+However, nested sampling is a much more complicated algorithm than ensemble-based MCMC and thus is potentially prone to failures that can be difficult to track down. Additionally, ``dynesty`` currently does not offer the ability to restart if the sampling is prematurely terminated; thus, it is advisable to use nested sampling in conjunction with the ``-R`` flag, which when used with ``-D dynesty`` sets the termination criterion based upon the expected remaining evidence gain (default ``dlogz`` is ``0.02``).
+
+The nested sampler is the default, and can also be selected explicitly via ``-D dynesty``. Fracking (scipy minimization during burn-in) applies to the ensemble sampler; it is not used on the dynesty path. ``--num-walkers`` / ``-N`` does **not** set dynesty's number of live points; MOSFiT uses ``nlive = 20 * ndim``.
+
+The status line **Efficiency** is dynesty's sampling efficiency
+(``100 × nested iterations / likelihood calls``), not CPU use and not
+fraction of the fit completed.
+
+.. _baselining-batching:
+
+Baselining and batching
+-----------------------
+
+When performing a nested sampling run, the user might notice that there are two phases to the process: "baselining" and "batching". In the baselining phase, ``dynesty`` samples from the posterior repeatedly to obtain the log of the evidence :math:`\log Z` (the N-dimensional volume integral of the posterior), for which it estimates the remaining :math:`\Delta \log Z`. Once that remaining evidence is smaller than the threshold set with ``-R``, baselining ceases and batching begins.
+
+In batching, ``dynesty`` fleshes out the posterior such that even regions of lower probability that may not be dominating the evidence integral are resolved with high fidelity. This process continues until a stopping criterion is met. Batching often takes longer than baselining.
+
+CPU use may drop between bursts of likelihood evaluations: dynesty rebuilds
+its bounding ellipsoids on the parent process (workers idle), and after each
+batch MOSFiT merges runs and checks the stopping function. That is expected
+and does not mean the job has hung.
 
 .. _ensembler:
 
@@ -57,7 +99,7 @@ In ensemble-based Markov chain Monte Carlo, a collection of parameter positions 
 
 While ``MOSFiT`` also performs minimization during the burn-in phase to find the global minima within the posterior, it should be noted that ``emcee`` on its own has been found to have poor convergence to the posterior for problems with greater than about 10 dimensions (`Huijser et al. 2015 <https://arxiv.org/abs/1509.02230>`_). As many models provided with ``MOSFiT`` have a dimension similar to this number, care should be taken when using this sampler to ensure that convergence has been achieved.
 
-The ensemble-based MCMC can be selected via the ``-D`` flag: ``-D ensembler``.
+The ensemble-based MCMC can be selected via the ``-D`` flag: ``-D ensembler`` (it is no longer the default).
 
 .. _initialization:
 
@@ -100,19 +142,23 @@ As an example, assuming a user wants to fit the ``ic`` model to a transient that
 Number of walkers
 -----------------
 
-The sampler used in ``MOSFiT`` is a variant of ``emcee``'s multi-temperature sampler ``PTSampler``, and thus the user can pass both a number of temperatures to use with ``-T`` in addition to the number of walkers ``-N`` per temperature. If one temperature is used (the default), the total number of walkers is simply whatever is passed to ``-N``, otherwise it is :math:`N*T`.
+The ensemble sampler used in ``MOSFiT`` is a variant of ``emcee``'s multi-temperature sampler ``PTSampler``. Pass a number of temperatures with ``-T`` and walkers per temperature with ``-N``. If one temperature is used (the default), the total number of walkers is whatever is passed to ``-N``, otherwise it is :math:`N*T`. These flags apply to ``-D ensembler``, not to dynesty live points.
 
 .. _duration:
 
 Duration of fitting
 -------------------
 
-The duration of the ``MOSFiT`` run is set with the ``-i`` option, unless the ``-R`` or ``-U`` options are used (see :ref:`convergence <convergence>`). Generally, unless the model has only a few free parameters or was initialized very close to the solution of highest-likelihood, the user should not expect good results unless ``-i`` is set to a few thousand or more.
+The duration of an **ensemble** (``-D ensembler``) run is set with the ``-i`` option, unless the ``-R`` or ``-U`` options are used (see :ref:`convergence <convergence>`). Generally, unless the model has only a few free parameters or was initialized very close to the solution of highest-likelihood, the user should not expect good results unless ``-i`` is set to a few thousand or more.
+
+For the default ``dynesty`` sampler, prefer ``-R`` (remaining evidence / ``dlogz``, default ``0.02``) rather than a large ``-i``. ``-i``, ``-b``/``-p``, and ``-f`` describe ensemble burn-in and walking, not nested sampling.
 
 .. _burning:
 
 Burning in a model
 ------------------
+
+Burn-in and fracking apply to ``-D ensembler``. Nested sampling does not use this path (``--no-fracking`` is implicit for ``dynesty``).
 
 Unless the solution for a given dataset is known in advance, the initial period of searching for the true posterior distribution involves finding the locations of the solutions of highest likelihood. In ``MOSFiT``, various ``scipy`` routines are employed in an alternating fashion with a Gibbs-like affine-invariant ensemble evolution, which we have found more robustly locates the true global likelihood minimas. The period of alternation between optimization (called "fracking" in ``MOSFiT``) and sampling (called "walking" in ``MOSFiT``) is controlled by the ``-f`` option, with the total burn-in duration being controlled by the ``-b``/``-p`` options. If ``-b``/``-p`` are not set, the burn-in is set to run for half the total number of iterations specified by ``-i``.
 
@@ -124,50 +170,26 @@ As an example, the following will run the burn-in phase for 2000 iterations, the
 
 All :ref:`convergence <convergence>` metrics are computed *after* the burn-in phase, as the operations employed during burn-in do *not* preserve detailed balance. During burn-in, the solutions of highest likelihood are over-represented, and thus the posteriors should not be trusted until the :ref:`convergence <convergence>` criteria are met beyond the burn-in phase.
 
-.. _nester:
-.. _dynesty:
+.. _ultranest:
 
 Nested sampling with ultranest
 ==============================
 
 For complicated posteriors with multiple modes or for problems of high dimension (ten dimensions or greater), nested sampling is often a superior choice versus ensemble-based methods.
-In ``MOSFiT``, nested sampling is available via the ``ultranest`` package. More information about ``ultranest`` can be found at https://johannesbuchner.github.io/UltraNest/.
+In ``MOSFiT``, reactive nested sampling is also available via the ``ultranest`` package. More information about ``ultranest`` can be found at https://johannesbuchner.github.io/UltraNest/.
 
-The nested sampler can be selected via the ``-D`` flag: ``-D ultranest``.
+Select it with ``-D ultranest``. ``ultranest`` is imported only when that sampler is chosen; it is not installed by ``uv sync`` unless you add it yourself.
 
 Ultranest supports resuming from a previous run if you set the output path (``-o myoutputdirectory``).
 
 If you have ``mpi4py`` installed, Ultranest supports running with MPI (``mpiexec -np 8 mosfit``).
-
-Ultranest implements a modern variant of nested sampling known as *reactive* nested sampling,
-a derivative of *dynamic* nested sampling. This can enhance the posterior samples at low cost.
-
-Nested sampling with dynesty
-=============================
-
-In ``MOSFiT``, nested sampling via the ``dynesty`` package is also available, which uses a modern variant of nested sampling known as *dynamic* nested sampling (`see the full documentation for this package <http://dynesty.rtfd.io>`_).
-
-Whereas ensemble-based approaches can only estimate the information content of their posteriors via heuristic information metrics such as the WAIC (see :ref:`scoring`), nested sampling directly evaluates the evidence for a given model, and provides a (statistical) estimate of its error. Nested sampling also yields many more useful samples of the posterior for the purposes of visualizing its structure; it is not uncommon for a run to provide tens of thousands of informative samples, as compared to ensemble-based approach that may only yield a few hundred.
-
-However, nested sampling is a much more complicated algorithm than ensemble-based MCMC and thus is potentially prone to failures that can be difficult to track down. Additionally, the ``dynesty`` software currently does not offer the ability to restart if the sampling is prematurely terminated; thus, it is advisable to always use the nested sampling routine in conjunction with the ``-R`` flag, which when used with ``-D dynesty`` specifies the termination criterion based upon the expected remaining evidence gain.
-
-The nested sampler can be selected via the ``-D`` flag: ``-D dynesty``.
-
-.. _baselining-batching:
-
-Baselining and batching
------------------------
-
-When performing a nested sampling run, the user might notice that there are two phases to the process: "baselining" and "batching". In the baselining phase, ``dynesty`` samples from the posterior repeatedly to obtain the log of the evidence :math:`\log_{10} Z` (the N-dimensional volume integral of the posterior), for which it estimates the error :math:`\Delta \log_{10} Z`. Once :math:`\Delta \log_{10} Z` is smaller than some prescribed value (set with the ``-R`` parameter), baselining ceases and batching begins.
-
-In batching, ``dynesty`` fleshes out the posterior such that even regions of lower probability that may not be dominating the evidence integral are resolved with high fidelity. In this part of the process, the posterior is sampled from again, but this time minimizing the error in the posterior distribution as opposed to its integral. This process continues until a stopping criterion is met, which indicates that the posterior is now of high quality. Typically, the batching phase takes a few times longer than the baselining phase.
 
 .. _switching:
 
 Switching between samplers
 ==========================
 
-After completing a nested sampling run, it is often useful to draw parameter combinations from the large collection of samples generated to perform additional analysis (particularly for data-intensive tasks, such as analyzing a collection of model SEDs). This can be easily done by loading the output from the previous run with the ``ensembler`` method (the default), and setting ``MOSFiT`` to run in generative mode with ``-G``,
+After completing a nested sampling run, it is often useful to draw parameter combinations from the large collection of samples generated to perform additional analysis (particularly for data-intensive tasks, such as analyzing a collection of model SEDs). This can be easily done by loading the output from the previous run with the ``ensembler`` method (via ``-D ensembler``), and setting ``MOSFiT`` to run in generative mode with ``-G``,
 
 .. code-block:: bash
 

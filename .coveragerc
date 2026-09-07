@@ -1,7 +1,0 @@
-[run]
-omit =
-    mosfit/plotting.py
-
-[report]
-exclude_lines =
-    except KeyboardInterrupt:

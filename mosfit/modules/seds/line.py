@@ -48,7 +48,9 @@ class Line(SED):
         if self._seds is None:
             raise ValueError(prt.message('line_sed'))
 
-        seds = [x * (1.0 - amps[xi]) for xi, x in enumerate(self._seds)]
+        seds = self.as_rectangular_seds(self._seds)
+        amps = np.asarray(amps, dtype=float)
+        seds = seds * (1.0 - amps)[:, None]
         amps *= self._luminosities / (ls * SQRT_2_PI)
         amps_dict = {}
         evaled = False
@@ -76,7 +78,12 @@ class Line(SED):
                 else:
                     amps_dict[bind] = ne.re_evaluate()
 
-            seds[li] += amps[li] * amps_dict[bind]
+            profile = np.asarray(amps_dict[bind], dtype=float).ravel()
+            if profile.size == 1:
+                seds[li, 0] += amps[li] * profile[0]
+            else:
+                n = min(profile.size, seds.shape[1])
+                seds[li, :n] += amps[li] * profile[:n]
 
             # seds[li][np.isnan(seds[li])] = 0.0
 
