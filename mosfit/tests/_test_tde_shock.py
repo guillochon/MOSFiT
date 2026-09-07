@@ -145,6 +145,26 @@ if __name__ == '__main__':
     summed = shock_capped + acc_capped
     if np.max(summed) > 2.0 * cap:
         raise SystemExit('sum of separately capped terms exceeds 2 L_Edd')
+    np.testing.assert_allclose(
+        lc_out['acc_edd_ratio_peak'], np.max(acc_capped) / two['Ledd'],
+        rtol=1e-12)
+
+    # Super-Eddington efficiency law: p=2, L = L_Edd ṁ/(1+ṁ)^2.
+    lc_p2 = LeddCap(name='leddcap', model=dummy)
+    lc_p2.set_attributes({
+        'replacements': {'luminosities': 'acc_luminosities'},
+        'wants_dense': True})
+    lc_p2._provide_dense = True
+    p2_out = lc_p2.process(
+        dense_acc_luminosities=np.array([cap, 100.0 * cap]),
+        Leddlim=1.0, Ledd=two['Ledd'], eddslope=2.0,
+        dense_indices=np.array([0, 1]))
+    np.testing.assert_allclose(
+        p2_out['dense_acc_luminosities'][0], 0.25 * cap, rtol=1e-12)
+    np.testing.assert_allclose(
+        p2_out['dense_acc_luminosities'][1],
+        100.0 / (101.0 ** 2) * cap, rtol=1e-12)
+    np.testing.assert_allclose(p2_out['acc_edd_ratio_peak'], 0.25, rtol=1e-12)
     print('accretion and shock capped separately before sum')
 
     dy = DarkYear(name='Tviscous', model=dummy)
@@ -215,6 +235,26 @@ if __name__ == '__main__':
         raise SystemExit('tviscoffset should be fixed')
     if not model._modules['tviscoffset']._fixed:
         raise SystemExit('tviscoffset module should be fixed')
+    if 'eddslope' not in model._call_stack:
+        raise SystemExit('eddslope missing from tde_shock')
+    if 'eddslope_shock' not in model._call_stack:
+        raise SystemExit('eddslope_shock missing from tde_shock')
+    if 'eddslope' in model._free_parameters:
+        raise SystemExit('eddslope should be fixed')
+    if 'eddslope_shock' in model._free_parameters:
+        raise SystemExit('eddslope_shock should be fixed')
+    if not model._modules['eddslope']._fixed:
+        raise SystemExit('eddslope module should be fixed')
+    ledd_inputs = [
+        x if not isinstance(x, list) else x[0]
+        for x in model._call_stack['leddcap'].get('inputs', [])]
+    if 'eddslope' not in ledd_inputs:
+        raise SystemExit('accretion leddcap should take eddslope')
+    shock_cap_inputs = [
+        x if not isinstance(x, list) else x[0]
+        for x in model._call_stack['leddcap_shock'].get('inputs', [])]
+    if 'eddslope_shock' not in shock_cap_inputs:
+        raise SystemExit('leddcap_shock should take eddslope_shock')
 
     targets = {
         'frad': 0.03,
@@ -253,6 +293,35 @@ if __name__ == '__main__':
         raise SystemExit('dense_shock_luminosities exceeds Leddlim × Ledd')
     if np.max(run_total) > 2.0 * run_cap:
         raise SystemExit('summed luminosity exceeds 2 Leddlim × Ledd')
+    acc_p1 = np.asarray(outputs['dense_acc_luminosities'], dtype=float)
+    np.testing.assert_allclose(np.sum(acc_p1), 2.552087541132003e+44, rtol=1e-10)
+    np.testing.assert_allclose(
+        np.max(acc_p1), 1.9900429408961543e+43, rtol=1e-10)
+    np.testing.assert_allclose(
+        np.sum(run_shock), 1.2175840705952918e+44, rtol=1e-10)
+    np.testing.assert_allclose(
+        np.max(run_shock), 1.4357594231102957e+43, rtol=1e-10)
+    np.testing.assert_allclose(
+        np.sum(run_total), 3.769671611727294e+44, rtol=1e-10)
+    if 'acc_edd_ratio_peak' not in outputs:
+        raise SystemExit('accretion cap did not emit acc_edd_ratio_peak')
+    if not (0.0 < float(outputs['acc_edd_ratio_peak']) <= 1.0):
+        raise SystemExit('p=1 acc_edd_ratio_peak should sit in (0, 1]')
+
+    model._modules['eddslope'].fix_value(1.5)
+    outputs_p15 = model.run(x)
+    acc_p15 = np.asarray(outputs_p15['dense_acc_luminosities'], dtype=float)
+    shock_p15 = np.asarray(outputs_p15['dense_shock_luminosities'], dtype=float)
+    np.testing.assert_allclose(shock_p15, run_shock, rtol=1e-10, atol=0.0)
+    lmax15 = 0.5 ** 0.5 / 1.5 ** 1.5
+    if np.max(acc_p15) > lmax15 * run_cap * (1.0 + 1e-8):
+        raise SystemExit(
+            'p=1.5 dense_acc_luminosities peaked above 0.38 L_Edd')
+    if int(np.argmax(acc_p15)) <= int(np.argmax(acc_p1)):
+        raise SystemExit('p=1.5 accretion peak should come later than p=1')
+    if float(outputs_p15['acc_edd_ratio_peak']) > lmax15 * (1.0 + 1e-8):
+        raise SystemExit('p=1.5 acc_edd_ratio_peak should be <= 0.38')
+    model._modules['eddslope'].fix_value(1.0)
     t_pk_run = float(outputs['tfallback']) + (
         float(outputs['tpeak']) - float(outputs['resttexplosion']))
     t_pk_run = max(t_pk_run, float(outputs['tfallback']))

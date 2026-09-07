@@ -30,8 +30,10 @@ tagged.
   [−1.5, 2]), with a per-event dex offset `tviscoffset` for population
   synthesis. Each luminosity is capped at Eddington separately — the
   accretion term before the viscous delay, the prompt shock before
-  they are summed — so L/L_Edd stays at most 2. ε_acc is drawn
-  modestly around 0.03. The `tde` model is unchanged.
+  they are summed — so L/L_Edd stays at most 2. Accretion follows
+  ``L = L_Edd ṁ/(1+ṁ)^p`` with fixed `eddslope` p = 1 (the harmonic
+  cap) by default; p > 1 declines at super-Eddington feeding rates.
+  ε_acc is drawn modestly around 0.03. The `tde` model is unchanged.
 - `uv` / `pyproject.toml` packaging (hatchling). Python **3.11–3.14**.
 - Optional extras: `mpi` (mpi4py), `sedona` (PyTorch, SESN SEDONA only), `docs`.
 - `--max-cores N` local process pool for likelihoods (Windows spawn-safe).

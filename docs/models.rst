@@ -62,6 +62,8 @@ List of built-in models
 
 .. [*] In development.
 
+``tde_shock`` accretion uses ``L = L_Edd ṁ/(1+ṁ)^{p}`` with fixed ``eddslope`` ``p = 1`` (harmonic cap) by default; ``p > 1`` declines at super-Eddington feeding rates.
+
 ``sesn_sedona`` needs the optional ``sedona`` extra (PyTorch): ``uv sync --extra sedona`` or ``pip install 'mosfit[sedona]'``. Other models do not import ``torch``. A local TDE catalog fixture for tests and examples is ``mosfit/tests/PS1-10jh.json`` (Open TDE Catalog JSON; no network fetch).
 
 .. _altering:
