@@ -23,9 +23,11 @@ tagged.
 
 ### Added
 
-- `tde_shock` model: fallback luminosity from prompt stream dissipation at
-  pericenter (Jiang, Guillochon & Loeb 2016), with free parameter `frad` and no
-  viscous delay. The `tde` model is unchanged.
+- `tde_shock` model: prompt nozzle-shock luminosity plus viscously
+  delayed accretion (Jiang, Guillochon & Loeb 2016; Guillochon &
+  Ramirez-Ruiz 2015). `Tviscous` follows the dark-year ``rp/rg`` map;
+  the Eddington cap is applied after the two terms are summed. The
+  `tde` model is unchanged.
 - `uv` / `pyproject.toml` packaging (hatchling). Python **3.11–3.14**.
 - Optional extras: `mpi` (mpi4py), `sedona` (PyTorch, SESN SEDONA only), `docs`.
 - `--max-cores N` local process pool for likelihoods (Windows spawn-safe).

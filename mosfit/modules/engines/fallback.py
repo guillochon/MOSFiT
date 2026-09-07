@@ -577,34 +577,55 @@ class Fallback(Engine):
             np.zeros(lengthposttimes)))
         dmdtnew[dmdtnew < 0] = 0
 
-        rp_over_rg = None
-        if 'frad' in kwargs and kwargs['frad'] is not None:
-            # prompt dissipation at pericenter: epsilon = f_rad r_g / r_p
-            rt = Rstar * c.R_sun.cgs.value * (self._Mh / self._Mstar) ** (
-                1.0 / 3.0)
-            rp = rt / self._beta
-            rg = c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS)
-            self._efficiency = kwargs['frad'] * rg / rp
-            self._efficiency = min(self._efficiency, 0.42)
-            rp_over_rg = rp / rg
-        else:
-            self._efficiency = kwargs['efficiency']
-        luminosities = (self._efficiency * dmdtnew *
-                        c.c.cgs.value * c.c.cgs.value)
+        rt = Rstar * c.R_sun.cgs.value * (self._Mh / self._Mstar) ** (
+            1.0 / 3.0)
+        rp = rt / self._beta
+        rg = c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS)
+        rp_over_rg = rp / rg
+
         kappa_t = 0.2 * (1 + 0.74)
         Ledd = (FOUR_PI * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
-
         self._Leddlim = kwargs['Leddlim']
         ledd_cap = self._Leddlim * Ledd
-        luminosities = luminosities * ledd_cap / (luminosities + ledd_cap)
-        luminosities = np.where(np.isnan(luminosities), 0.0, luminosities)
+        l0 = dmdtnew * c.c.cgs.value * c.c.cgs.value
+
+        has_frad = kwargs.get('frad') is not None
+        has_eff = kwargs.get('efficiency') is not None
+        two_component = has_frad and has_eff
 
         result = {
-            self.dense_key('luminosities'): luminosities, 'Rstar': Rstar,
-            'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-            'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback': float(tfallback),
-            'efficiency': self._efficiency}
-        if rp_over_rg is not None:
-            result['rp_over_rg'] = rp_over_rg
+            'Rstar': Rstar, 'tpeak': tpeak, 'beta': self._beta,
+            'starmass': self._Mstar, 'dmdt': dmdtnew, 'Ledd': Ledd,
+            'tfallback': float(tfallback), 'rp_over_rg': rp_over_rg}
+
+        if has_frad:
+            # prompt dissipation at pericenter: epsilon = f_rad r_g / r_p
+            shock_eps = min(float(kwargs['frad']) * rg / rp, 0.42)
+            shock_lums = shock_eps * l0
+            result[self.dense_key('shock_luminosities')] = np.where(
+                np.isnan(shock_lums), 0.0, shock_lums)
+            result['shock_efficiency'] = shock_eps
+
+        if has_eff:
+            self._efficiency = kwargs['efficiency']
+            acc_lums = self._efficiency * l0
+        elif has_frad:
+            self._efficiency = result['shock_efficiency']
+            acc_lums = None
+        else:
+            raise KeyError('fallback requires `efficiency` or `frad`')
+
+        result['efficiency'] = self._efficiency
+
+        if two_component:
+            # Defer the Eddington cap until shock + viscous accretion are summed.
+            result[self.dense_key('luminosities')] = np.where(
+                np.isnan(acc_lums), 0.0, acc_lums)
+        else:
+            luminosities = acc_lums if acc_lums is not None else shock_lums
+            luminosities = luminosities * ledd_cap / (luminosities + ledd_cap)
+            luminosities = np.where(np.isnan(luminosities), 0.0, luminosities)
+            result[self.dense_key('luminosities')] = luminosities
+
         return result
