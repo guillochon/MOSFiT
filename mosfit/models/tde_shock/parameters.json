@@ -23,8 +23,8 @@
         "log":true
     },
     "efficiency":{
-        "min_value":0.05,
-        "max_value":0.2,
+        "min_value":0.01,
+        "max_value":0.1,
         "log":true
     },
     "texplosion":{

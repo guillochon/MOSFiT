@@ -58,7 +58,7 @@
     },
     "efficiency":{
         "kind":"parameter",
-        "value":0.1,
+        "value":0.03,
         "class":"parameter",
         "latex":"\\epsilon_{\\rm acc}"
     },
@@ -151,10 +151,22 @@
         ],
         "latex":"T_{\\rm viscous}"
     },
+    "leddcap":{
+        "kind":"utility",
+        "class":"leddcap",
+        "inputs":[
+            "fallback",
+            "Leddlim"
+        ],
+        "wants_dense":true,
+        "replacements":{
+            "luminosities":"acc_luminosities"
+        }
+    },
     "viscous":{
         "kind":"transform",
         "inputs":[
-            "fallback",
+            "leddcap",
             "texplosion",
             "Tviscous"
         ],
@@ -177,16 +189,6 @@
         "wants_dense":true,
         "class":"operator"
     },
-    "leddcap":{
-        "kind":"utility",
-        "class":"leddcap",
-        "inputs":[
-            "total_luminosity",
-            "fallback",
-            "Leddlim"
-        ],
-        "wants_dense":true
-    },
     "tde_photosphere":{
         "kind":"photosphere",
         "inputs":[
@@ -194,7 +196,7 @@
             "fallback",
             "lphoto",
             "Rph0",
-            "leddcap"
+            "total_luminosity"
         ]
     },
     "blackbody":{

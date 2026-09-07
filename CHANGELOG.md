@@ -28,8 +28,9 @@ tagged.
   Ramirez-Ruiz 2015). `Tviscous` follows the calibrated GR15 map
   ``log10(T_visc/t_pk) = 1 + 2.1 log10((rp/rg)/47)`` (clipped to
   [−1.5, 2]), with a per-event dex offset `tviscoffset` for population
-  synthesis. The Eddington cap is applied after the two terms are
-  summed. The `tde` model is unchanged.
+  synthesis. The Eddington cap is applied to the accretion term
+  before the viscous delay; the prompt shock is left uncapped. ε_acc
+  is drawn modestly around 0.03. The `tde` model is unchanged.
 - `uv` / `pyproject.toml` packaging (hatchling). Python **3.11–3.14**.
 - Optional extras: `mpi` (mpi4py), `sedona` (PyTorch, SESN SEDONA only), `docs`.
 - `--max-cores N` local process pool for likelihoods (Windows spawn-safe).
