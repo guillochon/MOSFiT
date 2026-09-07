@@ -32,7 +32,8 @@ class LeddCap(Utility):
 
     def process(self, **kwargs):
         """Process module."""
-        cap = float(kwargs['Leddlim']) * float(kwargs['Ledd'])
+        # `Leddlim` honors replacements, so the disk and shock caps can differ (e.g. `Leddlimdisk`)
+        cap = float(kwargs[self.key('Leddlim')]) * float(kwargs['Ledd'])
         p = float(kwargs.get(self.key('eddslope'), 1.0))
         lum_key = self.key('luminosities')
         dense_in = self.key('dense_luminosities')
