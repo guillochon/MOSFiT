@@ -577,7 +577,18 @@ class Fallback(Engine):
             np.zeros(lengthposttimes)))
         dmdtnew[dmdtnew < 0] = 0
 
-        self._efficiency = kwargs['efficiency']
+        rp_over_rg = None
+        if 'frad' in kwargs and kwargs['frad'] is not None:
+            # prompt dissipation at pericenter: epsilon = f_rad r_g / r_p
+            rt = Rstar * c.R_sun.cgs.value * (self._Mh / self._Mstar) ** (
+                1.0 / 3.0)
+            rp = rt / self._beta
+            rg = c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS)
+            self._efficiency = kwargs['frad'] * rg / rp
+            self._efficiency = min(self._efficiency, 0.42)
+            rp_over_rg = rp / rg
+        else:
+            self._efficiency = kwargs['efficiency']
         luminosities = (self._efficiency * dmdtnew *
                         c.c.cgs.value * c.c.cgs.value)
         kappa_t = 0.2 * (1 + 0.74)
@@ -589,6 +600,11 @@ class Fallback(Engine):
         luminosities = luminosities * ledd_cap / (luminosities + ledd_cap)
         luminosities = np.where(np.isnan(luminosities), 0.0, luminosities)
 
-        return {self.dense_key('luminosities'): luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback': float(tfallback)}
+        result = {
+            self.dense_key('luminosities'): luminosities, 'Rstar': Rstar,
+            'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
+            'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback': float(tfallback),
+            'efficiency': self._efficiency}
+        if rp_over_rg is not None:
+            result['rp_over_rg'] = rp_over_rg
+        return result
