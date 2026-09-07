@@ -619,7 +619,8 @@ class Fallback(Engine):
         result['efficiency'] = self._efficiency
 
         if two_component:
-            # Defer the Eddington cap until shock + viscous accretion are summed.
+            # Uncapped accretion; tde_shock applies leddcap then viscous,
+            # leaving the prompt shock term uncapped.
             result[self.dense_key('luminosities')] = np.where(
                 np.isnan(acc_lums), 0.0, acc_lums)
         else:

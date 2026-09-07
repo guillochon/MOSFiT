@@ -107,24 +107,28 @@ if __name__ == '__main__':
     np.testing.assert_allclose(np.max(lum), 7.638370418643626e+44, rtol=1e-10)
     print('efficiency-mode golden luminosities unchanged')
 
-    # Two-component: uncapped acc + shock arrays, cap applied after the sum.
-    two = fb.process(frad=0.03, efficiency=0.1, bhmass=1.0e6, **shared)
+    # Two-component: cap accretion only; shock stays uncapped, then they sum.
+    two = fb.process(frad=0.03, efficiency=0.03, bhmass=1.0e6, **shared)
     shock = np.asarray(two['dense_shock_luminosities'])
     acc = np.asarray(two['dense_luminosities'])
     np.testing.assert_allclose(
-        two['shock_efficiency'] / 0.1, shock.max() / acc.max(), rtol=1e-10)
-    if np.max(acc) <= two['Ledd']:
-        # ε_acc = 0.1 is super-Eddington at peak for this draw; leave uncapped.
-        pass
-    summed = shock + acc
+        two['shock_efficiency'] / 0.03, shock.max() / acc.max(), rtol=1e-10)
     cap = two['Ledd']
-    capped = summed * cap / (summed + cap)
+    acc_capped = acc * cap / (acc + cap)
+    acc_capped = np.where(np.isnan(acc_capped), 0.0, acc_capped)
     lc = LeddCap(name='leddcap', model=dummy)
+    lc.set_attributes({
+        'replacements': {'luminosities': 'acc_luminosities'},
+        'wants_dense': True})
+    lc._provide_dense = True
     lc_out = lc.process(
-        dense_luminosities=summed, Leddlim=1.0, Ledd=cap,
+        dense_acc_luminosities=acc, Leddlim=1.0, Ledd=cap,
         dense_indices=np.array([0, 1]))
-    np.testing.assert_allclose(lc_out['dense_luminosities'], capped, rtol=1e-12)
-    print('two-component arrays and post-sum cap ok')
+    np.testing.assert_allclose(
+        lc_out['dense_acc_luminosities'], acc_capped, rtol=1e-12)
+    if np.max(shock) >= cap:
+        raise SystemExit('prompt shock should remain sub-Eddington')
+    print('accretion capped before viscous; shock uncapped')
 
     dy = DarkYear(name='Tviscous', model=dummy)
     dy_kw = dict(
@@ -160,10 +164,18 @@ if __name__ == '__main__':
     ok = model.load_data(dummy_data, event_name='tde_shock', pool=pool)
     if not ok:
         raise SystemExit('tde_shock load_data failed')
-    for required in ('frad', 'efficiency', 'viscous', 'Tviscous',
-                     'total_luminosity', 'leddcap'):
-        if required not in model._call_stack:
-            raise SystemExit('{} missing from tde_shock'.format(required))
+    if 'leddcap' not in model._call_stack:
+        raise SystemExit('leddcap missing from tde_shock')
+    visc_inputs = [
+        x if not isinstance(x, list) else x[0]
+        for x in model._call_stack['viscous'].get('inputs', [])]
+    if 'leddcap' not in visc_inputs:
+        raise SystemExit('viscous should take capped acc from leddcap')
+    photo_inputs = [
+        x if not isinstance(x, list) else x[0]
+        for x in model._call_stack['tde_photosphere'].get('inputs', [])]
+    if 'total_luminosity' not in photo_inputs:
+        raise SystemExit('tde_photosphere should read the uncapped shock sum')
     if 'frad' not in model._free_parameters:
         raise SystemExit('frad is not a free parameter of tde_shock')
     if 'efficiency' not in model._free_parameters:
@@ -181,7 +193,7 @@ if __name__ == '__main__':
 
     targets = {
         'frad': 0.03,
-        'efficiency': 0.1,
+        'efficiency': 0.03,
         'starmass': 1.0,
         'b': b_beta1,
         'bhmass': 1.0e6,
@@ -208,7 +220,7 @@ if __name__ == '__main__':
         raise SystemExit('Model.run did not return derived Tviscous')
     np.testing.assert_allclose(outputs['shock_efficiency'], 6.4e-4, rtol=0.15)
     np.testing.assert_allclose(outputs['rp_over_rg'], 47.0, rtol=0.15)
-    np.testing.assert_allclose(outputs['efficiency'], 0.1, rtol=0.05)
+    np.testing.assert_allclose(outputs['efficiency'], 0.03, rtol=0.05)
     t_pk_run = float(outputs['tfallback']) + (
         float(outputs['tpeak']) - float(outputs['resttexplosion']))
     t_pk_run = max(t_pk_run, float(outputs['tfallback']))

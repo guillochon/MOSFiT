@@ -8,7 +8,11 @@ from mosfit.modules.utilities.utility import Utility
 
 
 class LeddCap(Utility):
-    """Soft Eddington cap ``L L_cap / (L + L_cap)`` applied after engines sum."""
+    """Soft Eddington cap ``L L_cap / (L + L_cap)``.
+
+    Honors ``replacements`` so the cap can be applied to ``acc_luminosities``
+    before the viscous transform, leaving the prompt shock term uncapped.
+    """
 
     def __init__(self, **kwargs):
         """Initialize module."""
@@ -18,18 +22,22 @@ class LeddCap(Utility):
     def process(self, **kwargs):
         """Process module."""
         cap = float(kwargs['Leddlim']) * float(kwargs['Ledd'])
+        lum_key = self.key('luminosities')
+        dense_in = self.key('dense_luminosities')
         out = {}
-        if 'dense_luminosities' in kwargs:
-            dense = np.asarray(kwargs['dense_luminosities'], dtype=float)
+        if dense_in in kwargs:
+            dense = np.asarray(kwargs[dense_in], dtype=float)
             capped = dense * cap / (dense + cap)
             capped = np.where(np.isnan(capped), 0.0, capped)
-            out['dense_luminosities'] = capped
+            out[self.dense_key('luminosities')] = capped
+            if dense_in not in out:
+                out[dense_in] = capped
             if 'dense_indices' in kwargs:
                 idx = np.asarray(kwargs['dense_indices'], dtype=int)
-                out['luminosities'] = capped[idx]
+                out[lum_key] = np.take(capped, idx)
         else:
-            kwargs = self.prepare_input('luminosities', **kwargs)
-            lums = np.asarray(kwargs['luminosities'], dtype=float)
+            kwargs = self.prepare_input(lum_key, **kwargs)
+            lums = np.asarray(kwargs[lum_key], dtype=float)
             capped = lums * cap / (lums + cap)
-            out['luminosities'] = np.where(np.isnan(capped), 0.0, capped)
+            out[lum_key] = np.where(np.isnan(capped), 0.0, capped)
         return out
