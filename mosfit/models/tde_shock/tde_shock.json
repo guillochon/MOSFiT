@@ -49,6 +49,13 @@
         "latex":"b\\ (\\rm scaled\\ \\beta)",
         "derived_keys":"beta"
     },
+    "fradslope":{
+        "kind":"parameter",
+        "value":1.0,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"{\\rm d}\\log \\epsilon_{\\rm shock}/{\\rm d}\\log (r_{\\rm g}/r_{\\rm p})"
+    },
     "frad":{
         "kind":"parameter",
         "value":0.03,
@@ -144,6 +151,7 @@
             "bhmass",
             "b",
             "frad",
+            "fradslope",
             "efficiency",
             "texplosion",
             "starmass",
