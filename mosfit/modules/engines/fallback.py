@@ -6,6 +6,7 @@ import numpy as np
 
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
+FRAD_PIVOT = 22.0   # r_p/r_g at which the collision efficiency is pinned as fradslope varies
 
 
 def _lin_interp(x, xp, fp):
@@ -600,8 +601,14 @@ class Fallback(Engine):
             'tfallback': float(tfallback), 'rp_over_rg': rp_over_rg}
 
         if has_frad:
-            # prompt dissipation at pericenter: epsilon = f_rad r_g / r_p
-            shock_eps = min(float(kwargs['frad']) * rg / rp, 0.42)
+            # prompt dissipation at the stream self-intersection: epsilon = f_rad r_g / r_int.
+            # `fradslope` is the log-log slope of epsilon against r_g/r_p, pivoted at
+            # r_p/r_g = FRAD_PIVOT so that tilting it leaves the normalization alone: 1 is
+            # r_int ~ r_p, 0 a collision radius fixed by a pre-existing disk, and 3 the
+            # weak-precession self-intersection radius r_int ~ r_p^3 / r_g^2.
+            fslope = float(kwargs.get('fradslope', 1.0))
+            shock_eps = min(float(kwargs['frad']) / FRAD_PIVOT *
+                            (FRAD_PIVOT * rg / rp) ** fslope, 0.42)
             shock_lums = shock_eps * l0
             result[self.dense_key('shock_luminosities')] = np.where(
                 np.isnan(shock_lums), 0.0, shock_lums)
