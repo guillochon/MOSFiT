@@ -33,7 +33,9 @@ tagged.
   they are summed — so L/L_Edd stays at most 2. Accretion follows
   ``L = L_Edd ṁ/(1+ṁ)^p`` with fixed `eddslope` p = 1 (the harmonic
   cap) by default; p > 1 declines at super-Eddington feeding rates.
-  ε_acc is drawn modestly around 0.03. The `tde` model is unchanged.
+  ε_acc is drawn modestly around 0.03. Collision radius modes
+  (`rcollmode` 0/1/2, default 0 = r_p) keep the current
+  ε = f_rad r_g/r_p. The `tde` model is unchanged.
 - `uv` / `pyproject.toml` packaging (hatchling). Python **3.11–3.14**.
 - Optional extras: `mpi` (mpi4py), `sedona` (PyTorch, SESN SEDONA only), `docs`.
 - `--max-cores N` local process pool for likelihoods (Windows spawn-safe).

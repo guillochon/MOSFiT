@@ -56,12 +56,26 @@
         "fixed":true,
         "latex":"{\\rm d}\\log \\epsilon_{\\rm shock}/{\\rm d}\\log (r_{\\rm g}/r_{\\rm p})"
     },
+    "rcollmode":{
+        "kind":"parameter",
+        "value":0,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"{\\rm collision\\ radius\\ mode}"
+    },
+    "rcolldisk":{
+        "kind":"parameter",
+        "value":1.0e13,
+        "class":"parameter",
+        "fixed":true,
+        "latex":"r_{\\rm disk}\\ ({\\rm cm})"
+    },
     "frad":{
         "kind":"parameter",
         "value":0.03,
         "class":"parameter",
         "latex":"f_{\\rm rad}",
-        "derived_keys":["shock_efficiency", "rp_over_rg"]
+        "derived_keys":["shock_efficiency", "rp_over_rg", "r_coll_over_rp"]
     },
     "efficiency":{
         "kind":"parameter",
@@ -152,6 +166,8 @@
             "b",
             "frad",
             "fradslope",
+            "rcollmode",
+            "rcolldisk",
             "efficiency",
             "texplosion",
             "starmass",
