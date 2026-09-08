@@ -50,6 +50,7 @@ if __name__ == '__main__':
     np.testing.assert_allclose(out6['efficiency'], exp_eff, rtol=1e-12)
     np.testing.assert_allclose(out6['rp_over_rg'], 47.0, rtol=0.15)
     np.testing.assert_allclose(out6['shock_efficiency'], 6.4e-4, rtol=0.15)
+    np.testing.assert_allclose(out6['r_coll_over_rp'], 1.0, rtol=1e-12)
     print('Mh=1e6 beta=1 shock_efficiency', out6['shock_efficiency'],
           'rp_over_rg', out6['rp_over_rg'], 'Rstar', out6['Rstar'])
 
@@ -106,6 +107,67 @@ if __name__ == '__main__':
     np.testing.assert_allclose(np.sum(lum), 2.7710499828301767e+46, rtol=1e-10)
     np.testing.assert_allclose(np.max(lum), 7.638370418643626e+44, rtol=1e-10)
     print('efficiency-mode golden luminosities unchanged')
+
+    def _collision_radius(mode, rp, rg, rstar_cm, rcolldisk=1.0e13):
+        if mode == 0:
+            return rp, 0.0
+        dphi = min(3.0 * np.pi * rg / rp, 2.0 * np.pi)
+        r_coll = 2.0 * rp / max(1.0 - np.cos(0.5 * dphi), 1e-12)
+        r_coll = min(r_coll, rp * rp / rstar_cm)
+        if mode == 2:
+            r_coll = min(r_coll, rcolldisk)
+        return max(r_coll, rp), dphi
+
+    # Mode 0 is f_rad r_g / r_p. Mode 1 table: 0.33 R_sun star, 10^6 M_sun hole.
+    rstar_tab = 0.33 * c.R_sun.cgs.value
+    rg_tab = c.G.cgs.value * 1.0e6 * M_SUN_CGS / (C_CGS * C_CGS)
+    table = (
+        (5.0, 1.885, 4.85, 4.1e-2, 0.21),
+        (10.0, 0.942, 18.3, 5.5e-3, 0.055),
+        (22.0, 0.428, 87.7, 5.2e-4, 0.011),
+        (45.0, 0.209, 289.0, 7.7e-5, 0.0035),
+    )
+    for rprg, dphi_exp, rcr_exp, epsrat_exp, vs0_exp in table:
+        rp = rprg * rg_tab
+        r_coll, dphi = _collision_radius(1, rp, rg_tab, rstar_tab)
+        np.testing.assert_allclose(dphi, dphi_exp, rtol=0.02)
+        np.testing.assert_allclose(r_coll / rp, rcr_exp, rtol=0.03)
+        epsrat = rg_tab / r_coll
+        np.testing.assert_allclose(epsrat, epsrat_exp, rtol=0.05)
+        np.testing.assert_allclose(epsrat / (1.0 / rprg), vs0_exp, rtol=0.06)
+    rp45 = 45.0 * rg_tab
+    dphi45 = min(3.0 * np.pi / 45.0, 2.0 * np.pi)
+    r_int45 = 2.0 * rp45 / max(1.0 - np.cos(0.5 * dphi45), 1e-12)
+    if not (r_int45 > rp45 * rp45 / rstar_tab):
+        raise SystemExit('apocenter ceiling should bind at rp/rg = 45')
+    rp22 = 22.0 * rg_tab
+    dphi22 = min(3.0 * np.pi / 22.0, 2.0 * np.pi)
+    r_int22 = 2.0 * rp22 / max(1.0 - np.cos(0.5 * dphi22), 1e-12)
+    if r_int22 > rp22 * rp22 / rstar_tab:
+        raise SystemExit('apocenter ceiling should not bind at rp/rg = 22')
+    rp_in = 1.4 * rg_tab
+    r_coll_in, dphi_in = _collision_radius(1, rp_in, rg_tab, rstar_tab)
+    np.testing.assert_allclose(dphi_in, 2.0 * np.pi, rtol=1e-12)
+    np.testing.assert_allclose(r_coll_in, rp_in, rtol=1e-12)
+
+    m1 = fb.process(frad=0.03, bhmass=1.0e6, rcollmode=1, **shared)
+    rg6 = c.G.cgs.value * 1.0e6 * M_SUN_CGS / (C_CGS * C_CGS)
+    rp6 = m1['rp_over_rg'] * rg6
+    r_coll6, _ = _collision_radius(
+        1, rp6, rg6, m1['Rstar'] * c.R_sun.cgs.value)
+    np.testing.assert_allclose(m1['r_coll_over_rp'], r_coll6 / rp6, rtol=1e-10)
+    np.testing.assert_allclose(
+        m1['shock_efficiency'] / out6['shock_efficiency'],
+        rp6 / r_coll6, rtol=1e-10)
+    m0 = fb.process(frad=0.03, bhmass=1.0e6, rcollmode=0, **shared)
+    np.testing.assert_allclose(
+        m0['shock_efficiency'], out6['shock_efficiency'], rtol=1e-15)
+    disk = 0.5 * r_coll6
+    m2 = fb.process(
+        frad=0.03, bhmass=1.0e6, rcollmode=2, rcolldisk=disk, **shared)
+    np.testing.assert_allclose(
+        m2['r_coll_over_rp'] * rp6, max(disk, rp6), rtol=1e-10)
+    print('collision-radius modes 0/1/2 ok')
 
     # Two-component: cap accretion and shock separately, then sum.
     two = fb.process(frad=0.03, efficiency=0.03, bhmass=1.0e6, **shared)
@@ -281,6 +343,13 @@ if __name__ == '__main__':
         raise SystemExit('Model.run did not return shock_efficiency')
     if 'rp_over_rg' not in outputs:
         raise SystemExit('Model.run did not return rp_over_rg')
+    if 'r_coll_over_rp' not in outputs:
+        raise SystemExit('Model.run did not return r_coll_over_rp')
+    np.testing.assert_allclose(outputs['r_coll_over_rp'], 1.0, rtol=1e-12)
+    if 'rcollmode' in model._free_parameters:
+        raise SystemExit('rcollmode should be fixed')
+    if 'rcolldisk' in model._free_parameters:
+        raise SystemExit('rcolldisk should be fixed')
     if 'Tviscous' not in outputs:
         raise SystemExit('Model.run did not return derived Tviscous')
     np.testing.assert_allclose(outputs['shock_efficiency'], 6.4e-4, rtol=0.15)
