@@ -3,6 +3,11 @@ from math import pi
 
 import numexpr as ne
 import numpy as np
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
+
 from astrocats.catalog.source import SOURCE
 from astropy import constants as c
 from astropy import units as u
@@ -152,7 +157,7 @@ class BlackbodyCutoff(SED):
         uniq_is = np.searchsorted(self._times, uniq_times, sorter=tsort)
 
         bb_wavelengths = np.linspace(100, 100000, self.N_TERMS)
-        norms = np.array([(R2 * self.STEF_CONST * T ** 4) / np.trapz(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
+        norms = np.array([(R2 * self.STEF_CONST * T ** 4) / trapezoid(bbody_sup(bb_wavelengths,T,R2,self._cutoff_wavelength,self._alpha), bb_wavelengths) for T, R2 in zip(tp[uniq_is],rp2[uniq_is])])
 
         # Apply renormalisation
         seds *= norms[np.searchsorted(uniq_times, self._times)]

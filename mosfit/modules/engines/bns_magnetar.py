@@ -2,6 +2,11 @@
 from math import isnan
 
 import numpy as np
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
+
 from scipy.integrate import cumulative_trapezoid
 from astrocats.catalog.source import SOURCE
 
