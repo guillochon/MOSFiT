@@ -1,6 +1,11 @@
 """Definitions for the `BNSEjecta` class."""
 
 import numpy as np
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
+
 from astrocats.catalog.source import SOURCE
 # import astropy.constants as c
 
@@ -200,8 +205,8 @@ class BNSEjecta(Energetic):
         atheta1 = 2*np.pi*np.sin(theta1)
         atheta2 = 2*np.pi*np.sin(theta2)
 
-        vejecta_blue = np.trapz(vtheta1*atheta1,x=theta1)/np.trapz(atheta1,x=theta1)
-        vejecta_red = np.trapz(vtheta2*atheta2,x=theta2)/np.trapz(atheta2,x=theta2)
+        vejecta_blue = trapezoid(vtheta1*atheta1,x=theta1)/trapezoid(atheta1,x=theta1)
+        vejecta_red = trapezoid(vtheta2*atheta2,x=theta2)/trapezoid(atheta2,x=theta2)
 
         vejecta_red *= ckm
         vejecta_blue *= ckm

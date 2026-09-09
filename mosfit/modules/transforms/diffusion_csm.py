@@ -2,6 +2,11 @@
 from collections import OrderedDict
 
 import numpy as np
+try:
+    from numpy import trapezoid
+except ImportError:
+    from numpy import trapz as trapezoid
+
 from scipy.interpolate import interp1d
 
 from mosfit.constants import C_CGS, DAY_CGS, M_SUN_CGS, AU_CGS
@@ -81,7 +86,7 @@ class DiffusionCSM(Transform):
         int_args = int_lums * np.exp((int_times) / t0)
         int_args[np.isnan(int_args)] = 0.0
 
-        uniq_lums = np.trapz(int_args, int_times)
+        uniq_lums = trapezoid(int_args, int_times)
         uniq_lums*= np.exp(-int_tes/t0)/t0
         new_lums = uniq_lums[np.searchsorted(uniq_times,
                                              self._times_to_process)]
