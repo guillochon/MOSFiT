@@ -13,6 +13,10 @@ mosfit/modules/observables/filters/*.xml
 MANIFEST
 mosfit.egg-info/
 *.pyc
+__pycache__/
+# Numba's on-disk function cache, written next to the modules it compiles
+*.nbi
+*.nbc
 *checkpoint.ipynb
 *.so
 *.prof
