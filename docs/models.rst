@@ -62,6 +62,8 @@ List of built-in models
 
 ``sesn_sedona`` needs the optional ``sedona`` extra (PyTorch): ``uv sync --extra sedona`` or ``pip install 'mosfit[sedona]'``. Other models do not import ``torch``. A local TDE catalog fixture for tests and examples is ``mosfit/tests/PS1-10jh.json`` (Open TDE Catalog JSON; no network fetch).
 
+Every other model in the table has a small simulated event under ``mosfit/tests/events`` (``sim_<model>.json``), which the test suite fits to keep each transient type covered. Those fixtures are light curves the models generated themselves, not observations, and are regenerated with ``python mosfit/tests/make_event_fixtures.py``. ``sim_default`` is also mirrored as ``sim_default.csv`` to exercise the ASCII converter.
+
 .. _altering:
 
 --------------------------
