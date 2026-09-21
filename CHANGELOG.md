@@ -22,6 +22,27 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 Nothing yet.
 
+## [2.0.1] - 2026-09-21
+
+Bug fixes for two paths 2.0.0 left broken. No API or packaging changes.
+
+### Fixed
+
+- Generative runs (`mosfit -m <model>` with no event, i.e. `-i 0`) crashed
+  under the default `dynesty` sampler with `AttributeError: 'Nester' object
+  has no attribute '_results'`: with no likelihood to nest against,
+  `Nester.run()` returned without leaving results behind. The nester now
+  draws from the priors as the ensembler does, so generative mode works
+  without `-D ensembler`. Those draws are equally weighted and are written
+  one realization apiece rather than being resampled against their weights,
+  which had been duplicating some and dropping others.
+- The `--limiting-magnitude` mock-survey noise model mixed boolean-masked
+  and full-length arrays, so it raised `ValueError` as soon as a model
+  produced a bolometric luminosity or a radio flux density alongside
+  magnitudes. Rows are now masked consistently. A draw at or below zero
+  flux becomes an upper limit rather than a `NaN` that silently dropped the
+  epoch from the mock light curve.
+
 ## [2.0.0] - 2026-09-21
 
 First 2.x release: `uv`/`pyproject.toml` packaging, Python 3.11-3.14, a dynesty
