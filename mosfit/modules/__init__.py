@@ -10,7 +10,7 @@ from .observables import *  # noqa: F403
 from .outputs import *  # noqa: F403
 from .parameters import *  # noqa: F403
 from .photospheres import *  # noqa: F403
-from .seds import *  # noqa: F403
+from . import seds
 from .transforms import *  # noqa: F403
 
 __all__ = ['Module']
@@ -24,5 +24,17 @@ __all__.extend(observables.__all__)  # noqa: F405
 __all__.extend(outputs.__all__)  # noqa: F405
 __all__.extend(parameters.__all__)  # noqa: F405
 __all__.extend(photospheres.__all__)  # noqa: F405
-__all__.extend(seds.__all__)  # noqa: F405
+__all__.extend(seds.__all__)
 __all__.extend(transforms.__all__)  # noqa: F405
+
+
+def __getattr__(name):
+    """Resolve SED class names on first access without importing ``torch``."""
+    if name in seds.__all__:
+        return getattr(seds, name)
+    raise AttributeError(f'module {__name__!r} has no attribute {name!r}')
+
+
+def __dir__():
+    return sorted(set(globals()) | set(__all__))
+

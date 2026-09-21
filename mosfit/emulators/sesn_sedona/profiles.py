@@ -17,8 +17,17 @@ from __future__ import annotations
 from pathlib import Path
 
 import numpy as np
-import torch
-import torch.nn as nn
+
+try:
+    import torch
+    import torch.nn as nn
+except ImportError as exc:
+    raise ImportError(
+        'The SESN SEDONA emulator requires PyTorch. Install the optional '
+        '`sedona` extra with `uv sync --extra sedona` or '
+        "`pip install 'mosfit[sedona]'`."
+    ) from exc
+
 
 from mosfit.emulators import emulator_weights_dir
 

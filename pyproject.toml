@@ -1,0 +1,118 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "mosfit"
+dynamic = ["version"]
+description = "Modular software for fitting semi-analytical model predictions to observed astronomical transient data."
+readme = "README.md"
+license = { text = "MIT" }
+requires-python = ">=3.11"
+authors = [
+    { name = "James Guillochon", email = "guillochon@gmail.com" },
+    { name = "Matt Nicholl" },
+]
+keywords = ["astronomy", "fitting", "monte carlo", "modeling"]
+classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "License :: OSI Approved :: MIT License",
+    "Natural Language :: English",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: Astronomy",
+    "Topic :: Scientific/Engineering :: Physics",
+]
+dependencies = [
+    "astrocats>=0.5.0",
+    "astropy>=7.1",
+    "dynesty>=3.1",
+    "emcee>=3.0.2",
+    "extinction>=0.2.2",
+    "h5py>=3.8.0",
+    "inflect>=1.0.0",
+    "matplotlib>=3.0.0",
+    "nbstripout>=0.2.9",
+    "numba>=0.67.0",
+    "numexpr>=2.6.1",
+    "numpy>=2.3",
+    "pandas>=2.2",
+    "palettable>=2.1.1",
+    "schwimmbad>=0.4.2",
+    "scipy>=1.2",
+    "seaborn>=0.7.1",
+    "six>=1.0.0",
+]
+
+[project.optional-dependencies]
+mpi = [
+    "mpi4py>=3.1.6",
+]
+sedona = [
+    "torch",
+]
+docs = [
+    "sphinx>=7.0,<8",
+    "sphinx_rtd_theme>=2.0",
+    "sphinx_automodapi",
+    "sphinxcontrib-autoprogram",
+    "numpydoc",
+    "tqdm",
+]
+
+[project.urls]
+Homepage = "https://github.com/guillochon/mosfit"
+Documentation = "https://mosfit.readthedocs.io/"
+Changelog = "https://github.com/guillochon/MOSFiT/blob/master/CHANGELOG.md"
+Download = "https://github.com/guillochon/mosfit/tarball/2.0.0"
+conda-forge = "https://anaconda.org/conda-forge/mosfit"
+
+[project.scripts]
+mosfit = "mosfit.main:main"
+
+[tool.hatch.version]
+path = "mosfit/__init__.py"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/mosfit",
+    "/LICENSE",
+    "/README.md",
+    "/CHANGELOG.md",
+    "/test.py",
+    "/recipe",
+]
+
+[tool.hatch.build.targets.sdist.force-include]
+"test.py" = "test.py"
+
+[tool.hatch.build.targets.wheel]
+packages = ["mosfit"]
+
+[dependency-groups]
+dev = [
+    "coverage>=7.6",
+]
+
+[tool.coverage.run]
+source = ["mosfit"]
+omit = [
+    "mosfit/tests/*",
+    "mosfit/modules/seds/sesn_sedona.py",
+    "mosfit/emulators/*",
+]
+parallel = true
+branch = false
+
+[tool.coverage.report]
+fail_under = 70
+show_missing = false
+skip_empty = true
+exclude_lines = [
+    "pragma: no cover",
+    "if __name__ == .__main__.:",
+    "raise NotImplementedError",
+]

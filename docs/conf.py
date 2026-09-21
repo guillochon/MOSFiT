@@ -69,6 +69,22 @@ extensions = [
 ]
 
 # Heavy / optional deps: keep autodoc working on Read the Docs without them.
+# Do not stub ``torch`` in ``sys.modules`` — Astropy treats that as a real
+# install and then fails. Drop SESN SEDONA names from ``__all__`` so
+# automodapi does not import ``sesn_sedona.py``.
+import mosfit.modules.seds as _seds
+import mosfit.modules as _mods
+
+_sedona_names = {
+    name for name, mod in _seds._NAME_TO_MODULE.items() if mod == 'sesn_sedona'
+}
+_seds._NAME_TO_MODULE = {
+    name: mod for name, mod in _seds._NAME_TO_MODULE.items()
+    if mod != 'sesn_sedona'
+}
+_seds.__all__ = list(_seds._NAME_TO_MODULE)
+_mods.__all__ = [name for name in _mods.__all__ if name not in _sedona_names]
+
 autodoc_mock_imports = [
     'torch',
     'mpi4py',

@@ -60,7 +60,7 @@ class Nester(Sampler):
         """Use nested sampling to determine posteriors."""
         from dynesty import DynamicNestedSampler
         from dynesty.dynamicsampler import stopping_function, weight_function
-        from mosfit.fitter import ln_likelihood, draw_from_icdf
+        from mosfit.fitter import ln_likelihood, draw_from_icdf, pool_queue_size
 
         prt = self._printer
 
@@ -98,18 +98,41 @@ class Nester(Sampler):
             sampler = DynamicNestedSampler(
                 ln_likelihood, draw_from_icdf, ndim,
                 pool=self._pool, sample='rwalk',
-                queue_size=max(self._pool.size, 1))
+                queue_size=pool_queue_size(self._pool))
+
+            def _disable_saved_bounds():
+                """Skip ellipsoid history. MOSFiT never uses it; Results()
+                otherwise deep-copies the whole list (very expensive)."""
+                inner = getattr(sampler, 'sampler', None)
+                if inner is not None:
+                    inner.save_bounds = False
+                    if getattr(inner, 'bound_list', None) is not None:
+                        inner.bound_list = []
+                    sampler.bound_list = getattr(
+                        inner, 'bound_list', [])
+
+            def _snapshot_results():
+                _disable_saved_bounds()
+                return sampler.results
+
             # Perform initial sample.
             ncall = sampler.ncall
             self._niter = sampler.it - 1
+            inner_ready = False
             for li, res in enumerate(sampler.sample_initial(
                 dlogz=nested_dlogz_init, nlive=self._nlive
             )):
+                if not inner_ready:
+                    _disable_saved_bounds()
+                    inner_ready = True
                 ncall0 = ncall
-                (worst, ustar, vstar, loglstar, logvol,
-                 logwt, self._logz, logzvar, h, nc, worst_it,
-                 propidx, propiter, eff, delta_logz) = res[:15]
-                
+                loglstar = res.loglstar
+                self._logz = res.logz
+                logzvar = res.logzvar
+                nc = res.nc
+                eff = res.eff
+                delta_logz = res.delta_logz
+
                 ncall += nc
                 self._niter += 1
                 max_iter -= 1
@@ -123,10 +146,6 @@ class Nester(Sampler):
                     prt.message('exceeded_walltime', warning=True)
                     break
 
-                self._results = sampler.results
-
-                scales.append(sampler.results.scale)
-
                 self._e_logz = np.sqrt(logzvar)
                 prt.status(
                     self, 'baseline',
@@ -137,6 +156,11 @@ class Nester(Sampler):
                     loglstar=[loglstar],
                     time_running=self.time_running(),
                     maximum_walltime=self._fitter._maximum_walltime)
+
+            # One Results snapshot after baseline (stop/weight + output).
+            self._results = _snapshot_results()
+            if getattr(self._results, 'scale', None) is not None:
+                scales.append(self._results.scale)
 
             if max_iter >= 0:
                 prt.status(
@@ -158,13 +182,10 @@ class Nester(Sampler):
                     prt.message('exceeded_walltime', warning=True)
                     break
 
-                self._results = sampler.results
-
-                scales.append(sampler.results.scale)
-
                 stop, stop_vals = stopping_function(
                     self._results, return_vals=True, args={
-                        'post_thresh': post_thresh})
+                        'evid_thresh': post_thresh
+                        if post_thresh is not None else 0.1})
                 stop_post, stop_evid, stop_val = stop_vals
                 if not stop:
                     logl_bounds = weight_function(self._results)
@@ -172,16 +193,16 @@ class Nester(Sampler):
                         -1], self._results.logzerr[-1]
                     for res in sampler.sample_batch(
                             logl_bounds=logl_bounds,
-                            nlive_new=int(np.ceil(self._nlive / 2))):
-                        (worst, ustar, vstar, loglstar, nc,
-                         worst_it, propidx, propiter, eff) = res
+                            nlive_new=int(np.ceil(self._nlive / 2)),
+                            save_bounds=False):
+                        loglstar = res.loglstar
+                        nc = res.nc
+                        eff = res.eff
                         ncall0 = ncall
 
                         ncall += nc
                         self._niter += 1
                         max_iter -= 1
-
-                        self._results = sampler.results
 
                         prt.status(
                             self, 'batching',
@@ -196,6 +217,9 @@ class Nester(Sampler):
                         if max_iter < 0:
                             break
                     sampler.combine_runs()
+                    self._results = _snapshot_results()
+                    if getattr(self._results, 'scale', None) is not None:
+                        scales.append(self._results.scale)
                 else:
                     break
 

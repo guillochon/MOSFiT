@@ -42,51 +42,62 @@ class Blackbody(SED):
         Azp1 = u.Angstrom.cgs.scale / zp1
         czp1 = cc / zp1
 
-        seds = []
+        luminosities = np.asarray(self._luminosities, dtype=float)
+        band_indices = np.asarray(self._band_indices)
+        frequencies = np.asarray(self._frequencies)
+        radius_all = np.asarray(self._radius_phot, dtype=float)
+        temperature_all = np.asarray(self._temperature_phot, dtype=float)
+        n_rows = luminosities.shape[0]
+        seds = self.alloc_seds(n_rows)
+
+        bol = band_indices == BOL_BAND_INDEX
+        zero_lum = (luminosities == 0.0) & ~bol
+
+        def _planck_block(rest_wavs, radius_phot, temperature_phot):
+            """One Planck / numexpr eval for a shared wavelength grid."""
+            rest_wavs = np.asarray(rest_wavs, dtype=float)
+            if rest_wavs.ndim == 1:
+                rest_wavs = rest_wavs[None, :]
+            radius_phot = np.asarray(radius_phot, dtype=float)[:, None]
+            temperature_phot = np.asarray(temperature_phot, dtype=float)[:, None]
+            block = ne.evaluate(
+                'fc * radius_phot**2 / rest_wavs**5 / '
+                'expm1(xc / rest_wavs / temperature_phot)',
+                local_dict={
+                    'fc': fc,
+                    'xc': xc,
+                    'radius_phot': radius_phot,
+                    'rest_wavs': rest_wavs,
+                    'temperature_phot': temperature_phot,
+                })
+            block[np.isnan(block)] = 0.0
+            return block
+
         rest_wavs_dict = {}
-        evaled = False
+        banded = (band_indices >= 0) & ~bol & ~zero_lum
+        for bi in np.unique(band_indices[banded]):
+            bi = int(bi)
+            rest_wavs = rest_wavs_dict.setdefault(
+                bi, self._sample_wavelengths[bi] * Azp1)
+            idx = np.flatnonzero(banded & (band_indices == bi))
+            block = _planck_block(
+                rest_wavs, radius_all[idx], temperature_all[idx])
+            seds[idx] = block
 
-        #print("in blackbody, self._luminosities: "+str(self._luminosities))
-        for li, lum in enumerate(self._luminosities):
-            bi = self._band_indices[li]
-            if bi == BOL_BAND_INDEX:
-                seds.append(np.zeros(1))
-                continue
-            if lum == 0.0:
-                seds.append(np.zeros(len(
-                    self._sample_wavelengths[bi]) if bi >= 0 else 1))
-                continue
-
-            if bi >= 0:
-                rest_wavs = rest_wavs_dict.setdefault(
-                    bi, self._sample_wavelengths[bi] * Azp1)
-            else:
-                rest_wavs = np.array(  # noqa: F841
-                    [czp1 / self._frequencies[li]])
-
-            radius_phot = self._radius_phot[li]  # noqa: F841
-            temperature_phot = self._temperature_phot[li]  # noqa: F841
-
-            if not evaled:
-                seds.append(ne.evaluate(
-                    'fc * radius_phot**2 / rest_wavs**5 / '
-                    'expm1(xc / rest_wavs / temperature_phot)'))
-                evaled = True
-            else:
-                try:
-                    seds.append(ne.re_evaluate())
-                except:
-                    seds.append(fc * radius_phot**2. / rest_wavs**5. / np.expm1(xc / rest_wavs / temperature_phot))
-
-            seds[-1][np.isnan(seds[-1])] = 0.0
+        freq_rows = (band_indices < 0) & ~bol & ~zero_lum
+        if np.any(freq_rows):
+            idx = np.flatnonzero(freq_rows)
+            rest_wavs = (czp1 / frequencies[idx])[:, None]
+            block = _planck_block(
+                rest_wavs, radius_all[idx], temperature_all[idx])
+            seds[idx, 0] = block[:, 0]
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 
         # Units of `seds` is ergs / s / Angstrom.
-        
         tor = {
             'sample_wavelengths': self._sample_wavelengths,
-            self.key('seds'): np.asarray(seds),
+            self.key('seds'): seds,
             'luminosities_out': self._luminosities,
             'times_out': self._times
         }

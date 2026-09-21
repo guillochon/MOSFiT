@@ -33,3 +33,27 @@ In the snippet below, we resolve a **local** catalog-format JSON path with ``Fet
     # Produce model output.
     outputs = my_model.run(x)
     print('Keys in output: `{}`'.format(', '.join(list(outputs.keys()))))
+
+.. _fitter-api:
+
+------------------
+Fitting in Python
+------------------
+
+``Fitter.fit_events`` defaults to nested sampling with ``dynesty``, matching
+the CLI. Pass ``method='ensembler'`` or ``method='ultranest'`` to switch.
+``max_cores`` starts a local process pool for likelihoods (same as
+``--max-cores``); MPI pools still take precedence when you construct the
+``Fitter`` with an MPI ``pool``.
+
+.. code-block:: python
+
+    from mosfit.fitter import Fitter
+
+    fitter = Fitter(max_cores=10)
+    fitter.fit_events(
+        events=['mosfit/tests/PS1-10jh.json'],
+        models=['tde'],
+        method='dynesty',
+        write=True,
+    )

@@ -59,7 +59,7 @@ class BlackbodyCutoff(SED):
 
         lt = len(self._times)
 
-        seds = np.empty(lt, dtype=object)
+        seds = self.alloc_seds(lt)
         rp2 = self._radius_phot ** 2
         tp = self._temperature_phot
 
@@ -69,11 +69,8 @@ class BlackbodyCutoff(SED):
             # tpi = tp[li]
             # rp2i = rp2[li]
             if bi == BOL_BAND_INDEX:
-                seds[li] = np.zeros(1)
                 continue
             if lum == 0.0:
-                seds[li] = np.zeros(
-                    len(self._sample_wavelengths[bi]) if bi >= 0 else 1)
                 continue
             if bi >= 0:
                 rest_wavs = self._sample_wavelengths[bi] * ac / zp1
@@ -99,7 +96,10 @@ class BlackbodyCutoff(SED):
                 sed = ne.re_evaluate()
 
             sed[np.isnan(sed)] = 0.0
-            seds[li] = sed
+            if bi >= 0:
+                seds[li, :len(sed)] = sed
+            else:
+                seds[li, 0] = sed[0]
 
         uniq_times = np.unique(self._times)
         tsort = np.argsort(self._times)
@@ -129,7 +129,7 @@ class BlackbodyCutoff(SED):
         norms /= f_blue_reds
 
         # Apply renormalisation
-        seds *= norms[np.searchsorted(uniq_times, self._times)]
+        seds *= norms[np.searchsorted(uniq_times, self._times)][:, None]
 
         seds = self.add_to_existing_seds(seds, **kwargs)
 

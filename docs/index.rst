@@ -2,7 +2,7 @@
 MOSFiT
 ======
 
-Welcome to the documentation for MOSFiT (The Modular Open Source Fitter for Transients), a Python 3 package for fitting and estimating the parameters of astronomical transients via user-contributed models.
+Welcome to the documentation for MOSFiT 2.0 (The Modular Open Source Fitter for Transients), a Python 3.11+ package for fitting and estimating the parameters of astronomical transients via user-contributed models. Development installs use `uv <https://docs.astral.sh/uv/>`__; the default sampler is nested sampling with ``dynesty``.
 
 Please see the links below for information on how to install and run the package.
 
@@ -25,6 +25,10 @@ Using MOSFiT
    help.rst
    command_line.rst
    api.rst
+
+Release notes are in ``CHANGELOG.md`` at the repository root (Keep a Changelog:
+stage work under **Unreleased**, then move it under a version heading when a
+tag is cut).
 
 ------------------
 Indices and tables

@@ -7,8 +7,8 @@ name: Build and push MOSFiT image
 # CVMFS unpacked sync (a separate PR against opensciencegrid/cvmfs-singularity-sync)
 # mirrors it to /cvmfs/singularity.opensciencegrid.org/<user>/mosfit:<tag>.
 #
-# Needs repo secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN. MOSFiT is CPU-only
-# (emcee/dynesty), so there is no GPU variant.
+# Needs repo secrets DOCKERHUB_USERNAME and DOCKERHUB_TOKEN. The default image
+# is CPU-only (emcee/dynesty + optional mpi); PyTorch/sedona is not installed.
 
 on:
   push:
@@ -17,8 +17,12 @@ on:
   pull_request:
     paths:
       - Dockerfile
+      - .dockerignore
       - mosfit/**
-      - setup.py
+      - pyproject.toml
+      - uv.lock
+      - README.md
+      - LICENSE
       - .github/workflows/docker-publish.yml
   workflow_dispatch:
 

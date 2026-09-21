@@ -288,6 +288,13 @@ def get_parser(printer=None):
         help=prt.text('parser_num_walkers'))
 
     parser.add_argument(
+        '--max-cores',
+        dest='max_cores',
+        type=int,
+        default=1,
+        help=prt.text('parser_max_cores'))
+
+    parser.add_argument(
         '--num-temps',
         '-T',
         dest='num_temps',
@@ -502,7 +509,7 @@ def get_parser(printer=None):
         '-D',
         dest='method',
         choices=['ensembler', 'ultranest', 'dynesty'],
-        default='ensembler',
+        default='dynesty',
         help=prt.text('parser_method'))
 
     return parser

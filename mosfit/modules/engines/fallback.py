@@ -3,10 +3,18 @@ import os
 
 import astropy.constants as c
 import numpy as np
-from scipy.interpolate import interp1d
 
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
+
+
+def _lin_interp(x, xp, fp):
+    """Linear interpolation equivalent to SciPy ``interp1d`` on the interior."""
+    return np.interp(
+        np.asarray(x, dtype=float),
+        np.asarray(xp, dtype=float),
+        np.asarray(fp, dtype=float))
+
 
 CLASS_NAME = 'Fallback'
 
@@ -28,6 +36,38 @@ class Fallback(Engine):
         Mhbase = 1.0e6 * M_SUN_CGS  # this is the generic size of bh used
 
         self.EXTRAPOLATE = True
+
+        # Tout et al. 1996 ZAMS radius, solar metallicity (Z = 0.0134).
+        # Coefficients depend only on Z, so they are computed once.
+        log10_Z_02 = np.log10(0.0134 / 0.02)
+        z2 = log10_Z_02 ** 2
+        z3 = log10_Z_02 ** 3
+        z4 = log10_Z_02 ** 4
+        self._tout_theta = (1.71535900 + 0.62246212 * log10_Z_02 -
+                            0.92557761 * z2 - 1.16996966 * z3 -
+                            0.30631491 * z4)
+        self._tout_l = (6.59778800 - 0.42450044 * log10_Z_02 -
+                        12.13339427 * z2 - 10.73509484 * z3 -
+                        2.51487077 * z4)
+        self._tout_kpa = (10.08855000 - 7.11727086 * log10_Z_02 -
+                          31.67119479 * z2 - 24.24848322 * z3 -
+                          5.33608972 * z4)
+        self._tout_lbda = (1.01249500 + 0.32699690 * log10_Z_02 -
+                           0.00923418 * z2 - 0.03876858 * z3 -
+                           0.00412750 * z4)
+        self._tout_mu = (0.07490166 + 0.02410413 * log10_Z_02 +
+                         0.07233664 * z2 + 0.03040467 * z3 +
+                         0.00197741 * z4)
+        self._tout_nu = 0.01077422
+        self._tout_eps = (3.08223400 + 0.94472050 * log10_Z_02 -
+                          2.15200882 * z2 - 2.49219496 * z3 -
+                          0.63848738 * z4)
+        self._tout_o = (17.84778000 - 7.45345690 * log10_Z_02 -
+                        48.9606685 * z2 - 40.05386135 * z3 -
+                        9.09331816 * z4)
+        self._tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 +
+                         0.00388783 * z2 + 0.00142402 * z3 -
+                         0.00007671 * z4)
 
         # ------ DIRECTORY PARAMETERS -------
 
@@ -172,8 +212,10 @@ class Fallback(Engine):
                     mapped_time[nointerp][j][0] = 0
                     mapped_time[nointerp][j][-1] = 1
 
-                    func = interp1d(mapped_time[interp][j], dmdt[interp][j])
-                    dmdtinterp = func(mapped_time[nointerp][j])
+                    dmdtinterp = _lin_interp(
+                        mapped_time[nointerp][j],
+                        mapped_time[interp][j],
+                        dmdt[interp][j])
 
                     if interp == 'hi':
                         slope = ((dmdtinterp - dmdt['lo'][j]) /
@@ -367,8 +409,10 @@ class Fallback(Engine):
                 mapped_time[nointerp][j][0] = 0
                 mapped_time[nointerp][j][-1] = 1
 
-                func = interp1d(mapped_time[interp][j], dmdtdict[interp][j])
-                dmdtdict[interp][j] = func(mapped_time[nointerp][j])
+                dmdtdict[interp][j] = _lin_interp(
+                    mapped_time[nointerp][j],
+                    mapped_time[interp][j],
+                    dmdtdict[interp][j])
 
                 # recall gfrac = 0 --> gamma = 4/3, gfrac = 1 --> gamma 5/3
                 if interp == '5-3':
@@ -421,53 +465,16 @@ class Fallback(Engine):
         # dmdt ~ Mh^(-1/2)
         self._Mh = kwargs['bhmass']  # in units of solar masses
 
-        # Assume that BDs below 0.1 solar masses are n=1 polytropes
-        if self._Mstar < 0.1:
-            Mstar_Tout = 0.1
-        else:
-            Mstar_Tout = self._Mstar
-
-        # calculate Rstar from Mstar (using Tout et. al. 1996),
-        # in Tout paper -> Z = 0.02 (now not quite solar Z) and ZAMS
-        Z = 0.0134  # assume solar metallicity
-        log10_Z_02 = np.log10(Z / 0.02)
-
-        # Tout coefficients for calculating Rstar
-        Tout_theta = (1.71535900 + 0.62246212 * log10_Z_02 - 0.92557761 *
-                      log10_Z_02 ** 2 - 1.16996966 * log10_Z_02 ** 3 -
-                      0.30631491 *
-                      log10_Z_02 ** 4)
-        Tout_l = (6.59778800 - 0.42450044 * log10_Z_02 - 12.13339427 *
-                  log10_Z_02 ** 2 - 10.73509484 * log10_Z_02 ** 3 -
-                  2.51487077 * log10_Z_02 ** 4)
-        Tout_kpa = (10.08855000 - 7.11727086 * log10_Z_02 - 31.67119479 *
-                    log10_Z_02 ** 2 - 24.24848322 * log10_Z_02 ** 3 -
-                    5.33608972 * log10_Z_02 ** 4)
-        Tout_lbda = (1.01249500 + 0.32699690 * log10_Z_02 - 0.00923418 *
-                     log10_Z_02 ** 2 - 0.03876858 * log10_Z_02 ** 3 -
-                     0.00412750 * log10_Z_02 ** 4)
-        Tout_mu = (0.07490166 + 0.02410413 * log10_Z_02 + 0.07233664 *
-                   log10_Z_02 ** 2 + 0.03040467 * log10_Z_02 ** 3 +
-                   0.00197741 * log10_Z_02 ** 4)
-        Tout_nu = 0.01077422
-        Tout_eps = (3.08223400 + 0.94472050 * log10_Z_02 - 2.15200882 *
-                    log10_Z_02 ** 2 - 2.49219496 * log10_Z_02 ** 3 -
-                    0.63848738 * log10_Z_02 ** 4)
-        Tout_o = (17.84778000 - 7.45345690 * log10_Z_02 - 48.9606685 *
-                  log10_Z_02 ** 2 - 40.05386135 * log10_Z_02 ** 3 -
-                  9.09331816 * log10_Z_02 ** 4)
-        Tout_pi = (0.00022582 - 0.00186899 * log10_Z_02 + 0.00388783 *
-                   log10_Z_02 ** 2 + 0.00142402 * log10_Z_02 ** 3 -
-                   0.00007671 * log10_Z_02 ** 4)
-        # caculate Rstar in units of Rsolar
-        Rstar = ((Tout_theta * Mstar_Tout ** 2.5 + Tout_l *
+        Mstar_Tout = 0.1 if self._Mstar < 0.1 else self._Mstar
+        # Tout et al. 1996 ZAMS radius (solar Z); coefficients cached in __init__.
+        Rstar = ((self._tout_theta * Mstar_Tout ** 2.5 + self._tout_l *
                   Mstar_Tout ** 6.5 +
-                  Tout_kpa * Mstar_Tout ** 11 + Tout_lbda *
+                  self._tout_kpa * Mstar_Tout ** 11 + self._tout_lbda *
                   Mstar_Tout ** 19 +
-                  Tout_mu * Mstar_Tout ** 19.5) /
-                 (Tout_nu + Tout_eps * Mstar_Tout ** 2 + Tout_o *
-                  Mstar_Tout ** 8.5 + Mstar_Tout ** 18.5 + Tout_pi *
-                  Mstar_Tout ** 19.5))
+                  self._tout_mu * Mstar_Tout ** 19.5) /
+                 (self._tout_nu + self._tout_eps * Mstar_Tout ** 2 +
+                  self._tout_o * Mstar_Tout ** 8.5 + Mstar_Tout ** 18.5 +
+                  self._tout_pi * Mstar_Tout ** 19.5))
 
         dmdt = (dmdt * np.sqrt(Mhbase / self._Mh) *
                 (self._Mstar / Mstarbase) ** 2.0 * (Rstarbase / Rstar) ** 1.5)
@@ -503,16 +510,14 @@ class Fallback(Engine):
                 # the following makes sure there is enough prepeak sampling for
                 # good extrapolation
                 if ipeak < 1000:
-                    prepeakfunc = interp1d(time[:ipeak], dmdt[:ipeak])
                     prepeaktimes = np.logspace(np.log10(time[0]),
                                                np.log10(time[ipeak - 1]), 1000)
-                    # prepeaktimes = np.linspace(time[0], time[ipeak - 1],
-                    #                           num=1000)
                     if prepeaktimes[-1] > time[ipeak - 1]:
                         prepeaktimes[-1] = time[ipeak - 1]
                     if prepeaktimes[0] < time[0]:
                         prepeaktimes[0] = time[0]
-                    prepeakdmdt = prepeakfunc(prepeaktimes)
+                    prepeakdmdt = _lin_interp(
+                        prepeaktimes, time[:ipeak], dmdt[:ipeak])
                 else:
                     prepeaktimes = time[:ipeak]
                     prepeakdmdt = dmdt[:ipeak]
@@ -560,41 +565,29 @@ class Fallback(Engine):
 
         tpeak = time[np.argmax(dmdt)]
 
-        timeinterpfunc = interp1d(time, dmdt)
-
-        lengthpretimes = len(np.where(self._times < time[0])[0])
-        lengthposttimes = len(np.where(self._times > time[-1])[0])
-
-        # include len(self._times) instead of just using -lengthposttimes
-        # for indexing in case lengthposttimes == 0
-        dmdt2 = timeinterpfunc(self._times[lengthpretimes:(len(self._times) -
-                                                           lengthposttimes)])
-        
-        # this removes all extrapolation by interp1d by setting dmdtnew = 0
-        # outside bounds of self._times
-        dmdt1 = np.zeros(lengthpretimes)
-        dmdt3 = np.zeros(lengthposttimes)
-
-        dmdtnew = np.append(dmdt1, dmdt2)
-        dmdtnew = np.append(dmdtnew, dmdt3)
-
-        dmdtnew[dmdtnew < 0] = 0  # set floor for dmdt
+        times_eval = np.asarray(self._times)
+        n_times = times_eval.shape[0]
+        lengthpretimes = int(np.count_nonzero(times_eval < time[0]))
+        lengthposttimes = int(np.count_nonzero(times_eval > time[-1]))
+        mid = times_eval[lengthpretimes:n_times - lengthposttimes]
+        dmdt2 = _lin_interp(mid, time, dmdt) if mid.size else np.empty(0)
+        dmdtnew = np.concatenate((
+            np.zeros(lengthpretimes),
+            dmdt2,
+            np.zeros(lengthposttimes)))
+        dmdtnew[dmdtnew < 0] = 0
 
         self._efficiency = kwargs['efficiency']
-        # luminosities in erg/s
         luminosities = (self._efficiency * dmdtnew *
                         c.c.cgs.value * c.c.cgs.value)
-        # -------------- EDDINGTON LUMINOSITY CUT -------------------
-        # Assume solar metallicity for now
-
-        # 0.2*(1 + X) = mean Thomson opacity
         kappa_t = 0.2 * (1 + 0.74)
         Ledd = (FOUR_PI * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
 
-        self._Leddlim = kwargs['Leddlim']  # user defined multiple of Ledd, default is 1
-        luminosities = (luminosities * self._Leddlim*Ledd / (luminosities + self._Leddlim*Ledd))
-        luminosities = [0.0 if np.isnan(x) else x for x in luminosities]
+        self._Leddlim = kwargs['Leddlim']
+        ledd_cap = self._Leddlim * Ledd
+        luminosities = luminosities * ledd_cap / (luminosities + ledd_cap)
+        luminosities = np.where(np.isnan(luminosities), 0.0, luminosities)
 
         return {self.dense_key('luminosities'): luminosities, 'Rstar': Rstar,
                 'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,

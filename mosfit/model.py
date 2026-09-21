@@ -3,6 +3,7 @@ import importlib
 import inspect
 import json
 import os
+import sys
 from collections import OrderedDict
 from copy import deepcopy
 from difflib import get_close_matches
@@ -23,6 +24,35 @@ from six import string_types
 # from scipy.optimize import basinhopping
 
 # from bayes_opt import BayesianOptimization
+
+
+def task_module_qualname(kinds, leaf, from_cwd=False):
+    """Fully-qualified name for a MOSFiT module loaded from disk.
+
+    Packaged modules use ``mosfit.modules.transforms.viscous`` so Numba
+    cache and spawned workers can reimport them. CWD overrides use
+    ``modules.transforms.viscous`` (the launch-time tree on ``sys.path``).
+    """
+    if from_cwd:
+        return 'modules.{}.{}'.format(kinds, leaf)
+    return 'mosfit.modules.{}.{}'.format(kinds, leaf)
+
+
+def _is_cwd_override(cwd_path, pkg_path):
+    """True when ``cwd_path`` is a custom module, not the installed file."""
+    if not os.path.isfile(cwd_path):
+        return False
+    if not os.path.isfile(pkg_path):
+        return True
+    return os.path.normcase(os.path.abspath(cwd_path)) != os.path.normcase(
+        os.path.abspath(pkg_path))
+
+
+def ensure_cwd_on_sys_path():
+    """Put the process CWD on ``sys.path`` so spawn workers can import overrides."""
+    cwd = os.getcwd()
+    if cwd not in sys.path:
+        sys.path.insert(0, cwd)
 
 
 class Model(object):
@@ -345,18 +375,27 @@ class Model(object):
             call_stack = self._call_stack
         cur_task = call_stack[task]
         kinds = self._inflect.plural(cur_task['kind'])
-        mod_name = cur_task.get('class', task).lower()
-        mod_path = os.path.join('modules', kinds, mod_name + '.py')
-        if not os.path.isfile(mod_path):
-            mod_path = os.path.join(self._dir_path, 'modules', kinds,
-                                    mod_name + '.py')
-        mod_name = 'mosfit.modules.' + kinds + mod_name
+        leaf = cur_task.get('class', task).lower()
+        cwd_path = os.path.join('modules', kinds, leaf + '.py')
+        pkg_path = os.path.join(self._dir_path, 'modules', kinds, leaf + '.py')
+        from_cwd = _is_cwd_override(cwd_path, pkg_path)
+        if from_cwd:
+            ensure_cwd_on_sys_path()
+            mod_path = cwd_path
+        elif os.path.isfile(pkg_path):
+            mod_path = pkg_path
+        else:
+            mod_path = cwd_path
+        mod_name = task_module_qualname(kinds, leaf, from_cwd=from_cwd)
         try:
-            mod = importlib.machinery.SourceFileLoader(mod_name,
-                                                       mod_path).load_module()
-        except AttributeError:
-            import imp
-            mod = imp.load_source(mod_name, mod_path)
+            mod = importlib.import_module(mod_name)
+        except ImportError:
+            try:
+                mod = importlib.machinery.SourceFileLoader(
+                    mod_name, mod_path).load_module()
+            except AttributeError:
+                import imp
+                mod = imp.load_source(mod_name, mod_path)
 
         class_name = [
             x[0] for x in

@@ -60,6 +60,47 @@ class SED(Module):
                                                 dtype=float)
         self._sample_frequencies = self.C_OVER_ANG / self._sample_wavelengths
 
+    def sed_row_width(self):
+        """Wavelength samples per SED row (bands are padded to this width)."""
+        sw = self._sample_wavelengths
+        if sw is None or len(sw) == 0:
+            return 1
+        if isinstance(sw, np.ndarray) and sw.dtype != object:
+            if sw.ndim >= 2:
+                return int(sw.shape[-1])
+            if sw.ndim == 1:
+                return int(sw.shape[0])
+        widths = [len(np.asarray(row).ravel()) for row in sw]
+        return int(max(widths)) if widths else 1
+
+    def alloc_seds(self, n_rows):
+        """Allocate a rectangular ``(n_obs, n_wav)`` SED array of zeros."""
+        return np.zeros((int(n_rows), self.sed_row_width()), dtype=float)
+
+    @staticmethod
+    def as_rectangular_seds(seds, n_wav=None):
+        """Coerce list / object-dtype SEDs to a 2-D float array."""
+        if seds is None:
+            return None
+        arr = np.asarray(seds)
+        if arr.dtype != object:
+            arr = np.asarray(arr, dtype=float)
+            if arr.ndim == 1:
+                return arr.reshape(arr.shape[0], 1)
+            return arr
+        rows = [np.asarray(x, dtype=float).ravel()
+                for x in np.asarray(seds, dtype=object)]
+        if not rows:
+            return np.zeros((0, 1 if n_wav is None else int(n_wav)),
+                            dtype=float)
+        width = int(n_wav) if n_wav is not None else int(
+            max(r.size for r in rows))
+        out = np.zeros((len(rows), width), dtype=float)
+        for i, row in enumerate(rows):
+            n = min(int(row.size), width)
+            out[i, :n] = row[:n]
+        return out
+
     def add_to_existing_seds(self, new_seds, **kwargs):
         """Add SED from module to existing ``seds`` key.
 
@@ -74,11 +115,21 @@ class SED(Module):
             The result of summing the new and existing SEDs.
 
         """
+        new_seds = self.as_rectangular_seds(new_seds)
         old_seds = kwargs.get('seds', None)
-        if old_seds is not None:
-            for i, sed in enumerate(old_seds):
-                new_seds[i] += sed
-        return new_seds
+        if old_seds is None:
+            return new_seds
+        old_seds = self.as_rectangular_seds(
+            old_seds, n_wav=new_seds.shape[1])
+        if old_seds.shape == new_seds.shape:
+            return new_seds + old_seds
+        n_rows = new_seds.shape[0]
+        n_wav = max(old_seds.shape[1], new_seds.shape[1])
+        out = np.zeros((n_rows, n_wav), dtype=float)
+        out[:, :new_seds.shape[1]] = new_seds
+        n_old = min(old_seds.shape[0], n_rows)
+        out[:n_old, :old_seds.shape[1]] += old_seds[:n_old]
+        return out
 
     def send_request(self, request):
         """Send a request."""

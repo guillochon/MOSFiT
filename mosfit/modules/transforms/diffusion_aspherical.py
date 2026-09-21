@@ -75,7 +75,7 @@ class DiffusionAspherical(Transform):
             (int_times ** 2 - int_te2s.reshape(lu, 1)) / td2)
         int_args[np.isnan(int_args)] = 0.0
 
-        uniq_lums = np.trapz(int_args, int_times)
+        uniq_lums = np.trapezoid(int_args, int_times)
         uniq_lums *= -2.0 * np.expm1(-A / int_te2s) / td2
 
         uniq_lums *= (1 + 1.4 * (2 + uniq_times/self._tau_diff/0.59) / (1 +

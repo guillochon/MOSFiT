@@ -12,7 +12,7 @@ Once installed, ``MOSFiT`` can be run from any directory, and it's typically con
     mkdir mosfit_runs
     cd mosfit_runs
 
-``MOSFiT`` can be invoked either via :code:`python -m mosfit` or simply :code:`mosfit`. Pass **paths** to catalog-format JSON (or ASCII for conversion) with ``-e``:
+``MOSFiT`` can be invoked either via :code:`python -m mosfit` or simply :code:`mosfit` (or ``uv run mosfit`` from a source checkout). Pass **paths** to catalog-format JSON (or ASCII for conversion) with ``-e``. The default sampler is ``dynesty`` (see :ref:`sampling`).
 
 .. code-block:: bash
 
@@ -23,6 +23,7 @@ The above command will prompt the user to choose a model (of those distributed w
 .. code-block:: bash
 
     mosfit -e ./LSQ12dlf.json -m slsn
+    mosfit -e mosfit/tests/PS1-10jh.json -m tde --max-cores 10 -R
 
 Multiple JSON files can be fit in succession (paths with spaces in quotes):
 
@@ -38,7 +39,18 @@ The code writes ``products/walkers.h5`` for each event/model combination: a set 
 Parallel execution
 ------------------
 
-``MOSFiT`` is parallelized and can be run in parallel by prepending ``mpirun -np #``, where ``#`` is the number of processors in your machine +1 for the master process. So, if your computer has 4 processors, the above command would be:
+Likelihood evaluations can be spread across local processes with ``--max-cores``
+(Windows-spawn compatible; default is 1, i.e. serial). This is the usual way
+to use multiple cores with the default ``dynesty`` sampler:
+
+.. code-block:: bash
+
+    mosfit -e ./LSQ12dlf.json -m slsn --max-cores 10
+
+MPI is still supported when ``mpi4py`` is installed (``uv sync --extra mpi``).
+Prepend ``mpirun``/``mpiexec``; ``mpirun`` takes precedence over ``--max-cores``.
+``#`` is typically the number of ranks you want (often cores + 1 for a master
+process with some MPI setups):
 
 .. code-block:: bash
 
@@ -48,7 +60,7 @@ Parallel execution
 
 .. code-block:: bash
 
-    mpirun -np 5 mosfit -m magnetar
+    mosfit -m magnetar --max-cores 10
 
 .. _own-data:
 

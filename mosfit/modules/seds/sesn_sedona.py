@@ -15,7 +15,6 @@ This class:
 from math import pi
 
 import numpy as np
-import torch
 
 from astropy import constants as c
 from astropy import units as u
@@ -25,8 +24,17 @@ from mosfit.emulators import emulator_weights_dir
 from mosfit.modules.seds.sed import SED
 from mosfit.emulators.preset_systematic import preset_systematic_mag
 
-import torch.nn as nn
-import torch.nn.functional as F
+try:
+    import torch
+    import torch.nn as nn
+    import torch.nn.functional as F
+except ImportError as exc:
+    raise ImportError(
+        'The SESN SEDONA emulator requires PyTorch. Install the optional '
+        '`sedona` extra with `uv sync --extra sedona` or '
+        "`pip install 'mosfit[sedona]'`."
+    ) from exc
+
 
 
 class SimpleFluxMLP(nn.Module):

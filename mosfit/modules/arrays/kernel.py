@@ -30,13 +30,22 @@ class Kernel(Array):
         self._variance = kwargs.get(self.key('variance'), 0.0)
 
         # Get array of real observations.
-        self._observations = np.array([
-            ct if (t == 'countrate' or t == 'magcount') else y if
-            (t == 'magnitude') else lum if t == 'luminosity' else fd if
-            t == 'fluxdensity' else None
-            for y, ct, fd, lum, t in zip(
-                self._mags, self._cts, self._fds, self._lums, self._o_otypes)
-        ])
+        t = np.asarray(self._o_otypes)
+        n = t.shape[0]
+        self._observations = np.empty(n, dtype=object)
+        is_cr = (t == 'countrate') | (t == 'magcount')
+        is_mag = t == 'magnitude'
+        is_lum = t == 'luminosity'
+        is_fd = t == 'fluxdensity'
+        mags = np.asarray(self._mags, dtype=object)
+        cts = np.asarray(self._cts, dtype=object)
+        fds = np.asarray(self._fds, dtype=object)
+        lums = np.asarray(self._lums, dtype=object)
+        self._observations[is_cr] = cts[is_cr]
+        self._observations[is_mag] = mags[is_mag]
+        self._observations[is_lum] = lums[is_lum]
+        self._observations[is_fd] = fds[is_fd]
+        self._observations[~(is_cr | is_mag | is_lum | is_fd)] = None
 
         # Get array of model observations.
         self._model_observations = kwargs.get('model_observations', [])
@@ -95,13 +104,15 @@ class Kernel(Array):
         self._lums = np.array(kwargs.get('observed_luminosities', []))
         self._u_freqs = kwargs.get('all_u_frequencies', [])
         ai = np.asarray(self._all_band_indices)
-        self._waves = np.array([
-            self._average_wavelengths[bi]
-            if bi >= 0 else (
-                np.nan if bi == BOL_BAND_INDEX else
-                C_CGS / self._freqs[i] / ANG_CGS)
-            for i, bi in enumerate(ai)
-        ])
+        freqs = np.asarray(self._freqs, dtype=float)
+        self._waves = np.full(ai.shape[0], np.nan, dtype=float)
+        in_band = ai >= 0
+        if np.any(in_band):
+            awaves = np.asarray(self._average_wavelengths, dtype=float)
+            self._waves[in_band] = awaves[ai[in_band]]
+        freq_rows = (ai < 0) & (ai != BOL_BAND_INDEX)
+        if np.any(freq_rows):
+            self._waves[freq_rows] = C_CGS / freqs[freq_rows] / ANG_CGS
         self._observed = np.array(kwargs.get('observed', []), dtype=bool)
         self._observation_types = kwargs.get('observation_types')
         self._n_obs = len(self._observed)

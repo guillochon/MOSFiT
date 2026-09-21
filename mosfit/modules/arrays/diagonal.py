@@ -1,5 +1,4 @@
 """Definitions for the `Diagonal` class."""
-from math import isnan
 
 import numpy as np
 
@@ -8,6 +7,15 @@ from mosfit.utils import flux_density_unit
 
 
 # Important: Only define one ``Module`` class per file.
+
+
+def _none_to_nan(values):
+    """Convert a sequence that may contain ``None`` to float with NaN."""
+    arr = np.asarray(values, dtype=object).ravel()
+    out = np.empty(arr.shape[0], dtype=float)
+    for i, val in enumerate(arr):
+        out[i] = np.nan if val is None else float(val)
+    return out
 
 
 class Diagonal(Array):
@@ -36,51 +44,48 @@ class Diagonal(Array):
             print([x for x in self._o_types if x not in allowed_otypes])
             raise ValueError('Unrecognized observation type.')
 
-        # Calculate (model - obs) residuals.
-        residuals = np.array([
-            (abs(x - ct) if (not u and ct is not None) or (
-                not isnan(x) and ct is not None and x < ct) else 0.0)
-            if (t == 'countrate' or t == 'magcount') else
-            ((abs(x - y) if (not u and y is not None) or (
-                not isnan(x) and y is not None and x < y) else 0.0)
-             if t == 'magnitude' else
-             ((abs(x - lum) if (not u and lum is not None) or (
-                 not isnan(x) and lum is not None and x < lum) else 0.0)
-              if t == 'luminosity' else
-              ((abs(x - fd) if (not u and fd is not None) or (
-                  not isnan(x) and fd is not None and x > fd) else 0.0)
-               if t == 'fluxdensity' else None)))
-            for x, y, lum, ct, fd, u, t in zip(
-                self._model_observations, self._mags, self._lums,
-                self._cts, self._fds, self._upper_limits, self._o_types)
-        ])
+        # Calculate (model - obs) residuals with the same definition as the
+        # original per-row zip, using masked arrays.
+        x = np.asarray(self._model_observations, dtype=float)
+        u = np.asarray(self._upper_limits, dtype=bool)
+        t = np.asarray(self._o_types)
+        y = self._mags_f
+        lum = self._lums_f
+        ct = self._cts_f
+        fd = self._fds_f
 
-        if np.any(residuals == None):  # noqa: E711
+        is_cr = (t == 'countrate') | (t == 'magcount')
+        is_mag = t == 'magnitude'
+        is_lum = t == 'luminosity'
+        is_fd = t == 'fluxdensity'
+        if np.any(~(is_cr | is_mag | is_lum | is_fd)):
             raise ValueError('Null residual.')
 
-        # Observational errors to be put in diagonal of error matrix.
-        diag = [
-            ((ctel if (ct is not None and x > ct) else cteu))
-            if (t == 'countrate' or t == 'magcount') else
-            ((el if (y is None or x > y) else eu))
-            if t == 'magnitude' else
-            ((lm_el if (lum is None or x > lum) else lm_eu))
-            if t == 'luminosity' else
-            ((fdel if (fd is not None and x > fd) else fdeu))
-            if t == 'fluxdensity' else None
-            for x, y, lum, eu, el, lm_eu, lm_el, fd, fdeu, fdel, ct,
-            ctel, cteu, t in zip(
-                self._model_observations, self._mags, self._lums,
-                self._e_u_mags, self._e_l_mags, self._e_u_lums, self._e_l_lums,
-                self._fds, self._e_u_fds, self._e_l_fds, self._cts,
-                self._e_l_cts, self._e_u_cts,
-                self._o_types)
-        ]
-        diag = [0.0 if x is None else x for x in diag]
-        diag = np.array(diag) ** 2
+        obs = np.where(is_cr, ct, np.where(
+            is_mag, y, np.where(is_lum, lum, fd)))
+        obs_ok = np.isfinite(obs)
+        finite_x = np.isfinite(x)
+        brighter = np.where(is_fd, x > obs, x < obs)
+        use_resid = ((~u) & obs_ok) | (finite_x & obs_ok & brighter)
+        residuals = np.where(use_resid, np.abs(x - obs), 0.0)
 
-        if np.any(diag == None):  # noqa: E711
-            raise ValueError('Null error.')
+        # Observational errors to be put in diagonal of error matrix.
+        el = self._e_l_mags_f
+        eu = self._e_u_mags_f
+        lm_el = self._e_l_lums_f
+        lm_eu = self._e_u_lums_f
+        ctel = self._e_l_cts_f
+        cteu = self._e_u_cts_f
+        fdel = self._e_l_fds_f
+        fdeu = self._e_u_fds_f
+
+        mag_err = np.where(np.isnan(y) | (x > y), el, eu)
+        lum_err = np.where(np.isnan(lum) | (x > lum), lm_el, lm_eu)
+        cr_err = np.where(np.isfinite(ct) & (x > ct), ctel, cteu)
+        fd_err = np.where(np.isfinite(fd) & (x > fd), fdel, fdeu)
+        diag = np.where(is_cr, cr_err, np.where(
+            is_mag, mag_err, np.where(is_lum, lum_err, fd_err)))
+        diag = np.nan_to_num(diag, nan=0.0) ** 2
 
         preset = kwargs.get('emulator_preset_systematic_mag')
         if preset is not None:
@@ -129,79 +134,75 @@ class Diagonal(Array):
         self._observed = np.array(kwargs.get('observed', []), dtype=bool)
         self._o_types = self._observation_types[self._observed]
 
+        default_ul = kwargs['default_upper_limit_error']
+        default_none = kwargs['default_no_error_bar_error']
+
+        def _fill_maglike(sym, sided):
+            e = _none_to_nan(sym)
+            side = _none_to_nan(sided)
+            both = np.isnan(e) & np.isnan(side)
+            out = np.where(np.isnan(side), e, side)
+            out = np.where(both & self._upper_limits, default_ul, out)
+            out = np.where(both & ~self._upper_limits, default_none, out)
+            return out
+
         # Magnitudes first
         # Note: Upper limits (censored data) currently treated as a
         # half-Gaussian, this is very approximate and can be improved upon.
-        self._e_u_mags = [
-            kwargs['default_upper_limit_error']
-            if (e is None and eu is None and self._upper_limits[i]) else
-            (kwargs['default_no_error_bar_error']
-             if (e is None and eu is None) else (e if eu is None else eu))
-            for i, (e, eu) in enumerate(zip(self._e_mags, self._e_u_mags))
-        ]
-        self._e_l_mags = [
-            kwargs['default_upper_limit_error']
-            if (e is None and el is None and self._upper_limits[i]) else
-            (kwargs['default_no_error_bar_error']
-             if (e is None and el is None) else (e if el is None else el))
-            for i, (e, el) in enumerate(zip(self._e_mags, self._e_l_mags))
-        ]
-
-        self._e_u_lums = [
-            kwargs['default_upper_limit_error']
-            if (e is None and eu is None and self._upper_limits[i]) else
-            (kwargs['default_no_error_bar_error']
-             if (e is None and eu is None) else (e if eu is None else eu))
-            for i, (e, eu) in enumerate(zip(self._e_lums_sym, self._e_u_lums))
-        ]
-        self._e_l_lums = [
-            kwargs['default_upper_limit_error']
-            if (e is None and el is None and self._upper_limits[i]) else
-            (kwargs['default_no_error_bar_error']
-             if (e is None and el is None) else (e if el is None else el))
-            for i, (e, el) in enumerate(zip(self._e_lums_sym, self._e_l_lums))
-        ]
+        self._e_u_mags = _fill_maglike(self._e_mags, self._e_u_mags)
+        self._e_l_mags = _fill_maglike(self._e_mags, self._e_l_mags)
+        self._e_u_lums = _fill_maglike(self._e_lums_sym, self._e_u_lums)
+        self._e_l_lums = _fill_maglike(self._e_lums_sym, self._e_l_lums)
 
         # Ignore upperlimits for countrate if magnitude is present.
         self._upper_limits[self._observation_types[
             self._observed] == 'magcount'] = False
-        self._e_u_cts = [
-            c if (e is None and eu is None) else
-            e if eu is None else eu
-            for i, (c, e, eu) in enumerate(zip(
-                self._cts, self._e_cts, self._e_u_cts))
-        ]
-        self._e_l_cts = [
-            c if (e is None and el is None) else
-            e if el is None else el
-            for i, (c, e, el) in enumerate(zip(
-                self._cts, self._e_cts, self._e_l_cts))
-        ]
 
-        # Now flux densities
-        self._e_u_fds = [
-            v if (e is None and eu is None and self._upper_limits[i]) else
-            (v if (e is None and eu is None) else (e if eu is None else eu))
-            for i, (e, eu, v) in enumerate(
-                zip(self._e_fds, self._e_u_fds, self._fds))
-        ]
-        self._e_l_fds = [
-            0.0 if self._upper_limits[i] else (
-                v if (e is None and el is None) else (e if el is None else el))
-            for i, (e, el, v) in enumerate(
-                zip(self._e_fds, self._e_l_fds, self._fds))
-        ]
-        self._fds = np.array([
-            x / flux_density_unit(y) if x is not None else None
-            for x, y in zip(self._fds, self._u_fds)
-        ])
-        self._e_u_fds = [
-            x / flux_density_unit(y) if x is not None else None
-            for x, y in zip(self._e_u_fds, self._u_fds)
-        ]
-        self._e_l_fds = [
-            x / flux_density_unit(y) if x is not None else None
-            for x, y in zip(self._e_l_fds, self._u_fds)
-        ]
+        cts = _none_to_nan(self._cts)
+        e_cts = _none_to_nan(self._e_cts)
+        e_u_cts = _none_to_nan(self._e_u_cts)
+        e_l_cts = _none_to_nan(self._e_l_cts)
+        both_u = np.isnan(e_cts) & np.isnan(e_u_cts)
+        both_l = np.isnan(e_cts) & np.isnan(e_l_cts)
+        self._e_u_cts = np.where(both_u, cts, np.where(np.isnan(e_u_cts),
+                                                       e_cts, e_u_cts))
+        self._e_l_cts = np.where(both_l, cts, np.where(np.isnan(e_l_cts),
+                                                       e_cts, e_l_cts))
+
+        fds = _none_to_nan(self._fds)
+        e_fds = _none_to_nan(self._e_fds)
+        e_u_fds = _none_to_nan(self._e_u_fds)
+        e_l_fds = _none_to_nan(self._e_l_fds)
+        both_uf = np.isnan(e_fds) & np.isnan(e_u_fds)
+        both_lf = np.isnan(e_fds) & np.isnan(e_l_fds)
+        self._e_u_fds = np.where(both_uf, fds, np.where(np.isnan(e_u_fds),
+                                                        e_fds, e_u_fds))
+        self._e_l_fds = np.where(
+            self._upper_limits, 0.0,
+            np.where(both_lf, fds, np.where(np.isnan(e_l_fds), e_fds, e_l_fds)))
+
+        u_fds = np.asarray(self._u_fds, dtype=object)
+        units = np.array([
+            flux_density_unit(u) if u is not None else 1.0 for u in u_fds],
+            dtype=float)
+        units[units == 0.0] = 1.0
+        self._fds = np.where(np.isfinite(fds), fds / units, np.nan)
+        self._e_u_fds = np.where(
+            np.isfinite(self._e_u_fds), self._e_u_fds / units, np.nan)
+        self._e_l_fds = np.where(
+            np.isfinite(self._e_l_fds), self._e_l_fds / units, np.nan)
+
+        self._mags_f = _none_to_nan(self._mags)
+        self._lums_f = _none_to_nan(self._lums)
+        self._cts_f = np.asarray(cts, dtype=float)
+        self._fds_f = np.asarray(self._fds, dtype=float)
+        self._e_u_mags_f = np.asarray(self._e_u_mags, dtype=float)
+        self._e_l_mags_f = np.asarray(self._e_l_mags, dtype=float)
+        self._e_u_lums_f = np.asarray(self._e_u_lums, dtype=float)
+        self._e_l_lums_f = np.asarray(self._e_l_lums, dtype=float)
+        self._e_u_cts_f = np.asarray(self._e_u_cts, dtype=float)
+        self._e_l_cts_f = np.asarray(self._e_l_cts, dtype=float)
+        self._e_u_fds_f = np.asarray(self._e_u_fds, dtype=float)
+        self._e_l_fds_f = np.asarray(self._e_l_fds, dtype=float)
 
         self._preprocessed = True
