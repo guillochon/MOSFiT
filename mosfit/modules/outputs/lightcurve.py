@@ -45,28 +45,40 @@ class LightCurve(Output):
             else:
                 lm = self._limiting_magnitude
 
-            lmo = len(output['model_observations'])
+            obs = np.array(output['model_observations'], dtype=float)
+            lmo = len(obs)
 
-            omags = output['observation_types'] == 'magnitude'
-            output['model_variances'] = np.zeros_like(output[
-                'model_observations'])
+            omags = np.array(
+                [x == 'magnitude' for x in output['observation_types']],
+                dtype=bool)
+            n_mags = int(np.count_nonzero(omags))
+            output['model_variances'] = np.zeros(lmo, dtype=float)
             output['model_upper_limits'] = np.full(lmo, False)
             lms = lm + ls * np.random.randn(lmo)
             varias = 10.0 ** (-lms / 2.5)
-            mods = 10.0 ** (
-                -np.array(output['model_observations'][omags]) / 2.5)
-            output['model_observations'][omags] = -2.5 * np.log10(
-                varias[omags] * np.random.randn(len(omags)) + mods)
-            obsas = 10.0 ** (
-                -np.array(output['model_observations']) / 2.5)
-            output['model_variances'][omags] = np.abs(-output[
-                'model_observations'][omags] - 2.5 * (
-                    np.log10(varias[omags] + obsas)))
-            ul_mask = omags & (obsas < 3.0 * varias)
+
+            # Scatter each magnitude row in flux space by the flux error the
+            # limiting magnitude implies. Every array indexed here is masked
+            # the same way; mixing masked and full-length arrays silently
+            # broadcasts (or raises) once a model has non-magnitude rows.
+            mods = 10.0 ** (-obs[omags] / 2.5)
+            drawn = varias[omags] * np.random.randn(n_mags) + mods
+            obsas = np.zeros(lmo, dtype=float)
+            obsas[omags] = drawn
+            with np.errstate(divide='ignore', invalid='ignore'):
+                obs[omags] = -2.5 * np.log10(drawn)
+                output['model_variances'][omags] = np.abs(
+                    -obs[omags] - 2.5 * np.log10(varias[omags] + drawn))
+
+            # A draw at or below zero flux is a non-detection, not a missing
+            # observation; treat it as one rather than leaving a NaN that
+            # would quietly drop the epoch from the mock light curve.
+            ul_mask = omags & ((obsas < 3.0 * varias) | ~np.isfinite(obs))
             output['model_upper_limits'] = ul_mask
-            output['model_observations'][ul_mask] = lms[ul_mask]
+            obs[ul_mask] = lms[ul_mask]
             output['model_variances'][ul_mask] = 2.5 * (
                 np.log10(2.0 * varias[ul_mask]) - np.log10(varias[ul_mask]))
+            output['model_observations'] = obs
             return output
 
         output['model_variances'] = np.full(
