@@ -43,6 +43,18 @@ Bug fixes for two paths 2.0.0 left broken. No API or packaging changes.
   flux becomes an upper limit rather than a `NaN` that silently dropped the
   epoch from the mock light curve.
 
+### Changed
+
+- The PyPI version badge now comes from shields.io. The badge.fury
+  endpoint it used had gone stale and was still advertising 1.3 after
+  2.0.0 was published.
+- Documentation: the built-in model table is a `list-table` rather than a
+  hand-aligned grid table, whose column rules had drifted out of
+  alignment and stopped parsing; `autosectionlabel_prefix_document` is
+  on, so section labels no longer collide with explicit `.. _target:`
+  names; and Read the Docs installs graphviz for the inheritance
+  diagrams. The docs now build clean, and CI builds them with `-W`.
+
 ## [2.0.0] - 2026-09-21
 
 First 2.x release: `uv`/`pyproject.toml` packaging, Python 3.11-3.14, a dynesty

@@ -63,3 +63,26 @@ jobs:
           .venv-sdist/bin/python -c "import mosfit; assert mosfit.__version__.startswith('2.')"
           .venv-sdist/bin/mosfit --version
           tar -tzf dist/mosfit-*.tar.gz | grep -E '/LICENSE$|/CHANGELOG.md$|/test.py$'
+
+  docs:
+    name: docs / sphinx
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install graphviz
+        # `dot`, for the inheritance diagrams automodapi generates. Read the
+        # Docs installs it through `apt_packages` in `.readthedocs.yaml`.
+        run: sudo apt-get update && sudo apt-get install -y graphviz
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.14"
+          enable-cache: true
+      - name: Sync locked environment with docs extra
+        run: uv sync --frozen --extra docs
+      - name: Build the docs as Read the Docs does
+        # `-W` so a warning fails here, where it is actionable, rather than
+        # silently degrading the published docs. RTD itself stays tolerant so
+        # a new Sphinx release cannot take the docs offline.
+        run: uv run sphinx-build -W --keep-going -b html docs docs/_build/html

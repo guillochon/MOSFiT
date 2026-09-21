@@ -68,6 +68,13 @@ extensions = [
     'sphinx.ext.autosectionlabel'
 ]
 
+# Qualify generated section labels by document. Without this, a section
+# title that matches an explicit `.. _target:` in the same file (or a
+# heading reused across files) collides, and Sphinx warns on every one.
+# Explicit targets are unaffected, so existing `:ref:` links still
+# resolve by their own names.
+autosectionlabel_prefix_document = True
+
 # Heavy / optional deps: keep autodoc working on Read the Docs without them.
 # Do not stub ``torch`` in ``sys.modules`` — Astropy treats that as a real
 # install and then fails. Drop SESN SEDONA names from ``__all__`` so
