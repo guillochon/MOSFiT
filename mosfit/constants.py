@@ -24,6 +24,14 @@ M_P_CGS = c.m_p.cgs.value
 MEV_CGS = u.MeV.cgs.scale
 MAG_FAC = 2.5
 MPC_CGS = u.Mpc.cgs.scale
+PC_CGS = u.pc.cgs.scale
+
+# Absolute-flux reference distance (10 pc) used when MOSFiT reports rest-frame
+# SEDs as flux densities, and the CGS value of one nanojansky. Together these
+# convert ``seds`` (erg/s/Angstrom) into the nJy-at-10-pc convention that
+# external simulators such as LightCurveLynx expect.
+TEN_PC_CGS = 10.0 * PC_CGS
+NJY_CGS = 1.0e-32  # erg / s / cm^2 / Hz
 
 # ``all_band_indices`` sentinel for bolometric / intrinsic luminosity rows
 # (catalog ``luminosity`` field); distinct from radio ``band_index == -1``.

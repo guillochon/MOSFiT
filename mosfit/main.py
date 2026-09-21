@@ -16,8 +16,9 @@ from six import string_types
 
 from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
+from mosfit.lynx import LYNX_FIXED_PARAMETERS, lynx_wavelength_grid
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master, speak
+from mosfit.utils import get_mosfit_hash, is_master, listify, speak
 
 
 class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -90,6 +91,22 @@ def get_parser(printer=None):
         default=False,
         action='store_true',
         help=prt.text('parser_prefer_fluxes'))
+
+    parser.add_argument(
+        '--lynx',
+        dest='lynx',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_lynx'))
+
+    parser.add_argument(
+        '--lynx-wavelengths',
+        dest='lynx_wavelengths',
+        default=None,
+        nargs=3,
+        type=float,
+        metavar=('MIN', 'MAX', 'N'),
+        help=prt.text('parser_lynx_wavelengths'))
 
     parser.add_argument(
         '--time-list',
@@ -538,6 +555,24 @@ def main():
 
     if args.limiting_magnitude == []:
         args.limiting_magnitude = 20.0
+
+    if args.lynx:
+        args.lynx_wavelengths = lynx_wavelength_grid(args.lynx_wavelengths)
+        # LightCurveLynx owns distance, redshift, extinction and the explosion
+        # epoch, so pin MOSFiT's versions of them rather than letting them vary
+        # underneath the caller. Anything the user pinned by hand wins.
+        named = set(listify(args.user_fixed_parameters)[::2])
+        for name, value in LYNX_FIXED_PARAMETERS.items():
+            if name not in named:
+                args.user_fixed_parameters += [name, value]
+        if args.band_list:
+            prt.message('lynx_ignoring_bands', warning=True)
+            args.band_list = []
+        if args.limiting_magnitude is not None:
+            prt.message('lynx_ignoring_limiting_magnitude', warning=True)
+            args.limiting_magnitude = None
+    else:
+        args.lynx_wavelengths = None
 
     args.return_fits = False
 

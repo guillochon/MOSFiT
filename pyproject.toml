@@ -67,7 +67,7 @@ docs = [
 Homepage = "https://github.com/guillochon/mosfit"
 Documentation = "https://mosfit.readthedocs.io/"
 Changelog = "https://github.com/guillochon/MOSFiT/blob/master/CHANGELOG.md"
-Download = "https://github.com/guillochon/mosfit/tarball/2.0.1"
+Download = "https://github.com/guillochon/mosfit/tarball/2.1.0"
 conda-forge = "https://anaconda.org/conda-forge/mosfit"
 
 [project.scripts]

@@ -25,9 +25,35 @@ class SED(Module):
         self._N_PTS = 24 + 1
         self._sample_wavelengths = []
 
+    def explicit_wavelengths(self):
+        """Caller-supplied wavelength grid, or ``None`` to use the filters.
+
+        By default the SED sampling grid is derived from the bandpasses that
+        are actually being fit, which is what the likelihood needs. External
+        simulators instead ask for the SED on a grid of their own choosing, so
+        a grid set on the ``Fitter`` takes precedence when present.
+        """
+        wavs = getattr(self._model._fitter, '_lynx_wavelengths', None)
+        if wavs is None or not len(wavs):
+            return None
+        return np.asarray(wavs, dtype=float)
+
     def receive_requests(self, **requests):
         """Receive requests from other ``Module`` objects."""
         self._sample_wavelengths = requests.get('sample_wavelengths', [])
+        explicit = self.explicit_wavelengths()
+        if explicit is not None:
+            # Every row shares one grid, so the per-band axis is just a tile.
+            # Keeping the (n_band, n_wav) shape means band indexing elsewhere
+            # in the SED modules needs no special-casing.
+            n_rows = len(self._sample_wavelengths)
+            if not n_rows:
+                n_rows = len(requests.get('band_wave_ranges', []))
+            self._sample_wavelengths = np.tile(
+                explicit, (max(int(n_rows), 1), 1))
+            self._sample_frequencies = (
+                self.C_OVER_ANG / self._sample_wavelengths)
+            return
         if not self._sample_wavelengths:
             wave_ranges = requests.get('band_wave_ranges', [])
             if not wave_ranges:
@@ -141,3 +167,14 @@ class SED(Module):
         """Set SED data."""
         self._N_PTS = band_sampling_points
         return True
+
+    def wavelength_range(self):
+        """Min/max sampled wavelength in Angstroms, or ``None`` if unset."""
+        sw = self._sample_wavelengths
+        if sw is None or not len(sw):
+            return None
+        flat = np.concatenate(
+            [np.asarray(row, dtype=float).ravel() for row in sw])
+        if not flat.size:
+            return None
+        return float(np.min(flat)), float(np.max(flat))

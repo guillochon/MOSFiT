@@ -20,7 +20,25 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `--lynx`, which reports the model as a rest-frame SED rather than as observed
+  photometry: flux density in nJy at 10 pc on a wavelength grid of the user's
+  choosing (`--lynx-wavelengths MIN MAX N`), with no redshift, time dilation or
+  extinction applied. This is the shape external light-curve simulators such as
+  [LightCurveLynx](https://lightcurvelynx.readthedocs.io) expect from a source
+  model. Redshift, luminosity distance, explosion time and extinction are pinned
+  so that the caller owns them. Writes `products/lynx_seds.h5` (a flat
+  `(realization, phase, wavelength)` block plus the grids and the unit-cube
+  coordinates behind each realization) and `products/lynx_manifest.json`.
+- `mosfit.lynx.LynxSource`, the in-process form of the same thing, for wrappers
+  that call MOSFiT per sample rather than through the CLI. `compute_sed(times,
+  wavelengths, parameters)` returns an `(n_phase, n_wave)` array in nJy.
+- `Model.parameter_manifest()`, describing every parameter's prior range, units,
+  log flag and position in the walker vector, so an external sampler can map its
+  own draws onto MOSFiT's unit cube.
+- `Model.minwave()` / `maxwave()` / `minphase()` / `maxphase()`, reporting where
+  a model is actually defined so a caller can decide when to extrapolate.
 
 ## [2.0.1] - 2026-09-21
 
