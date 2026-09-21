@@ -11,15 +11,21 @@ and this project follows [Semantic Versioning](https://semver.org/).
    section (use the UTC date of the tag).
 2. Leave an empty **Unreleased** section at the top for the next cycle.
 3. Set `__version__` in `mosfit/__init__.py` to `X.Y.Z` if it is not already.
-4. Tag `vX.Y.Z`, publish the sdist/wheel to PyPI, then open a version bump on
+4. Tag `vX.Y.Z` and push the tag. The `Publish` workflow builds the sdist and
+   wheel and uploads them to PyPI via trusted publishing; check its run before
+   announcing the release.
+5. Open a version bump on
    [conda-forge/mosfit-feedstock](https://github.com/conda-forge/mosfit-feedstock)
    using `recipe/meta.yaml` as the starting point (see `recipe/README.md`).
 
 ## [Unreleased]
 
-Changes that have landed since the last Git tag. The work below is the MOSFiT
-**2.0.0** release; move this section to `[2.0.0]` and date it when `v2.0.0` is
-tagged.
+Nothing yet.
+
+## [2.0.0] - 2026-09-21
+
+First 2.x release: `uv`/`pyproject.toml` packaging, Python 3.11-3.14, a dynesty
+default sampler, and a NumPy 2 / Astropy 7 runtime.
 
 ### Added
 
@@ -70,5 +76,6 @@ tagged.
 Last 1.x release on PyPI and conda-forge (`1.3`). Python 2-era packaging,
 ensemble MCMC default, NumPy 1.x, and a required PyTorch/mpi4py conda payload.
 
-[Unreleased]: https://github.com/guillochon/MOSFiT/compare/v1.3...HEAD
+[Unreleased]: https://github.com/guillochon/MOSFiT/compare/v2.0.0...HEAD
+[2.0.0]: https://github.com/guillochon/MOSFiT/compare/v1.3...v2.0.0
 [1.3]: https://github.com/guillochon/MOSFiT/releases/tag/v1.3
