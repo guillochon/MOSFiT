@@ -20,7 +20,21 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
-Nothing yet.
+### Added
+
+- `tde_shock` model: prompt nozzle-shock luminosity plus viscously
+  delayed accretion (Jiang, Guillochon & Loeb 2016; Guillochon &
+  Ramirez-Ruiz 2015). `Tviscous` follows the calibrated GR15 map
+  ``log10(T_visc/t_pk) = 1 + 2.1 log10((rp/rg)/47)`` (clipped to
+  [−1.5, 2]), with a per-event dex offset `tviscoffset` for population
+  synthesis. Each luminosity is capped at Eddington separately — the
+  accretion term before the viscous delay, the prompt shock before
+  they are summed — so L/L_Edd stays at most 2. Accretion follows
+  ``L = L_Edd ṁ/(1+ṁ)^p`` with fixed `eddslope` p = 1 (the harmonic
+  cap) by default; p > 1 declines at super-Eddington feeding rates.
+  ε_acc is drawn modestly around 0.03. Collision radius modes
+  (`rcollmode` 0/1/2, default 0 = r_p) keep the current
+  ε = f_rad r_g/r_p. The `tde` model is unchanged.
 
 ## [2.0.1] - 2026-09-22
 
@@ -62,19 +76,6 @@ default sampler, and a NumPy 2 / Astropy 7 runtime.
 
 ### Added
 
-- `tde_shock` model: prompt nozzle-shock luminosity plus viscously
-  delayed accretion (Jiang, Guillochon & Loeb 2016; Guillochon &
-  Ramirez-Ruiz 2015). `Tviscous` follows the calibrated GR15 map
-  ``log10(T_visc/t_pk) = 1 + 2.1 log10((rp/rg)/47)`` (clipped to
-  [−1.5, 2]), with a per-event dex offset `tviscoffset` for population
-  synthesis. Each luminosity is capped at Eddington separately — the
-  accretion term before the viscous delay, the prompt shock before
-  they are summed — so L/L_Edd stays at most 2. Accretion follows
-  ``L = L_Edd ṁ/(1+ṁ)^p`` with fixed `eddslope` p = 1 (the harmonic
-  cap) by default; p > 1 declines at super-Eddington feeding rates.
-  ε_acc is drawn modestly around 0.03. Collision radius modes
-  (`rcollmode` 0/1/2, default 0 = r_p) keep the current
-  ε = f_rad r_g/r_p. The `tde` model is unchanged.
 - `uv` / `pyproject.toml` packaging (hatchling). Python **3.11–3.14**.
 - Optional extras: `mpi` (mpi4py), `sedona` (PyTorch, SESN SEDONA only), `docs`.
 - `--max-cores N` local process pool for likelihoods (Windows spawn-safe).
