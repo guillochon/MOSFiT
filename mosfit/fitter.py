@@ -21,9 +21,6 @@ from mosfit.constants import BOL_MAG_BAND_LABEL
 from mosfit.converter import Converter
 from mosfit.fetcher import Fetcher
 from mosfit.printer import Printer
-from mosfit.samplers.ensembler import Ensembler
-from mosfit.samplers.nester import Nester
-from mosfit.samplers.ultranester import UltraNester
 from mosfit.utils import (all_to_list, entabbed_json_dump, entabbed_json_dumps,
                           flux_density_unit, frequency_unit, listify,
                           load_walkers_file, open_atomic, speak, temp_atomic,
@@ -553,6 +550,13 @@ class Fitter(object):
             return (None, None, None)
 
         self._method = method
+
+        # Imported here rather than at module scope: `Ensembler` pulls in
+        # `emcee`, which a rest-frame SED run has no use for. See the `lynx`
+        # dependency group in `pyproject.toml`.
+        from mosfit.samplers.ensembler import Ensembler
+        from mosfit.samplers.nester import Nester
+        from mosfit.samplers.ultranester import UltraNester
 
         if self._method == 'dynesty':
             self._sampler = Nester(self, model, iterations, burn, post_burn,

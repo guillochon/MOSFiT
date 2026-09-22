@@ -127,13 +127,18 @@ phase and wavelength. The ``--lynx`` flag reports exactly that view:
 
     mosfit -m slsn --lynx --lynx-wavelengths 1000 25000 100 -S 100 -N 1000
 
+This path does not need the sampling or plotting stacks, and there is a
+lightweight install that leaves them out: see :ref:`lightweight`.
+
 The convention matches ``SEDModel.compute_sed``: flux density in **nJy**, as
 the source would appear at **10 pc**, in the **rest frame**, with no redshift,
 no time dilation and no extinction applied. Redshift, luminosity distance,
 explosion time and extinction are pinned to the values that make this
 well-defined, so that the calling simulator owns them rather than fighting
 ``MOSFiT`` over them. Bandpasses and ``-l`` play no part and are ignored; use
-``-S`` to set how many phases are sampled.
+``-S`` to set how many phases are sampled. With no ``-D``, the ensembler is
+used: the realizations are prior draws, not a posterior, and the ensembler is
+the one sampler the lightweight install of :ref:`lightweight` carries.
 
 Two files land in ``products``:
 

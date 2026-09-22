@@ -72,6 +72,7 @@
     "lynx_ignoring_bands": "Bandpasses are not used in `--lynx` mode; the SED is reported on the wavelength grid instead. Ignoring the supplied band list.",
     "lynx_ignoring_limiting_magnitude": "Survey noise is the calling simulator’s responsibility in `--lynx` mode. Ignoring `--limiting-magnitude`.",
     "lynx_no_seds": "No rest-frame SEDs were produced; nothing written. Does this model have an SED module?",
+    "lynx_using_ensembler": "Rest-frame SEDs are drawn from the priors rather than sampled against a likelihood; defaulting to `-D ensembler`. Pass `-D` explicitly to override.",
     "max_iter": "Maximum iterations exceeded, either increase with `-i` or using `-R` to run until converged.",
     "mc_interrupted": "You have interrupted the Monte Carlo. Do you wish to save the incomplete run to disk? Previous results will be overwritten.",
     "merge_with_existing": "Would you like to merge this data with previously converted data in this directory?",

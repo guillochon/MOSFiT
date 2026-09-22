@@ -39,6 +39,25 @@ and this project follows [Semantic Versioning](https://semver.org/).
   own draws onto MOSFiT's unit cube.
 - `Model.minwave()` / `maxwave()` / `minphase()` / `maxphase()`, reporting where
   a model is actually defined so a caller can decide when to extrapolate.
+- A `lynx` dependency group in `pyproject.toml` holding only what the
+  rest-frame SED path needs, for installs that never fit or plot:
+  `uv pip install --no-deps -e . && uv pip install --group lynx`. Drops
+  `dynesty`, `numba` and `llvmlite`. A CI job installs exactly that set and
+  runs `--lynx` against it, so an eager import of the fitting stack fails
+  there rather than in a user's environment.
+
+### Changed
+
+- MOSFiT's submodules are now imported on first access rather than eagerly by
+  `mosfit/__init__.py`, and `fitter` imports the samplers at the point it
+  chooses one. `import mosfit.lynx` therefore costs neither the plotting nor
+  the sampling stack. `mosfit.plotting` and friends still resolve as before.
+- The `Viscous` transform's numba kernels moved to a private module imported
+  when the transform runs, so `numba` is no longer imported by every MOSFiT
+  session. Module package scans now skip `_`-prefixed files.
+- `--lynx` defaults to the ensembler when no sampler is given: rest-frame SEDs
+  are prior draws, with no likelihood to nest against, and the ensembler is the
+  one sampler the lightweight `lynx` group installs. An explicit `-D` wins.
 
 ## [2.0.1] - 2026-09-21
 

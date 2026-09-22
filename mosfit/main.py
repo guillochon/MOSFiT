@@ -526,7 +526,9 @@ def get_parser(printer=None):
         '-D',
         dest='method',
         choices=['ensembler', 'ultranest', 'dynesty'],
-        default='dynesty',
+        # Resolved to `dynesty` below, once anything that wants to know
+        # whether the user picked a sampler has had its say.
+        default=None,
         help=prt.text('parser_method'))
 
     return parser
@@ -571,8 +573,18 @@ def main():
         if args.limiting_magnitude is not None:
             prt.message('lynx_ignoring_limiting_magnitude', warning=True)
             args.limiting_magnitude = None
+        if args.method is None:
+            # Rest-frame SEDs are a generative product: there is no likelihood
+            # to nest against, only prior draws. The ensembler is also the one
+            # sampler the lightweight `lynx` dependency group installs, so it
+            # is the better default here -- but an explicit `-D` still wins.
+            prt.message('lynx_using_ensembler')
+            args.method = 'ensembler'
     else:
         args.lynx_wavelengths = None
+
+    if args.method is None:
+        args.method = 'dynesty'
 
     args.return_fits = False
 

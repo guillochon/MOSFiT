@@ -1323,6 +1323,21 @@ sedona = [
 dev = [
     { name = "coverage" },
 ]
+lynx = [
+    { name = "astrocats" },
+    { name = "astropy" },
+    { name = "emcee" },
+    { name = "extinction" },
+    { name = "h5py" },
+    { name = "inflect" },
+    { name = "numexpr" },
+    { name = "numpy", version = "2.4.6", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "numpy", version = "2.5.2", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "schwimmbad" },
+    { name = "scipy", version = "1.17.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.12'" },
+    { name = "scipy", version = "1.18.1", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.12'" },
+    { name = "six" },
+]
 
 [package.metadata]
 requires-dist = [
@@ -1357,6 +1372,19 @@ provides-extras = ["docs", "mpi", "sedona"]
 
 [package.metadata.requires-dev]
 dev = [{ name = "coverage", specifier = ">=7.6" }]
+lynx = [
+    { name = "astrocats", specifier = ">=0.5.0" },
+    { name = "astropy", specifier = ">=7.1" },
+    { name = "emcee", specifier = ">=3.0.2" },
+    { name = "extinction", specifier = ">=0.2.2" },
+    { name = "h5py", specifier = ">=3.8.0" },
+    { name = "inflect", specifier = ">=1.0.0" },
+    { name = "numexpr", specifier = ">=2.6.1" },
+    { name = "numpy", specifier = ">=2.3" },
+    { name = "schwimmbad", specifier = ">=0.4.2" },
+    { name = "scipy", specifier = ">=1.2" },
+    { name = "six", specifier = ">=1.0.0" },
+]
 
 [[package]]
 name = "mpi4py"
