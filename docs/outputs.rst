@@ -161,9 +161,8 @@ Two files land in ``products``:
 
 .. _lynx-api:
 
-^^^^^^^^^^^^^^^^^^^^^^^
 Calling this in-process
-^^^^^^^^^^^^^^^^^^^^^^^
+=======================
 
 A wrapper that evaluates one sample at a time should not pay for file output
 and console traffic on every call. :class:`mosfit.lynx.LynxSource` is the same
