@@ -40,6 +40,9 @@ class Nester(Sampler):
 
     def append_output(self, modeldict):
         """Append output from the nester to the model description."""
+        if self._generative:
+            # No evidence and no iterations to report: nothing was sampled.
+            return
         modeldict[MODEL.SCORE] = {
             QUANTITY.VALUE: pretty_num(self._logz, sig=6),
             QUANTITY.E_VALUE: pretty_num(self._e_logz, sig=6),
@@ -49,6 +52,9 @@ class Nester(Sampler):
 
     def prepare_output(self):
         """Prepare nested samples for writing."""
+        if self._generative:
+            # `draw_from_priors` already filled the output arrays.
+            return
         self._pout = [self._results.samples]
         self._lnprobout = [self._results.logl]
         self._weights = [np.exp(self._results.logwt - max(
@@ -86,6 +92,11 @@ class Nester(Sampler):
 
         max_iter = self._iterations if self._ct is None else np.inf
         if max_iter <= 0:
+            # Nothing to nest against: `-i 0` (typically with no event) asks
+            # for model realizations, not a posterior. Draw them from the
+            # priors, as the ensembler does, rather than leaving the sampler
+            # without results for `prepare_output` to read.
+            self.draw_from_priors(self._nwalkers)
             return
 
         s_exception = None

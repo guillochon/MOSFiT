@@ -280,7 +280,7 @@ Other prior
 
 If you have another prior following a function not specified above, you can create your own prior by using the ``arbitrary`` class prior. To start with, you need to create a file (e.g., ``filename.csv``) which storing the information of your function:
 
-.. code-block:: txt
+.. code-block:: text
 
     X   Y
     0   1.1

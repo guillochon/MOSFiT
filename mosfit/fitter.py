@@ -627,7 +627,11 @@ class Fitter(object):
         extras = OrderedDict()
         samples_to_plot = self._sampler._nwalkers
 
-        if isinstance(self._sampler, Nester):
+        if isinstance(self._sampler, Nester) and not self._sampler._generative:
+            # Nested samples carry unequal weights, so pick which ones to
+            # render by resampling against them. Prior draws are already
+            # equally weighted and each one is a realization the user asked
+            # for, so they are kept as they are.
             icdf = np.cumsum(np.concatenate(([0.0], weights)))
             draws = np.random.rand(samples_to_plot)
             indices = np.searchsorted(icdf, draws) - 1

@@ -12,51 +12,76 @@ Models
 List of built-in models
 -----------------------
 
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| Model name   | Description                           | Reference(s)                                                                  |
-+==============+=======================================+===============================================================================+
-| ``default``  | Nickel-cobalt decay                   | 1994ApJS...92..527N                                                           |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``csm``      | Interacting CSM-SNe                   | 2013ApJ...773...76C, 2017ApJ...849...70V, 2020RNAAS...4...16J                 |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``csmni``    | CSM + NiCo decay                      | See ``default`` & ``csm``                                                     |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``exppow``   | Analytical engine                     |                                                                               |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``ia``       | NiCo decay + I-band (EXPERIMENTAL) [*]|                                                                               |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``ic``       | NiCo decay + radio (EXPERIMENTAL) [*] |                                                                               |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``magnetar`` | Magnetar engine w/ simple SED         | `2017ApJ...850...55N <http://adsabs.harvard.edu/abs/2017ApJ...850...55N>`_    |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``magni``    | Above + NiCo decay                    |                                                                               |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``rprocess`` | Kilonova                              | `2017ApJ...851L..21V <http://adsabs.harvard.edu/abs/2017ApJ...851L..21V>`_    |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``kilonova`` | Kilonova                              | `2017ApJ...851L..21V <http://adsabs.harvard.edu/abs/2017ApJ...851L..21V>`_    |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``bns``      | Kilonova + binary params + angle      | `2021MNRAS.505.3016N <https://ui.adsabs.harvard.edu/abs/2021MNRAS.505.3016N>`_|
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``bns_generative`` | bns model but NS radius rather than deformability  | `2021MNRAS.505.3016N <https://ui.adsabs.harvard.edu/abs/2021MNRAS.505.3016N>`_|
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``bns_magnetar`` | bns_generative with magnetar remnant | `2023arXiv230911340S <https://ui.adsabs.harvard.edu/abs/2023arXiv230911340S>`_|
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``nsbh``     | Kilonova from NS-BH binary parameters | `2023MNRAS.526.4585G <https://ui.adsabs.harvard.edu/abs/2023MNRAS.526.4585G>`_|
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``nsbh_generative`` | nsbh model but masses and radii rather than deformability | `2023MNRAS.526.4585G <https://ui.adsabs.harvard.edu/abs/2023MNRAS.526.4585G>`_|
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``slsn``     | Magnetar + modified SED + constraints | `2017ApJ...850...55N <http://adsabs.harvard.edu/abs/2017ApJ...850...55N>`_    |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``slsnni``   | Magnetar + NiCo decay                 | See ``slsn`` & ``default``                                                   |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``shockni``  | Shock cooling + NiCo decay            | Moore et al., in preparation                                                |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``fallback`` | Fallback accretion engine             |                                                                               |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``sesn_sedona`` | SESN with SEDONA SED emulator      | `Yadavalli et al. 2026 <https://iopscience.iop.org/article/10.3847/1538-4357/ae32f8/meta>`_ |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
-| ``tde``      | Tidal disruption events               | `2018arXiv180108221M <http://adsabs.harvard.edu/abs/2018arXiv180108221M>`_    |
-+--------------+---------------------------------------+-------------------------------------------------------------------------------+
+.. list-table::
+   :header-rows: 1
+   :widths: 20 40 40
+
+   * - Model name
+     - Description
+     - Reference(s)
+   * - ``default``
+     - Nickel-cobalt decay
+     - 1994ApJS...92..527N
+   * - ``csm``
+     - Interacting CSM-SNe
+     - 2013ApJ...773...76C, 2017ApJ...849...70V, 2020RNAAS...4...16J
+   * - ``csmni``
+     - CSM + NiCo decay
+     - See ``default`` & ``csm``
+   * - ``exppow``
+     - Analytical engine
+     -
+   * - ``ia``
+     - NiCo decay + I-band (EXPERIMENTAL) [*]
+     -
+   * - ``ic``
+     - NiCo decay + radio (EXPERIMENTAL) [*]
+     -
+   * - ``magnetar``
+     - Magnetar engine w/ simple SED
+     - `2017ApJ...850...55N <http://adsabs.harvard.edu/abs/2017ApJ...850...55N>`_
+   * - ``magni``
+     - Above + NiCo decay
+     -
+   * - ``rprocess``
+     - Kilonova
+     - `2017ApJ...851L..21V <http://adsabs.harvard.edu/abs/2017ApJ...851L..21V>`_
+   * - ``kilonova``
+     - Kilonova
+     - `2017ApJ...851L..21V <http://adsabs.harvard.edu/abs/2017ApJ...851L..21V>`_
+   * - ``bns``
+     - Kilonova + binary params + angle
+     - `2021MNRAS.505.3016N <https://ui.adsabs.harvard.edu/abs/2021MNRAS.505.3016N>`_
+   * - ``bns_generative``
+     - bns model but NS radius rather than deformability
+     - `2021MNRAS.505.3016N <https://ui.adsabs.harvard.edu/abs/2021MNRAS.505.3016N>`_
+   * - ``bns_magnetar``
+     - bns_generative with magnetar remnant
+     - `2023arXiv230911340S <https://ui.adsabs.harvard.edu/abs/2023arXiv230911340S>`_
+   * - ``nsbh``
+     - Kilonova from NS-BH binary parameters
+     - `2023MNRAS.526.4585G <https://ui.adsabs.harvard.edu/abs/2023MNRAS.526.4585G>`_
+   * - ``nsbh_generative``
+     - nsbh model but masses and radii rather than deformability
+     - `2023MNRAS.526.4585G <https://ui.adsabs.harvard.edu/abs/2023MNRAS.526.4585G>`_
+   * - ``slsn``
+     - Magnetar + modified SED + constraints
+     - `2017ApJ...850...55N <http://adsabs.harvard.edu/abs/2017ApJ...850...55N>`_
+   * - ``slsnni``
+     - Magnetar + NiCo decay
+     - See ``slsn`` & ``default``
+   * - ``shockni``
+     - Shock cooling + NiCo decay
+     - Moore et al., in preparation
+   * - ``fallback``
+     - Fallback accretion engine
+     -
+   * - ``sesn_sedona``
+     - SESN with SEDONA SED emulator
+     - `Yadavalli et al. 2026 <https://iopscience.iop.org/article/10.3847/1538-4357/ae32f8/meta>`_
+   * - ``tde``
+     - Tidal disruption events
+     - `2018arXiv180108221M <http://adsabs.harvard.edu/abs/2018arXiv180108221M>`_
 
 .. [*] In development.
 

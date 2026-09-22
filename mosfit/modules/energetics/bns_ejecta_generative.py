@@ -21,7 +21,8 @@ class BNSEjecta(Energetic):
 
     Also includes an ignorance parameter `alpha` for NS-driven winds to
     increase the fraction of blue ejecta: Mdyn_blue /= alpha
-     - therefore NS surface winds turned off by setting alpha = 1
+
+    - therefore NS surface winds turned off by setting alpha = 1
     """
 
     _REFERENCES = [

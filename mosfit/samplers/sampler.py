@@ -19,6 +19,40 @@ class Sampler(object):
 
         self._num_walkers = num_walkers
 
+        # A generative run (`-i 0`, typically with no event) draws from the
+        # priors and never samples a posterior. Samplers set this so that
+        # output paths which assume a fitted chain can step aside.
+        self._generative = False
+
+    def draw_from_priors(self, nwalkers):
+        """Populate the output arrays with draws from the priors.
+
+        Used when there is nothing to fit: every draw is kept, unweighted and
+        unscored, which is what a generative run wants.
+        """
+        from mosfit.fitter import draw_walker
+
+        prt = self._printer
+        draws = []
+        while len(draws) < nwalkers:
+            prt.status(
+                self, desc='drawing_walkers',
+                iterations=[len(draws) + 1, nwalkers])
+            if self._pool.size == 0:
+                draws.append(draw_walker(False)[0])
+            else:
+                nmap = min(nwalkers - len(draws), max(self._pool.size, 10))
+                draws.extend(
+                    [x[0] for x in self._pool.map(draw_walker,
+                                                  [False] * nmap)])
+        prt.message('initial_draws', inline=True)
+
+        self._generative = True
+        self._pout = [np.array(draws[:nwalkers])]
+        self._lnprobout = None
+        self._lnlikeout = None
+        self._weights = None
+
     def get_samples(self):
         """Return samples from ensembler."""
         samples = np.array([a for b in self._pout for a in b])
