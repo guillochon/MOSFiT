@@ -22,7 +22,7 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 Nothing yet.
 
-## [2.0.1] - 2026-09-21
+## [2.0.1] - 2026-09-22
 
 Bug fixes for two paths 2.0.0 left broken. No API or packaging changes.
 
