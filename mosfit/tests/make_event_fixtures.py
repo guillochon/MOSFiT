@@ -48,6 +48,8 @@ ENGINE = dict(span=150.0, epochs=13, groups=[OPTICAL, ULTRAVIOLET],
               redshift=0.12, ebv=0.02, texplosion=-10.0)
 SUPERLUMINOUS = dict(span=220.0, epochs=14, groups=[OPTICAL, ULTRAVIOLET],
                      redshift=0.25, ebv=0.02, texplosion=-15.0)
+TDE = dict(span=400.0, epochs=14, groups=[OPTICAL, ULTRAVIOLET],
+           redshift=0.17, ebv=0.013, texplosion=-30.0)
 KILONOVA = dict(span=14.0, epochs=11, groups=[OPTICAL, NEAR_INFRARED],
                 redshift=0.0098, ebv=0.1, texplosion=-0.5)
 
@@ -75,9 +77,8 @@ FIXTURES = OrderedDict([
     ('shockni', dict(SUPERNOVA, claimedtype='IIb')),
     ('slsn', dict(SUPERLUMINOUS, claimedtype='SLSN-I')),
     ('slsnni', dict(SUPERLUMINOUS, claimedtype='SLSN-I')),
-    ('tde', dict(span=400.0, epochs=14, groups=[OPTICAL, ULTRAVIOLET],
-                 redshift=0.17, ebv=0.013, texplosion=-30.0,
-                 claimedtype='TDE')),
+    ('tde', dict(TDE, claimedtype='TDE')),
+    ('tde_shock', dict(TDE, claimedtype='TDE')),
 ])
 
 # Built-in models that get no fixture. `sesn_sedona` needs the optional

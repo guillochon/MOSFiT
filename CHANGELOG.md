@@ -45,6 +45,19 @@ and this project follows [Semantic Versioning](https://semver.org/).
   `dynesty`, `numba` and `llvmlite`. A CI job installs exactly that set and
   runs `--lynx` against it, so an eager import of the fitting stack fails
   there rather than in a user's environment.
+- `tde_shock` model: prompt nozzle-shock luminosity plus viscously
+  delayed accretion (Jiang, Guillochon & Loeb 2016; Guillochon &
+  Ramirez-Ruiz 2015). `Tviscous` follows the calibrated GR15 map
+  ``log10(T_visc/t_pk) = 1 + 2.1 log10((rp/rg)/47)`` (clipped to
+  [−1.5, 2]), with a per-event dex offset `tviscoffset` for population
+  synthesis. Each luminosity is capped at Eddington separately — the
+  accretion term before the viscous delay, the prompt shock before
+  they are summed — so L/L_Edd stays at most 2. Accretion follows
+  ``L = L_Edd ṁ/(1+ṁ)^p`` with fixed `eddslope` p = 1 (the harmonic
+  cap) by default; p > 1 declines at super-Eddington feeding rates.
+  ε_acc is drawn modestly around 0.03. Collision radius modes
+  (`rcollmode` 0/1/2, default 0 = r_p) keep the current
+  ε = f_rad r_g/r_p. The `tde` model is unchanged.
 
 ### Changed
 
