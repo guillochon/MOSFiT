@@ -92,6 +92,45 @@ channel still has 0.3.37 at the time of writing). PyTorch and mpi4py are
 optional extras, not required conda run dependencies. Until that feedstock
 PR lands, install 2.0 from source with ``uv sync`` or from PyPI with pip.
 
+
+.. _lightweight:
+
+---------------------------------------
+Lightweight install for rest-frame SEDs
+---------------------------------------
+
+If all you need is the rest-frame SED path (:ref:`lynx`) — driving ``MOSFiT``
+as a source model from an external light-curve simulator, or generating
+training data — you do not need the sampling stack. Nothing on that path
+imports ``emcee``, ``dynesty`` or ``numba``, and a CI job keeps it that way.
+
+``pyproject.toml`` declares a ``lynx`` dependency group holding just that
+subset. Because extras can only ever *add* packages, the lightweight install
+works by suppressing ``MOSFiT``'s own dependencies and then installing the
+group on its own:
+
+.. code-block:: bash
+
+    uv venv
+    uv pip install --no-deps -e .     # or: --no-deps mosfit
+    uv pip install --group lynx
+
+This drops ``dynesty``, ``numba`` and ``llvmlite`` — the last two being by far
+the largest of the omitted wheels. ``emcee`` is kept, since the command-line
+``--lynx`` run draws from the priors with the ensembler; ``mosfit.lynx.
+LynxSource`` does not need it.
+
+Two caveats worth stating plainly:
+
+* ``astrocats`` imports ``matplotlib``, ``seaborn`` and ``pandas`` at module
+  scope, so those arrive regardless of what ``MOSFiT`` asks for. They are not
+  something this install path can avoid.
+* The ``tde`` model JIT-compiles its viscous transform, so it additionally
+  needs ``numba``. Every other bundled model runs without it.
+
+Anything beyond the SED path — fitting real events, plotting, nested sampling
+— wants the full install described above.
+
 .. _docker:
 
 ------

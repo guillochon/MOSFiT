@@ -67,7 +67,7 @@ docs = [
 Homepage = "https://github.com/guillochon/mosfit"
 Documentation = "https://mosfit.readthedocs.io/"
 Changelog = "https://github.com/guillochon/MOSFiT/blob/master/CHANGELOG.md"
-Download = "https://github.com/guillochon/mosfit/tarball/2.0.1"
+Download = "https://github.com/guillochon/mosfit/tarball/2.1.0"
 conda-forge = "https://anaconda.org/conda-forge/mosfit"
 
 [project.scripts]
@@ -95,6 +95,33 @@ packages = ["mosfit"]
 [dependency-groups]
 dev = [
     "coverage>=7.6",
+]
+
+# Minimal runtime set for the rest-frame SED path (`--lynx` /
+# `mosfit.lynx.LynxSource`). Fitting, plotting and the samplers are excluded:
+# nothing on that path imports `emcee`, `dynesty` or `numba`. Install it
+# alongside MOSFiT itself with dependencies suppressed, e.g.
+#
+#     uv pip install --no-deps -e .
+#     uv pip install --group lynx
+#
+# `h5py` is needed only to write `products/lynx_seds.h5` from the command
+# line; `LynxSource` returns arrays and does not touch it. `emcee` backs the
+# prior draws the command line makes, and is not needed by `LynxSource`.
+# `numba` is needed only by the `tde` model, whose viscous transform is
+# JIT-compiled.
+lynx = [
+    "astrocats>=0.5.0",
+    "astropy>=7.1",
+    "emcee>=3.0.2",
+    "extinction>=0.2.2",
+    "h5py>=3.8.0",
+    "inflect>=1.0.0",
+    "numexpr>=2.6.1",
+    "numpy>=2.3",
+    "schwimmbad>=0.4.2",
+    "scipy>=1.2",
+    "six>=1.0.0",
 ]
 
 [tool.coverage.run]

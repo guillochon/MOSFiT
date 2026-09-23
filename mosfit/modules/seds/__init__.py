@@ -15,7 +15,7 @@ def _discover_exports():
     """Map public names to submodule names without importing those modules."""
     name_to_mod = {}
     for filename in os.listdir(_DIR):
-        if not filename.endswith('.py') or filename == '__init__.py':
+        if not filename.endswith('.py') or filename.startswith('_'):
             continue
         mod_name = filename[:-3]
         path = os.path.join(_DIR, filename)

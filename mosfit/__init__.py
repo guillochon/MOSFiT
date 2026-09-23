@@ -1,15 +1,34 @@
 """MOSFiT: Modular light curve fitting software."""
+import importlib
 import os
 import re
 
 import astrocats
 
 from . import constants  # noqa: F401
-from . import fitter  # noqa: F401
-from . import model  # noqa: F401
-from . import plotting  # noqa: F401
-from . import printer  # noqa: F401
-from . import utils  # noqa: F401
+
+# Submodules are resolved on first access rather than imported up front, so
+# that `import mosfit.lynx` does not drag in plotting or sampling stacks a
+# rest-frame SED run never touches. `mosfit.plotting` still works, it just
+# costs matplotlib at the moment it is asked for. See the `lynx` dependency
+# group in `pyproject.toml`.
+_LAZY_SUBMODULES = ('fitter', 'lynx', 'model', 'plotting', 'printer', 'utils')
+
+
+def __getattr__(name):
+    """Import a MOSFiT submodule on first attribute access (PEP 562)."""
+    if name in _LAZY_SUBMODULES:
+        module = importlib.import_module('.' + name, __name__)
+        globals()[name] = module
+        return module
+    raise AttributeError(
+        'module {!r} has no attribute {!r}'.format(__name__, name))
+
+
+def __dir__():
+    """Include the lazily-imported submodules in ``dir(mosfit)``."""
+    return sorted(set(list(globals()) + list(_LAZY_SUBMODULES)))
+
 
 authors = []
 contributors = []
@@ -23,7 +42,7 @@ with open(os.path.join(dir_name, 'contributors.txt')) as f:
         else:
             contributors.append(cont.split('(')[0].strip())
 
-__version__ = '2.0.1'
+__version__ = '2.1.0'
 __author__ = ' & '.join([', '.join(authors[:-1]), authors[-1]])
 __contributors__ = ' & '.join([', '.join(contributors[:-1]), contributors[-1]])
 __license__ = 'MIT'

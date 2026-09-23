@@ -178,6 +178,13 @@
             "resttimes"
         ]
     },
+    "lynxsed":{
+        "kind":"output",
+        "inputs":[
+            "photometry"
+        ],
+        "class":"lynxsed"
+    },
     "fitlc":{
         "kind":"output",
         "inputs":[

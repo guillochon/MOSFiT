@@ -32,6 +32,17 @@ def get_url_file_handle(url, timeout=10):
     return urlopen(url, timeout=timeout)
 
 
+def user_cache_dir(*parts):
+    """Writable MOSFiT data directory outside the CWD and the install tree.
+
+    ``$MOSFIT_CACHE_DIR`` when set, otherwise ``~/.mosfit``. Not created here;
+    writers such as :func:`open_atomic` make parent directories on demand.
+    """
+    root = os.environ.get('MOSFIT_CACHE_DIR') or os.path.join(
+        os.path.expanduser('~'), '.mosfit')
+    return os.path.join(root, *parts)
+
+
 def is_date(s):
     """Check if input is a valid date."""
     try:
