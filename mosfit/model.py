@@ -543,6 +543,8 @@ class Model(object):
                 [0.0 for x in range(self._num_free_parameters)],
                 root=root)
 
+        self._set_phase_range(outputs)
+
         # Collect observed band info
         if self._pool.is_master() and 'photometry' in self._modules:
             prt.message('bands_used')
@@ -720,6 +722,100 @@ class Model(object):
     def is_parameter_fixed_by_user(self, parameter):
         """Return whether a parameter is fixed by the user."""
         return parameter in self._user_fixed_parameters
+
+    def parameter_manifest(self, include_fixed=True):
+        """Describe this model's parameters in a machine-readable form.
+
+        Returns one entry per parameter task, in the order the free parameters
+        appear in a walker vector, so that an external sampler can map its own
+        draws onto MOSFiT's unit-cube coordinates. ``min_value`` / ``max_value``
+        are reported in the parameter's own units, undoing the internal log
+        transform where one is applied.
+        """
+        manifest = []
+        free_index = 0
+        for task in self._call_stack:
+            cur_task = self._call_stack[task]
+            if cur_task['kind'] != 'parameter':
+                continue
+            module = self._modules[task]
+            free = task in self._free_parameters
+            if not free and not include_fixed:
+                continue
+            is_log = module.is_log()
+            min_value = getattr(module, '_min_value', None)
+            max_value = getattr(module, '_max_value', None)
+            if is_log:
+                if min_value is not None:
+                    min_value = float(np.exp(min_value))
+                if max_value is not None:
+                    max_value = float(np.exp(max_value))
+            entry = OrderedDict([
+                ('name', module.name()),
+                ('task', task),
+                ('class', cur_task.get('class', 'parameter')),
+                ('latex', module.latex()),
+                ('log', bool(is_log)),
+                ('free', bool(free)),
+                ('min_value', min_value),
+                ('max_value', max_value),
+                ('value', getattr(module, '_value', None)),
+                ('derived_keys', list(module.get_derived_keys())),
+            ])
+            if free:
+                entry['index'] = free_index
+                free_index += 1
+            manifest.append(entry)
+        return manifest
+
+    def _sed_modules(self):
+        """Return the modules that produce SEDs, in call-stack order."""
+        return [self._modules[t] for t in self._call_stack
+                if self._call_stack[t]['kind'] == 'sed']
+
+    def minwave(self):
+        """Smallest sampled wavelength in Angstroms, or ``None``."""
+        ranges = [m.wavelength_range() for m in self._sed_modules()]
+        ranges = [r for r in ranges if r is not None]
+        return min(r[0] for r in ranges) if ranges else None
+
+    def maxwave(self):
+        """Largest sampled wavelength in Angstroms, or ``None``."""
+        ranges = [m.wavelength_range() for m in self._sed_modules()]
+        ranges = [r for r in ranges if r is not None]
+        return max(r[1] for r in ranges) if ranges else None
+
+    def minphase(self):
+        """Earliest phase the model is defined at, in days since explosion.
+
+        Pre-explosion phases evaluate to zero flux rather than being undefined,
+        so the useful lower bound is simply the earliest phase on the grid the
+        model was set up with.
+        """
+        return getattr(self, '_min_phase', None)
+
+    def maxphase(self):
+        """Latest phase the model is defined at, in days since explosion.
+
+        Engines integrate on a grid that ends at the last requested time, so
+        extrapolating past it is the caller's responsibility.
+        """
+        return getattr(self, '_max_phase', None)
+
+    def _set_phase_range(self, outputs):
+        """Record the phase span covered by the grid built in ``load_data``."""
+        times = outputs.get('rest_times')
+        if times is None or not len(times):
+            return
+        t_exp = outputs.get(
+            'resttexplosion', outputs.get('texplosion', 0.0))
+        try:
+            t_exp = float(t_exp)
+        except (TypeError, ValueError):
+            t_exp = 0.0
+        phases = np.asarray(times, dtype=float) - t_exp
+        self._min_phase = float(np.min(phases))
+        self._max_phase = float(np.max(phases))
 
     def get_num_free_parameters(self):
         """Return number of free parameters."""

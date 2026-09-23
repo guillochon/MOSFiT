@@ -16,8 +16,9 @@ from six import string_types
 
 from mosfit import __author__, __contributors__, __version__
 from mosfit.fitter import Fitter
+from mosfit.lynx import LYNX_FIXED_PARAMETERS, lynx_wavelength_grid
 from mosfit.printer import Printer
-from mosfit.utils import get_mosfit_hash, is_master, speak
+from mosfit.utils import get_mosfit_hash, is_master, listify, speak
 
 
 class SortingHelpFormatter(argparse.ArgumentDefaultsHelpFormatter):
@@ -90,6 +91,22 @@ def get_parser(printer=None):
         default=False,
         action='store_true',
         help=prt.text('parser_prefer_fluxes'))
+
+    parser.add_argument(
+        '--lynx',
+        dest='lynx',
+        default=False,
+        action='store_true',
+        help=prt.text('parser_lynx'))
+
+    parser.add_argument(
+        '--lynx-wavelengths',
+        dest='lynx_wavelengths',
+        default=None,
+        nargs=3,
+        type=float,
+        metavar=('MIN', 'MAX', 'N'),
+        help=prt.text('parser_lynx_wavelengths'))
 
     parser.add_argument(
         '--time-list',
@@ -509,7 +526,9 @@ def get_parser(printer=None):
         '-D',
         dest='method',
         choices=['ensembler', 'ultranest', 'dynesty'],
-        default='dynesty',
+        # Resolved to `dynesty` below, once anything that wants to know
+        # whether the user picked a sampler has had its say.
+        default=None,
         help=prt.text('parser_method'))
 
     return parser
@@ -538,6 +557,34 @@ def main():
 
     if args.limiting_magnitude == []:
         args.limiting_magnitude = 20.0
+
+    if args.lynx:
+        args.lynx_wavelengths = lynx_wavelength_grid(args.lynx_wavelengths)
+        # LightCurveLynx owns distance, redshift, extinction and the explosion
+        # epoch, so pin MOSFiT's versions of them rather than letting them vary
+        # underneath the caller. Anything the user pinned by hand wins.
+        named = set(listify(args.user_fixed_parameters)[::2])
+        for name, value in LYNX_FIXED_PARAMETERS.items():
+            if name not in named:
+                args.user_fixed_parameters += [name, value]
+        if args.band_list:
+            prt.message('lynx_ignoring_bands', warning=True)
+            args.band_list = []
+        if args.limiting_magnitude is not None:
+            prt.message('lynx_ignoring_limiting_magnitude', warning=True)
+            args.limiting_magnitude = None
+        if args.method is None:
+            # Rest-frame SEDs are a generative product: there is no likelihood
+            # to nest against, only prior draws. The ensembler is also the one
+            # sampler the lightweight `lynx` dependency group installs, so it
+            # is the better default here -- but an explicit `-D` still wins.
+            prt.message('lynx_using_ensembler')
+            args.method = 'ensembler'
+    else:
+        args.lynx_wavelengths = None
+
+    if args.method is None:
+        args.method = 'dynesty'
 
     args.return_fits = False
 
@@ -710,40 +757,6 @@ def main():
                 if not os.path.isfile(dst_nb) or fc:
                     shutil.copy(
                         os.path.join(jupyter_src, nb_name), dst_nb)
-
-            if not os.path.exists('modules'):
-                os.mkdir(os.path.join('modules'))
-            module_dirs = next(os.walk(os.path.join(dir_path, 'modules')))[1]
-            for mdir in module_dirs:
-                if mdir.startswith('__'):
-                    continue
-                full_mdir = os.path.join(dir_path, 'modules', mdir)
-                copy_path = os.path.join(full_mdir, '.copy')
-                to_copy = []
-                if os.path.isfile(copy_path):
-                    to_copy = list(
-                        filter(None,
-                               open(copy_path, 'r').read().split()))
-
-                mdir_path = os.path.join('modules', mdir)
-                if not os.path.exists(mdir_path):
-                    os.mkdir(mdir_path)
-                for tc in to_copy:
-                    tc_path = os.path.join(full_mdir, tc)
-                    if os.path.isfile(tc_path):
-                        shutil.copy(tc_path, os.path.join(mdir_path, tc))
-                    elif os.path.isdir(tc_path) and not os.path.exists(
-                            os.path.join(mdir_path, tc)):
-                        os.mkdir(os.path.join(mdir_path, tc))
-                readme_path = os.path.join(mdir_path, 'README')
-                if not os.path.exists(readme_path):
-                    txt = prt.message(
-                        'readme-modules', [
-                            os.path.join(dir_path, 'modules', 'mdir'),
-                            os.path.join(dir_path, 'modules')
-                        ],
-                        prt=False)
-                    open(readme_path, 'w').write(txt)
 
             if not os.path.exists('models'):
                 os.mkdir(os.path.join('models'))

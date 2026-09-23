@@ -68,6 +68,21 @@ class LOSExtinction(SED):
     def process(self, **kwargs):
         """Process module."""
         #kwargs = self.prepare_input(self.key('luminosities'), **kwargs)
+        if getattr(self._model._fitter, '_lynx', False):
+            # Rest-frame SEDs are handed to the caller unreddened: dust along
+            # the line of sight belongs to whoever places the source on the
+            # sky, not to the source model itself.
+            ret = {
+                'sample_wavelengths': self._sample_wavelengths,
+                self.key('seds'): self.as_rectangular_seds(
+                    kwargs[self.key('seds')]),
+                self.key('avhost'): 0.0,
+                'sesn_valid_mask': kwargs.get('sesn_valid_mask'),
+            }
+            ps = kwargs.get('emulator_preset_systematic_mag')
+            if ps is not None:
+                ret['emulator_preset_systematic_mag'] = ps
+            return ret
         self.preprocess(**kwargs)
         zp1 = 1.0 + kwargs[self.key('redshift')]
         self._seds = self.as_rectangular_seds(kwargs[self.key('seds')])

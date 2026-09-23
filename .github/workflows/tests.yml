@@ -39,6 +39,51 @@ jobs:
       - name: Run package tests with coverage
         run: uv run python mosfit/tests/run_all.py
 
+  lynx-light:
+    name: lightweight lynx install
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          python-version: "3.12"
+          enable-cache: true
+
+      # Install MOSFiT without its declared dependencies, then add only the
+      # `lynx` group. If anything on the rest-frame SED path grows an import
+      # of emcee, dynesty or numba, this job fails where the main matrix
+      # (which has everything installed) would not notice.
+      - name: Install with only the lynx dependency group
+        run: |
+          set -euo pipefail
+          uv venv --python 3.12 .venv-lynx
+          uv pip install --python .venv-lynx --no-deps .
+          uv pip install --python .venv-lynx --group lynx
+
+      # emcee is in the group (the command line draws from the priors with
+      # the ensembler); dynesty, numba and llvmlite are what it leaves out.
+      - name: Confirm the excluded packages are absent
+        run: |
+          set -euo pipefail
+          for mod in dynesty numba llvmlite; do
+            if .venv-lynx/bin/python -c "import $mod" 2>/dev/null; then
+              echo "$mod should not be installed by the lynx group" >&2
+              exit 1
+            fi
+          done
+
+      - name: Exercise the rest-frame SED path
+        run: |
+          set -euo pipefail
+          .venv-lynx/bin/python mosfit/tests/_test_lynx_imports.py
+          mkdir -p "$RUNNER_TEMP/lynx" && cd "$RUNNER_TEMP/lynx"
+          "$GITHUB_WORKSPACE/.venv-lynx/bin/python" -m mosfit             -m slsn --lynx -N 2 -S 10
+          test -f products/lynx_seds.h5
+          test -f products/lynx_manifest.json
+          test ! -e modules
+
   sdist:
     name: sdist / pip (conda-forge shape)
     runs-on: ubuntu-latest

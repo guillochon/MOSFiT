@@ -10,7 +10,6 @@ import scipy
 from astrocats.catalog.model import MODEL
 from astrocats.catalog.quantity import QUANTITY
 from emcee.autocorr import AutocorrError
-from mosfit.mossampler import MOSSampler
 from mosfit.samplers.sampler import Sampler
 from mosfit.utils import calculate_WAIC
 
@@ -242,6 +241,10 @@ class Ensembler(Sampler):
 
         try:
             if self._iterations > 0:
+                # Imported here to break the cycle with `mosfit.mossampler`,
+                # which reaches back into this package for `PTSampler`.
+                from mosfit.mossampler import MOSSampler
+
                 sampler = MOSSampler(
                     self._ntemps, self._nwalkers, ndim, ln_likelihood,
                     ln_prior, pool=self._pool)

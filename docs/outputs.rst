@@ -109,3 +109,81 @@ Below is an inexhaustive list of keys available; a full list of keys can be disp
 * ``dense_times``: Times at which luminosity was computed (units: days). These are sampled more densely than the input observations as dense sampling is required for an accurate integration of the luminosity.
 
 * ``dense_luminosities``: Luminosity of transient at each observation epoch (units: ergs / s).
+
+.. _lynx:
+
+---------------------------------------------------
+Rest-frame SEDs for external light-curve simulators
+---------------------------------------------------
+
+Everything above produces *observed* photometry: ``MOSFiT`` redshifts the SED,
+reddens it along the line of sight, integrates it through bandpasses and, with
+``-l``, adds survey noise. Simulation frameworks such as `LightCurveLynx
+<https://lightcurvelynx.readthedocs.io>`_ do all of that themselves, and ask a
+source model for one thing only — rest-frame flux density as a function of
+phase and wavelength. The ``--lynx`` flag reports exactly that view:
+
+.. code-block:: bash
+
+    mosfit -m slsn --lynx --lynx-wavelengths 1000 25000 100 -S 100 -N 1000
+
+This path does not need the sampling or plotting stacks, and there is a
+lightweight install that leaves them out: see :ref:`lightweight`.
+
+The convention matches ``SEDModel.compute_sed``: flux density in **nJy**, as
+the source would appear at **10 pc**, in the **rest frame**, with no redshift,
+no time dilation and no extinction applied. Redshift, luminosity distance,
+explosion time and extinction are pinned to the values that make this
+well-defined, so that the calling simulator owns them rather than fighting
+``MOSFiT`` over them. Bandpasses and ``-l`` play no part and are ignored; use
+``-S`` to set how many phases are sampled. With no ``-D``, the ensembler is
+used: the realizations are prior draws, not a posterior, and the ensembler is
+the one sampler the lightweight install of :ref:`lightweight` carries.
+
+Two files land in ``products``:
+
+* ``lynx_seds.h5``, holding a flat ``seds`` block of shape ``(n_realization,
+  n_phase, n_wave)`` together with the ``phases`` and ``wavelengths`` grids,
+  the ``fractions`` (unit-cube coordinates) behind each realization and the
+  ``free_parameter_names`` they correspond to. Nothing here requires knowledge
+  of the catalog schema, so it can be read straight into a training pipeline::
+
+    import h5py
+    with h5py.File('products/lynx_seds.h5', 'r') as hf:
+        seds = hf['seds'][:]            # nJy, (n_realization, n_phase, n_wave)
+        phases = hf['phases'][:]        # days since explosion
+        waves = hf['wavelengths'][:]    # Angstroms, rest frame
+        fractions = hf['fractions'][:]  # (n_realization, n_free), in [0, 1]
+
+* ``lynx_manifest.json``, describing every parameter — prior range, units, log
+  flag and position in the walker vector — alongside the wavelength and phase
+  ranges over which the model is defined.
+
+.. _lynx-api:
+
+Calling this in-process
+=======================
+
+A wrapper that evaluates one sample at a time should not pay for file output
+and console traffic on every call. :class:`mosfit.lynx.LynxSource` is the same
+machinery without them::
+
+    import numpy as np
+    from mosfit.lynx import LynxSource
+
+    source = LynxSource(
+        model='slsn',
+        phases=np.linspace(0.0, 200.0, 100),
+        wavelengths=np.linspace(1000.0, 25000.0, 100))
+
+    source.free_parameter_names()
+    source.parameter_manifest()
+    source.minwave(), source.maxwave(), source.minphase(), source.maxphase()
+
+    sed = source.compute_sed(parameters={'mejecta': 5.0, 'vejecta': 1.0e4})
+
+``compute_sed`` returns an ``(n_phase, n_wave)`` array in nJy. Parameters may
+be given as physical values, or as unit-cube ``fractions`` if the caller is
+doing its own prior sampling; unspecified free parameters take the midpoint of
+their prior. Changing the phase or wavelength grid rebuilds the model, which is
+expensive, so hold one ``LynxSource`` per grid and vary only the parameters.

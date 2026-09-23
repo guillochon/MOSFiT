@@ -483,7 +483,9 @@ def _viscous_quadrature(dense_t, dense_l, times, tvisc, tb, t_end):
 
 def test_viscous_matches_interp1d():
     """Exponential recurrence matches analytic kernel and old quadrature."""
-    from mosfit.modules.transforms.viscous import Viscous, viscous_exp_filter
+    from mosfit.modules.transforms._viscous_kernels import (
+        viscous_exp_filter)
+    from mosfit.modules.transforms.viscous import Viscous
     from mosfit.modules.transforms.transform import Transform
 
     rest_t = 10.0
@@ -565,11 +567,19 @@ def test_viscous_loader_name_is_importable():
     name = task_module_qualname('transforms', 'viscous')
     assert name == 'mosfit.modules.transforms.viscous'
     mod = importlib.import_module(name)
+    assert hasattr(mod, 'Viscous')
+
+    # The jitted kernels live beside the transform, in the private module the
+    # transform imports when it runs. That is the name Numba pickles, so it is
+    # the one that has to round-trip through an import.
+    kernels_name = 'mosfit.modules.transforms._viscous_kernels'
+    mod = importlib.import_module(kernels_name)
     assert hasattr(mod, 'viscous_exp_filter')
 
     path = os.path.join(
-        os.path.dirname(mod.__file__), 'viscous.py')
-    loaded = importlib.machinery.SourceFileLoader(name, path).load_module()
+        os.path.dirname(mod.__file__), '_viscous_kernels.py')
+    loaded = importlib.machinery.SourceFileLoader(
+        kernels_name, path).load_module()
     t = np.array([0.0, 1.0, 2.0])
     lums = np.array([0.0, 1.0, 0.0])
     y = loaded.viscous_exp_filter(t, lums, t, 1.0, 0.0, 2.0)

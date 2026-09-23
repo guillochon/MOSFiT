@@ -21,12 +21,9 @@ from mosfit.constants import BOL_MAG_BAND_LABEL
 from mosfit.converter import Converter
 from mosfit.fetcher import Fetcher
 from mosfit.printer import Printer
-from mosfit.samplers.ensembler import Ensembler
-from mosfit.samplers.nester import Nester
-from mosfit.samplers.ultranester import UltraNester
 from mosfit.utils import (all_to_list, entabbed_json_dump, entabbed_json_dumps,
                           flux_density_unit, frequency_unit, listify,
-                          load_walkers_file, open_atomic, speak,
+                          load_walkers_file, open_atomic, speak, temp_atomic,
                           write_chain_hdf5, write_json_payload,
                           write_walkers_hdf5)
 
@@ -156,6 +153,8 @@ class Fitter(object):
                  cuda=False,
                  exit_on_prompt=False,
                  limiting_magnitude=None,
+                 lynx=False,
+                 lynx_wavelengths=None,
                  prefer_fluxes=False,
                  prefer_cache=False,
                  pool=None,
@@ -177,6 +176,10 @@ class Fitter(object):
 
         self._cuda = cuda
         self._limiting_magnitude = limiting_magnitude
+        self._lynx = lynx
+        self._lynx_wavelengths = (
+            None if lynx_wavelengths is None
+            else np.asarray(lynx_wavelengths, dtype=float))
         self._prefer_fluxes = prefer_fluxes
         self._prefer_cache = prefer_cache
         self._quiet = quiet
@@ -548,6 +551,13 @@ class Fitter(object):
 
         self._method = method
 
+        # Imported here rather than at module scope: `Ensembler` pulls in
+        # `emcee`, which a rest-frame SED run has no use for. See the `lynx`
+        # dependency group in `pyproject.toml`.
+        from mosfit.samplers.ensembler import Ensembler
+        from mosfit.samplers.nester import Nester
+        from mosfit.samplers.ultranester import UltraNester
+
         if self._method == 'dynesty':
             self._sampler = Nester(self, model, iterations, burn, post_burn,
                                    num_walkers, convergence_criteria,
@@ -640,6 +650,9 @@ class Fitter(object):
 
         ri = 0
         selected_extra = False
+        lynx_seds = []
+        lynx_wavelengths = None
+        lynx_phases = None
         for xi, x in enumerate(samples):
             ri = ri + 1
             prt.message(
@@ -648,6 +661,14 @@ class Fitter(object):
                 min_time=0.2)
             if xi in indices:
                 output = model.run_stack(x, root='output')
+                if self._lynx and 'lynx_seds' in output:
+                    if lynx_wavelengths is None:
+                        lynx_wavelengths = np.asarray(
+                            output['lynx_wavelengths'], dtype=float)
+                        lynx_phases = np.asarray(
+                            output['lynx_phases'], dtype=float)
+                    lynx_seds.append(
+                        np.asarray(output['lynx_seds'], dtype=float))
                 if extra_outputs is not None:
                     if not extra_outputs and not selected_extra:
                         extra_options = list(output.keys())
@@ -837,6 +858,11 @@ class Fitter(object):
                     (('_' + suffix) if suffix else '') + '.h5')
             write_walkers_hdf5(walkers_path, oentry)
 
+            if self._lynx:
+                self.write_lynx_output(
+                    model, lynx_seds, lynx_phases, lynx_wavelengths,
+                    samples, suffix=suffix, quick_save=quick_save)
+
             if save_full_chain:
                 prt.message('writing_full_chain')
                 my_chain = np.array(
@@ -894,6 +920,79 @@ class Fitter(object):
     def nester(self):
         """Use nested sampling to determine posteriors."""
         pass
+
+    def write_lynx_output(self, model, seds, phases, wavelengths, samples,
+                          suffix='', quick_save=False):
+        """Write rest-frame SEDs and a parameter manifest to ``products``.
+
+        The HDF5 payload is deliberately flat — one ``(n_realization, n_phase,
+        n_wave)`` block plus the grids and the unit-cube coordinates that
+        produced it — so that a training pipeline can read it without knowing
+        anything about MOSFiT's catalog schema.
+        """
+        import h5py
+
+        from mosfit.__init__ import __version__
+
+        prt = self._printer
+        if not seds:
+            prt.message('lynx_no_seds', warning=True)
+            return
+
+        products = model.get_products_path()
+        stem = (self._event_name + '_lynx' +
+                (('_' + suffix) if suffix else '')) if quick_save else 'lynx'
+        seds_path = os.path.join(products, stem + '_seds.h5')
+        manifest_path = os.path.join(products, stem + '_manifest.json')
+
+        block = np.asarray(seds, dtype=np.float64)
+        fractions = np.asarray(samples, dtype=np.float64)
+        free_names = list(model.free_parameter_names())
+
+        prt.message('writing_lynx', [seds_path])
+        with temp_atomic(suffix='.h5', dir=os.path.abspath(products)) as tmp:
+            with h5py.File(tmp, 'w') as hf:
+                ds = hf.create_dataset(
+                    'seds', data=block, compression='gzip',
+                    compression_opts=4)
+                ds.attrs['units'] = 'nJy'
+                ds.attrs['frame'] = 'rest'
+                ds.attrs['reference_distance_pc'] = 10.0
+                ds.attrs['axes'] = 'realization, phase, wavelength'
+                ds = hf.create_dataset('phases', data=np.asarray(
+                    phases, dtype=np.float64))
+                ds.attrs['units'] = 'days since explosion'
+                ds = hf.create_dataset('wavelengths', data=np.asarray(
+                    wavelengths, dtype=np.float64))
+                ds.attrs['units'] = 'Angstrom'
+                ds.attrs['frame'] = 'rest'
+                hf.create_dataset('fractions', data=fractions)
+                hf.create_dataset(
+                    'free_parameter_names',
+                    data=np.array(free_names, dtype='S'))
+                hf.attrs['model'] = model._model_name
+                hf.attrs['mosfit_version'] = __version__
+            if os.path.isfile(seds_path):
+                os.remove(seds_path)
+            os.rename(tmp, seds_path)
+
+        manifest = OrderedDict([
+            ('model', model._model_name),
+            ('mosfit_version', __version__),
+            ('flux_units', 'nJy'),
+            ('wavelength_units', 'Angstrom'),
+            ('phase_units', 'days since explosion'),
+            ('frame', 'rest'),
+            ('reference_distance_pc', 10.0),
+            ('minwave', model.minwave()),
+            ('maxwave', model.maxwave()),
+            ('minphase', model.minphase()),
+            ('maxphase', model.maxphase()),
+            ('free_parameter_names', free_names),
+            ('parameters', model.parameter_manifest()),
+        ])
+        with open_atomic(manifest_path, 'w') as f:
+            entabbed_json_dump(manifest, f, separators=(',', ':'))
 
     def generate_dummy_data(self,
                             name,
