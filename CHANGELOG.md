@@ -20,6 +20,12 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.0] - 2026-09-23
+
+A rest-frame SED interface for external light-curve simulators such as
+LightCurveLynx, and lighter imports. Existing fits give the same results, but
+MOSFiT no longer writes a `modules/` directory into the working directory.
+
 ### Added
 
 - `--lynx`, which reports the model as a rest-frame SED rather than as observed
@@ -154,6 +160,8 @@ default sampler, and a NumPy 2 / Astropy 7 runtime.
 Last 1.x release on PyPI and conda-forge (`1.3`). Python 2-era packaging,
 ensemble MCMC default, NumPy 1.x, and a required PyTorch/mpi4py conda payload.
 
-[Unreleased]: https://github.com/guillochon/MOSFiT/compare/v2.0.0...HEAD
+[Unreleased]: https://github.com/guillochon/MOSFiT/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/guillochon/MOSFiT/compare/v2.0.1...v2.1.0
+[2.0.1]: https://github.com/guillochon/MOSFiT/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/guillochon/MOSFiT/compare/v1.3...v2.0.0
 [1.3]: https://github.com/guillochon/MOSFiT/releases/tag/v1.3
