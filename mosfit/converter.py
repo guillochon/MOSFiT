@@ -24,7 +24,7 @@ from six import string_types
 from mosfit.constants import KS_DAYS
 from mosfit.utils import (entabbed_json_dump, get_mosfit_hash, is_bibcode,
                           is_date, is_datum, is_number, listify, name_clean,
-                          replace_multiple)
+                          replace_multiple, user_cache_dir)
 
 
 class Converter(object):
@@ -57,13 +57,11 @@ class Converter(object):
             # Default to the package dir, but fall back to a writable location when
             # it is read-only (e.g. an installed/containerized MOSFiT).
             pkg_dir = os.path.dirname(os.path.realpath(__file__))
-            override = os.environ.get('MOSFIT_CACHE_DIR')
-            if override:
-                self._path = override
-            elif os.access(pkg_dir, os.W_OK):
+            if (not os.environ.get('MOSFIT_CACHE_DIR') and
+                    os.access(pkg_dir, os.W_OK)):
                 self._path = pkg_dir
             else:
-                self._path = os.path.join(os.path.expanduser('~'), '.mosfit')
+                self._path = user_cache_dir()
         if not os.path.isdir(os.path.join(self._path, 'cache')):
             os.makedirs(os.path.join(self._path, 'cache'))
         self._inflect = inflect.engine()

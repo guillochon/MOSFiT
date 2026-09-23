@@ -82,6 +82,7 @@ jobs:
           "$GITHUB_WORKSPACE/.venv-lynx/bin/python" -m mosfit             -m slsn --lynx -N 2 -S 10
           test -f products/lynx_seds.h5
           test -f products/lynx_manifest.json
+          test ! -e modules
 
   sdist:
     name: sdist / pip (conda-forge shape)

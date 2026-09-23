@@ -58,6 +58,14 @@ and this project follows [Semantic Versioning](https://semver.org/).
 - `--lynx` defaults to the ensembler when no sampler is given: rest-frame SEDs
   are prior draws, with no likelihood to nest against, and the ensembler is the
   one sampler the lightweight `lynx` group installs. An explicit `-D` wins.
+- MOSFiT no longer writes a `modules/` tree into the current working
+  directory. Filter curves downloaded from SVO, and the `.dat` tables derived
+  from them, are cached under `$MOSFIT_CACHE_DIR/filters` (default
+  `~/.mosfit/filters`) instead of `./modules/observables/filters`, and the
+  launch-time copy (`--no-copy-at-launch` to disable) now scaffolds only
+  `models/` and `jupyter/`. Custom modules and a `filterrules.json` placed
+  under `./modules/` by hand are still picked up as before; MOSFiT just no
+  longer creates that directory itself.
 
 ## [2.0.1] - 2026-09-21
 
