@@ -76,6 +76,16 @@ mosfit = "mosfit.main:main"
 [tool.hatch.version]
 path = "mosfit/__init__.py"
 
+[tool.hatch.build]
+# The bundled filter curves are gitignored (so SVO downloads never get
+# committed by accident) but tracked; hatch drops gitignored paths unless
+# they are listed as artifacts.
+artifacts = [
+    "mosfit/modules/observables/filters/*.area",
+    "mosfit/modules/observables/filters/*.dat",
+    "mosfit/modules/observables/filters/*.xml",
+]
+
 [tool.hatch.build.targets.sdist]
 include = [
     "/mosfit",
