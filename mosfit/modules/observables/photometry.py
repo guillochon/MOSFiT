@@ -256,9 +256,8 @@ class Photometry(Module):
                             prt.message('dl_svo', [svopath], inline=True)
                             try:
                                 response = get_url_file_handle(
-                                    'http://svo2.cab.inta-csic.es'
-                                    '/svo/theory/fps3/'
-                                    'fps.php?PhotCalID=' + svopath,
+                                    'http://svo2.cab.inta-csic.es/'
+                                    'theory/fps/fps.php?PhotCalID=' + svopath,
                                     timeout=10)
                             except Exception:
                                 prt.message('cant_dl_svo', warning=True)
