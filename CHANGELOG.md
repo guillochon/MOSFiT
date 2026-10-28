@@ -20,6 +20,26 @@ and this project follows [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+## [2.1.1] - 2026-10-28
+
+Filter curves can be downloaded from the SVO Filter Profile Service again,
+and the curves MOSFiT ships are included in the installed package.
+
+### Fixed
+
+- The SVO Filter Profile Service URL. Downloads used the retired path
+  `/svo/theory/fps3/fps.php`, which no longer resolves, so any band that was
+  not already cached failed. They now use
+  `http://svo2.cab.inta-csic.es/theory/fps/fps.php`. The error text no longer
+  says a cached filter will be used when none is on disk.
+
+### Changed
+
+- Palomar/ZTF g, r, and i curves are bundled with the package instead of
+  fetched from SVO while the Docker image builds. Hatch lists the filter
+  `.area`, `.dat`, and `.xml` files as build artifacts, so a wheel or sdist
+  install includes them and does not have to download every band at runtime.
+
 ## [2.1.0] - 2026-09-23
 
 A rest-frame SED interface for external light-curve simulators such as
@@ -160,7 +180,8 @@ default sampler, and a NumPy 2 / Astropy 7 runtime.
 Last 1.x release on PyPI and conda-forge (`1.3`). Python 2-era packaging,
 ensemble MCMC default, NumPy 1.x, and a required PyTorch/mpi4py conda payload.
 
-[Unreleased]: https://github.com/guillochon/MOSFiT/compare/v2.1.0...HEAD
+[Unreleased]: https://github.com/guillochon/MOSFiT/compare/v2.1.1...HEAD
+[2.1.1]: https://github.com/guillochon/MOSFiT/compare/v2.1.0...v2.1.1
 [2.1.0]: https://github.com/guillochon/MOSFiT/compare/v2.0.1...v2.1.0
 [2.0.1]: https://github.com/guillochon/MOSFiT/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/guillochon/MOSFiT/compare/v1.3...v2.0.0
