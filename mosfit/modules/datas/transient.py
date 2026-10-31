@@ -141,7 +141,7 @@ class Transient(Module):
                 mbol_here = False
                 if any([x not in entry for x in req_subkeys]):
                     continue
-                if any([x in entry for x in exc_subkeys]):
+                if any([x in entry and entry[x] is not False for x in exc_subkeys]):
                     continue
                 if any([
                         x in entry and ((isinstance(entry[x], list) and any([
