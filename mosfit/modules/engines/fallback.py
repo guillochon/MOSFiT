@@ -6,6 +6,7 @@ import numpy as np
 
 from mosfit.constants import C_CGS, DAY_CGS, FOUR_PI, M_SUN_CGS
 from mosfit.modules.engines.engine import Engine
+FRAD_PIVOT = 22.0   # r_p/r_g at which the collision efficiency is pinned as fradslope varies
 
 
 def _lin_interp(x, xp, fp):
@@ -577,18 +578,83 @@ class Fallback(Engine):
             np.zeros(lengthposttimes)))
         dmdtnew[dmdtnew < 0] = 0
 
-        self._efficiency = kwargs['efficiency']
-        luminosities = (self._efficiency * dmdtnew *
-                        c.c.cgs.value * c.c.cgs.value)
+        rt = Rstar * c.R_sun.cgs.value * (self._Mh / self._Mstar) ** (
+            1.0 / 3.0)
+        rp = rt / self._beta
+        rg = c.G.cgs.value * self._Mh * M_SUN_CGS / (C_CGS * C_CGS)
+        rp_over_rg = rp / rg
+
         kappa_t = 0.2 * (1 + 0.74)
         Ledd = (FOUR_PI * c.G.cgs.value * self._Mh * M_SUN_CGS *
                 C_CGS / kappa_t)
-
         self._Leddlim = kwargs['Leddlim']
         ledd_cap = self._Leddlim * Ledd
-        luminosities = luminosities * ledd_cap / (luminosities + ledd_cap)
-        luminosities = np.where(np.isnan(luminosities), 0.0, luminosities)
+        l0 = dmdtnew * c.c.cgs.value * c.c.cgs.value
 
-        return {self.dense_key('luminosities'): luminosities, 'Rstar': Rstar,
-                'tpeak': tpeak, 'beta': self._beta, 'starmass': self._Mstar,
-                'dmdt': dmdtnew, 'Ledd': Ledd, 'tfallback': float(tfallback)}
+        has_frad = kwargs.get('frad') is not None
+        has_eff = kwargs.get('efficiency') is not None
+        two_component = has_frad and has_eff
+
+        result = {
+            'Rstar': Rstar, 'tpeak': tpeak, 'beta': self._beta,
+            'starmass': self._Mstar, 'dmdt': dmdtnew, 'Ledd': Ledd,
+            'tfallback': float(tfallback), 'rp_over_rg': rp_over_rg}
+
+        if has_frad:
+            # Prompt dissipation where the returning stream shocks:
+            #     epsilon_shock = f_rad r_g / r_coll
+            # `rcollmode` selects the collision radius:
+            #   0  r_coll = r_p                        (default; epsilon = f_rad r_g/r_p)
+            #   1  relativistic free-stream self-intersection radius
+            #   2  as 1, capped at `rcolldisk` (cm), where a pre-existing disk intercepts the
+            #      stream before it reaches its free-stream intersection point
+            # `fradslope` tilts epsilon against r_g/r_coll about r_p/r_g = FRAD_PIVOT;
+            # fradslope = 1 leaves epsilon = f_rad r_g / r_coll exactly.
+            mode = int(round(float(kwargs.get('rcollmode', 0))))
+            if mode == 0:
+                r_coll = rp
+            else:
+                # apsidal precession per radial period for e -> 1: dphi = 3 pi r_g / r_p.
+                # (General form: 6 pi r_g / [r_p (1 + e)]; loss-cone debris is parabolic to 1e-4.)
+                dphi = min(3.0 * np.pi * rg / rp, 2.0 * np.pi)
+                # the outgoing and returning branches cross at
+                #     r_int = r_p (1 + e) / [1 - e cos(dphi/2)]  ->  2 r_p / [1 - cos(dphi/2)]
+                r_coll = 2.0 * rp / max(1.0 - np.cos(0.5 * dphi), 1e-12)
+                # the stream cannot shock beyond the apocenter of its own most bound debris,
+                # 2 a_mb = r_p^2 / R_star
+                r_coll = min(r_coll, rp * rp / (Rstar * c.R_sun.cgs.value))
+                if mode == 2:
+                    r_coll = min(r_coll, float(kwargs.get('rcolldisk', 1.0e13)))
+                r_coll = max(r_coll, rp)          # modes 1 and 2 can only suppress
+            fslope = float(kwargs.get('fradslope', 1.0))
+            shock_eps = min(float(kwargs['frad']) / FRAD_PIVOT *
+                            (FRAD_PIVOT * rg / r_coll) ** fslope, 0.42)
+            shock_lums = shock_eps * l0
+            result[self.dense_key('shock_luminosities')] = np.where(
+                np.isnan(shock_lums), 0.0, shock_lums)
+            result['shock_efficiency'] = shock_eps
+            result['r_coll_over_rp'] = r_coll / rp
+
+        if has_eff:
+            self._efficiency = kwargs['efficiency']
+            acc_lums = self._efficiency * l0
+        elif has_frad:
+            self._efficiency = result['shock_efficiency']
+            acc_lums = None
+        else:
+            raise KeyError('fallback requires `efficiency` or `frad`')
+
+        result['efficiency'] = self._efficiency
+
+        if two_component:
+            # Uncapped accretion and shock; tde_shock caps each separately
+            # before summing.
+            result[self.dense_key('luminosities')] = np.where(
+                np.isnan(acc_lums), 0.0, acc_lums)
+        else:
+            luminosities = acc_lums if acc_lums is not None else shock_lums
+            luminosities = luminosities * ledd_cap / (luminosities + ledd_cap)
+            luminosities = np.where(np.isnan(luminosities), 0.0, luminosities)
+            result[self.dense_key('luminosities')] = luminosities
+
+        return result

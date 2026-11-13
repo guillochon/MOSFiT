@@ -82,8 +82,13 @@ List of built-in models
    * - ``tde``
      - Tidal disruption events
      - `2018arXiv180108221M <http://adsabs.harvard.edu/abs/2018arXiv180108221M>`_
+   * - ``tde_shock``
+     - TDE shock + GR15 viscous delay
+     - `2016ApJ...830..125J <https://ui.adsabs.harvard.edu/abs/2016ApJ...830..125J>`_
 
 .. [*] In development.
+
+``tde_shock`` accretion uses ``L = L_Edd ṁ/(1+ṁ)^{p}`` with fixed ``eddslope`` ``p = 1`` (harmonic cap) by default; ``p > 1`` declines at super-Eddington feeding rates. The collision radius is ``r_p`` by default (``rcollmode`` 0); modes 1 and 2 use the free-stream self-intersection, optionally limited by a pre-existing disk.
 
 ``sesn_sedona`` needs the optional ``sedona`` extra (PyTorch): ``uv sync --extra sedona`` or ``pip install 'mosfit[sedona]'``. Other models do not import ``torch``. A local TDE catalog fixture for tests and examples is ``mosfit/tests/PS1-10jh.json`` (Open TDE Catalog JSON; no network fetch).
 
